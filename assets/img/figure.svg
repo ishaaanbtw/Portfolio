@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 290" fill="none">
+  <!-- Swap this file for your own illustration. Keep the viewBox roughly square. -->
+  <ellipse cx="120" cy="252" rx="66" ry="13" fill="#14100c" opacity=".07"/>
+
+  <!-- cushion -->
+  <path d="M60 240q0-16 22-18h76q22 2 22 18 0 9-22 9H82q-22 0-22-9z" fill="#8ec7bd"/>
+  <path d="M60 240q0-16 22-18h76q22 2 22 18" stroke="#6aa79d" stroke-width="1.6"/>
+
+  <!-- crossed legs -->
+  <path d="M64 230q-2-26 22-31h68q24 5 22 31 0 11-22 11H86q-22 0-22-11z" fill="#5b483d"/>
+  <path d="M92 236q14-10 28-10t28 10" stroke="#4a3a31" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M78 214q18 8 42 8t42-8" stroke="#4a3a31" stroke-width="1.6" opacity=".7"/>
+
+  <!-- feet -->
+  <path d="M70 226q-8 4-8 10 0 5 7 5h9q4 0 4-5t-5-10z" fill="#e0b795"/>
+  <path d="M170 226q8 4 8 10 0 5-7 5h-9q-4 0-4-5t5-10z" fill="#e0b795"/>
+
+  <!-- torso -->
+  <path d="M95 112q25-9 50 0l11 68q-36 13-72 0z" fill="#eeece6"/>
+  <path d="M95 112q25-9 50 0l11 68q-36 13-72 0z" stroke="#d9d5cc" stroke-width="1.4"/>
+
+  <!-- arms resting on knees -->
+  <path d="M96 118q-21 26-19 58 0 11 12 11 11 0 11-11 0-25 8-48z" fill="#eeece6" stroke="#d9d5cc" stroke-width="1.4"/>
+  <path d="M144 118q21 26 19 58 0 11-12 11-11 0-11-11 0-25-8-48z" fill="#eeece6" stroke="#d9d5cc" stroke-width="1.4"/>
+  <path d="M78 182q-6 6-4 12 2 5 8 4l11-3" fill="#e0b795"/>
+  <path d="M162 182q6 6 4 12-2 5-8 4l-11-3" fill="#e0b795"/>
+
+  <!-- collar -->
+  <path d="M110 110l10 12 10-12-10-6z" fill="#f7f6f3"/>
+  <path d="M110 110l10 12M130 110l-10 12" stroke="#d9d5cc" stroke-width="1.2"/>
+
+  <!-- neck -->
+  <path d="M112 92h16v18q0 8-8 8t-8-8z" fill="#d8a988"/>
+
+  <!-- head -->
+  <ellipse cx="120" cy="70" rx="29" ry="32" fill="#e8bfa0"/>
+  <!-- ears -->
+  <ellipse cx="91" cy="72" rx="4" ry="6" fill="#e0b795"/>
+  <ellipse cx="149" cy="72" rx="4" ry="6" fill="#e0b795"/>
+
+  <!-- hair -->
+  <path d="M90 70q-6-36 30-38 36 2 30 38-6-17-19-19-13 7-27 3-9 5-14 16z" fill="#3a2d28"/>
+  <path d="M104 34q10 8 24 6" stroke="#4d3d36" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- closed eyes, calm mouth -->
+  <path d="M104 72q5 5 11 0M125 72q5 5 11 0" stroke="#3a2d28" stroke-width="2" stroke-linecap="round"/>
+  <path d="M115 86q5 3 10 0" stroke="#b8846a" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,8 @@
+.DS_Store
+**/.DS_Store
+.tools/
+_to_delete/
+*.zip
+*.tgz
+.vercel/
+node_modules/

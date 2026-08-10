@@ -1,0 +1,216 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Onefinnet review — Ishaan Gupta</title>
+<style>
+:root{--ink:#14100c;--ink2:#3a352f;--dim:#8a857e;--line:#e7e4de;--paper:#faf9f7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;padding:48px 32px 96px}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-size:26px;margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--dim);margin:0 0 8px;max-width:70ch}
+.note{background:#fff;border:1px solid var(--line);border-left:3px solid #d9a400;
+padding:14px 16px;border-radius:8px;margin:22px 0 34px;max-width:90ch;color:var(--ink2)}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th{text-align:left;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+color:var(--dim);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line)}
+td{vertical-align:top;padding:18px 14px;border-bottom:1px solid var(--line)}
+td.a{width:42%;background:#fff} td.b{width:58%}
+.nav{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);
+margin-bottom:6px;font-weight:600}
+.hd{font-weight:600;margin:0 0 8px;font-size:16px;line-height:1.35}
+.fh{margin:0 0 3px;font-weight:600;font-size:14px}
+.span{font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums;margin-bottom:10px}
+p.body{margin:0 0 9px;color:var(--ink2)}
+.img{margin:10px 0 0;padding:11px 13px;background:#f4f2ef;border-radius:7px;font-size:13.5px}
+.img a{color:#2439f5;text-decoration:none;font-weight:600}
+.img a:hover{text-decoration:underline}
+.none{color:var(--dim);font-style:italic;font-size:13.5px}
+code{background:#f0eeea;padding:1px 5px;border-radius:4px;font-size:12.5px}
+</style><link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/img/favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ishaan Gupta">
+<meta property="og:title" content="Onefinnet review — Ishaan Gupta">
+<meta property="og:description" content="A design review of the Onefinnet hiring platform.">
+<meta property="og:image" content="assets/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Onefinnet review — Ishaan Gupta">
+<meta name="twitter:description" content="A design review of the Onefinnet hiring platform.">
+<meta name="twitter:image" content="assets/img/og.png">
+</head><body><div class="wrap">
+<h1>Onefinnet Talent — Figma source vs written case study</h1>
+<p class="sub">Left: what the Figma frame actually contains at that point, with a link that opens the exact node.
+Right: what I wrote into <code>content.js</code>. File <code>App v2</code> → page <code>Handoff</code> → frame <code>Ishaan Gupta</code> (1470×18371).</p>
+<div class="note"><strong>Why links and not embedded screenshots.</strong> The connection to Figma returns image
+bytes as base64 through the tool channel, which costs roughly 20–90&nbsp;KB of text per thumbnail and would have to
+pass through twice to land as a file — for 12 images that is not a sensible trade. A link opens the real node at
+full fidelity instead of a 110px thumbnail. Every screen in the file is also watermarked “Work under NDA”, which is
+why none of it is published on the live site. If you want them embedded anyway, say so and I will pull them a few
+at a time.</div>
+<table><thead><tr><th>In the Figma</th><th>What I wrote</th></tr></thead><tbody>
+<tr><td class="a">
+<div class="span">y 2670–4600</div>
+<p class="fh">Onefinnet / Talent</p>
+<p class="fh">Helping teams hire faster &amp; smarter with AI</p>
+<div class="img">THE SHINY HIGHLIGHTS — a 5-up carousel of finished product screens (707–816×462 each).<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17214" target="_blank" rel="noopener">Open 2691:17214 in Figma →</a></div>
+</td><td class="b">
+<div class="nav">Overview</div>
+<p class="hd">Helping teams hire faster and smarter with AI</p>
+<p class="body">Helping teams hire faster and smarter with AI</p>
+<p class="body">The Onefinnet Talent platform automates candidate sourcing, shortlisting and screening — so your team can focus on building great teams, not filtering resumes.</p>
+<p class="body">What follows walks through the reasoning behind the design decisions, from the first scoping conversations to the metrics we shipped against.</p>
+</td></tr>
+<tr><td class="a">
+<div class="span">y 5434–5950 — text only in Figma, no image</div>
+<p class="fh">Going back to how it started…</p>
+<p class="fh">Solve for unstructured hiring decisions</p>
+<p class="fh">Scoping down to data-backed recruitment</p>
+<div class="img none">No image at this point — text only.</div>
+</td><td class="b">
+<div class="nav">The Problem</div>
+<p class="hd">Solve for unstructured hiring decisions</p>
+<p class="body">,
+              body: [
+                </p>
+<p class="body">Over 70% of startups lose top candidates because of slow or disorganised hiring workflows. So the scope narrowed to one idea: data-backed recruitment, where every decision has something underneath it.</p>
+<p class="body">Three separate jobs, three separate tools, and no shared view of the candidate.</p>
+</td></tr>
+<tr><td class="a">
+<div class="span">y 6093–7680</div>
+<p class="fh">Understanding the hiring ecosystem</p>
+<p class="fh">Key takeaways from interviews</p>
+<p class="fh">Hiring isn’t as easy as it looks</p>
+<p class="fh">The emotional toll on recruiters</p>
+<div class="img">A purple research board: interview questions grouped under Recruiters / Founders &amp; Hiring Managers / Candidates, each with follow-up probes.<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17295" target="_blank" rel="noopener">Open 2691:17295 in Figma →</a></div>
+<div class="img">Three colour-coded affinity clusters (blue Recruiters, green Founders, purple Candidates) with sticky notes feeding into grouped takeaways.<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17325" target="_blank" rel="noopener">Open 2691:17325 in Figma →</a></div>
+</td><td class="b">
+<div class="nav">Research</div>
+<p class="hd">Understanding the hiring ecosystem</p>
+<p class="body">,
+              body: [
+                </p>
+<p class="body">Modern recruitment depends on founders, recruiters and AI tools working in sync. Misalignment at any stage costs candidates and time, and tools that bridge clarity, collaboration and speed are the ones that redefine hiring success.</p>
+<p class="body">Recruiters feel pressure from both directions — founders want speed, candidates want clarity. Hiring is not as easy as it looks from either side of it.</p>
+<p class="body">“What they really want? Control, visibility, and confidence in their decisions.”</p>
+</td></tr>
+<tr><td class="a">
+<div class="span">y 7885–8213</div>
+<p class="fh">Who are we designing for?</p>
+<div class="img">Three persona cards with photos, a labelled trait, a pull quote in caps, and two needs each — this is where the three quotes in my copy come from.<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17352" target="_blank" rel="noopener">Open 2691:17352 in Figma →</a></div>
+</td><td class="b">
+<div class="nav">Who For</div>
+<p class="hd">Three people, three different frustrations</p>
+<p class="body">Three people, three different frustrations</p>
+<p class="body">Founders, highly ambitious: “We’re growing fast — we can’t afford slow hiring.” They want to build a dream team without losing speed, and look for a partner tool that brings structure to chaos.</p>
+<p class="body">Recruiters, no time to breathe: “Juggling 10 open roles, 5 tools, and 0 time.” They want a clearer view of pipelines, feedback and performance, and wish for a single dashboard that tracks everything in one place.</p>
+<p class="body">Candidates, straight to the point: “Excited for opportunities, disappointed by silence.” They hope for clarity, respect and real updates, and judge a company’s culture by how they are treated during hiring.</p>
+</td></tr>
+<tr><td class="a">
+<div class="span">y 8284–8884</div>
+<p class="fh">Benchmarking the Best (and the Rest)</p>
+<div class="img">A comparison table: Ashby / Lever / Workable / BambooHR down the side, scored across Top Capabilities, Ease of Use, AI Features, Customised Reporting, Pricing Affordability.<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17474" target="_blank" rel="noopener">Open 2691:17474 in Figma →</a></div>
+</td><td class="b">
+<div class="nav">Benchmarking</div>
+<p class="hd">Benchmarking the best (and the rest)</p>
+<p class="body">,
+              body: [
+                </p>
+<p class="body">Each one was scored on the same five axes — top capabilities, ease of use, AI features, customised reporting and pricing affordability — so the gaps were comparable rather than anecdotal.</p>
+<p class="body">Some legacy platforms struggle to deliver consistently. That inconsistency became a key differentiator for startups and fast-scaling teams, who depend on speed, clarity and automation more than anyone.</p>
+</td></tr>
+<tr><td class="a">
+<div class="span">y 8948–9740</div>
+<p class="fh">✨ Introducing Onefinnet Talent</p>
+<p class="fh">Recruiter’s Application</p>
+<p class="fh">High level goal</p>
+<div class="img">A white goal card: “put the power back in the recruiter’s hands — enabling them to take charge of the hiring process, not chase it.”<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17597" target="_blank" rel="noopener">Open 2691:17597 in Figma →</a></div>
+</td><td class="b">
+<div class="nav">The Product</div>
+<p class="hd">A single platform to automate hiring end to end</p>
+<p class="body">A single platform to automate hiring end to end</p>
+<p class="body">An AI hiring assistant that works as hard as you do. Automated shortlisting, engagement tracking and real-time insights keep every team member in sync and in control.</p>
+<p class="body">The goal was to give recruiters the same clarity AI already brings to every other business function — so hiring feels strategic rather than stressful.</p>
+<p class="body">Put plainly: put the power back in the recruiter’s hands, enabling them to take charge of the hiring process rather than chase it. Recruiters juggle endless candidate lists and follow-ups; the intent was to equip them with real-time insight and let them make faster, smarter, more confident decisions.</p>
+<p class="body">One surface for sourcing, screening and decisions, instead of a stack of tools that never agree.</p>
+</td></tr>
+<tr><td class="a">
+<div class="span">y 9991–13055</div>
+<p class="fh">Adding Jobs to start hiring</p>
+<p class="fh">Stages of Job creation flow</p>
+<div class="img">“Selected Iteration” — a tall 1018×2167 board: four device mockups (Enter basic job details / Customise Your Screening Criteria / Candidate Application Form / Configure &amp; Publish) each with callout annotations. The four stages in my copy are read off this.<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17651" target="_blank" rel="noopener">Open 2691:17651 in Figma →</a></div>
+</td><td class="b">
+<div class="nav">Job Creation</div>
+<p class="hd">Stages of the job creation flow</p>
+<p class="body">,
+              body: [
+                </p>
+<p class="body">This flow is not only about user experience, it is about conversion and trust. Recruiters already using another tool do not want to learn something new — they want to do the same work faster and smarter. So it had to fit existing habits: upload an old JD, save drafts, keep the settings customisable.</p>
+<p class="body">The selected iteration runs in four stages. Enter basic job details, where the form fills in the basics and suggests what else the role might need, saves progress as a draft, and reads an existing JD to understand context. Customise your screening criteria, where AI builds a snapshot of the ideal candidate and the recruiter reweights what matters most. The candidate application form, which starts from a ready-made base with the must-have screening fields. Then configure and publish — per-job settings, a final review before going live, and a privacy and terms acknowledgement.</p>
+<p class="body">Optimising it cut friction, automated the repetitive parts and delivered context-driven recommendations, shortening the turnaround on creating a job.</p>
+</td></tr>
+<tr><td class="a">
+<div class="span">y 13143–17240</div>
+<p class="fh">Enhancing AI Candidate Reports</p>
+<p class="fh">Understanding the need</p>
+<p class="fh">Putting things back together!</p>
+<div class="img">“Old/Rejected Flow”, red-headed: a candidate profile screen with three annotated failures — Dead End, Textual AI Report, Information at Scroll. My three named failures come from here.<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17678" target="_blank" rel="noopener">Open 2691:17678 in Figma →</a></div>
+<div class="img">Restructured report explorations (1018×993) — categorising and prioritising information by relevance.<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17694" target="_blank" rel="noopener">Open 2691:17694 in Figma →</a></div>
+<div class="img">The reassembled report (1018×1303) — “Putting things back together!”<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17700" target="_blank" rel="noopener">Open 2691:17700 in Figma →</a></div>
+</td><td class="b">
+<div class="nav">AI Reports</div>
+<p class="hd">Leading with the data that decides</p>
+<p class="body">,
+              body: [
+                </p>
+<p class="body">The rejected flow failed in three specific ways. It dead-ended: once a recruiter opened a profile there was no clear next action except going back to the candidate list, which broke the workflow and killed momentum. The report was textual, so users had to read, interpret and only then decide — draining when repeated across dozens of candidates. And basic information sat below the fold, so getting to it required a scroll, adding task time and frustration.</p>
+<p class="body">Each report section was restructured to lead with the most relevant data, which meant categorising and prioritising it by how much it actually mattered to a recruiter. Every visual and content block was then designed to minimise cognitive load, so attention goes to evaluating talent rather than decoding a report.</p>
+</td></tr>
+<tr><td class="a">
+<div class="span">y 17328–19550</div>
+<p class="fh">Admin Control app</p>
+<p class="fh">High Level Goals</p>
+<p class="fh">Laying the foundation of the Admin Panel</p>
+<div class="img">A goal card: “give complete control back to the organization’s core — the admins”, describing invites and Role-Based Access Control.<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17709" target="_blank" rel="noopener">Open 2691:17709 in Figma →</a></div>
+</td><td class="b">
+<div class="nav">Admin Panel</div>
+<p class="hd">Laying the foundation of the admin panel</p>
+<p class="body">Laying the foundation of the admin panel</p>
+<p class="body">The goal was to give complete control back to the organisation’s core — the admins. From the control panel they invite recruiters, hiring managers and teammates, granting each the right access and visibility through Role-Based Access Control.</p>
+<p class="body">Every complex product needs a defined control structure that shares information on a need-to-know basis, and RBAC is what makes that enforceable rather than a convention.</p>
+<p class="body">It had to be a scalable system rather than a static interface — hundreds of recruiters and thousands of candidates, still fast and still reliable as the organisation grows.</p>
+</td></tr>
+<tr><td class="a">
+<div class="span">y 19555–19900 — three metric blocks, text only</div>
+<p class="fh">Metrics to measure success</p>
+<div class="img none">No image at this point — text only.</div>
+</td><td class="b">
+<div class="nav">Outcome</div>
+<p class="hd">Metrics to measure success</p>
+<p class="body">,
+              body: [
+                </p>
+<p class="body">Trial-to-paid conversion improved over six months, as a smoother experience kept people around long enough to convert.</p>
+<p class="body">CSAT and NPS both trended upward — enough to be confident the direction was right, and to keep going.</p>
+</td></tr>
+<tr><td class="a">
+<div class="span">y 19905–20651</div>
+<p class="fh">Finally, my top learnings</p>
+<p class="fh">Wrapping up, there is so much more to talk about</p>
+<p class="fh">fin.</p>
+<div class="img">A prototype embed (953×1065) sitting after the closing note.<br><a href="https://www.figma.com/design/2jNsTqQei6Sf6D7Lnygjgs/App-v2?node-id=2691-17908" target="_blank" rel="noopener">Open 2691:17908 in Figma →</a></div>
+</td><td class="b">
+<div class="nav">Learnings</div>
+<p class="hd">Finally, my top learnings</p>
+<p class="body">,
+              body: [
+                </p>
+<p class="body">Designing the data. Deep candidate and hiring analytics had to feel effortless and contextual, not heavy — the reference points were analytics tools that make complex data look lightweight.</p>
+<p class="body">The importance of trust. Hiring data is sensitive, so every number, insight and automation had to be trustworthy through transparency, feedback loops and a clean audit trail.</p>
+<p class="body">Using AI responsibly. The challenge was not to automate blindly but to assist intelligently, keeping humans in control while AI handled the heavy lifting.</p>
+<p class="body">Designing for scale and change. Teams, roles and data all grow, so the admin panel had to be a system that absorbs that rather than an interface that breaks under it.</p>
+</td></tr>
+</tbody></table></div></body></html>
