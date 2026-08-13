@@ -29,15 +29,22 @@
   /* ONE family across the whole project; hierarchy comes from weight, size and
      tracking, not from switching typeface.
 
-     No webfont is loaded (the page only had dead preconnects, now removed), so
-     this is a system stack. That was the real cause of the mismatched look: the
-     old --serif and --script tokens fell back to ui-serif and cursive, which are
-     different faces on every machine. */
-  --sans: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-          Roboto, 'Helvetica Neue', Arial, sans-serif;
+     ONE TYPEFACE, SELF-HOSTED. Geist, in three variable files under
+     assets/fonts — see the @font-face block below section 0 for why they are
+     variable and why they are local rather than fetched. The tail of each stack
+     is still the old system list, because a stack with nothing after the
+     webfont is a blank page while the woff2 is in flight.
+
+     There used to be no webfont here at all, and the tokens named Inter, which
+     almost nobody has installed. What everyone actually saw was the second
+     entry in the list — a different face on every machine. That was the real
+     cause of the mismatched look, and it is what this fixes. */
+  --sans: 'Geist', 'Geist Fallback', ui-sans-serif, -apple-system,
+          BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   /* kept for the numbered code block only, where proportional type would break
      the alignment that makes code readable */
-  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --mono: 'Geist Mono', 'Geist Mono Fallback', ui-monospace, SFMono-Regular,
+          'SF Mono', Menlo, Consolas, monospace;
   /* Every prose measure inside a case study reads from this. It is deliberately
      one variable: the section used to cap headings at 34rem and body at 44rem,
      which left the right side of a 1136px column empty. Set it to a rem value
@@ -158,9 +165,87 @@
 *::before,
 *::after { box-sizing: border-box; }
 
-/* The viewport scrolls <html>, not <body>, so a guard on body alone lets the
-   page slide sideways anyway — both need it. */
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: hidden; }
+/* ==========================================================================
+   0b. TYPE
+   Geist, self-hosted. No CDN, no `<link>` in six HTML files, nothing to go down
+   — the same reason the rest of this site has no build step and no framework.
+
+   VARIABLE, NOT NINE STATIC CUTS. One 68KB file covers 100–900, which is less
+   than the three static weights this page uses would have been, and it means a
+   weight can be changed in CSS without shipping another download. The italic is
+   a real second file rather than a synthesised slant: the headline sets one word
+   in italic and a faux oblique on a geometric sans shears the letterforms into
+   something Geist does not contain.
+
+   `font-display: swap` — the page is text on paper and text is the point. Better
+   to read it in the fallback for 100ms than to look at nothing.
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Geist';
+  src: url('../fonts/Geist-Variable.woff2') format('woff2-variations'),
+       url('../fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('../fonts/Geist-Italic-Variable.woff2') format('woff2-variations'),
+       url('../fonts/Geist-Italic-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('../fonts/GeistMono-Variable.woff2') format('woff2-variations'),
+       url('../fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* THE FALLBACK IS NOT A DIFFERENT FONT, IT IS ARIAL WEARING GEIST'S MEASUREMENTS.
+   `swap` means the first paint is in the fallback and the second is in Geist, and
+   if the two set text at different widths and heights the whole page jumps at
+   the swap — the layout shift every webfont is accused of.
+
+   So the fallback is declared, not inherited. It is local Arial with Geist's
+   metrics forced onto it: the overrides below are computed, not guessed —
+   size-adjust is the ratio of the two fonts' average character widths
+   (Geist 581/1000 against Arial 1091/2048), and the ascent and descent are
+   Geist's own hhea values divided back through that ratio so a line box is the
+   same height either way. Text set in the fallback occupies very nearly the same
+   box as the same text in Geist, and the swap is a change of shape rather than a
+   reflow. */
+
+@font-face {
+  font-family: 'Geist Fallback';
+  src: local('Arial'), local('Helvetica'), local('Liberation Sans');
+  size-adjust: 109.11%;
+  ascent-override: 92.11%;
+  descent-override: 27.04%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Geist Mono Fallback';
+  src: local('Courier New'), local('Liberation Mono');
+  size-adjust: 112.68%;
+  ascent-override: 89.19%;
+  descent-override: 26.18%;
+  line-gap-override: 0%;
+}
+
+
+/* NEITHER OF THESE SCROLLS ANY MORE — `.app` does. See section 38: a rounded,
+   scaled window has to be clipped to the viewport, and a viewport-sized scroll
+   container clips itself with a border-radius instead of needing its clip
+   rewritten in document coordinates on every frame. */
+html { -webkit-text-size-adjust: 100%; overflow: hidden; height: 100%; }
 
 body {
   margin: 0;
@@ -170,7 +255,8 @@ body {
   background: var(--sky-2);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  overflow: hidden;
+  height: 100%;
 }
 
 img, svg, video { display: block; max-width: 100%; }
@@ -1472,14 +1558,25 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   transition: color 900ms linear;
 }
 
-/* A soft haze behind the footer copy. Its job is legibility — it keeps the
-   local background off mid-luminance at dawn and dusk — but it also reads as
-   a gentle glow, which suits the hour-by-hour sky. */
-.outro::before {
+/* THE HAZE MOVED TO THE SKY. It is a legibility device — it keeps the local
+   background off mid-luminance at dawn and dusk, where neither dark nor light
+   ink clears 4.5:1 — and it used to be painted by the outro, inside the moving
+   shell.
+
+   That was fine while the shell was the whole screen. With the deck out it was
+   the thing that gave the game away: measured across the window's edge at the
+   footer, the sky inside was twenty levels lighter than the sky six pixels to
+   its left. One environment, painted two ways, with a hard step down the seam —
+   which is exactly the "two identities" it is supposed not to be.
+
+   So it is painted once, on the sky, at viewport coordinates. Both sides of the
+   window's edge get the same wash because there is only one wash, and the outro
+   still sits in the middle of it. */
+.pane::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(52% 40% at 50% 42%, var(--outro-scrim, transparent) 0%, transparent 74%);
+  background: radial-gradient(78% 46% at 50% 86%, var(--outro-scrim, transparent) 0%, transparent 74%);
   transition: background 900ms linear;
   pointer-events: none;
 }
@@ -6162,14 +6259,11 @@ body.past-hero .sel { opacity: 0; }
   }
   .msheet.is-lit .msheet__cta:active { transform: scale(0.97); }
 
-  /* Pinned, not just overflow-hidden: iOS Safari loses the scroll position
-     with overflow alone, and the reader comes back to the top of the page. */
-  body.m-locked {
-    position: fixed;
-    left: 0; right: 0;
-    width: 100%;
-    overflow: hidden;
-  }
+  /* This used to pin the body, because a document scroller on iOS loses its
+     position under `overflow: hidden` and the reader came back to the top.
+     `.app` is an element scroller and keeps its scrollTop, so the phone's menu
+     now holds the page still the same way everything else does — see
+     `body.is-locked .app`. */
 
   /* the hero's own content starts below the bar */
   body[data-page='home'] .canvas__intro { padding-top: calc(var(--sa-top) + 3.25rem); }
@@ -7307,14 +7401,9 @@ body.past-hero .sel { opacity: 0; }
 }
 .paper__pg img { display: block; width: 100%; height: auto; }
 
-/* Pinned rather than `overflow: hidden`, for the same reason the phone's menu
-   is: iOS forgets the scroll position with overflow alone. */
-body.is-held {
-  position: fixed;
-  left: 0; right: 0;
-  width: 100%;
-  overflow: hidden;
-}
+/* The body was pinned here once, because a document scroller on iOS forgets
+   where it was under `overflow: hidden`. `.app` is an element, it does not, and
+   `App.lock()` is the whole of it now — see `body.is-locked .app`. */
 
 @media (prefers-reduced-motion: reduce) {
   .paper__veil, .paper__win { transition-duration: 1ms; }
@@ -7323,7 +7412,13 @@ body.is-held {
 
 /* ==========================================================================
    38. THE SHELL AND THE DECK
-   Above 48rem the menu is not drawn over the page. The page is slid off it.
+   Above 48rem the menu is not drawn over the page. The page is slid off it, to
+   the right, and what was already lying underneath on the left is uncovered.
+
+   THE DIRECTION IS NOT ARBITRARY. Whichever way the shell goes, the far side of
+   it leaves the screen — and everything this page leads with is in its top-left
+   corner: the sentence, the tags, the two buttons. Going right pushes the empty
+   right-hand half off instead and keeps all of that in view the whole way.
 
    Everything the site draws lives in one of three layers, and all three carry
    the same transform from the same two properties with the same transition, so
@@ -7343,7 +7438,7 @@ body.is-held {
   --app-x: 0px;
   --app-s: 1;
   --app-r: 0px;
-  --app-scrim: 0;
+  --app-lit: 0;
 
   /* 600ms, decelerating the whole way, arriving at zero velocity. Not a spring
      in the overshoot sense — a spring that overshoots would bounce the entire
@@ -7352,36 +7447,86 @@ body.is-held {
 }
 
 body.deck-open {
-  --app-x: calc(-1 * var(--deck-w));
+  --app-x: var(--deck-w);
+  /* THE INSET IS BACK, THE DIALOG LIGHTING IS NOT.
+
+     A uniform scale shrinks all four edges, so this is also the top and bottom
+     padding: 0.935 puts 29px of sky above the workspace and 29px below it.
+
+     That inset was blamed once for making the thing read as a floating modal
+     and taken down to 0.99, which removed the padding along with the problem.
+     The padding was not the problem. What made it a dialog was the light on it —
+     180px of blur thrown straight down from a card hanging in the middle of the
+     viewport. So the inset is restored and the shadow is not: it casts sideways
+     off the leading edge now, which is the edge you can actually see, and reads
+     as a sheet lifted at one side rather than a window floating in space. */
   --app-s: 0.935;
   --app-r: 20px;
-  --app-scrim: 1;
+  --app-lit: 1;
 }
 
 /* --- the three layers ----------------------------------------------------- */
 
+/* THE WORLD, AND IT DOES NOT MOVE.
+
+   This layer used to travel with the shell, carrying a sky of its own, while the
+   deck carried a second sky underneath. Two skies with two sets of clouds at two
+   different offsets, and the seam between them landed exactly where the footer
+   met the menu — which is the one place the brief says must read as one place.
+   Opening the menu at the bottom of the page showed you two weathers.
+
+   There is one now, and it is here: fixed, untransformed, at the very back of
+   everything. The page's paper floats on it, the footer is where the paper stops
+   covering it, and the menu is more of the same sky with the shell moved off it.
+   Nothing is revealed but more of one continuous thing. */
 .pane {
   position: fixed;
   inset: 0;
-  z-index: 1;
-  /* `overflow: hidden` clips the sky to the radius; a box-shadow is painted
-     outside the border box and is not touched by it, which is the whole reason
-     the shadow lives on this layer and not on one of the clipped ones. */
-  overflow: hidden;
-  border-radius: var(--app-r);
-  /* THE SHADOW DOES NOT ANIMATE, AND DOES NOT NEED TO. Closed, this layer is
-     exactly the viewport, so every pixel of its shadow falls outside the screen
-     and none of it is drawn. It appears because the layer moves out from under
-     the edges, not because anything fades it in — which is the same trick the
-     whole interaction runs on, and it keeps a 140px blur off the animation. */
+  z-index: 0;
+}
+
+/* The scroll surface, and the window. Viewport-sized, so its own border-radius
+   is the window's radius and its fixed descendants — of which there are none
+   left, but still — would measure from the screen either way. */
+.app {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  scroll-behavior: smooth;
+  /* THE FRAME HANDS OVER TO THE PAPER AT THE FOOTER.
+
+     This layer is the viewport, and framing the viewport is right at the top of
+     the page, where the paper fills it — the frame and the paper are the same
+     rectangle. At the end of the page they are not: the sheet has lifted off
+     and half of what is inside this frame is sky. Drawing a rounded, shadowed
+     box around sky, with the same sky continuing outside it, is what made the
+     bottom read as two environments no matter how well the colours matched.
+
+     So the frame fades out as the sheet detaches. --sheet-lift is the number the
+     scroll loop already computes for that detachment — 0 up top, 1 when the
+     paper is fully off the desk — and the frame is its inverse. By the time you
+     are at the footer the only edge on screen is the sheet's own, which is the
+     right one: the paper is the canvas, the weather is the desk, and there is
+     one of each. */
+  --frame: calc(1 - var(--sheet-lift, 0));
+  border-radius: calc(var(--app-r) * var(--frame));
+  /* Cast mostly sideways, off the leading edge, because that is the only edge
+     that is on screen. The old chain threw 180px of blur downward from a card
+     hanging in the middle of the viewport, which is the lighting of a dialog. */
   box-shadow:
-    0 2px 8px rgba(20, 16, 12, 0.06),
-    0 18px 50px -16px rgba(20, 16, 12, 0.28),
-    0 60px 140px -40px rgba(20, 16, 12, 0.42);
+    -1px 0 0 rgba(20, 16, 12, calc(0.05 * var(--frame))),
+    -10px 0 26px -12px rgba(20, 16, 12, calc(0.16 * var(--frame))),
+    -34px 0 70px -34px rgba(20, 16, 12, calc(0.26 * var(--frame)));
+  transform: translate3d(var(--app-x), 0, 0) scale(var(--app-s));
   transition: transform var(--deck-move), border-radius var(--deck-move);
 }
 
-.app { position: relative; z-index: 2; }
+/* held still for a modal — the scrollTop survives, because this is an element
+   and not the document */
+body.is-locked .app { overflow: hidden; }
 
 .hud {
   position: fixed;
@@ -7394,34 +7539,41 @@ body.deck-open {
 }
 :where(.hud) > * { pointer-events: auto; }
 
-.pane,
-.hud { transform: translate3d(var(--app-x), 0, 0) scale(var(--app-s)); }
+/* The furniture takes the shell's transform to the pixel — same expression,
+   same curve — so there is no frame in which the dock and the page it belongs
+   to disagree about where they are.
 
-/* `.app` is the only one that must not carry a transform at rest: it is the
-   document flow, so a transform on it — even the identity — would make it the
-   containing block for anything fixed inside, and "fixed" would start meaning
-   "somewhere in a 4,000px box". It gets one only while the shell is away, and
-   `deck-shut` holds it there for the length of the journey back. */
-body.deck-open .app,
-body.deck-shut .app {
+   THE CLIP IS ALWAYS ON, and that is a fix rather than an oversight. It used to
+   be applied only while the deck was out, which meant it went from `none` to a
+   20px rounded inset in one frame while the workspace's own radius was easing
+   from zero over 600ms — the furniture's corners snapped, the page's corners
+   travelled, and that gap is what read as segmented motion. Declared always, at
+   a radius that is zero when closed, it interpolates with everything else. */
+.hud {
   transform: translate3d(var(--app-x), 0, 0) scale(var(--app-s));
-  transition: transform var(--deck-move);
+  clip-path: inset(0 round calc(var(--app-r) * (1 - var(--sheet-lift, 0))));
+  transition: transform var(--deck-move), clip-path var(--deck-move);
 }
 
-body.deck-open .hud,
-body.deck-shut .hud { clip-path: inset(0 round var(--app-r)); }
-
-/* Depth, and a signal. The canvas is still a page while it is out — you can
-   read it, and clicking it brings it back — but it is not the thing being
-   looked at, so it sits a little further into the room. Opacity only. */
+/* EDGE LIGHT, NOT A SCRIM. There was a wash of dark over the whole canvas here,
+   and it was the last thing in the interaction that behaved like a second
+   surface arriving on top of the first. What replaces it is the paper's own
+   edge: a hairline of light down the leading side and across the top, the way
+   a lifted sheet catches the room. It is on the canvas, it moves with the
+   canvas, and it is only there when the canvas has edges to catch anything. */
 .hud::after {
   content: '';
   position: fixed;
   inset: 0;
   z-index: 40;
   pointer-events: none;
-  background: rgba(16, 13, 10, 0.10);
-  opacity: var(--app-scrim);
+  border-radius: calc(var(--app-r) * (1 - var(--sheet-lift, 0)));
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset -1px 0 0 rgba(20, 16, 12, 0.05);
+  /* goes with the frame it belongs to */
+  opacity: calc(var(--app-lit) * (1 - var(--sheet-lift, 0)));
   transition: opacity var(--deck-move);
 }
 
@@ -7430,22 +7582,45 @@ body.deck-shut .hud { clip-path: inset(0 round var(--app-r)); }
 .deck {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  /* Nothing of it should be visible, or paint, until the shell starts to move.
-     It is fully covered when closed, so this is about the second starfield and
-     the second cloud field not running behind an opaque page all day. */
+  justify-content: flex-start;
+  /* The deck is not hidden because it is arriving — it is hidden because when
+     the shell is home it is behind it, and a menu you can read through the gap
+     the footer opens in the paper is a menu that is in the wrong place. It
+     switches, it does not fade: there is no state in which this is halfway
+     here. */
   visibility: hidden;
 }
 body.deck-open .deck,
 body.deck-shut .deck { visibility: visible; }
 
-/* The same engine as the footer, not a copy of it: `.sky-root` reads --sky-1/2/3
-   and the two opacities off the root, and `Sky.set()` writes them once for the
-   whole document. Its own stars and its own clouds, at the same hour. */
-.deck__sky { z-index: 0; }
+/* Top-left of the deck, on the same gutter as everything else in the column. */
+.deck__close {
+  position: absolute;
+  top: clamp(1.25rem, 3.5vh, 2rem);
+  left: clamp(1.75rem, 3.2vw, 3.25rem);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -9px;                 /* optical: the glyph on the gutter, not the box */
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--outro-ink, #33302c);
+  opacity: 0.62;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 220ms var(--ease), transform 320ms var(--spring);
+}
+.deck__close svg { width: 17px; height: 17px; }
+.deck__close:hover,
+.deck__close:focus-visible { opacity: 1; }
+.deck__close:active { transform: scale(0.9); }
 
 .deck__inner {
   position: relative;
@@ -7490,29 +7665,59 @@ body.deck-shut .deck { visibility: visible; }
 }
 .deck__dot { opacity: 0.5; }
 
+/* THE FOOTER'S TWO PODS, IN THE FOOTER'S ARRANGEMENT. Out on the page they are
+   fixed to the bottom two corners and faded by --end, which is zero anywhere
+   but the very end of the scroll. Here they keep the geometry and lose the
+   fade: the slider holds the bottom-left, the mute holds the bottom-right of
+   the deck's own column, and both are simply on — down here the hour is the
+   subject rather than a footnote to it.
+
+   Pinned to the bottom of the deck rather than stacked under the links, because
+   that is where they live everywhere else on this site and moving them would
+   make them read as two new controls instead of the two you already know. */
+.deck__pods {
+  position: absolute;
+  left: 0;
+  bottom: clamp(1.25rem, 3.5vh, 2rem);
+  width: var(--deck-w);
+  padding-inline: clamp(1.75rem, 3.2vw, 3.25rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.deck__pods > .controls,
+.deck__pods > .mute {
+  position: static;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.deck__pods > .mute:hover { transform: scale(1.09); }
+
 /* --- the handle ----------------------------------------------------------- */
 
 /* It is in `.hud`, so it carries the shell's transform and stays welded to the
-   canvas's right edge for the whole journey. That is what makes the edge read
-   as the edge of something you are pushing. */
+   canvas's left edge for the whole journey. That is what makes the edge read as
+   the edge of something you are pushing: the handle is the leading edge, and it
+   is the first thing the deck appears from behind. */
 .tab-menu {
   position: fixed;
   top: 50%;
-  right: 0;
+  left: 0;
   z-index: 92;
   transform: translateY(-50%);
   display: grid;
   place-items: center;
   padding: 1.15rem 0.5rem;
   border: 0;
-  border-radius: 10px 0 0 10px;
+  border-radius: 0 10px 10px 0;
   background: var(--paper);
   box-shadow:
-    -1px 0 0 rgba(20, 16, 12, 0.05),
-    -6px 0 22px -12px rgba(20, 16, 12, 0.22);
+    1px 0 0 rgba(20, 16, 12, 0.05),
+    6px 0 22px -12px rgba(20, 16, 12, 0.22);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: padding-right 260ms var(--ease), background-color 260ms var(--ease);
+  transition: padding-left 260ms var(--ease), background-color 260ms var(--ease);
 }
 .tab-menu span {
   writing-mode: vertical-rl;
@@ -7523,15 +7728,41 @@ body.deck-shut .deck { visibility: visible; }
   text-transform: uppercase;
   color: var(--ink-2);
 }
-.tab-menu:hover { padding-right: 0.75rem; }
+.tab-menu:hover { padding-left: 0.75rem; }
 .tab-menu:active { transform: translateY(-50%) scale(0.97); }
 
-/* The dock was measured 24px off the edge back when the edge was empty. It is
-   not any more — the handle is centred on the same edge at the same height — so
-   the dock moves inboard by the handle's width and the two stop touching. */
-@media (min-width: 48.0625rem) {
-  .tools { right: calc(58px + var(--sa-right)); }
+/* IT IS GONE WHILE THE DECK IS OUT — not faded, not disabled, not there. With
+   a navigation panel open beside it, a second control offering the same thing
+   is duplicate navigation, and a duplicate that is merely transparent is still
+   in the tab order and still under the pointer.
+
+   THE TWO HANDOVERS DO NOT OVERLAP. The handle goes on `deck-open`, which is set
+   in the same frame the shell starts moving, and the ✕ arrives with the deck it
+   belongs to. Closing is the mirror: `deck-open` comes off and `deck-shut` goes
+   on in the same frame, the ✕ leaves with it, and the handle does not come back
+   until `deck-shut` clears — which is when the shell has landed. There is no
+   frame with both on screen, in either direction. */
+body.deck-open .tab-menu,
+body.deck-shut .tab-menu { display: none; }
+
+/* AND IT GOES AT THE FOOTER TOO, for the same reason it goes when the deck is
+   out: by then the page is offering the same four links in the footer's own
+   Pages column, a few hundred pixels to the right, and a floating handle over
+   the sky beside them is the second copy.
+
+   It rides --end — the number the scroll loop already uses to bring the time
+   slider and the mute up at the end of the page — read backwards, so the handle
+   leaves on exactly the frame those two arrive. One set of controls at the
+   bottom of the page, and it is the set that belongs to the bottom of the page.
+   `--end-events-inv` is the matching keyword, written for the dock, which does
+   the same thing on a phone. */
+.tab-menu {
+  opacity: calc(1 - var(--end, 0));
+  pointer-events: var(--end-events-inv, auto);
 }
+
+body.deck-shut .deck__close { display: none; }
+
 
 /* The row of links is gone: the handle is the navigation now, and two of them
    on one screen is the second one explaining that the first is decoration. The
@@ -7553,4 +7784,145 @@ body[data-page] .nav { display: none; }
   body.deck-open .app,
   body.deck-shut .app { transition-duration: 1ms; }
   .deck__link { transition-duration: 1ms; }
+}
+
+/* ==========================================================================
+   39. THE PEEK
+   The card behind the underlined words in the closing block. Its motion is in
+   site.js — a spring in the page's frame loop, not a transition, for the reason
+   written over the module. What is here is the surface and the two states the
+   word itself has.
+   ========================================================================== */
+
+/* THE WORD, BEFORE ANYTHING HAPPENS. The underline is already drawn by the
+   reveal; hovering only makes it heavier and the ink darker. Nothing moves —
+   a word that shifts under the cursor is a word you then have to chase. */
+.block mark.rule.is-peek { cursor: pointer; }
+
+.block mark.rule.is-peek:hover,
+.block mark.rule.is-peek:focus-visible {
+  color: var(--ink);
+  /* 1.5px → 2px, and the line goes from 72% ink to full. Two properties, both
+     paint, and the transition below is what makes it read as a response rather
+     than a swap. */
+  background-image: linear-gradient(to right, var(--ink), var(--ink));
+  background-size: 100% 2px;
+}
+.block mark.rule.is-peek {
+  transition:
+    background-size 220ms var(--ease),
+    background-image 220ms linear,
+    color 220ms var(--ease);
+}
+
+.peek {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 95;
+  width: clamp(17.5rem, 22vw, 21rem);      /* 280–336px */
+  /* The loop writes transform and opacity every frame; nothing else here is
+     allowed to change, and neither of them costs layout. */
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  padding: 1.15rem 1.25rem 1rem;
+  border-radius: 20px;
+  background: var(--paper);
+  border: 1px solid rgba(20, 16, 12, 0.05);
+  box-shadow:
+    0 1px 2px rgba(20, 16, 12, 0.05),
+    0 12px 28px -10px rgba(20, 16, 12, 0.16),
+    0 40px 80px -32px rgba(20, 16, 12, 0.30);
+}
+
+/* X is a black site. A paper card in front of it would be this page talking
+   about them rather than a glimpse of them. */
+.peek[data-tone='dark'] {
+  background: #141210;
+  border-color: rgba(255, 255, 255, 0.09);
+  color: #f4f2ef;
+}
+
+/* The tail. Small, and its only job is to say which word this belongs to when
+   two of them are a line apart. */
+.peek::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 11px; height: 11px;
+  margin-left: -5.5px;
+  border-radius: 0 0 3px 0;
+  background: inherit;
+  border-right: 1px solid rgba(20, 16, 12, 0.05);
+  border-bottom: 1px solid rgba(20, 16, 12, 0.05);
+  transform: rotate(45deg);
+}
+.peek[data-tone='dark']::after { border-color: rgba(255, 255, 255, 0.09); }
+
+.peek__media {
+  margin: -0.25rem -0.35rem 0.85rem;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--paper-2, rgba(20, 16, 12, 0.04));
+}
+.peek__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* the parallax lean is written here; the 1.08 is the overscan that keeps an
+     edge from showing when it does */
+  transform: scale(1.08);
+  will-change: transform;
+}
+
+.peek__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  line-height: 1.35;
+}
+.peek__body {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.peek[data-tone='dark'] .peek__body { color: rgba(244, 242, 239, 0.72); }
+
+.peek__hint {
+  margin-top: 0.7rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-dim);
+}
+.peek[data-tone='dark'] .peek__hint { color: rgba(244, 242, 239, 0.5); }
+
+/* Switching words does not rebuild the card, it replaces what is written on it.
+   140ms is under the spring's own travel time, so the contents have changed by
+   the time the card arrives at the new word. */
+.peek__in.is-xf { animation: peekXf 140ms var(--ease); }
+@keyframes peekXf {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* --- the phone: a sheet, because there is no hover ------------------------ */
+@media (hover: none), (pointer: coarse) {
+  .peek {
+    width: min(26rem, calc(100vw - 2rem));
+    padding-bottom: calc(1rem + var(--sa-bottom));
+    pointer-events: auto;
+    border-radius: 22px;
+  }
+  /* the tail points at a word the finger is covering, so it goes */
+  .peek::after { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peek__in.is-xf { animation-duration: 1ms; }
+  .peek__media img { transform: scale(1.08) !important; }
 }

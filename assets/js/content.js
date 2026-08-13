@@ -1439,12 +1439,71 @@ window.SITE = {
      current, and a visitor hits all three. The invitation is kept, the
      availability claim is not. */
   closing: [
-    ['I’m currently at <mark class="rule">Cypherock</mark>, otherwise',
-     '<mark class="rule">vibecoding</mark> and playing <mark class="rule">poker</mark>.',
+    ['I’m currently at <mark class="rule" data-peek="cypherock">Cypherock</mark>, otherwise',
+     '<mark class="rule" data-peek="vibecoding">vibecoding</mark> and playing <mark class="rule" data-peek="poker">poker</mark>.',
      'Always up for building exciting things',
      'with people I enjoy working with.',
-     'Reach out via <a href="mailto:product@cypherock.com"><mark class="rule">email</mark></a> or dm on <a href="https://x.com/"><mark class="rule">X</mark></a>.'],
+     'Reach out via <a href="mailto:product@cypherock.com"><mark class="rule" data-peek="email">email</mark></a> or dm on <a href="https://x.com/"><mark class="rule" data-peek="x">X</mark></a>.'],
   ],
+
+  /* ------------------------------------------------------------------- peek
+     WHAT IS BEHIND THE UNDERLINED WORDS in the closing block. Each key here
+     matches a `data-peek` above; a word without an entry is just a word, and an
+     entry without a word is never built.
+
+     THE FIELDS
+       tone    'light' (paper) or 'dark'. Dark is for the places that are dark
+               themselves — X is a black site and a white card in front of it
+               reads as this page's, not as theirs.
+       media   optional image at the top of the card. Anything in assets/;
+               leave it out and the card is type only, which is the right answer
+               more often than it sounds. 16:10 is the box it is cropped to.
+       title   one line, and it should be the thing you would say out loud.
+       body    one or two sentences. Past three the card stops being a glance.
+       hint    the small grey line at the bottom. A date, a status, an
+               instruction — whatever the word owes the reader.
+       action  'copy' puts the title's value on the clipboard on click and
+               swaps the hint for a tick. Only `email` uses it.
+       value   what `action: 'copy'` copies. Defaults to person.copyEmail.
+
+     ON THE TWO WITHOUT PICTURES. Poker and vibecoding have no artwork in this
+     repo, and a stock photograph of chips would be worse than the sentence. Add
+     a `media` line to either when there is a real image to put there. */
+  peek: {
+    cypherock: {
+      tone: 'light',
+      media: 'assets/img/x0/x0.webp',
+      title: 'Cypherock',
+      body: 'Product designer. The X0 card from concept to beta, the wallet app around it, and the design system under both.',
+      hint: 'Dec 2025 — now · Gurugram',
+    },
+    vibecoding: {
+      tone: 'light',
+      media: 'assets/media/x0/app-walkthrough.webp',
+      title: 'Vibecoding',
+      body: 'Designing by building it. This site is hand-written HTML, CSS and JavaScript — no framework, no build step, every measurement taken off a real screen.',
+      hint: 'Claude Code · Figma MCP · a lot of Chromium',
+    },
+    poker: {
+      tone: 'light',
+      title: 'Poker',
+      body: 'Reading people under incomplete information, then paying to find out if you were right. It is the closest thing to product judgement I have found outside work.',
+      hint: 'Mostly losing, learning fast',
+    },
+    email: {
+      tone: 'light',
+      title: 'Let’s talk.',
+      body: '',
+      hint: 'Click to copy',
+      action: 'copy',
+    },
+    x: {
+      tone: 'dark',
+      title: '@ishaaanbtw',
+      body: 'Half design, half whatever I am building that week.',
+      hint: 'Open profile',
+    },
+  },
 
   /* -------------------------------------------------------------- index table */
   index: {

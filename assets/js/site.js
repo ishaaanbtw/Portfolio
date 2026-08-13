@@ -46,6 +46,7 @@
   const Pointer = { x: 0, y: 0, seen: false };
 
   const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
+
   const lerp = (a, b, t) => a + (b - a) * t;
   const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 
@@ -420,9 +421,10 @@
      THE PAGE IS A SHEET OF PAPER LYING ON A DESK, AND THE DESK IS THE SKY.
 
      Opening the menu does not animate a menu. It slides the whole application
-     left, and what was already underneath is simply no longer covered. For that
-     to read as one object rather than a dozen synchronised ones, everything the
-     site draws has to carry the same transform at the same instant.
+     right, and what was already underneath on the left is simply no longer
+     covered. For that to read as one object rather than a dozen synchronised
+     ones, everything the site draws has to carry the same transform at the same
+     instant.
 
      It cannot be one element, and the reason is `position: fixed`. A transform
      makes its element the containing block for every fixed descendant, so the
@@ -472,6 +474,33 @@
 
     /* the sky goes under the flow, not over it */
     mountSky(node) { this.pane.appendChild(node); return node; },
+
+    /* THE PAGE SCROLLS INSIDE `.app`, NOT INSIDE THE WINDOW, and that is what
+       lets the shell move while you are still reading. A rounded, scaled window
+       has to be clipped to the viewport rectangle; if the document were the
+       scroller, `.app` would be a box thousands of pixels tall and the clip
+       would have to be rewritten in document coordinates on every scroll frame.
+       Made viewport-sized instead, it clips itself with a plain border-radius
+       and the scroll is just a scroll.
+
+       Everything that used to ask the window how far down the page it was asks
+       here instead. One place, so there is one answer. */
+    y() { return this.app ? this.app.scrollTop : (window.scrollY || 0); },
+
+    to(top, smooth) {
+      const s = this.app || window;
+      const opt = { top, behavior: smooth && !REDUCED ? 'smooth' : 'instant' };
+      if (s.scrollTo) s.scrollTo(opt); else s.scrollTop = top;
+    },
+
+    onScroll(fn) { (this.app || window).addEventListener('scroll', fn, { passive: true }); },
+
+    /* Holding the page still for a modal. An element scroller keeps its
+       scrollTop under `overflow: hidden`, so none of the pin-the-body-at-a
+       -negative-offset dance the document scroller needed applies here — and
+       neither does the scrollbar-width compensation, because the bar belongs to
+       `.app` and `.app` is not going anywhere. */
+    lock(on) { document.body.classList.toggle('is-locked', !!on); },
   };
 
   /* ==================================================== 2c. the deck =====
@@ -479,11 +508,13 @@
      once, at the bottom of the stack, and the shell sliding off it is the whole
      of the reveal.
 
-     Its background is not a copy of the footer's sky, it is the same one.
-     `Sky.set()` writes --sky-1/2/3, --star-opacity and --cloud-opacity to the
-     root, and every rule that paints weather reads them from there, so a second
-     `.sky-root` here is the same engine at the same hour with its own stars and
-     its own drift. Move the time slider and both change together. */
+     IT HAS NO SKY OF ITS OWN, AND THAT IS THE POINT. It used to build a second
+     `.sky-root` — the same engine at the same hour, but its own clouds at its
+     own offsets — while the shell carried a first one along with it. Two
+     weathers, and the seam between them fell exactly where the footer meets the
+     menu. There is one sky now, in `.pane`, fixed and untransformed at the back
+     of everything: the paper floats on it, the footer is where the paper stops
+     covering it, and this is more of the same sky with the paper moved aside. */
   const Deck = {
     built: false,
 
@@ -491,11 +522,6 @@
       if (window.matchMedia('(max-width: 48rem)').matches) return;  // the phone has its sheet
 
       const deck = el('div', { class: 'deck', id: 'deck' });
-
-      const sky = el('div', { class: 'sky-root deck__sky', 'aria-hidden': 'true' });
-      sky.appendChild(Sky.starfield());
-      sky.appendChild(Sky.clouds());
-      deck.appendChild(sky);
 
       const here = (location.pathname.split('/').pop() || 'index.html');
       const inner = el('div', { class: 'deck__inner' });
@@ -531,20 +557,42 @@
       meta.append(this.timeEl, el('span', { class: 'deck__dot' }, '·'), this.skyEl);
       inner.appendChild(meta);
 
-      deck.appendChild(inner);
+      /* THE SAME TWO PODS THE FOOTER HAS — the same nodes, not copies. They are
+         borrowed from `.hud` while the deck is out and handed back when it
+         closes, so the hour you set here is the hour the footer is already at:
+         there is no second slider to fall out of step, and no second mute to
+         disagree about whether the sound is on. */
+      this.pods = el('div', { class: 'deck__pods' });
+
+      /* THE WAY OUT, SAID PLAINLY. The handle that opened this is on the canvas
+         and the canvas has left; leaving it there as the only exit means the way
+         back is a button riding a thing that just slid off. So it goes, and this
+         takes over — in the corner the deck owns, where a close control belongs
+         and where nothing else is. */
+      this.closeBtn = el('button', {
+        class: 'deck__close', type: 'button', 'aria-label': 'Close menu',
+      }, '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"'
+       + ' stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>');
+      this.closeBtn.addEventListener('click', () => this.close());
+
+      deck.append(this.closeBtn, inner, this.pods);
       document.body.prepend(deck);
 
       /* THE HANDLE RIDES THE SHELL, NOT THE SCREEN. It goes in .hud, so it
          carries the same transform as everything else and stays welded to the
-         canvas's right edge the whole way across — which is what makes the edge
+         canvas's left edge the whole way across — which is what makes the edge
          read as the edge of an object you are pushing, rather than as a button
-         that happens to be near it. */
+         that happens to be near it. It is also the leading edge: the deck comes
+         out from behind the handle, not from the far side of the screen. */
       const tab = el('button', {
         class: 'tab-menu', type: 'button',
         'aria-label': 'Menu', 'aria-expanded': 'false', 'aria-controls': 'deck',
       }, '<span>Menu</span>');
       tab.addEventListener('click', () => this.toggle());
       App.mount(tab);
+      /* it reads --end like the pods do, and Sheet collected them before this
+         existed */
+      Sheet.collect();
 
       /* Escape, and a click anywhere on the pushed-aside canvas. The canvas is
          not disabled while it is out — it is still a page, you can still read
@@ -553,12 +601,13 @@
       addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && this.isOpen) { e.preventDefault(); this.close(); }
       });
-      App.app.addEventListener('click', (e) => {
-        if (!this.isOpen) return;
-        e.preventDefault();
-        e.stopPropagation();
-        this.close();
-      }, true);
+      /* Clicking the deck's own background closes it. The canvas does NOT —
+         it is still a live page out there, and swallowing its clicks to use
+         them as a dismiss would be the one thing that gives away that it is a
+         menu rather than a workspace. */
+      deck.addEventListener('click', (e) => {
+        if (this.isOpen && !hit(e, 'a, button, input, .deck__pods')) this.close();
+      });
 
       this.el = deck;
       this.built = true;
@@ -581,29 +630,11 @@
       if (!this.built || this.isOpen) return;
       this.isOpen = true;
 
-      /* THE SCROLL IS PINNED, AND IT HAS TO BE. `.app` is the document flow, so
-         its transform-origin has to be written in document coordinates to make
-         the scale pivot on the middle of what you can actually see. That number
-         is only right for one scroll position, so the scroll stops at the one
-         it was taken at. The gutter is paid back as padding, or the page jumps
-         sideways by the width of the scrollbar as it goes. */
-      this.keep = window.scrollY || 0;
-      /* `html` has scroll-behavior: smooth, so a jump started a moment ago — an
-         anchor, a skip link — is still travelling. `overflow: hidden` stops the
-         wheel but not that, and it would land somewhere the clip and the origin
-         were not measured for. Landing it here, instantly, at the number we just
-         took. */
-      window.scrollTo({ top: this.keep, left: 0, behavior: 'instant' });
-      const gutter = window.innerWidth - document.documentElement.clientWidth;
-      App.app.style.transformOrigin = `50% ${this.keep + window.innerHeight / 2}px`;
-      /* clips the flow to the visible rectangle so the corner radius is the
-         window's, not the document's */
-      App.app.style.clipPath =
-        `inset(${this.keep}px 0 ${Math.max(0, document.documentElement.scrollHeight - this.keep - window.innerHeight)}px 0`
-        + ` round var(--app-r))`;
-
-      document.documentElement.style.overflow = 'hidden';
-      if (gutter) document.body.style.paddingRight = `${gutter}px`;
+      /* THE PAGE KEEPS WORKING WHILE IT IS OUT. Nothing is pinned and nothing
+         is disabled: the shell is viewport-sized and scrolls inside itself, so
+         it can be read, scrolled and drawn on where it stands. That is the whole
+         reason the scroll container moved off the document — see App.y(). */
+      this.borrowPods(true);
 
       clearTimeout(this.t);
       document.body.classList.remove('deck-shut');
@@ -611,8 +642,9 @@
       this.el.removeAttribute('aria-hidden');
       const tab = $('.tab-menu');
       if (tab) tab.setAttribute('aria-expanded', 'true');
-      const first = $('.deck__link', this.el);
-      if (first) setTimeout(() => first.focus({ preventScroll: true }), 260);
+      /* the exit takes focus, so Tab starts from the way out rather than
+         landing on it last */
+      setTimeout(() => this.closeBtn && this.closeBtn.focus({ preventScroll: true }), 260);
     },
 
     close() {
@@ -627,18 +659,22 @@
       const tab = $('.tab-menu');
       if (tab) { tab.setAttribute('aria-expanded', 'false'); tab.focus({ preventScroll: true }); }
 
-      document.documentElement.style.overflow = '';
-      document.body.style.paddingRight = '';
-
-      /* the clip and the origin stay until the shell has finished coming back —
-         removing them mid-flight snaps the corners square and moves the pivot */
+      /* The pods go home only once the shell has landed. Moving them mid-flight
+         would take them out of the deck while the deck is still on screen. */
       clearTimeout(this.t);
       this.t = setTimeout(() => {
         if (this.isOpen) return;
         document.body.classList.remove('deck-shut');
-        App.app.style.clipPath = '';
-        App.app.style.transformOrigin = '';
+        this.borrowPods(false);
       }, REDUCED ? 20 : 680);
+    },
+
+    /* `.controls` and `.mute` live in `.hud` and ride the shell. Out here they
+       would ride it off the screen, so for the duration they are moved onto the
+       deck, which does not move. Same nodes, same listeners, same state. */
+    borrowPods(take) {
+      const pods = [$('.controls'), $('.mute')].filter(Boolean);
+      pods.forEach((n) => (take ? this.pods : App.hud).appendChild(n));
     },
 
     toggle() { this.isOpen ? this.close() : this.open(); },
@@ -936,9 +972,8 @@
           /* Locking with `overflow: hidden` alone lets iOS Safari forget where
              the reader was; pinning the body at its current offset and putting
              it back on close is what keeps the position. */
-          keep = window.scrollY;
-          document.body.style.top = `-${keep}px`;
-          document.body.classList.add('m-locked');
+          keep = App.y();
+          App.lock(true);
           sheet.hidden = false;
           for (const L of lays) { L.to = 0; }
           if (REDUCED) {
@@ -958,8 +993,8 @@
 
         sheet.classList.remove('is-lit');
         lit = false;
-        document.body.classList.remove('m-locked');
-        window.scrollTo(0, keep);
+        App.lock(false);
+        App.to(keep);
         btn.focus({ preventScroll: true });
 
         for (const L of lays) { L.to = -100; }
@@ -1202,7 +1237,7 @@
       }, { passive: true });
 
       /* a tooltip anchored to a moving page has to follow or disappear */
-      addEventListener('scroll', () => { if (current) show(current); }, { passive: true });
+      App.onScroll(() => { if (current) show(current); });
       document.addEventListener('focusin', (e) => {
         const node = e.target.closest?.('[data-tip]');
         if (node) show(node); else hide();
@@ -1381,7 +1416,7 @@
       scrim.addEventListener('click', () => setOpen(false));
       addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
       /* scrolling away should dismiss it rather than leave it floating */
-      addEventListener('scroll', () => { if (open) setOpen(false); }, { passive: true });
+      App.onScroll(() => { if (open) setOpen(false); });
     },
 
     /* soft cross-page fade */
@@ -3182,8 +3217,8 @@
           if (typeof target.scrollIntoView === 'function') {
             target.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
           } else {
-            const y = target.getBoundingClientRect().top + (window.scrollY || 0);
-            scrollTo({ top: y, behavior: REDUCED ? 'auto' : 'smooth' });
+            const y = target.getBoundingClientRect().top + App.y();
+            App.to(y, true);
           }
           history.replaceState(null, '', a.getAttribute('href'));
         });
@@ -5250,7 +5285,7 @@
     measureBase() {
       const host = this.inline && this.el && this.el.parentNode;
       this.base = host && host.getBoundingClientRect
-        ? host.getBoundingClientRect().top + (window.scrollY || 0)
+        ? host.getBoundingClientRect().top + App.y()
         : 0;
     },
 
@@ -5381,7 +5416,7 @@
       if (surf && surf.classList && surf.classList.contains('drawer__scroll')) {
         return surf.scrollTop || 0;
       }
-      return window.scrollY || 0;
+      return App.y();
     },
 
     resize() {
@@ -6265,7 +6300,7 @@
       if (!this.el || this.el.offsetParent === null) return false;
       /* Sampling is a hit test plus one getComputedStyle, so it is cheap but
          not free. Once every 4px of scroll is imperceptible and bounds it. */
-      const y = scrollY;
+      const y = App.y();
       if (this.lastY !== null && Math.abs(y - this.lastY) < 4) return false;
       this.lastY = y;
       return this.set(this.surface());
@@ -6480,7 +6515,7 @@
       this.build();
       if (this.open_) return;
       this.open_ = true;
-      this.keep = window.scrollY;
+      this.keep = App.y();
 
       /* PINNED, AND THE SCROLLBAR'S WIDTH GIVEN BACK.
          Taking the page out of flow removes the scrollbar with it, and on a
@@ -6490,7 +6525,7 @@
       const bar = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.top = `-${this.keep}px`;
       if (bar > 0) document.body.style.paddingRight = `${bar}px`;
-      document.body.classList.add('is-held');
+      App.lock(true);
 
       this.el.hidden = false;
       requestAnimationFrame(() => this.el.classList.add('is-up'));
@@ -6502,10 +6537,10 @@
       if (!this.open_) return;
       this.open_ = false;
       this.el.classList.remove('is-up');
-      document.body.classList.remove('is-held');
+      App.lock(false);
       document.body.style.top = '';
       document.body.style.paddingRight = '';
-      window.scrollTo(0, this.keep);
+      App.to(this.keep);
       const back = $('[data-action="resume"]');
       if (back) back.focus({ preventScroll: true });
       setTimeout(() => { if (!this.open_) this.el.hidden = true; }, REDUCED ? 1 : 420);
@@ -6518,13 +6553,20 @@
       this.outro = $('.outro');
       /* The floating pods, collected once — the first two are built by
          Shell.controls() and the dock by Rack.init(), both before this runs.
-         The dock is in the list because it reads the same --end, backwards: on
-         a phone it leaves the corner as the slider and the mute arrive in it. */
-      this.pods = $$('.controls, .mute, .tools');
+         The dock and the deck's handle are in the list because they read the
+         same --end backwards: the dock leaves the phone's corner as the slider
+         and the mute arrive in it, and the handle leaves the desktop's edge as
+         the footer's own Pages column comes into view. */
+      this.collect();
       this.last = -1;
       this.lastEnd = -1;
       this.measure();
     },
+
+    /* Re-runnable, because one of these is built after this module starts: the
+       deck mounts its handle later and calls back here. A pod missed at boot
+       simply never receives --end and never leaves. */
+    collect() { this.pods = $$('.controls, .mute, .tools, .tab-menu'); },
 
     /* The travel distance is the outro's own height, not a fraction of the
        viewport. At max scroll the sheet's bottom edge sits exactly one outro
@@ -6579,6 +6621,12 @@
         s.setProperty('--sheet-inset', `${px}px`);
         s.setProperty('--sheet-round', round);
         s.setProperty('--sheet-lift', lift);
+        /* The shell's own frame reads this too, and fades out as the paper
+           lifts — at the footer the only edge on screen should be the sheet's.
+           Written on the two layers that draw the frame rather than on the root,
+           for the reason in the comment above. */
+        if (App.app) App.app.style.setProperty('--sheet-lift', lift);
+        if (App.hud) App.hud.style.setProperty('--sheet-lift', lift);
         /* the phone's second reader — see measure(). Two subtrees dirtied
            instead of one, and neither write touches layout. */
         if (this.narrow && this.outro) {
@@ -6619,6 +6667,252 @@
     $$('.reveal, .blk, .sec__body, .sec__heading').forEach((n) => io.observe(n));
   }
 
+  /* ==================================================== 2d. the peek ======
+     THE UNDERLINED WORDS IN THE CLOSING BLOCK, AND WHAT IS BEHIND THEM.
+
+     ONE CARD, NOT FIVE. It is built once and re-pointed, which is what makes
+     moving from one word to the next a change of contents rather than a card
+     dying and another being born. Two cards would flicker at the handover no
+     matter how the timings were tuned, because there is a frame where both are
+     mid-opacity and you can see through one to the other.
+
+     THE MOTION IS A SPRING, INTEGRATED IN THE PAGE'S OWN FRAME LOOP, not a CSS
+     transition. A transition re-targets by restarting: move the cursor and the
+     card eases from wherever it is to wherever the pointer now is, with its
+     velocity thrown away at every re-target, which reads as stuttering. A
+     spring keeps its velocity, so a continuous cursor produces continuous
+     motion and the card trails rather than chases.
+
+       k = 210, d = 29 against unit mass. Damping ratio d / 2√k = 1.0006, which
+       is critically damped to three places: it arrives and stops, it does not
+       overshoot, and a card that bounces past the word it belongs to reads as a
+       toy. The time constant that falls out is ~69ms, so at a normal cursor
+       speed of around 300px/s the card sits about 20px behind the pointer —
+       which is the trail, and it is a consequence of the physics rather than a
+       number typed in somewhere.
+
+     Everything the loop writes is one transform and one opacity, on one
+     element, once a frame. */
+  const Peek = {
+    /* 120ms. Long enough that crossing a word on the way somewhere else does
+       not summon anything; short enough that a deliberate hover feels answered
+       rather than waited on. */
+    DELAY: 120,
+    K: 210,
+    D: 29,
+
+    init() {
+      this.words = $$('mark.rule[data-peek]');
+      if (!this.words.length || !S.peek) return;
+
+      this.el = el('div', { class: 'peek', 'aria-hidden': 'true' });
+      this.el.innerHTML =
+        '<div class="peek__in">' +
+          '<div class="peek__media"><img alt="" decoding="async" loading="lazy"></div>' +
+          '<div class="peek__title"></div>' +
+          '<p class="peek__body"></p>' +
+          '<div class="peek__hint"></div>' +
+        '</div>';
+      App.mount(this.el);
+
+      this.media = $('.peek__media', this.el);
+      this.img = $('img', this.el);
+      this.titleEl = $('.peek__title', this.el);
+      this.bodyEl = $('.peek__body', this.el);
+      this.hintEl = $('.peek__hint', this.el);
+      this.inner = $('.peek__in', this.el);
+
+      this.x = this.y = 0; this.vx = this.vy = 0;
+      this.tx = this.ty = 0;
+      this.px = this.py = 0;          // pointer, for the inner parallax
+      this.amt = 0; this.amtTo = 0;   // 0 hidden, 1 shown
+      this.key = null;
+      this.t0 = 0;
+
+      /* Coarse pointers never hover. There, the same content opens as a sheet
+         off the bottom of the screen and closes on the next tap outside it. */
+      this.touch = matchMedia('(hover: none), (pointer: coarse)').matches;
+
+      this.words.forEach((w) => {
+        const def = S.peek[w.dataset.peek];
+        if (!def) return;
+        w.classList.add('is-peek');
+        if (this.touch) {
+          w.addEventListener('click', (e) => {
+            if (this.key === w.dataset.peek && this.amtTo) { this.hide(); return; }
+            e.preventDefault();
+            this.point(w, true);
+          });
+        } else {
+          w.addEventListener('pointerenter', () => this.arm(w));
+          w.addEventListener('pointerleave', () => this.disarm());
+          w.addEventListener('click', () => this.act(def));
+        }
+      });
+
+      if (this.touch) {
+        addEventListener('pointerdown', (e) => {
+          if (this.amtTo && !hit(e, '.peek, mark.rule[data-peek]')) this.hide();
+        }, true);
+      } else {
+        /* One listener on the document rather than one per word: the card
+           follows the pointer wherever it is, including across the gaps between
+           words, and a listener per word would drop it in those gaps. */
+        addEventListener('pointermove', (e) => {
+          this.px = e.clientX; this.py = e.clientY;
+          if (this.amtTo) this.retarget();
+        }, { passive: true });
+      }
+    },
+
+    /* hover began — start the clock, do not show anything yet */
+    arm(w) {
+      clearTimeout(this.timer);
+      const wait = this.amtTo ? 0 : this.DELAY;   // already open: switch at once
+      this.timer = setTimeout(() => this.point(w, false), wait);
+    },
+
+    disarm() {
+      clearTimeout(this.timer);
+      /* A short grace before it goes. Without it, crossing the two-pixel gap
+         between `email` and the full stop after it flickers the card off and
+         straight back on. */
+      this.timer = setTimeout(() => this.hide(), 90);
+    },
+
+    point(w, anchored) {
+      const key = w.dataset.peek;
+      const def = S.peek[key];
+      if (!def) return;
+      clearTimeout(this.timer);
+
+      if (key !== this.key) {
+        this.key = key;
+        this.fill(def);
+      }
+      this.def = def;
+      this.el.dataset.tone = def.tone === 'dark' ? 'dark' : 'light';
+
+      const first = !this.amtTo;
+      this.amtTo = 1;
+      this.anchor = anchored ? w.getBoundingClientRect() : null;
+
+      /* FIRST APPEARANCE STARTS AT THE WORD, not wherever the card was left. A
+         spring told to travel from the last word across the paragraph would
+         fly, and the entry has to read as the card rising out of this word. */
+      if (first) {
+        const r = w.getBoundingClientRect();
+        this.x = r.left + r.width / 2;
+        this.y = r.top;
+        this.vx = this.vy = 0;
+        this.t0 = performance.now();
+      }
+      this.retarget();
+      this.el.removeAttribute('aria-hidden');
+      wakeLoop();
+    },
+
+    /* Where the card wants to be: above the pointer, or above the word when a
+       finger opened it. Kept inside the viewport, because a card half off the
+       right edge is worse than one that is not quite where the cursor is. */
+    retarget() {
+      const b = this.el.getBoundingClientRect();
+      const w = b.width || 300, h = b.height || 180;
+      if (this.touch) { this.tx = innerWidth / 2; this.ty = innerHeight - 24; return; }
+      const pad = 14;
+      this.tx = clamp(this.px, w / 2 + pad, innerWidth - w / 2 - pad);
+      /* above the pointer if there is room, below it if there is not */
+      const above = this.py - 22;
+      this.ty = above - h < pad ? this.py + h + 34 : above;
+    },
+
+    hide() {
+      clearTimeout(this.timer);
+      this.amtTo = 0;
+      this.el.setAttribute('aria-hidden', 'true');
+      wakeLoop();
+    },
+
+    fill(def) {
+      const hasMedia = !!def.media;
+      this.media.hidden = !hasMedia;
+      if (hasMedia && this.img.getAttribute('src') !== def.media) this.img.src = def.media;
+      this.titleEl.textContent = def.title || '';
+      const body = def.action === 'copy'
+        ? (def.value || S.person.copyEmail || S.person.email)
+        : (def.body || '');
+      this.bodyEl.textContent = body;
+      this.bodyEl.hidden = !body;
+      this.hintEl.textContent = def.hint || '';
+      this.hintEl.hidden = !def.hint;
+      /* the contents changed under a card that is staying put — a short
+         crossfade on the inner block, and nothing on the card itself */
+      this.inner.classList.remove('is-xf');
+      void this.inner.offsetWidth;
+      this.inner.classList.add('is-xf');
+    },
+
+    async act(def) {
+      if (def.action !== 'copy') return;
+      const v = def.value || S.person.copyEmail || S.person.email;
+      try { await navigator.clipboard.writeText(v); } catch { return; }
+      this.hintEl.textContent = '✓ Copied';
+      Sound.chime && Sound.chime();
+      clearTimeout(this.copyT);
+      this.copyT = setTimeout(() => { this.hintEl.textContent = def.hint || ''; }, 1600);
+    },
+
+    /* One write per frame, and only while there is something to write. */
+    tick(dt) {
+      if (!this.el) return false;
+
+      const before = this.amt;
+      this.amt += (this.amtTo - this.amt) * Math.min(1, dt * (this.amtTo ? 13 : 17));
+      if (Math.abs(this.amtTo - this.amt) < 0.002) this.amt = this.amtTo;
+
+      if (!this.amt && !before) return false;
+
+      if (this.touch) {
+        this.x = this.tx; this.y = this.ty;
+      } else {
+        /* the spring — see the note above the module for the two constants */
+        const ax = (this.tx - this.x) * this.K - this.vx * this.D;
+        const ay = (this.ty - this.y) * this.K - this.vy * this.D;
+        this.vx += ax * dt; this.vy += ay * dt;
+        this.x += this.vx * dt; this.y += this.vy * dt;
+      }
+
+      /* Idle float. Amplitude under a pixel and a half — at rest you should not
+         be able to say whether it is moving, only that it is not dead. */
+      const t = (performance.now() - this.t0) / 1000;
+      const bob = Math.sin(t * 1.5) * 1.4;
+
+      const e = this.amt;
+      const ease = e * e * (3 - 2 * e);                 // smoothstep
+      const rise = (1 - ease) * 12;
+      const scale = 0.955 + ease * 0.045;
+
+      this.el.style.transform =
+        `translate3d(${(this.x).toFixed(1)}px, ${(this.y + bob + rise).toFixed(1)}px, 0)` +
+        ` translate(-50%, -100%) scale(${scale.toFixed(4)})`;
+      this.el.style.opacity = ease.toFixed(3);
+
+      /* Parallax, and it is deliberately tiny: the media leans against the
+         pointer's offset from the card's own centre, six pixels at the edge of
+         the card and nothing at the middle. */
+      if (!this.touch && this.media && !this.media.hidden) {
+        const dx = clamp((this.px - this.x) / 160, -1, 1);
+        const dy = clamp((this.py - this.y + 60) / 160, -1, 1);
+        this.img.style.transform =
+          `translate3d(${(dx * -6).toFixed(2)}px, ${(dy * -4).toFixed(2)}px, 0) scale(1.08)`;
+      }
+
+      /* keep the loop awake while the spring is still travelling */
+      const moving = Math.abs(this.vx) > 1 || Math.abs(this.vy) > 1;
+      return this.amt !== this.amtTo || moving || this.amt > 0;
+    },
+  };
+
   /* ======================================================== boot ======== */
 
   function boot() {
@@ -6641,6 +6935,7 @@
     Sheet.init();
     /* last, so the handle mounts above the furniture it sits beside */
     Deck.init();
+    Peek.init();
     observeReveals();
 
     /* One frame loop. It keeps running while the reveal is still easing toward
@@ -6666,9 +6961,10 @@
       const dr = Drag.tick(dt);
       const pr = Canvas.parallax ? Canvas.parallax(dt) : false;
       const gh = Ghost.tick(dt);
+      const pk = Peek.tick(dt);
       Sheet.tick(vh);
 
-      if (a || b || g || dr || pr || gh) idleFrames = 0;
+      if (a || b || g || dr || pr || gh || pk) idleFrames = 0;
       else idleFrames++;
 
       if (idleFrames > 6) { live = false; return; }
@@ -6684,7 +6980,7 @@
     };
 
     wakeLoop = wake;
-    addEventListener('scroll', wake, { passive: true });
+    App.onScroll(wake);
     addEventListener('resize', () => { vh = innerHeight; Sheet.measure(); Nav.lastY = null; wake(); });
     wake();
 

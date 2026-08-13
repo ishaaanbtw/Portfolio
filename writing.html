@@ -6,6 +6,12 @@
 <title>Writing — Ishaan Gupta</title>
 <meta name="description" content="Notes on interfaces, incentives and the internet.">
 <meta name="theme-color" content="#f7f6f3">
+<!-- The one font the page always needs, started before the stylesheet has been
+     parsed. Without this the request only begins once the CSS is read and the
+     first glyph is wanted, which is a swap you can see. The italic and the mono
+     are not preloaded on purpose: one word on the home page is italic and only
+     case studies set code, so both can arrive late without anything moving. -->
+<link rel="preload" href="assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/site.css">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/img/favicon.svg">
