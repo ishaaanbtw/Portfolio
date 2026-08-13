@@ -7320,3 +7320,237 @@ body.is-held {
   .paper__veil, .paper__win { transition-duration: 1ms; }
   .paper__win { transform: none; }
 }
+
+/* ==========================================================================
+   38. THE SHELL AND THE DECK
+   Above 48rem the menu is not drawn over the page. The page is slid off it.
+
+   Everything the site draws lives in one of three layers, and all three carry
+   the same transform from the same two properties with the same transition, so
+   there is nothing to keep in sync — see the comment over `App` in site.js for
+   why it cannot be a single element.
+
+   The scroll is pinned while it is out, which is what lets `.app` be clipped to
+   a fixed rectangle in document coordinates: the corner radius has to be the
+   window's, and the flow is several thousand pixels tall.
+   ========================================================================== */
+
+:root {
+  /* how far the shell travels, and therefore how much deck there is */
+  --deck-w: clamp(19rem, 30vw, 27rem);
+
+  /* the shell's resting state — read by all three layers */
+  --app-x: 0px;
+  --app-s: 1;
+  --app-r: 0px;
+  --app-scrim: 0;
+
+  /* 600ms, decelerating the whole way, arriving at zero velocity. Not a spring
+     in the overshoot sense — a spring that overshoots would bounce the entire
+     page, which at this size reads as a glitch rather than as weight. */
+  --deck-move: 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.deck-open {
+  --app-x: calc(-1 * var(--deck-w));
+  --app-s: 0.935;
+  --app-r: 20px;
+  --app-scrim: 1;
+}
+
+/* --- the three layers ----------------------------------------------------- */
+
+.pane {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  /* `overflow: hidden` clips the sky to the radius; a box-shadow is painted
+     outside the border box and is not touched by it, which is the whole reason
+     the shadow lives on this layer and not on one of the clipped ones. */
+  overflow: hidden;
+  border-radius: var(--app-r);
+  /* THE SHADOW DOES NOT ANIMATE, AND DOES NOT NEED TO. Closed, this layer is
+     exactly the viewport, so every pixel of its shadow falls outside the screen
+     and none of it is drawn. It appears because the layer moves out from under
+     the edges, not because anything fades it in — which is the same trick the
+     whole interaction runs on, and it keeps a 140px blur off the animation. */
+  box-shadow:
+    0 2px 8px rgba(20, 16, 12, 0.06),
+    0 18px 50px -16px rgba(20, 16, 12, 0.28),
+    0 60px 140px -40px rgba(20, 16, 12, 0.42);
+  transition: transform var(--deck-move), border-radius var(--deck-move);
+}
+
+.app { position: relative; z-index: 2; }
+
+.hud {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  /* the layer itself is a hole; its children keep whatever they declared, and
+     `:where` keeps this from outranking a `.drawer` that means to be inert */
+  pointer-events: none;
+  transition: transform var(--deck-move);
+}
+:where(.hud) > * { pointer-events: auto; }
+
+.pane,
+.hud { transform: translate3d(var(--app-x), 0, 0) scale(var(--app-s)); }
+
+/* `.app` is the only one that must not carry a transform at rest: it is the
+   document flow, so a transform on it — even the identity — would make it the
+   containing block for anything fixed inside, and "fixed" would start meaning
+   "somewhere in a 4,000px box". It gets one only while the shell is away, and
+   `deck-shut` holds it there for the length of the journey back. */
+body.deck-open .app,
+body.deck-shut .app {
+  transform: translate3d(var(--app-x), 0, 0) scale(var(--app-s));
+  transition: transform var(--deck-move);
+}
+
+body.deck-open .hud,
+body.deck-shut .hud { clip-path: inset(0 round var(--app-r)); }
+
+/* Depth, and a signal. The canvas is still a page while it is out — you can
+   read it, and clicking it brings it back — but it is not the thing being
+   looked at, so it sits a little further into the room. Opacity only. */
+.hud::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  background: rgba(16, 13, 10, 0.10);
+  opacity: var(--app-scrim);
+  transition: opacity var(--deck-move);
+}
+
+/* --- what is underneath --------------------------------------------------- */
+
+.deck {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  /* Nothing of it should be visible, or paint, until the shell starts to move.
+     It is fully covered when closed, so this is about the second starfield and
+     the second cloud field not running behind an opaque page all day. */
+  visibility: hidden;
+}
+body.deck-open .deck,
+body.deck-shut .deck { visibility: visible; }
+
+/* The same engine as the footer, not a copy of it: `.sky-root` reads --sky-1/2/3
+   and the two opacities off the root, and `Sky.set()` writes them once for the
+   whole document. Its own stars and its own clouds, at the same hour. */
+.deck__sky { z-index: 0; }
+
+.deck__inner {
+  position: relative;
+  z-index: 1;
+  width: var(--deck-w);
+  padding-inline: clamp(1.75rem, 3.2vw, 3.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 5vh, 3.5rem);
+}
+
+.deck__nav { display: flex; flex-direction: column; }
+
+/* Large, quiet, and NOT staggered. A list that flies in one item at a time is
+   a menu animating itself, which is the one thing this interaction is not: the
+   deck is already here, and lay here while you were reading. */
+.deck__link {
+  font-size: clamp(1.6rem, 2.2vw, 2.35rem);
+  line-height: 1.34;
+  letter-spacing: -0.022em;
+  font-weight: 600;
+  text-decoration: none;
+  width: fit-content;
+  /* chosen against the sky by Sky.set(), the same way the footer's copy is */
+  color: var(--outro-ink, #33302c);
+  opacity: 0.58;
+  transition: opacity 260ms var(--ease), transform 420ms var(--spring);
+}
+.deck__link:hover,
+.deck__link:focus-visible { opacity: 1; transform: translateX(4px); }
+.deck__link[aria-current] { opacity: 1; color: var(--outro-ink-strong, #1c1a17); }
+
+.deck__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
+  color: var(--outro-ink, #33302c);
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+}
+.deck__dot { opacity: 0.5; }
+
+/* --- the handle ----------------------------------------------------------- */
+
+/* It is in `.hud`, so it carries the shell's transform and stays welded to the
+   canvas's right edge for the whole journey. That is what makes the edge read
+   as the edge of something you are pushing. */
+.tab-menu {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  z-index: 92;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  padding: 1.15rem 0.5rem;
+  border: 0;
+  border-radius: 10px 0 0 10px;
+  background: var(--paper);
+  box-shadow:
+    -1px 0 0 rgba(20, 16, 12, 0.05),
+    -6px 0 22px -12px rgba(20, 16, 12, 0.22);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: padding-right 260ms var(--ease), background-color 260ms var(--ease);
+}
+.tab-menu span {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.tab-menu:hover { padding-right: 0.75rem; }
+.tab-menu:active { transform: translateY(-50%) scale(0.97); }
+
+/* The dock was measured 24px off the edge back when the edge was empty. It is
+   not any more — the handle is centred on the same edge at the same height — so
+   the dock moves inboard by the handle's width and the two stop touching. */
+@media (min-width: 48.0625rem) {
+  .tools { right: calc(58px + var(--sa-right)); }
+}
+
+/* The row of links is gone: the handle is the navigation now, and two of them
+   on one screen is the second one explaining that the first is decoration. The
+   markup stays, because the phone's sheet is generated from the same array and
+   a harness checks that they match. Later than the rule that shows it on the
+   hero, and at the same weight, so it wins on order. */
+body[data-page] .nav { display: none; }
+
+/* The phone keeps its own menu — a sheet that comes down over the page. There
+   is nowhere for a canvas to slide to on a 390px screen. */
+@media (max-width: 48rem) {
+  .deck, .tab-menu { display: none; }
+  .pane, .hud, .app { transform: none; }
+  .pane { border-radius: 0; box-shadow: none; overflow: visible; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pane, .hud, .hud::after,
+  body.deck-open .app,
+  body.deck-shut .app { transition-duration: 1ms; }
+  .deck__link { transition-duration: 1ms; }
+}

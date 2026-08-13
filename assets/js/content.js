@@ -55,6 +55,29 @@ window.SITE = {
     ],
   },
 
+  /* -------------------------------------------------------------------- deck
+     What is underneath the site. Above 48rem the menu is not drawn over the
+     page — the page slides off it — so this is the list you see once it has
+     moved. It is deliberately not the same array as `nav` below: that one is
+     the four pages, this one is everywhere you can go, pages included.
+
+     `kind` says where a link points without repeating an address that is
+     already settled in `person`:
+       resume   the PDF in person.resumeUrl, opened in the page's own viewer
+       email    a mailto to person.email
+     Anything with a plain `href` is just a link. Add a row and it appears; the
+     order here is the order down the deck. */
+  deck: {
+    links: [
+      { label: 'Home', href: 'index.html' },
+      { label: 'Work', href: 'work.html' },
+      { label: 'People', href: 'people.html' },
+      { label: 'Writing', href: 'writing.html' },
+      { label: 'Resume', kind: 'resume' },
+      { label: 'Email', kind: 'email' },
+    ],
+  },
+
   /* ------------------------------------------------------------------ motion */
   motion: {
     // Eased wheel scrolling. Set false to hand scrolling back to the browser.

@@ -250,7 +250,7 @@
       root.appendChild(this.clouds());
       this.shoot = el('span', { class: 'shoot' });
       root.appendChild(this.shoot);
-      document.body.prepend(root);
+      App.mountSky(root);
 
       const now = new Date();
       this.set(now.getHours() + now.getMinutes() / 60, false);
@@ -412,7 +412,236 @@
       }
       const fine = $('.outro .fine');
       if (fine && announce) fine.dataset.sky = p.name;
+      if (Deck.built) Deck.readout();
     },
+  };
+
+  /* ==================================================== 2b. the shell ====
+     THE PAGE IS A SHEET OF PAPER LYING ON A DESK, AND THE DESK IS THE SKY.
+
+     Opening the menu does not animate a menu. It slides the whole application
+     left, and what was already underneath is simply no longer covered. For that
+     to read as one object rather than a dozen synchronised ones, everything the
+     site draws has to carry the same transform at the same instant.
+
+     It cannot be one element, and the reason is `position: fixed`. A transform
+     makes its element the containing block for every fixed descendant, so the
+     moment the shell moves, anything fixed inside it stops measuring from the
+     viewport and starts measuring from the shell's own box. For the scrolling
+     flow that box is the whole document, several thousand pixels tall, and the
+     toolbar would fly off with it. So the fixed furniture is separated from the
+     flow, into a wrapper that IS exactly the viewport — where being the
+     containing block changes nothing, because the two rectangles coincide.
+
+     Three layers, in paint order, all reading the same two custom properties:
+
+       .pane   fixed. The window's back plate: the sky lives in it, it carries
+               the corner radius and clips to it, and it casts the shadow. The
+               shadow has to be here because a `box-shadow` paints outside the
+               border box and `overflow: hidden` does not touch it, whereas the
+               `clip-path` the other two need would cut it off.
+       .app    the document flow. Not fixed, so it is clipped per-open to the
+               viewport rectangle in document coordinates — which is a constant,
+               because the scroll is locked while the menu is out.
+       .hud    fixed. Every overlay the modules mount: nav, dock, pods, drawer,
+               menu sheet, toasts. Its box is the viewport, so its fixed
+               children keep measuring from the viewport exactly as before.
+
+     They move together because they are given one transform, from one pair of
+     variables, with one transition. There is no orchestration to drift. */
+  const App = {
+    init() {
+      this.pane = el('div', { class: 'pane', 'aria-hidden': 'true' });
+      this.app = el('div', { class: 'app', id: 'app' });
+      this.hud = el('div', { class: 'hud', id: 'hud' });
+
+      /* Everything already in the document is flow — the nav, the sheet, the
+         outro. It goes into .app wholesale, and then the one fixed thing among
+         them is lifted back out. */
+      while (document.body.firstChild) this.app.appendChild(document.body.firstChild);
+      document.body.append(this.pane, this.app, this.hud);
+
+      const nav = $('.nav', this.app);
+      if (nav) this.hud.appendChild(nav);
+    },
+
+    /* Modules mount their furniture through here instead of onto the body.
+       Returns the node so the chained `.appendChild(pod)` calls still read the
+       way they did. */
+    mount(node) { this.hud.appendChild(node); return node; },
+
+    /* the sky goes under the flow, not over it */
+    mountSky(node) { this.pane.appendChild(node); return node; },
+  };
+
+  /* ==================================================== 2c. the deck =====
+     What is underneath. It never moves and it never animates: it is painted
+     once, at the bottom of the stack, and the shell sliding off it is the whole
+     of the reveal.
+
+     Its background is not a copy of the footer's sky, it is the same one.
+     `Sky.set()` writes --sky-1/2/3, --star-opacity and --cloud-opacity to the
+     root, and every rule that paints weather reads them from there, so a second
+     `.sky-root` here is the same engine at the same hour with its own stars and
+     its own drift. Move the time slider and both change together. */
+  const Deck = {
+    built: false,
+
+    init() {
+      if (window.matchMedia('(max-width: 48rem)').matches) return;  // the phone has its sheet
+
+      const deck = el('div', { class: 'deck', id: 'deck' });
+
+      const sky = el('div', { class: 'sky-root deck__sky', 'aria-hidden': 'true' });
+      sky.appendChild(Sky.starfield());
+      sky.appendChild(Sky.clouds());
+      deck.appendChild(sky);
+
+      const here = (location.pathname.split('/').pop() || 'index.html');
+      const inner = el('div', { class: 'deck__inner' });
+      const nav = el('nav', { class: 'deck__nav', 'aria-label': 'Site' });
+
+      (S.deck && S.deck.links ? S.deck.links : []).forEach((l, i) => {
+        /* `resume` and `email` are written as kinds rather than as URLs, because
+           where they point is already settled in `person` and saying it twice is
+           how the two drift apart. */
+        const href = l.kind === 'resume' ? (S.person.resumeUrl || '#')
+          : l.kind === 'email' ? `mailto:${S.person.email}`
+            : l.href;
+        const a = el('a', { class: 'deck__link', href }, esc(l.label));
+        /* the document-level [data-action] delegate opens the resume in the
+           page's own viewer rather than handing the file to the PDF plugin */
+        if (l.kind === 'resume') a.dataset.action = 'resume';
+        if (l.href === here) a.setAttribute('aria-current', 'page');
+        nav.appendChild(a);
+      });
+
+      /* Any link closes it. A page link is about to unload anyway, but the
+         resume opens in place — and it should open over a page that has finished
+         coming back, not over one still sliding. */
+      nav.addEventListener('click', (e) => { if (hit(e, 'a')) this.close(); });
+      inner.appendChild(nav);
+
+      /* The two readouts. Both come off the sky rather than off a clock: the
+         hour is whatever the slider says, so dragging it moves the time here
+         too, which is the point — this is the same world as the footer. */
+      this.timeEl = el('span', { class: 'deck__time' });
+      this.skyEl = el('span', { class: 'deck__cond' });
+      const meta = el('div', { class: 'deck__meta' });
+      meta.append(this.timeEl, el('span', { class: 'deck__dot' }, '·'), this.skyEl);
+      inner.appendChild(meta);
+
+      deck.appendChild(inner);
+      document.body.prepend(deck);
+
+      /* THE HANDLE RIDES THE SHELL, NOT THE SCREEN. It goes in .hud, so it
+         carries the same transform as everything else and stays welded to the
+         canvas's right edge the whole way across — which is what makes the edge
+         read as the edge of an object you are pushing, rather than as a button
+         that happens to be near it. */
+      const tab = el('button', {
+        class: 'tab-menu', type: 'button',
+        'aria-label': 'Menu', 'aria-expanded': 'false', 'aria-controls': 'deck',
+      }, '<span>Menu</span>');
+      tab.addEventListener('click', () => this.toggle());
+      App.mount(tab);
+
+      /* Escape, and a click anywhere on the pushed-aside canvas. The canvas is
+         not disabled while it is out — it is still a page, you can still read
+         it — so the click has to be caught where it lands and not swallowed by
+         whatever it landed on. Capture phase, and only while open. */
+      addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.isOpen) { e.preventDefault(); this.close(); }
+      });
+      App.app.addEventListener('click', (e) => {
+        if (!this.isOpen) return;
+        e.preventDefault();
+        e.stopPropagation();
+        this.close();
+      }, true);
+
+      this.el = deck;
+      this.built = true;
+      this.readout();
+      /* a minute is finer than this readout needs, but it keeps the two in step
+         when the hour rolls over on its own rather than under the slider */
+      setInterval(() => this.readout(), 20000);
+    },
+
+    readout() {
+      if (!this.timeEl) return;
+      const h = Sky.hour == null ? new Date().getHours() : Sky.hour;
+      const hh = String(Math.floor(h) % 24).padStart(2, '0');
+      const mm = String(Math.floor((h % 1) * 60)).padStart(2, '0');
+      this.timeEl.textContent = `${hh}:${mm}`;
+      this.skyEl.textContent = Sky.at(h).name;
+    },
+
+    open() {
+      if (!this.built || this.isOpen) return;
+      this.isOpen = true;
+
+      /* THE SCROLL IS PINNED, AND IT HAS TO BE. `.app` is the document flow, so
+         its transform-origin has to be written in document coordinates to make
+         the scale pivot on the middle of what you can actually see. That number
+         is only right for one scroll position, so the scroll stops at the one
+         it was taken at. The gutter is paid back as padding, or the page jumps
+         sideways by the width of the scrollbar as it goes. */
+      this.keep = window.scrollY || 0;
+      /* `html` has scroll-behavior: smooth, so a jump started a moment ago — an
+         anchor, a skip link — is still travelling. `overflow: hidden` stops the
+         wheel but not that, and it would land somewhere the clip and the origin
+         were not measured for. Landing it here, instantly, at the number we just
+         took. */
+      window.scrollTo({ top: this.keep, left: 0, behavior: 'instant' });
+      const gutter = window.innerWidth - document.documentElement.clientWidth;
+      App.app.style.transformOrigin = `50% ${this.keep + window.innerHeight / 2}px`;
+      /* clips the flow to the visible rectangle so the corner radius is the
+         window's, not the document's */
+      App.app.style.clipPath =
+        `inset(${this.keep}px 0 ${Math.max(0, document.documentElement.scrollHeight - this.keep - window.innerHeight)}px 0`
+        + ` round var(--app-r))`;
+
+      document.documentElement.style.overflow = 'hidden';
+      if (gutter) document.body.style.paddingRight = `${gutter}px`;
+
+      clearTimeout(this.t);
+      document.body.classList.remove('deck-shut');
+      document.body.classList.add('deck-open');
+      this.el.removeAttribute('aria-hidden');
+      const tab = $('.tab-menu');
+      if (tab) tab.setAttribute('aria-expanded', 'true');
+      const first = $('.deck__link', this.el);
+      if (first) setTimeout(() => first.focus({ preventScroll: true }), 260);
+    },
+
+    close() {
+      if (!this.built || !this.isOpen) return;
+      this.isOpen = false;
+      /* `deck-shut` is the journey back: it keeps the transform, the clip and
+         the deck's own visibility alive while the shell travels, and comes off
+         once it has landed. Without it the page would teleport home. */
+      document.body.classList.remove('deck-open');
+      document.body.classList.add('deck-shut');
+      this.el.setAttribute('aria-hidden', 'true');
+      const tab = $('.tab-menu');
+      if (tab) { tab.setAttribute('aria-expanded', 'false'); tab.focus({ preventScroll: true }); }
+
+      document.documentElement.style.overflow = '';
+      document.body.style.paddingRight = '';
+
+      /* the clip and the origin stay until the shell has finished coming back —
+         removing them mid-flight snaps the corners square and moves the pivot */
+      clearTimeout(this.t);
+      this.t = setTimeout(() => {
+        if (this.isOpen) return;
+        document.body.classList.remove('deck-shut');
+        App.app.style.clipPath = '';
+        App.app.style.transformOrigin = '';
+      }, REDUCED ? 20 : 680);
+    },
+
+    toggle() { this.isOpen ? this.close() : this.open(); },
   };
 
   /* ======================================================== 3. shell ===== */
@@ -599,8 +828,8 @@
         esc(fc.lead || 'Get in touch'))));
 
       sheet.appendChild(body);
-      document.body.appendChild(bar);
-      document.body.appendChild(sheet);
+      App.mount(bar);
+      App.mount(sheet);
 
       /* --- the physics -----------------------------------------------------
          One spring per panel, all four integrated in ONE requestAnimationFrame
@@ -887,7 +1116,7 @@
       track.appendChild(range);
       pod.appendChild(track);
       pod.appendChild(el('span', { class: 'timepod__label' }));
-      document.body.appendChild(el('div', { class: 'controls' })).appendChild(pod);
+      App.mount(el('div', { class: 'controls' })).appendChild(pod);
 
       /* mute */
       const mute = el(
@@ -899,7 +1128,7 @@
         const m = Sound.toggle();
         mute.setAttribute('aria-pressed', String(m));
       });
-      document.body.appendChild(mute);
+      App.mount(mute);
 
       Sky.set(Sky.hour);
     },
@@ -934,20 +1163,20 @@
       for (let k = 0; k < 6; k++) {
         s.appendChild(el('i', { style: `--a:${36 + k * 60}deg` }));
       }
-      document.body.appendChild(s);
+      App.mount(s);
       setTimeout(() => s.remove(), 220);
     },
 
     toast() {
       this.toastEl = el('div', { class: 'toast', role: 'status', 'aria-live': 'polite' });
-      document.body.appendChild(this.toastEl);
+      App.mount(this.toastEl);
     },
 
     /* One tooltip element, repositioned on demand. It springs up from under the
        badge rather than fading in place. */
     tooltip() {
       const tip = el('div', { class: 'tip', role: 'tooltip' });
-      document.body.appendChild(tip);
+      App.mount(tip);
       this.tipEl = tip;
 
       let current = null;
@@ -1133,7 +1362,7 @@
       };
 
       layout();
-      document.body.appendChild(field);
+      App.mount(field);
 
       let open = false;
       const setOpen = (next) => {
@@ -1254,7 +1483,7 @@
           } catch {
             const ta = el('textarea', { style: 'position:fixed;opacity:0' });
             ta.value = mail;
-            document.body.appendChild(ta);
+            document.body.appendChild(ta);   /* transient, stays off the shell */
             ta.select();
             document.execCommand('copy');
             ta.remove();
@@ -1849,7 +2078,7 @@
       const scroll = el('div', { class: 'drawer__scroll' });
       panel.append(bar, scroll);
       wrap.append(scrim, panel);
-      document.body.appendChild(wrap);
+      App.mount(wrap);
 
       let open = false;
       let restoreTo = null;
@@ -3664,7 +3893,7 @@
 
       this.fabInit(rack);
 
-      document.body.appendChild(rack);
+      App.mount(rack);
       this.panel = panel;
       this.rack = rack;
       this.mode = 'tab';
@@ -4851,7 +5080,7 @@
       this.el = el('div', { class: 'ghost', 'aria-hidden': 'true' });
       this.inner = el('div', { class: 'ghost__inner' });
       this.el.appendChild(this.inner);
-      document.body.appendChild(this.el);
+      App.mount(this.el);
 
       addEventListener('pointermove', (e) => {
         Pointer.x = e.clientX;
@@ -5028,7 +5257,7 @@
     init() {
       const mk = (cls) => {
         const c = el('canvas', { class: `ink ${cls}`, 'aria-hidden': 'true' });
-        document.body.appendChild(c);
+        App.mount(c);
         return c;
       };
       /* two layers: completed strokes, and the one being drawn */
@@ -5386,7 +5615,7 @@
       if (this.el) return;
       this.el = el('div', { class: 'lbox', 'aria-hidden': 'true' },
         '<div class="lbox__scrim"></div><div class="lbox__stage"></div>');
-      document.body.appendChild(this.el);
+      App.mount(this.el);
       this.stage = $('.lbox__stage', this.el);
       $('.lbox__scrim', this.el).addEventListener('click', () => this.close());
       this.stage.addEventListener('dblclick', () => this.close());
@@ -6237,7 +6466,7 @@
       this.el = el('div', { class: 'paper', hidden: '' });
       this.el.appendChild(el('div', { class: 'paper__veil' }));
       this.el.appendChild(win);
-      document.body.appendChild(this.el);
+      App.mount(this.el);
 
       this.x = x;
       x.addEventListener('click', () => this.close());
@@ -6393,6 +6622,9 @@
   /* ======================================================== boot ======== */
 
   function boot() {
+    /* First, before anything mounts: the three layers exist, and every module
+       after this lands in one of them rather than on the body. */
+    App.init();
     Sky.init();
     Shell.init();
     Nav.init();
@@ -6407,6 +6639,8 @@
     Rack.init();
     Shell.field();
     Sheet.init();
+    /* last, so the handle mounts above the furniture it sits beside */
+    Deck.init();
     observeReveals();
 
     /* One frame loop. It keeps running while the reveal is still easing toward
