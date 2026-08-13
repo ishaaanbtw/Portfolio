@@ -176,27 +176,39 @@ window.SITE = {
        safe-zone push in Peel.place() is a backstop for narrow windows, not
        something the desktop arrangement should lean on — if you move one and it
        lands somewhere you didn't ask for, it collided with the text and got
-       shoved.                                                                */
+       shoved.
+
+       ON THE PHONE IT IS THE OTHER WAY UP. Below 48rem the intro is anchored to
+       the bottom of the hero instead of the top, so the free space is the upper
+       two fifths rather than the lower one, and these four sit in it: can in the
+       top-right, AirPods left of it and slightly lower, controller and F1 car on
+       the line beneath. The lowest edge of the lowest one lands around 47% of
+       the hero, which leaves the collision guard nothing to do here either.
+
+       These used to carry a `tall` variant for the case where the headline sat
+       high enough to leave a deep strip underneath. There is no such case now —
+       the text is always at the bottom on a phone — so there is one mobile
+       arrangement and `roomy` in Peel.place() never picks a second.          */
     peel: [
       {
         id: 'airpods', label: 'AirPods Pro', src: 'assets/img/stickers/airpods.png',
         x: 63, y: 15, w: 100, rot: -10, dir: 20, hover: 30, active: 42,
-        mobile: { x: 83, y: 81, w: 68, tall: { x: 33, y: 63, w: 76 } },
+        mobile: { x: 32, y: 20, w: 76 },
       },
       {
         id: 'ps5', label: 'PS5 controller', src: 'assets/img/stickers/ps5.png',
         x: 9, y: 76, w: 118, rot: 5, dir: 340, hover: 32, active: 44,
-        mobile: { x: 15, y: 85, w: 88, tall: { x: 22, y: 84, w: 92 } },
+        mobile: { x: 26, y: 42, w: 92 },
       },
       {
         id: 'coke', label: 'Diet Coke', src: 'assets/img/stickers/coke.png',
         x: 88, y: 22, w: 56, rot: 8, dir: 45, hover: 26, active: 36,
-        mobile: { x: 63, y: 80, w: 36, tall: { x: 84, y: 58, w: 40 } },
+        mobile: { x: 80, y: 18, w: 40 },
       },
       {
         id: 'lego', label: 'Lego F1', src: 'assets/img/stickers/lego.png',
         x: 84, y: 80, w: 125, rot: -9, dir: 45, hover: 34, active: 46,
-        mobile: { x: 41, y: 77, w: 84, tall: { x: 72, y: 82, w: 90 } },
+        mobile: { x: 74, y: 44, w: 88 },
       },
     ],
 

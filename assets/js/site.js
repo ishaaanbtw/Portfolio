@@ -482,6 +482,17 @@
       if (this.page === 'project' || $('.mbar')) return;
 
       const bar = el('div', { class: 'mbar', 'aria-hidden': 'false' });
+
+      /* THE NAME, WHICH THE PHONE DID NOT HAVE. A desktop reads the four nav
+         links and knows whose site it is from the headline; below 48rem the
+         links collapse into the hamburger and the headline is at the bottom of
+         the hero, so until you scroll there is nothing above the fold saying
+         who this is. It is a link rather than a label because on Work, People
+         and Writing it is the only way back to the front page that is not
+         behind the menu. */
+      bar.appendChild(el('a', { class: 'mbar__name', href: 'index.html' },
+        esc(S.person.name)));
+
       const btn = el('button', {
         class: 'mbar__btn', type: 'button',
         'aria-label': 'Menu', 'aria-expanded': 'false', 'aria-controls': 'm-sheet',

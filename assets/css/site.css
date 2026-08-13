@@ -5798,15 +5798,36 @@ body.past-hero .sel { opacity: 0; }
 
   .mbar {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 94;
-    height: calc(52px + var(--sa-top));
-    padding: var(--sa-top) calc(var(--sa-right) + 0.75rem) 0 calc(var(--sa-left) + 0.75rem);
-    pointer-events: none;              /* only the button is live */
+    height: calc(56px + var(--sa-top));
+    padding: var(--sa-top) calc(var(--sa-right) + 1.25rem) 0 calc(var(--sa-left) + 1.5rem);
+    pointer-events: none;              /* only the name and the button are live */
   }
+
+  /* Set to sit ON the line the hamburger's bars are centred on, not above it:
+     the two marks at either end of the bar are the only things up here and they
+     have to read as one row. Quiet, because it is a label — the page's own
+     first sentence is what should be loud, and that is at the other end of the
+     screen. */
+  .mbar__name {
+    pointer-events: auto;
+    font-size: 0.9375rem;
+    line-height: 1;
+    letter-spacing: -0.006em;
+    color: var(--ink-2);
+    opacity: 0.62;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 220ms var(--ease);
+  }
+  .mbar__name:active { opacity: 1; }
+
+  /* it goes with the page under the menu, the same way the bars do */
+  .mbar.is-open .mbar__name { opacity: 0; transition: opacity 200ms var(--ease); }
 
   /* --- THERE IS NO BAR ANY MORE, ONLY A BUTTON ----------------------------
      What used to be here was a translucent strip across the top of the screen
@@ -5822,50 +5843,36 @@ body.past-hero .sel { opacity: 0; }
      re-blur everything behind it on every frame that might have changed, which
      while scrolling is all of them.
 
-     So the strip is gone and the button carries its own surface — an opaque
-     paper disc with a hairline and a soft shadow, which is exactly the
-     treatment the toolbar already uses at the opposite corner of the same
-     screen. Nothing is smeared, because nothing passes under anything: text
-     scrolls past a small solid object instead of beneath a pane of frosted
-     glass. */
+     So the strip went, and for a while the button carried its own surface — an
+     opaque paper disc with a hairline and a soft shadow. Nothing was smeared,
+     because nothing passed under anything.
+
+     THE DISC HAS GONE TOO, now that the name sits at the other end of the bar.
+     A disc alone in a corner is an object on the page; a disc opposite a plain
+     line of text is one of two things that do not match. The pair has to read
+     as one row, and the cheaper half to change is the button — a label cannot
+     be given a disc without becoming a chip, which is a different thing again.
+
+     What the disc was buying was contrast against whatever scrolled underneath,
+     and what pays for it now is the page itself: everything that passes under
+     this corner is paper or paper-2, and dark ink on either is legible without
+     help. The 44px target is untouched; only the surface is. */
   .mbar__btn {
     display: grid;
     place-content: center;
     gap: 5px;
     width: 44px;
     height: 44px;
+    margin-right: -10px;               /* optical: the bars, not the box, align */
     padding: 0;
-    border: 1px solid rgba(20, 16, 12, 0.06);
-    border-radius: 50%;
-    background: var(--paper);
-    box-shadow:
-      0 2px 5px rgba(20, 16, 12, 0.08),
-      0 10px 24px -12px rgba(20, 16, 12, 0.22);
+    border: 0;
+    background: none;
     pointer-events: auto;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition:
-      transform 200ms var(--ease),
-      background-color 220ms var(--ease),
-      border-color 220ms var(--ease),
-      box-shadow 220ms var(--ease);
+    transition: transform 200ms var(--ease), opacity 220ms var(--ease);
   }
   .mbar__btn:active { transform: scale(0.9); }
-
-  /* Over the menu it is not an object sitting on the page any longer, so the
-     disc goes with the page. The delay matches the ink's: by then the panels
-     have carried something dark under it, and a paper disc fading out over
-     paper would only be visible as a flicker. */
-  .mbar.is-open .mbar__btn {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
-    transition:
-      transform 200ms var(--ease),
-      background-color 1ms linear 240ms,
-      border-color 1ms linear 240ms,
-      box-shadow 1ms linear 240ms;
-  }
 
   /* Two bars, not three: they cross into the X. Nothing appears or disappears,
      so the shape reads as one object turning rather than a swap. */
@@ -7111,6 +7118,42 @@ body.past-hero .sel { opacity: 0; }
 
   .mute { width: 2.75rem; height: 2.75rem; }
   .mute svg { width: 1.15rem; height: 1.15rem; }
+}
+
+/* --- 36a. the phone's hero, upside down ------------------------------------
+   The desktop hero reads top-left first: headline, tags, buttons, and the four
+   objects arranged in the space around them. Straight onto a phone that becomes
+   a wall of type against the top edge with everything else pushed below the
+   fold, and the objects — the part that says this page is a surface you can
+   move things on — end up in the dregs underneath.
+
+   So on a phone the two swap. The intro is anchored to the BOTTOM of the hero
+   and the objects take the upper two fifths, which is the order a phone screen
+   actually wants: you land on an empty dotted field with four things lying on
+   it, and the sentence is waiting at the bottom where your thumb already is.
+   Their coordinates are in content.js, under `mobile`.
+
+   The headline also stops being narrow. `18ch` is a desktop measure — it exists
+   so the line breaks before it runs into the objects on its right, and there is
+   nothing to its right here. At the bottom of a 390px screen a 226px column of
+   type with 120px of nothing beside it reads as a mistake rather than as a
+   margin, so it takes the full width between the gutters and wraps there.
+
+   48rem, not 46, because that is where `.mbar` takes over and where Peel's own
+   `narrowNow` switches to the mobile coordinates. All three have to agree or
+   the text lands at the bottom while the objects are still arranged for a
+   headline at the top. */
+@media (max-width: 48rem) {
+  body[data-page='home'] .canvas__intro {
+    top: auto;
+    bottom: clamp(4rem, 10vh, 5.5rem);
+    left: 1.5rem;
+    max-width: calc(100vw - 3rem);
+    /* the bar's clearance was for a hero that started under it */
+    padding-top: 0;
+  }
+
+  body[data-page='home'] .canvas__headline { max-width: 100%; }
 }
 
 /* --- 36b. the phone's scroll indicator -------------------------------------
