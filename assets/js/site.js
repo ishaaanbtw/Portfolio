@@ -525,6 +525,19 @@
 
       const here = (location.pathname.split('/').pop() || 'index.html');
       const inner = el('div', { class: 'deck__inner' });
+      const wrap = el('div', { class: 'deck__navwrap' });
+      /* THE RAIL. Segments, not a line: a continuous stroke can only get
+         brighter, and what this has to say is *where along itself* you are.
+         Twenty-odd separate marks can each answer that individually, which is
+         what makes the focus gradient legible — the rail reads like a ruler
+         with your finger on it. Built after layout, because how many there are
+         depends on how tall the list turns out. */
+      this.rail = el('div', { class: 'deck__rail', 'aria-hidden': 'true' });
+      /* Paints nothing — see .deck__mark in the stylesheet. It is where the
+         spring's number lives, and the segments read their distance from it. */
+      this.mark = el('span', { class: 'deck__mark', 'aria-hidden': 'true' });
+      this.rail.appendChild(this.mark);
+      wrap.appendChild(this.rail);
       const nav = el('nav', { class: 'deck__nav', 'aria-label': 'Site' });
 
       (S.deck && S.deck.links ? S.deck.links : []).forEach((l, i) => {
@@ -546,7 +559,20 @@
          resume opens in place — and it should open over a page that has finished
          coming back, not over one still sliding. */
       nav.addEventListener('click', (e) => { if (hit(e, 'a')) this.close(); });
-      inner.appendChild(nav);
+
+      /* Hover sets the destination; leaving hands it back to the page you are
+         actually on. The indicator is never told to jump — only ever given a
+         new number to travel toward, which is why moving between two items
+         reads as one continuous glide rather than two animations. */
+      nav.addEventListener('pointerover', (e) => {
+        const a = hit(e, '.deck__link');
+        if (a) this.aim(a);
+      });
+      nav.addEventListener('pointerleave', () => this.aim(null));
+
+      wrap.appendChild(nav);
+      inner.appendChild(wrap);
+      this.navEl = nav;
 
       /* The two readouts. Both come off the sky rather than off a clock: the
          hour is whatever the slider says, so dragging it moves the time here
@@ -562,6 +588,25 @@
          closes, so the hour you set here is the hour the footer is already at:
          there is no second slider to fall out of step, and no second mute to
          disagree about whether the sound is on. */
+      /* THE PODS LIVE HERE NOW, AND THEY NEVER MOVE HOUSE AGAIN.
+
+         They used to be borrowed from `.hud` when the deck opened and handed
+         back when it closed, and both ends of that were a teleport: a node
+         leaves one layout and appears in another between two paint frames, and
+         nothing in the browser knows the two positions are the same object.
+
+         Paying for it with a FLIP did not work either, and the reason is worth
+         keeping. Back in `.hud` the pod is a child of the shell, and the shell
+         is itself mid-transition — so the pod's own animation composed with its
+         parent's and it overshot 195px backwards before turning round. Two
+         eases on one object do not add up to one ease.
+
+         So there is one layout. They are re-parented once, here, at boot, into
+         the layer that never moves, and from then on the only thing that ever
+         changes is a transform — see `body.deck-open .controls` in the
+         stylesheet, where the distance is written in viewport units and eased
+         on the shell's own curve. Same nodes, same listeners, same slider
+         value; no second parent to argue with. */
       this.pods = el('div', { class: 'deck__pods' });
 
       /* THE WAY OUT, SAID PLAINLY. The handle that opened this is on the canvas
@@ -612,9 +657,90 @@
       this.el = deck;
       this.built = true;
       this.readout();
+
+      /* Segment count follows the list's real height, so the rail always spans
+         it whatever is in `deck.links`. Re-measured on resize because the type
+         is clamped to the viewport. */
+      [$('.controls'), $('.mute')].forEach((n) => n && deck.appendChild(n));
+
+      this.railFit();
+      addEventListener('resize', () => this.railFit());
+      this.markY = this.markTo = 0; this.markV = 0;
+      this.aim(null);
       /* a minute is finer than this readout needs, but it keeps the two in step
          when the hour rolls over on its own rather than under the slider */
       setInterval(() => this.readout(), 20000);
+    },
+
+    /* --- the rail ------------------------------------------------------- */
+
+    SEG: 13,          /* 2px mark + 11px gap */
+
+    railFit() {
+      if (!this.navEl || !this.rail) return;
+      const h = this.navEl.offsetHeight;
+      if (!h) return;
+      const n = Math.max(6, Math.round(h / this.SEG));
+      if (n === this.segN) return;
+      this.segN = n;
+      $$('i', this.rail).forEach((x) => x.remove());
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < n; i++) frag.appendChild(el('i', { style: `--y:${i * this.SEG}px` }));
+      this.rail.insertBefore(frag, this.mark);
+      this.segs = $$('i', this.rail);
+      this.segLast = new Array(n).fill(-1);
+      this.railH = h;
+    },
+
+    /* Where the indicator should be heading. `null` means back to the page you
+       are on, which is why the active item stays lit once the pointer leaves. */
+    aim(a) {
+      const link = a || (this.navEl && $('.deck__link[aria-current]', this.navEl))
+        || (this.navEl && $('.deck__link', this.navEl));
+      if (!link || !this.navEl) return;
+      const r = link.getBoundingClientRect();
+      const n = this.navEl.getBoundingClientRect();
+      this.markTo = r.top - n.top + r.height / 2;
+      $$('.deck__link', this.navEl).forEach((x) => x.classList.toggle('is-aim', x === link));
+      wakeLoop();
+    },
+
+    /* Spring, in the page's frame loop, same reason as everywhere else on this
+       site: a transition restarts on every re-target and throws its velocity
+       away, so crossing three items would be three animations. This is one.
+       k = 240, d = 31 — ratio 1.0006, critically damped, no overshoot past the
+       word it is pointing at. */
+    tick(dt) {
+      if (!this.built || !this.segs || !this.segs.length) return false;
+      const d = this.markTo - this.markY;
+      if (Math.abs(d) < 0.05 && Math.abs(this.markV) < 0.5) {
+        if (this.settled) return false;
+        this.settled = true;
+        this.markY = this.markTo; this.markV = 0;
+      } else {
+        this.settled = false;
+        this.markV += (d * 240 - this.markV * 31) * dt;
+        this.markY += this.markV * dt;
+      }
+
+      this.mark.style.transform = `translate3d(0, ${this.markY.toFixed(1)}px, 0) translateY(-50%)`;
+
+      /* The focus gradient. Each segment is lit by how near it is to the
+         indicator, and written only when its quantised value actually moves —
+         twenty-odd elements a frame is cheap, twenty-odd style writes a frame
+         for no change is not. */
+      const FALL = 74;
+      for (let i = 0; i < this.segs.length; i++) {
+        const dy = Math.abs(i * this.SEG - this.markY);
+        const t = Math.max(0, 1 - dy / FALL);
+        const q = Math.round(t * 10);
+        if (q === this.segLast[i]) continue;
+        this.segLast[i] = q;
+        const e = (q / 10) * (q / 10);          // squared: the falloff is tight
+        this.segs[i].style.opacity = (0.18 + e * 0.72).toFixed(2);
+        this.segs[i].style.width = `${(18 + e * 6).toFixed(1)}px`;
+      }
+      return !this.settled;
     },
 
     readout() {
@@ -634,11 +760,11 @@
          is disabled: the shell is viewport-sized and scrolls inside itself, so
          it can be read, scrolled and drawn on where it stands. That is the whole
          reason the scroll container moved off the document — see App.y(). */
-      this.borrowPods(true);
-
       clearTimeout(this.t);
       document.body.classList.remove('deck-shut');
       document.body.classList.add('deck-open');
+      /* the list has a height now that it is on screen */
+      requestAnimationFrame(() => { this.railFit(); this.aim(null); });
       this.el.removeAttribute('aria-hidden');
       const tab = $('.tab-menu');
       if (tab) tab.setAttribute('aria-expanded', 'true');
@@ -659,22 +785,11 @@
       const tab = $('.tab-menu');
       if (tab) { tab.setAttribute('aria-expanded', 'false'); tab.focus({ preventScroll: true }); }
 
-      /* The pods go home only once the shell has landed. Moving them mid-flight
-         would take them out of the deck while the deck is still on screen. */
       clearTimeout(this.t);
       this.t = setTimeout(() => {
         if (this.isOpen) return;
         document.body.classList.remove('deck-shut');
-        this.borrowPods(false);
       }, REDUCED ? 20 : 680);
-    },
-
-    /* `.controls` and `.mute` live in `.hud` and ride the shell. Out here they
-       would ride it off the screen, so for the duration they are moved onto the
-       deck, which does not move. Same nodes, same listeners, same state. */
-    borrowPods(take) {
-      const pods = [$('.controls'), $('.mute')].filter(Boolean);
-      pods.forEach((n) => (take ? this.pods : App.hud).appendChild(n));
     },
 
     toggle() { this.isOpen ? this.close() : this.open(); },
@@ -3914,9 +4029,9 @@
       /* the collapsed tab: always present, so the tools are never a secret */
       const tab = el('button', {
         class: 'tools__tab', type: 'button',
-        'data-tip': 'Open annotation tools',
-        'aria-label': 'Open annotation tools', 'aria-expanded': 'false',
-      }, TOOL_ICON.pencilTab);
+        'data-tip': 'Open Workspace Tools',
+        'aria-label': 'Open Workspace Tools', 'aria-expanded': 'false',
+      }, TOOL_ICON.cursor);
       tab.addEventListener('click', () => { this.userCollapsed = false; this.setMode('open', 'tab'); });
       rack.appendChild(tab);
       this.tab = tab;
@@ -4051,6 +4166,20 @@
         sticker: TOOL_ICON.plus,
       };
       return map[name] || TOOL_ICON.cursor;
+    },
+
+    /* THE HANDLE WEARS THE LIVE TOOL. Collapsed, this 28px sliver is the only
+       thing left of the dock, so a fixed pencil on it was a lie two thirds of
+       the time — pick the cursor and the edge still said pen. It shows whatever
+       is armed, which makes the handle a status light as well as a door: you
+       can tell what a click on the canvas is about to do without opening
+       anything. Same glyph map the phone's button uses, so the two can never
+       disagree about what is selected. */
+    tabSync(name) {
+      if (!this.tab) return;
+      if (this.tab.dataset.glyph === name) return;
+      this.tab.dataset.glyph = name;
+      this.tab.innerHTML = this.fabIcon(name);
     },
 
     fabInit(rack) {
@@ -4259,6 +4388,7 @@
          exception: its drawer hangs off the dock's edge, so the dock stays up
          while you choose which sticker to place. */
       this.fabSync(name);
+      this.tabSync(name);
       if (name !== 'sticker') this.fabSet(false);
 
       /* the preview is the answer to "what happens if I click right now?" */
@@ -5629,7 +5759,12 @@
         this.rows.appendChild(
           el(r.href ? 'a' : 'div', props,
             `<span class="row__year">${esc(r.year || '')}</span>` +
-            `<span class="row__name">${esc(r.name)}</span>` +
+            /* The trailing em dash in "2025—" is doing this job today, and it is
+               doing it quietly enough that you have to already know what it
+               means. `now: true` says it out loud. */
+            `<span class="row__name">${esc(r.name)}` +
+              (r.now ? '<span class="row__now"><i></i>Now</span>' : '') +
+            `</span>` +
             `<span class="row__meta">${esc(r.meta)}</span>`)
         );
       });
@@ -6962,9 +7097,10 @@
       const pr = Canvas.parallax ? Canvas.parallax(dt) : false;
       const gh = Ghost.tick(dt);
       const pk = Peek.tick(dt);
+      const dk = Deck.tick(dt);
       Sheet.tick(vh);
 
-      if (a || b || g || dr || pr || gh || pk) idleFrames = 0;
+      if (a || b || g || dr || pr || gh || pk || dk) idleFrames = 0;
       else idleFrames++;
 
       if (idleFrames > 6) { live = false; return; }

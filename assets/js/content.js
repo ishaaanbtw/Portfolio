@@ -1525,7 +1525,9 @@ window.SITE = {
            it as two (UX Design Intern Jan–Jun 2024, then Product Designer to
            Dec 2025); the span in `year` covers both. */
         rows: [
-          { year: '2025—', name: 'Cypherock', meta: 'Product Designer' },
+          /* `now: true` marks the row you are still in — it puts a live dot and
+             the word Now beside the name. Only one row should ever carry it. */
+          { year: 'Since 2025', name: 'Cypherock', meta: 'Senior Product Designer', now: true },
           { year: '24-25', name: 'Onefinnet', meta: 'Product Designer' },
           { year: '2023', name: 'Veritas Technologies', meta: 'CX Designer' },
         ],

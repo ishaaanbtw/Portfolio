@@ -1222,7 +1222,9 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 
 .row {
   display: grid;
-  grid-template-columns: 4.5rem 1fr auto;
+  /* 6rem, not the 4.5 it was: the first column holds "Since 2025" now, and at
+     4.5 it wrapped onto two lines and took the row's height with it. */
+  grid-template-columns: 6rem 1fr auto;
   gap: 1rem;
   align-items: baseline;
   padding: 0.72rem 0;
@@ -4211,8 +4213,10 @@ body.is-lbox { overflow: hidden; }
   position: fixed;
   /* The dock's behaviour is untouched — this is only its distance from the
      screen edge, so it cannot end up under a rounded corner. Added to the
-     measured 24px, so with no inset it is still exactly 24px. */
-  right: calc(24px + var(--sa-right));
+     measured 24px, so with no inset it is still exactly 24px.
+     Named, because the collapsed handle has to undo it — see .tools__tab. */
+  --dock-inset: calc(24px + var(--sa-right));
+  right: var(--dock-inset);
   top: 50%;
   translate: 0 -50%;
   /* Order: drawer 80, ink 85, dock 90, tooltip 95, click spark 96. */
@@ -4251,11 +4255,24 @@ body.is-lbox { overflow: hidden; }
 
 .tools__tab {
   position: fixed;
-  right: 0;
+  /* IT WAS NOT ACTUALLY DOCKED. `.tools` carries `translate: 0 -50%`, and a
+     translate makes its element the containing block for anything fixed inside
+     it exactly as a transform does — so `right: 0` here resolved to the right
+     edge of the dock, not of the screen, and the handle sat 24px inside the
+     content with the dock's own inset under it. It looked like a small floating
+     button because that is what it was.
+
+     Undoing the dock's inset puts it back on the frame. It stays a child of the
+     rack on purpose: the panel grows out of this element's edge when it opens,
+     and a handle mounted elsewhere would be a second object the drawer merely
+     appears near. */
+  right: calc(-1 * var(--dock-inset));
   top: 50%;
   translate: 0 -50%;
-  width: 26px;
-  height: 46px;
+  /* The peek: 28px of a 92px dock, so two thirds of it is off the screen and
+     what is left reads as an edge rather than as a button touching the frame. */
+  width: 28px;
+  height: 52px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(0, 0, 0, 0.06);
@@ -4271,17 +4288,24 @@ body.is-lbox { overflow: hidden; }
   pointer-events: none;
   transition:
     opacity 260ms var(--ease),
+    background-color 220ms var(--ease),
     transform 460ms var(--spring-soft),
     box-shadow 300ms var(--ease);
 }
 
 .tools.is-tab .tools__tab { opacity: 1; transform: none; pointer-events: auto; }
 
+/* Hover offers the drawer without opening it: ten pixels out, a little more
+   lift, and the surface comes up off paper-white to true white. Ten rather than
+   the five it was — under about eight the movement reads as a wobble rather
+   than as the thing coming to meet you, and past twelve it has committed to
+   opening something it is not going to open. */
 :root:not(.hover-cold) .tools.is-tab .tools__tab:hover {
-  transform: translateX(-5px);
-  box-shadow: -6px 6px 24px rgba(0, 0, 0, 0.14);
+  transform: translateX(-10px);
+  background: #fff;
+  box-shadow: -8px 6px 30px rgba(0, 0, 0, 0.16);
 }
-.tools__tab.is-press { transform: translateX(-3px) scale(0.97); transition-duration: 110ms; }
+.tools__tab.is-press { transform: translateX(-7px) scale(0.97); transition-duration: 110ms; }
 .tools__tab svg { width: 15px; height: 15px; }
 
 /* the subtle glow that keeps it discoverable */
@@ -7586,15 +7610,22 @@ body.is-locked .app { overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  /* The deck is not hidden because it is arriving — it is hidden because when
-     the shell is home it is behind it, and a menu you can read through the gap
-     the footer opens in the paper is a menu that is in the wrong place. It
-     switches, it does not fade: there is no state in which this is halfway
-     here. */
-  visibility: hidden;
+  /* THE LAYER STAYS, ITS CONTENTS HIDE. The whole deck used to switch to
+     `visibility: hidden` when the shell was home — it is behind the page then,
+     and a menu you can read through the gap the footer opens in the paper is a
+     menu in the wrong place. But the two footer pods live in here now, and they
+     have to be visible at the footer with the deck shut, so what hides is the
+     menu rather than the layer holding it. */
+  pointer-events: none;
 }
-body.deck-open .deck,
-body.deck-shut .deck { visibility: visible; }
+body.deck-open .deck { pointer-events: auto; }
+
+.deck__inner,
+.deck__close { visibility: hidden; }
+body.deck-open .deck__inner,
+body.deck-open .deck__close,
+body.deck-shut .deck__inner,
+body.deck-shut .deck__close { visibility: visible; }
 
 /* Top-left of the deck, on the same gutter as everything else in the column. */
 .deck__close {
@@ -7632,26 +7663,106 @@ body.deck-shut .deck { visibility: visible; }
   gap: clamp(2rem, 5vh, 3.5rem);
 }
 
-.deck__nav { display: flex; flex-direction: column; }
+/* --- the rail, the indicator, and the list beside them -------------------- */
+
+.deck__navwrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.15rem;
+}
+
+/* SEGMENTS, NOT A LINE. A continuous stroke can only get brighter; it cannot
+   say *where along itself* you are. Twenty-odd separate marks each answer that
+   on their own, which is what makes the focus gradient legible — the rail reads
+   as a ruler with a finger on it. Their width and opacity are written by the
+   frame loop; everything here is the part that never changes. */
+.deck__rail {
+  position: relative;
+  flex: none;
+  width: 26px;
+  align-self: stretch;
+  /* the segments are absolutely placed, so the rail needs its own height from
+     the list beside it */
+  min-height: 100%;
+}
+.deck__rail i {
+  position: absolute;
+  left: 0;
+  top: var(--y);
+  height: 2px;
+  width: 18px;
+  border-radius: 1px;
+  background: var(--outro-ink, #33302c);
+  opacity: 0.18;
+  /* no transition: the loop writes these every frame it needs to, and a
+     transition on top would fight the spring for control of the same number */
+}
+
+/* THE ARROW IS GONE, AND THE INDICATOR IS NOT. Drawing a cursor here was a
+   mistake of the literal kind: a second pointer parked in the interface reads
+   as one that got stuck, not as a marker, and you cannot tell it from your own.
+   The position it was reporting was already being reported better by the rail
+   underneath it — the segments brighten and widen around wherever the spring
+   currently is, which is the same information without a duplicate mouse in it.
+   So the element stays, as the thing the spring writes to and the segments
+   measure against, and it paints nothing. */
+.deck__mark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  visibility: hidden;
+}
+
+.deck__nav {
+  display: flex;
+  flex-direction: column;
+  /* A plain pointer. A custom arrow in here competed with the one the rail was
+     drawing and neither won. */
+  cursor: pointer;
+
+  /* ROOM. The list was set solid — six lines of 2.35rem type at 1.34 with
+     nothing between them, so it read as a paragraph of place names rather than
+     as six separate destinations you might choose between. The gap is what
+     makes them choosable. */
+  gap: 0.6rem;
+}
 
 /* Large, quiet, and NOT staggered. A list that flies in one item at a time is
    a menu animating itself, which is the one thing this interaction is not: the
    deck is already here, and lay here while you were reading. */
 .deck__link {
   font-size: clamp(1.6rem, 2.2vw, 2.35rem);
-  line-height: 1.34;
-  letter-spacing: -0.022em;
-  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  /* 500, not 600. At this size a semibold six deep is a wall — the weight was
+     doing the work the spacing should have been doing, and now the spacing
+     does it. The aimed item goes to 600, so the step between resting and
+     chosen is still a full weight. */
+  font-weight: 500;
   text-decoration: none;
   width: fit-content;
   /* chosen against the sky by Sky.set(), the same way the footer's copy is */
   color: var(--outro-ink, #33302c);
   opacity: 0.58;
-  transition: opacity 260ms var(--ease), transform 420ms var(--spring);
+  transition:
+    opacity 260ms var(--ease),
+    color 260ms var(--ease),
+    font-variation-settings 320ms var(--ease),
+    transform 420ms var(--spring);
 }
-.deck__link:hover,
-.deck__link:focus-visible { opacity: 1; transform: translateX(4px); }
-.deck__link[aria-current] { opacity: 1; color: var(--outro-ink-strong, #1c1a17); }
+/* Hover and the current page are the same state, because they mean the same
+   thing to the rail: this is the destination. `is-aim` is written by the same
+   call that re-points the indicator, so the item and the marker can never
+   disagree about which one is lit. */
+.deck__link.is-aim {
+  opacity: 1;
+  color: var(--outro-ink-strong, #1c1a17);
+  font-variation-settings: 'wght' 600;
+  transform: translateX(6px) scale(1.02);
+}
+.deck__link { transform-origin: 0 50%; }
 
 .deck__meta {
   display: flex;
@@ -7665,34 +7776,57 @@ body.deck-shut .deck { visibility: visible; }
 }
 .deck__dot { opacity: 0.5; }
 
-/* THE FOOTER'S TWO PODS, IN THE FOOTER'S ARRANGEMENT. Out on the page they are
-   fixed to the bottom two corners and faded by --end, which is zero anywhere
-   but the very end of the scroll. Here they keep the geometry and lose the
-   fade: the slider holds the bottom-left, the mute holds the bottom-right of
-   the deck's own column, and both are simply on — down here the hour is the
-   subject rather than a footnote to it.
+/* THE TWO PODS DO NOT CHANGE LAYOUT, THEY TRANSLATE.
 
-   Pinned to the bottom of the deck rather than stacked under the links, because
-   that is where they live everywhere else on this site and moving them would
-   make them read as two new controls instead of the two you already know. */
-.deck__pods {
-  position: absolute;
-  left: 0;
-  bottom: clamp(1.25rem, 3.5vh, 2rem);
-  width: var(--deck-w);
-  padding-inline: clamp(1.75rem, 3.2vw, 3.25rem);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.deck__pods > .controls,
-.deck__pods > .mute {
-  position: static;
+   They keep the fixed corners they have everywhere else on this site — bottom
+   left and bottom right of the viewport — in every state. Opening the deck does
+   not restyle them, re-parent them or re-anchor them; it gives them a transform
+   that carries them into the deck's column, on the shell's own 600ms curve, so
+   they start on the frame the workspace starts and stop on the frame it stops.
+
+   THE DISTANCES ARE WRITTEN IN VIEWPORT UNITS so no measurement is needed and
+   nothing has to be recomputed on resize. The slider is left-anchored at 20px
+   and wants the deck's gutter, which is a few pixels. The mute is right-anchored
+   at 20px and wants to be a gutter in from the deck's right-hand edge, so it
+   crosses everything between: minus the viewport, plus the deck's width. Both
+   rise from the page's 20px to the deck's own bottom margin. */
+.deck__pods { display: none; }
+
+body.deck-open .controls,
+body.deck-open .mute {
   opacity: 1;
-  transform: none;
   pointer-events: auto;
 }
-.deck__pods > .mute:hover { transform: scale(1.09); }
+
+body.deck-open .controls {
+  transform: translate3d(
+    calc(clamp(1.75rem, 3.2vw, 3.25rem) - 20px),
+    calc(20px - clamp(1.25rem, 3.5vh, 2rem)),
+    0);
+}
+
+body.deck-open .mute {
+  transform: translate3d(
+    calc(var(--deck-w) - clamp(1.75rem, 3.2vw, 3.25rem) - 100vw + 20px),
+    calc(20px - clamp(1.25rem, 3.5vh, 2rem)),
+    0);
+}
+body.deck-open .mute:hover {
+  transform: translate3d(
+    calc(var(--deck-w) - clamp(1.75rem, 3.2vw, 3.25rem) - 100vw + 20px),
+    calc(20px - clamp(1.25rem, 3.5vh, 2rem)),
+    0) scale(1.09);
+}
+
+/* One curve for the journey, the pods' own springs for everything else they do.
+   Duration and easing are the shell's, which is what makes the three read as
+   one object rather than as three things that happen to start together. */
+body.deck-open .controls,
+body.deck-open .mute,
+body.deck-shut .controls,
+body.deck-shut .mute {
+  transition: transform var(--deck-move), opacity var(--deck-move);
+}
 
 /* --- the handle ----------------------------------------------------------- */
 
@@ -7925,4 +8059,56 @@ body[data-page] .nav { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .peek__in.is-xf { animation-duration: 1ms; }
   .peek__media img { transform: scale(1.08) !important; }
+}
+
+/* --- the row you are still in --------------------------------------------
+   "2025—" already says this, and says it so quietly that you have to know the
+   convention to read it. This says it in words, at the size the rest of the
+   table's secondary type is set in, so it reads as a fact about the row rather
+   than as a badge stuck onto it.
+
+   The dot breathes. Two seconds, and between a third and full opacity — slow
+   and shallow enough that you notice it only after you have stopped reading,
+   which is the right moment for a detail whose whole content is "this one is
+   still true". */
+/* A CHIP, NOT A FOOTNOTE. Set in the table's muted grey it disappeared into the
+   column of dates and roles either side of it — the one thing on the row that is
+   not simply a record was the quietest mark on it. It carries its own surface
+   now, and takes the dot's colour into the type, so it reads as a state rather
+   than as more metadata. Still small: the row is the subject, this is a flag on
+   it. */
+.row__now {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-left: 0.65em;
+  vertical-align: 0.12em;
+  padding: 0.24em 0.55em 0.24em 0.45em;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #147a4e;
+  background: rgba(33, 163, 107, 0.11);
+  box-shadow: inset 0 0 0 1px rgba(33, 163, 107, 0.16);
+  white-space: nowrap;
+}
+.row__now i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #21a36b;
+  animation: nowPulse 2s ease-in-out infinite;
+}
+@keyframes nowPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+/* it belongs to the row, so it warms with it */
+.row:hover .row__now { background: rgba(33, 163, 107, 0.16); }
+
+@media (prefers-reduced-motion: reduce) {
+  .row__now i { animation: none; }
 }
