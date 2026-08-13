@@ -7090,6 +7090,45 @@ body.past-hero .sel { opacity: 0; }
     left: calc(20px + var(--sa-left));
     bottom: calc(20px + var(--sa-bottom));
   }
+
+  /* BOTH PODS GO TO 44px. 32 is the measured desktop size and it is a size for
+     a cursor: a pointer lands where it is pointed, so the pod only has to be as
+     big as it looks. A finger does not, and 44px is the number the rest of this
+     phone already uses — the footer's marks were squares of exactly this, and
+     the dock's button was 48. Two 32px pods alone on the sky read as leftovers
+     from a bigger screen. Everything inside scales with them so the pod does
+     not just get taller around the same small parts. */
+  .timepod {
+    height: 2.75rem;
+    gap: 0.7rem;
+    padding: 0 0.85rem 0 0.7rem;
+  }
+  .timepod__orb { width: 1.15rem; height: 1.15rem; }
+  .timepod__track { width: 6.5rem; }
+  .timepod__ticks { height: 1.15rem; }
+  .timepod__ticks i { height: 0.44rem; }
+  .timepod__ticks i.on { height: 1.1rem; }
+
+  .mute { width: 2.75rem; height: 2.75rem; }
+  .mute svg { width: 1.15rem; height: 1.15rem; }
+}
+
+/* --- 36b. the phone's scroll indicator -------------------------------------
+   There isn't one. A narrow window in a desktop browser still draws the page's
+   scrollbar over the right edge — a grey 6px bar that fades in the moment you
+   start scrolling and sits directly on top of the gap the paper opens as it
+   detaches, which is the one thing at the end of this page that is supposed to
+   be sky. A real phone never draws it; this is the emulator's edge showing.
+
+   Hidden the same way `.drawer__rail` hides its own, and only below 48rem: a
+   desktop window keeps its scrollbar, because there it is the only thing
+   telling you how much page is left. */
+@media (max-width: 48rem) {
+  html {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  html::-webkit-scrollbar { display: none; }
 }
 
 /* --- 37. the paper --------------------------------------------------------
