@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Onefinnet review — Ishaan Gupta</title>
 <style>
@@ -17,6 +17,16 @@ th{text-align:left;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
 color:var(--dim);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line)}
 td{vertical-align:top;padding:18px 14px;border-bottom:1px solid var(--line)}
 td.a{width:42%;background:#fff} td.b{width:58%}
+/* On a phone this two-column table of long phrases cannot get below about
+   290px, which is wider than a 320px screen once the page padding is taken
+   off — so it scrolls inside itself rather than cutting its right edge off.
+   The page padding comes in too: 32px a side is a third of a small screen. */
+@media (max-width:767.98px){
+  body{padding:32px 20px 72px}
+  table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  td.a,td.b{width:auto}
+  h1{font-size:23px}
+}
 .nav{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);
 margin-bottom:6px;font-weight:600}
 .hd{font-weight:600;margin:0 0 8px;font-size:16px;line-height:1.35}

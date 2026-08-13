@@ -463,6 +463,291 @@
         }
         nav.appendChild(a);
       });
+      this.menu();
+    },
+
+    /* --- the phone's navigation -----------------------------------------------
+       A row of four links is a desktop pattern: it assumes a cursor and a page
+       wide enough to spare the room. At 390px it is 262px of 16px-tall targets
+       sitting on top of the headline.
+
+       Below 48rem it is replaced — not reflowed — by a fixed bar and a sheet.
+       Both live in the DOM at all times and CSS alone decides which is on
+       screen, so a rotation or a resized window can never leave the page with
+       neither.
+
+       Project pages already hide `.nav` entirely, and the bar is hidden with
+       it, so nothing here can reach a case study. */
+    menu() {
+      if (this.page === 'project' || $('.mbar')) return;
+
+      const bar = el('div', { class: 'mbar', 'aria-hidden': 'false' });
+      const btn = el('button', {
+        class: 'mbar__btn', type: 'button',
+        'aria-label': 'Menu', 'aria-expanded': 'false', 'aria-controls': 'm-sheet',
+      });
+      btn.innerHTML = '<span class="mbar__bar"></span><span class="mbar__bar"></span>';
+      bar.appendChild(btn);
+
+      const sheet = el('div', {
+        class: 'msheet', id: 'm-sheet', hidden: '',
+        role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Menu',
+      });
+
+      /* --- the four panels -------------------------------------------------
+         Opening is not a sheet fading up. Four coloured panels come down over
+         the page one after another, each starting about 110ms after the one
+         ahead of it — so at any instant you are looking at a staircase of
+         leading edges rather than at a single moving thing, which is what makes
+         it read as layers of paper sliding over each other instead of a drawer.
+
+         EACH ONE STOPS WHERE IT LANDS. The first version had them continue on
+         out of the bottom, which looked right in a video of somebody else's
+         site and was wrong here for a measurable reason: a panel that passes
+         through has to travel two screens instead of one, and at any duration
+         that keeps the whole sequence under a second that makes the leading
+         edge cross the glass in about 150ms. Filmed at 60fps against the
+         reference — 430ms to cross — it read as a flash rather than as fabric.
+         Landing halves the distance, so the same spring covers it in the same
+         time the reference takes, and the colours simply pile up: only the top
+         one is visible at rest, and the three beneath it are what the close
+         uncovers on the way back out.
+
+         Each panel is 124% of the viewport, offset -12%, and travels in units
+         of its own height. That margin is not decoration: the springs overshoot
+         by about 5%, and without the overspill an overshoot would show a strip
+         of the page along the top edge at the moment the panel settles. */
+      const PANELS = [
+        /* in: the order they come down.  out: reversed, because they are
+           stacked — the top one has to lift before the one beneath it can be
+           seen, so leaving in the order they arrived would just hide the
+           cascade under the panel that had not moved yet. */
+        { k: 'a', in: 0, out: 270 },
+        { k: 'b', in: 110, out: 180 },
+        { k: 'c', in: 220, out: 90 },
+        { k: 'd', in: 330, out: 0 },
+      ];
+      const lays = PANELS.map((P, i) => {
+        const n = el('div', {
+          class: `msheet__lay msheet__lay--${P.k}`, 'aria-hidden': 'true',
+          style: `z-index:${i + 1}`,
+        });
+        sheet.appendChild(n);
+        return { n, at: P.in, out: P.out, pos: -100, vel: 0, to: -100 };
+      });
+      const last = lays[3];    /* the surface the menu is written on */
+
+      /* --- what is written on it -------------------------------------------
+         Ordered the way it arrives: the name, the pages, the places to find me,
+         then the one thing I want tapped. Each carries its own `--i`, so the
+         stagger is a single multiplication in CSS rather than a queue of
+         timeouts that would need cancelling on a fast close. */
+      const body = el('div', { class: 'msheet__body' });
+      let i = 0;
+      const step = (n) => { n.style.setProperty('--i', String(i++)); return n; };
+
+      body.appendChild(step(el('p', { class: 'msheet__brand' }, esc(S.person.name))));
+
+      /* --- the pages, set as a masthead rather than a list -------------------
+         The nav sits in its own two-column block: a small standing word on the
+         left and the pages themselves indented past it, large and tightly
+         leaded, anchored to the top third of the screen with the room left
+         under them.
+
+         That indent is the whole idea. Four rows of the same size with rules
+         between them and a gap above is a settings screen; the same four words
+         set as a stack with something standing beside them is a masthead, and a
+         masthead has a voice. The word is "Pages" rather than something written
+         for the occasion because that is what this site already calls this list
+         in its own footer — a menu is not the place to introduce a new noun. */
+      const nav = el('div', { class: 'msheet__nav' });
+      nav.appendChild(step(el('p', { class: 'msheet__eyebrow' }, 'Pages')));
+
+      const list = el('nav', { class: 'msheet__list', 'aria-label': 'Pages' });
+      S.nav.forEach((item) => {
+        const cur = item.href.startsWith(this.page === 'home' ? 'index' : this.page);
+        list.appendChild(step(el('a', {
+          class: 'msheet__link', href: item.href,
+          ...(cur ? { 'aria-current': 'page' } : {}),
+        }, esc(item.label))));
+      });
+      nav.appendChild(list);
+      body.appendChild(nav);
+
+      const fc = S.footer || {};
+      const soc = el('ul', { class: 'msheet__soc' });
+      (fc.links || []).filter((l) => !/^mailto:/.test(l.href)).forEach((l) => {
+        soc.appendChild(step(el('li', {}, ''))).appendChild(el('a', {
+          href: l.href, target: '_blank', rel: 'noopener',
+        }, esc(l.label)));
+      });
+      if (soc.children.length) body.appendChild(soc);
+
+      const mail = fc.email || S.person.email;
+      body.appendChild(step(el('a', { class: 'msheet__cta', href: `mailto:${mail}` },
+        esc(fc.lead || 'Get in touch'))));
+
+      sheet.appendChild(body);
+      document.body.appendChild(bar);
+      document.body.appendChild(sheet);
+
+      /* --- the physics -----------------------------------------------------
+         One spring per panel, all four integrated in ONE requestAnimationFrame
+         loop that writes four transforms and reads nothing. A spring rather
+         than a bezier for a reason that matters here: the button can be tapped
+         again mid-flight, and a spring simply gets a new target and carries its
+         current velocity into it, so an interrupted open turns into a close
+         without a seam. A CSS transition would restart from a standstill.
+
+         zeta 0.7 — under-damped on purpose. It arrives, goes about 5% past, and
+         settles. Critically damped would be correct and would feel like
+         software.
+
+         omega 6.4 rather than 13.2, and it was set by measurement rather than
+         by feel. The frequency is what decides how long the leading edge takes
+         to cross the glass, which is the one number that separates fabric from
+         a flash. Filmed at 60fps: 13.2 over two screens gave 150ms, 9 over one
+         screen gave 230ms, and the reference — filmed the same way — takes
+         about 400. 6.4 puts it at 330: slower than a UI transition wants to be,
+         which is the point, and still leaves the whole sequence inside 1.1s. */
+      const W = 6.4;                    /* rad/s   */
+      const Z = 0.7;                    /* damping */
+      const K = W * W;
+      const C = 2 * Z * W;
+      let raf = 0, t0 = 0, prev = 0, lit = false, dir = 1;
+
+      const write = () => {
+        for (const L of lays) L.n.style.transform = `translate3d(0,${L.pos.toFixed(2)}%,0)`;
+      };
+
+      const frame = (now) => {
+        raf = 0;
+        const t = now - t0;
+        let dt = Math.min((now - prev) / 1000, 0.05);
+        prev = now;
+        let live = false;
+
+        for (const L of lays) {
+          if (t < (dir > 0 ? L.at : L.out)) { live = true; continue; }
+          /* substepped so a dropped frame cannot make the spring explode */
+          let rest = dt;
+          while (rest > 0) {
+            const h = Math.min(rest, 1 / 120);
+            rest -= h;
+            L.vel += (-K * (L.pos - L.to) - C * L.vel) * h;
+            L.pos += L.vel * h;
+          }
+          /* A PANEL THAT IS OFF THE SCREEN IS FINISHED, WHATEVER THE SPRING
+             THINKS. On the way out it overshoots past -100 and eases back, all
+             of it above the top edge — a third of a second of arithmetic and
+             transform writes that cannot be seen. Clamping the moment it clears
+             ends the loop with the animation instead of long after it. */
+          if (L.to < 0 && L.pos <= -100) { L.pos = -100; L.vel = 0; }
+          else if (Math.abs(L.pos - L.to) > 0.15 || Math.abs(L.vel) > 0.6) live = true;
+          else { L.pos = L.to; L.vel = 0; }
+        }
+        write();
+
+        /* The content is lit from inside the loop, off the last panel's real
+           position rather than a timer, so it cannot appear early on a slow
+           frame: the surface it is written on has to be down first.
+
+           AND IT LATCHES. The first version re-tested the condition every frame
+           and the surface's own overshoot — 2.8% past its resting place — took
+           it back out of the window, so the class went on at 656ms, off at
+           690ms and on again at 806ms. Each flip restarted six staggered CSS
+           transitions from zero, which is why the menu used to finish arriving
+           a third of a second later than it should. Turning it off is the
+           closing tap's job, and nothing else's. */
+        if (!lit && dir > 0 && last.pos > -3) {
+          lit = true;
+          sheet.classList.add('is-lit');
+          const first = $('.msheet__link', sheet);
+          if (first) first.focus({ preventScroll: true });
+        }
+
+        if (live) raf = requestAnimationFrame(frame);
+        else {
+          sheet.classList.remove('is-moving');
+          if (dir < 0) { sheet.hidden = true; document.body.style.top = ''; }
+        }
+      };
+
+      /* The delay clock restarts on every call, including one that lands
+         mid-flight — the positions and velocities carry over untouched, so a
+         reversal keeps its momentum while the stagger is measured from the tap
+         that caused it. */
+      const run = () => {
+        t0 = prev = performance.now();
+        sheet.classList.add('is-moving');
+        if (!raf) raf = requestAnimationFrame(frame);
+      };
+
+      let open = false, keep = 0;
+      const set = (next) => {
+        if (next === open) return;
+        open = next;
+        dir = open ? 1 : -1;
+        btn.setAttribute('aria-expanded', String(open));
+        btn.classList.toggle('is-open', open);
+        bar.classList.toggle('is-open', open);
+
+        if (open) {
+          /* Locking with `overflow: hidden` alone lets iOS Safari forget where
+             the reader was; pinning the body at its current offset and putting
+             it back on close is what keeps the position. */
+          keep = window.scrollY;
+          document.body.style.top = `-${keep}px`;
+          document.body.classList.add('m-locked');
+          sheet.hidden = false;
+          for (const L of lays) { L.to = 0; }
+          if (REDUCED) {
+            for (const L of lays) { L.pos = L.to; L.vel = 0; }
+            write();
+            sheet.classList.add('is-lit');
+            lit = true;
+            const first = $('.msheet__link', sheet);
+            if (first) first.focus({ preventScroll: true });
+            return;
+          }
+          /* start from above without a paint at the old position */
+          write();
+          run();
+          return;
+        }
+
+        sheet.classList.remove('is-lit');
+        lit = false;
+        document.body.classList.remove('m-locked');
+        window.scrollTo(0, keep);
+        btn.focus({ preventScroll: true });
+
+        for (const L of lays) { L.to = -100; }
+        if (REDUCED) {
+          for (const L of lays) { L.pos = -100; L.vel = 0; }
+          write();
+          sheet.hidden = true;
+          document.body.style.top = '';
+          return;
+        }
+        run();
+      };
+
+      /* THE FIRST FRAME IS THE EXPENSIVE ONE, SO IT HAPPENS BEFORE THE TAP
+         LANDS. Unhiding the sheet inside the click handler means style, layout
+         and the first paint of four full-screen panels and ten blurred rows all
+         fall in the same frame as the first panel's first move — measured at
+         53ms, against 16.7 for every frame after it. Taking the sheet out of
+         `display: none` on pointerdown instead spends that work in the gap
+         between a finger touching the glass and the click event, which on a
+         phone is 80ms or more, and the animation starts on a warm layout.
+         Nothing is visible either way: the panels are parked above the top
+         edge and the sheet does not take pointer events until it moves. */
+      btn.addEventListener('pointerdown', () => { if (!open) sheet.hidden = false; }, { passive: true });
+      btn.addEventListener('click', () => set(!open));
+      list.addEventListener('click', (e) => { if (hit(e, 'a')) set(false); });
+      body.addEventListener('click', (e) => { if (hit(e, '.msheet__cta')) set(false); });
+      addEventListener('keydown', (e) => { if (e.key === 'Escape' && open) set(false); });
     },
 
     /* The footer answers the header. Same dotted field, same nav — the Pages
@@ -484,25 +769,77 @@
         esc(String(c.fine || '').replace('{year}', new Date().getFullYear()))));
       f.appendChild(said);
 
-      const column = (title, items) => {
-        const col = el('div', { class: 'foot__col' });
+      /* --- the Links column speaks in glyphs --------------------------------
+         Four stacked words that all mean "elsewhere" are four things to read
+         before you can pick one; the marks are recognised without reading. The
+         column keeps its rhythm — same row pitch as Pages beside it, only the
+         label becomes a glyph — so the two columns still scan as one pair.
+
+         MATCHED ON THE HREF, NOT THE LABEL, because the href is the fact.
+         `S.footer.links` is content and its labels are free text: the first
+         entry is called Twitter and points at x.com, and somebody will
+         eventually write "𝕏" or "Twitter/X" or their own name for it. The
+         destination cannot drift.
+
+         AND IT FALLS BACK TO THE WORD. A link this does not recognise keeps its
+         label rather than rendering an empty 18px box — adding a fifth link to
+         content should never make it disappear from the page. */
+      const GLYPH = [
+        [/^mailto:/, 'mail'],
+        [/(^|\/\/|\.)(x|twitter)\.com/, 'x'],
+        [/linkedin\.com/, 'linkedin'],
+        [/github\.com/, 'github'],
+        [/dribbble\.com/, 'dribbble'],
+      ];
+      const glyph = (href) => {
+        const hit = GLYPH.find(([re]) => re.test(href));
+        return hit ? ICON[hit[1]] : '';
+      };
+
+      const column = (title, items, asGlyphs) => {
+        /* named rather than counted: the phone hides one of these two and lays
+           the other one out sideways, and `:nth-of-type` would be pointing at
+           the dot field and the address, which are divs in the same grid */
+        const col = el('div', {
+          class: `foot__col foot__col--${title.toLowerCase()}`,
+        });
         col.appendChild(el('h2', { class: 'foot__colt' }, esc(title)));
         const list = el('ul', {});
         items.forEach((it) => {
           const here = it.href.startsWith(this.page === 'home' ? 'index' : this.page);
+          const mark = asGlyphs ? glyph(it.href) : '';
           const a = el('a', {
             href: it.href,
+            /* The label does not disappear when the word does — it moves to the
+               accessible name, so a screen reader still says "Twitter" and a
+               cursor still gets a tooltip. An icon-only link with no name is
+               announced as its own URL. */
+            ...(mark ? { class: 'foot__ico', 'aria-label': it.label, title: it.label } : {}),
             ...(here ? { 'aria-current': 'page' } : {}),
             /* only the outbound ones open away from the site */
             ...(/^https?:/.test(it.href) ? { target: '_blank', rel: 'noopener' } : {}),
-          }, esc(it.label));
+          }, mark
+            /* THE WORD STAYS IN THE BOX, IT JUST STOPS BEING VISIBLE.
+               Sizing the glyph row by hand does not hold: a text row here is
+               the line box of a 15px label at `line-height: normal`, which is
+               17px, and an 18px mark set to `1.5em` came out at 22.5 — five
+               and a half pixels of drift per row, so by the fourth link the
+               column was 10px out of step with Pages beside it and the whole
+               pair stopped reading as one thing.
+               So the label is still laid out and still measured; it is only
+               hidden, and the mark is positioned over it. The pitch is then
+               identical BY CONSTRUCTION, at every width and whatever the type
+               scale does — and the box keeps the width of the word, which on a
+               desktop is a far better target than 18 square pixels. */
+            ? `<span class="foot__ico__w">${esc(it.label)}</span>${mark}`
+            : esc(it.label));
           list.appendChild(el('li', {}, '')).appendChild(a);
         });
         col.appendChild(list);
         return col;
       };
       f.appendChild(column('Pages', S.nav));
-      f.appendChild(column('Links', c.links || []));
+      f.appendChild(column('Links', c.links || [], true));
     },
 
     outro() {
@@ -897,7 +1234,10 @@
 
         if (act === 'copy-email') {
           e.preventDefault();
-          const mail = S.person.email;
+          /* `copyEmail` if content.js names one, otherwise the address the page
+             is written from — so the button keeps working in a copy of this
+             site that has not been told about the distinction */
+          const mail = S.person.copyEmail || S.person.email;
           try {
             await navigator.clipboard.writeText(mail);
           } catch {
@@ -920,7 +1260,16 @@
         }
 
         if (act === 'resume') {
-          if (S.person.resumeUrl === '#') {
+          /* It opens HERE. Following the link would hand the file to the
+             browser's own PDF plugin, which is a different application with a
+             different toolbar, a different scrollbar and a grey void around the
+             page — the exact moment a portfolio stops feeling like one thing.
+             The link stays a real link, with a real href, so a middle-click or
+             a right-click still gets the file and the page works with no JS. */
+          if (Paper.ok()) {
+            e.preventDefault();
+            Paper.open();
+          } else if (S.person.resumeUrl === '#') {
             e.preventDefault();
             Shell.say('Add your resume link in content.js');
           }
@@ -3155,6 +3504,12 @@
     plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>',
     undo: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 6.2H8.6a4 4 0 1 1 0 8H5.2"/><path d="M6 3 3 6.2l3 3"/></svg>',
     pencilTab: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11.2 2.4 13.6 4.8 5.6 12.8 2.4 13.6l.8-3.2z"/><path d="M10 3.6l2.4 2.4"/></svg>',
+    /* The sticky note as a line glyph. The dock draws the note as an
+       illustrated object sliding out of a slot, which needs a slot to slide
+       within; the status pill is 48px of pill and has none, so it takes a glyph
+       like the pen beside it. Same shape as the illustration: a square with the
+       lower-left corner turned up. */
+    noteTab: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2.6v10.8H6.2L2.6 9.8V2.6z"/><path d="M2.6 9.8h3.6v3.6"/></svg>',
   };
 
   const Rack = {
@@ -3239,7 +3594,13 @@
         });
         inks.appendChild(b);
       });
-      panel.appendChild(inks);
+      /* Parented to the rack, not the panel. The geometry is identical either
+         way — `.tools` shrink-wraps the panel exactly and both are positioned,
+         so `right: 100%; top: 0` resolves against the same edge, and the
+         desktop renders pixel for pixel as before. It matters on a phone: the
+         pen folds the dock away so you can reach the canvas, and a palette
+         inside the dock would go with it. */
+      this.inks = inks;
 
       /* the "+" drawer of stickers */
       const pad = el('div', { class: 'drawerpad', role: 'group', 'aria-label': 'Stickers' });
@@ -3272,6 +3633,7 @@
          clips its content per the Figma spec — so it parents to the rack
          instead, after the panel so it still paints above it. Same visual
          position, since .tools wraps the panel exactly. */
+      rack.appendChild(inks);
       rack.appendChild(pad);
 
       /* the collapsed tab: always present, so the tools are never a secret */
@@ -3288,6 +3650,8 @@
       this.say = el('div', { class: 'tools__say', role: 'status', 'aria-live': 'polite' });
       this.flash = el('div', { class: 'tools__say tools__flash', 'aria-hidden': 'true' });
       rack.append(this.say, this.flash);
+
+      this.fabInit(rack);
 
       document.body.appendChild(rack);
       this.panel = panel;
@@ -3335,6 +3699,8 @@
           return;
         }
         if (e.key === 'Escape') {
+          /* an external keyboard on a phone folds the dock away first */
+          if (this.dockOpen) { this.fabSet(false); return; }
           if (this.tool !== 'select') { this.pick('select'); this.flashLabel('Move Tool'); }
           return;
         }
@@ -3357,6 +3723,113 @@
 
       /* any interaction with the dock resets the idle timer */
       rack.addEventListener('pointerdown', () => this.touch());
+
+      /* Crossing the phone boundary swaps which affordance folds the dock away,
+         so the mode rules have to be re-read — a dock collapsed to its edge tab
+         at 900px must not stay collapsed when the window narrows to a phone,
+         where there is no tab to bring it back. */
+      const mq = matchMedia(this.PHONE);
+      const swap = () => { this.fabSet(false); this.applyScope(); };
+      if (mq.addEventListener) mq.addEventListener('change', swap);
+      else if (mq.addListener) mq.addListener(swap);
+    },
+
+    /* ====================================================== the phone's dock
+       Below 768 the dock does not become a different toolbar. It becomes a
+       toolbar you open: a 64px button in the bottom-right corner, and above it
+       THE DOCK ITSELF — the same 48px panel, the same two hairlines, the same
+       pencil and sticky note sliding out of their slots, the same plus and
+       undo. Nothing is redrawn and nothing is rebuilt. The only thing this adds
+       is a way to fold it away, because 286px pinned to the middle of the right
+       edge is 40% of a phone screen sitting across the hero.
+
+       So there is one toolbar on this site, not two. The edge tab is what the
+       desktop folds to and the button is what the phone folds to; both open the
+       same element, and `Rack.pick` remains the single place a tool is chosen.
+
+       767.98px, not 48rem: the brief puts the tablet at 768 and up, and 48rem
+       would claim 768 itself — an iPad in portrait is exactly that wide. This
+       is the exclusive complement of the tablet floor, not a new breakpoint. */
+
+    PHONE: '(max-width: 767.98px)',
+
+    /* The MediaQueryList is made once and kept. `.matches` on a live list is a
+       property read; `matchMedia()` is a parse and an allocation, and this is
+       called from the scroll loop — once per frame is once too often for it. */
+    phone() {
+      if (typeof matchMedia !== 'function') return false;
+      if (!this._mq) this._mq = matchMedia(this.PHONE);
+      return this._mq.matches;
+    },
+
+    /* what the button says it is doing once a tool is live */
+    LIVE: { marker: 'Drawing', note: 'Sticky Notes', sticker: 'Stickers' },
+
+    /* `|| TOOL_ICON.cursor` is not defensive padding. This is written straight
+       into innerHTML, and innerHTML of undefined is not empty — it is the seven
+       letters u-n-d-e-f-i-n-e-d, rendered inside the button, on top of the
+       label. Which is exactly what a missing glyph did here once. */
+    fabIcon(name) {
+      const map = {
+        marker: TOOL_ICON.pencilTab,
+        note: TOOL_ICON.noteTab,
+        sticker: TOOL_ICON.plus,
+      };
+      return map[name] || TOOL_ICON.cursor;
+    },
+
+    fabInit(rack) {
+      /* The dismissal surface. It is a child of `.tools` on purpose: the canvas
+         places a note wherever you press, and that listener already skips
+         anything inside `.tools`, so closing the dock by tapping the page
+         cannot also drop a sticky note where you tapped. */
+      const veil = el('div', { class: 'fab__veil', 'data-nopress': '', 'aria-hidden': 'true' });
+      veil.addEventListener('pointerdown', (e) => { e.preventDefault(); this.fabSet(false); });
+
+      const fab = el('button', {
+        class: 'fab', type: 'button',
+        'aria-haspopup': 'true', 'aria-expanded': 'false',
+        'aria-label': 'Annotation tools',
+      },
+        '<span class="fab__ico" aria-hidden="true">' + TOOL_ICON.cursor + '</span>'
+        + '<span class="fab__say"></span>');
+
+      /* Three states, in the order you meet them:
+           the dock is up      →  put it away, and keep whatever is in your hand
+           a tool is live      →  the button is that tool's status pill, and the
+                                  one thing a status pill should do is put the
+                                  tool down
+           neither             →  bring the dock up                            */
+      fab.addEventListener('click', () => {
+        if (this.dockOpen) { this.fabSet(false); return; }
+        if (this.tool !== 'select') { this.pick('select'); return; }
+        this.fabSet(true);
+      });
+
+      this.fab = fab;
+      rack.append(veil, fab);
+    },
+
+    fabSet(open) {
+      if (!this.fab) return;
+      const next = !!open;
+      if (next === !!this.dockOpen) return;
+      this.dockOpen = next;
+      this.rack.classList.toggle('is-dock', next);
+      this.fab.setAttribute('aria-expanded', String(next));
+      if (next) Sound.voice({ freq: 520, gain: 0.028, dur: 0.07, bright: 3200, drop: 1.6, noise: 0.4 });
+    },
+
+    /* the tools themselves are the dock's own chips and light up on their own;
+       this is only the button's glyph and its label */
+    fabSync(name) {
+      if (!this.fab) return;
+      const live = this.LIVE[name] || '';
+      this.rack.classList.toggle('is-live', !!live);
+      $('.fab__ico', this.fab).innerHTML = this.fabIcon(name);
+      $('.fab__say', this.fab).textContent = live;
+      this.fab.setAttribute('aria-label',
+        live ? live + ' — tap to go back to Move' : 'Annotation tools');
     },
 
     /* Which sticker is armed. The drawer has hover states but had no selected
@@ -3417,6 +3890,13 @@
 
     /* re-evaluate on scroll and on drawer changes */
     applyScope() {
+      /* A phone has no edge tab — the CSS hides it — so every rule below that
+         collapses the dock would take the tools away with nothing left to bring
+         them back. The FAB is always on screen instead, and the dock's state
+         machine is simply held open behind it so that placing, drawing and the
+         ink layer all keep the one condition they test for. */
+      if (this.phone()) { this.setMode('open', 'phone'); return; }
+
       const scope = S.rack?.scope || 'contextual';
       if (scope === 'everywhere') { this.setMode('open'); return; }
 
@@ -3434,6 +3914,7 @@
     touch() {
       clearTimeout(this._idle);
       if (this.mode !== 'open') return;
+      if (this.phone()) return;              /* nothing to collapse to */
       this._idle = setTimeout(() => {
         /* never interrupt someone mid-stroke or mid-edit */
         if (Ink.live) return this.touch();
@@ -3497,6 +3978,13 @@
         b.classList.toggle('is-on', on);
         b.setAttribute('aria-pressed', String(on));
       });
+
+      /* The button's glyph follows the tool, and the dock folds away — picking
+         the pen or a note means you want the canvas, not the toolbar. Add is the
+         exception: its drawer hangs off the dock's edge, so the dock stays up
+         while you choose which sticker to place. */
+      this.fabSync(name);
+      if (name !== 'sticker') this.fabSet(false);
 
       /* the preview is the answer to "what happens if I click right now?" */
       Ghost.set(name === 'note' ? 'note' : name === 'sticker' ? 'sticker' : 'none');
@@ -3619,7 +4107,10 @@
       }, S.canvas.peelStyle || {});
 
       const layer = el('div', { class: 'peel' });
-      const narrow = matchMedia('(max-width: 46rem)').matches;
+      /* 48rem is the mobile ceiling on the documented scale — see --bp-portrait
+         in site.css. It was 46rem, a number from nowhere, which meant the hero
+         thinned out at 736 while every other mobile rule waited for 768. */
+      const narrow = matchMedia('(max-width: 48rem)').matches;
 
       defs.forEach((d, i) => {
         if (narrow && d.mobile === false) return;
@@ -3866,14 +4357,43 @@
       const host = this.host;
       if (!host || !this.items.length) return;
       const r = host.getBoundingClientRect();
-      const scale = clamp(r.width / 1440, 0.55, 1.1);
+      /* Scaling everything off a 1440 reference gives a 390px screen objects at
+         27% — legible on a desk, specks in a hand. A phone measures against a
+         phone. */
+      const narrowNow = r.width <= 768;
+      const scale = narrowNow
+        ? clamp(r.width / 430, 0.66, 1.04)
+        : clamp(r.width / 1440, 0.55, 1.1);
 
       /* the one thing a sticker may never cover, measured rather than assumed */
       const safe = this.safeZone(host);
 
+      /* HOW MUCH ROOM IS LEFT, which on a phone decides the whole composition.
+
+         The safe zone is one union box around the headline, the tags and the
+         buttons, and on a narrow screen that box is nearly the full width — so
+         a sticker cannot sit BESIDE the text the way it does on a desktop. It
+         is pushed out sideways and clamped at the edge. Everything has to go
+         below.
+
+         How far below is the whole question, and it is not a function of width.
+         An SE at 320x568 ends its buttons at 69% of the hero and leaves a 15%
+         strip; a 14 Pro at 390x844 ends them at 46% and leaves half the screen.
+         Same layout in both is either a pile or a shelf with a hole above it.
+
+         So: if the content clears the upper half, there is a lower half to
+         compose in and the roomy coordinates are used. If it does not, the
+         stickers line up in the strip that is left. 55% rather than 50% because
+         a sticker needs its own height below the line, not just its centre. */
+      const roomy = !!safe && (safe.bottom - r.top) < r.height * 0.55;
+
       this.items.forEach((it) => {
         const d = it.def;
-        const w = Math.round(d.w * scale);
+        const mob = (narrowNow && d.mobile && typeof d.mobile === 'object') ? d.mobile : null;
+        /* `tall` overrides only what it names, so a sticker that sits in the
+           same place either way says so by leaving it out */
+        const mw = (mob && roomy && mob.tall) ? Object.assign({}, mob, mob.tall) : mob;
+        const w = Math.round(((mw && mw.w) || d.w) * scale);
         it.wrap.style.setProperty('--sticker-width', `${w}px`);
         const img = $('.sticker-image', it.box);
         const ratio = img.naturalWidth ? img.naturalHeight / img.naturalWidth : 1;
@@ -3890,8 +4410,14 @@
         it.wrap.style.setProperty('--sticker-box-w', `${Math.round(w * ca + it.h * sa)}px`);
         it.wrap.style.setProperty('--sticker-box-h', `${Math.round(w * sa + it.h * ca)}px`);
 
-        let x = (d.x / 100) * r.width - w / 2;
-        let y = (d.y / 100) * r.height - it.h / 2;
+        /* A PHONE GETS ITS OWN COORDINATES. The desktop ring is drawn around a
+           headline that sits in the top-left of a wide screen; on a tall narrow
+           one the text takes the whole upper half and there is no ring to be
+           in. `mobile: { x, y, w }` in content.js is the same object placed
+           again, and anything it leaves out falls back to the desktop value. */
+        const m = mw;
+        let x = (((m && m.x != null) ? m.x : d.x) / 100) * r.width - w / 2;
+        let y = (((m && m.y != null) ? m.y : d.y) / 100) * r.height - it.h / 2;
 
         if (safe) {
           const pad = 20;
@@ -4534,9 +5060,23 @@
            is left to the page so touch scrolling still works, which is how FigJam
            behaves. */
         if (e.button !== 0 && e.button !== undefined) return;
-        if (e.pointerType === 'touch') return;
         const t = e.target;
         if (t && t.closest && t.closest('.tools, .drg, .lbox, .drawer__rail')) return;
+        /* A finger is normally left to the page so touch scrolling keeps
+           working — a mouse or a stylus has a second way to scroll the page and
+           a finger does not. A phone has no mouse to fall back to, so the pen
+           there has to accept a finger or it is a tool that does nothing.
+
+           The trade is contained rather than global: only a press that starts on
+           the drawing SURFACE draws, and only that surface is given
+           `touch-action: none` while the pen is armed. Everything else — the
+           bar, the sections under the hero, the footer — still scrolls under a
+           finger, and putting the pen down hands the hero back too. */
+        if (e.pointerType === 'touch') {
+          if (!Rack.phone()) return;
+          const surf = Canvas.surface;
+          if (!surf || !t || !surf.contains(t)) return;
+        }
         e.preventDefault();
         anchor();                           // one layout read for the whole stroke
         this.live = {
@@ -5238,6 +5778,25 @@
           a.classList.toggle('is-active', on);
           if (on) a.setAttribute('aria-current', 'true');
           else a.removeAttribute('aria-current');
+          /* On a phone the rail is one line that scrolls sideways, so the chip
+             for the section you are reading can be off the end of the strip —
+             which is the same as not having a rail. It is brought to the middle
+             as the active section changes.
+
+             The guard is the whole cross-platform story: on a desktop the rail
+             is a column that fits its content, scrollWidth equals clientWidth,
+             and this does nothing at all. */
+          if (!on) return;
+          const strip = a.parentElement;
+          if (!strip || strip.scrollWidth <= strip.clientWidth + 4) return;
+          const want = a.offsetLeft - (strip.clientWidth - a.offsetWidth) / 2;
+          const to = Math.max(0, Math.min(want, strip.scrollWidth - strip.clientWidth));
+          if (Math.abs(strip.scrollLeft - to) < 2) return;
+          if (typeof strip.scrollTo === 'function') {
+            strip.scrollTo({ left: to, behavior: REDUCED ? 'auto' : 'smooth' });
+          } else {
+            strip.scrollLeft = to;
+          }
         });
       };
 
@@ -5366,6 +5925,26 @@
           const ink = over ? 'light' : 'dark';
           if (links[i].dataset.ink !== ink) links[i].dataset.ink = ink;
         }
+
+        /* THE BAR'S TONE, FROM THE SAME ARITHMETIC AS THE INK.
+
+           On a phone the rail is a bar with a background of its own, because the
+           article scrolls underneath it, and that background has to follow the
+           band the bar is sitting on. Asking the same question the links are
+           asked — is my midpoint over a dark section — but of the BAR, because
+           the bar is the thing being coloured.
+
+           Decided here rather than in setActive so it cannot drift: setActive
+           fires when the section changes, this runs on every scroll, and a
+           snapshot of one taken inside the other is how the two ended up
+           disagreeing. The stylesheet then derives the ink from THIS class
+           rather than from data-ink, so there is one state and one answer. */
+        const rmid = railY + rail.offsetHeight / 2;
+        let railOver = false;
+        for (let k = 0; k < bands.length; k++) {
+          if (rmid >= bands[k].top && rmid <= bands[k].bottom) { railOver = true; break; }
+        }
+        rail.classList.toggle('is-dark', railOver);
       };
 
       let lastY = null;
@@ -5577,10 +6156,129 @@
 
   /* ======================================================== 8. loop ===== */
 
+  /* ===================================================== 6c. the paper ====
+
+     The resume, shown inside the site.
+
+     A link straight to the PDF hands the file to the browser's own viewer,
+     which is a different application: its own toolbar, its own scrollbar, a
+     grey void around the page and no way back except the back button. Embedding
+     the PDF in an iframe is barely better — the plugin's chrome comes with it,
+     and on iOS it often refuses to render inline at all and offers a download
+     instead.
+
+     So the pages are IMAGES, rendered from the same PDF at export time, and the
+     viewer around them is built out of the site's own parts: the ink surface
+     the menu is written on, the corner radius the project cards use, the same
+     spring. The PDF itself is still there behind a download button, which is
+     what somebody actually wants the file for.
+
+     The whole thing is built on first open and kept afterwards — a resume is
+     something you look at once, and 300KB of page images should not be fetched
+     by everybody who never asks for it. */
+  const Paper = {
+    ok() {
+      const r = S.person && S.person.resume;
+      return !!(r && r.sheets && r.sheets.length);
+    },
+
+    build() {
+      if (this.el) return;
+      const r = S.person.resume;
+
+      const win = el('div', {
+        class: 'paper__win', role: 'dialog', 'aria-modal': 'true',
+        'aria-label': r.title || 'Resume',
+      });
+
+      const bar = el('div', { class: 'paper__bar' });
+      bar.appendChild(el('p', { class: 'paper__title' }, esc(r.title || 'Resume')));
+      const acts = el('div', { class: 'paper__acts' });
+      acts.appendChild(el('a', {
+        class: 'paper__get', href: S.person.resumeUrl, download: '',
+      }, 'Download'));
+      const x = el('button', {
+        class: 'paper__x', type: 'button', 'aria-label': 'Close',
+      }, '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" '
+        + 'stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>');
+      acts.appendChild(x);
+      bar.appendChild(acts);
+      win.appendChild(bar);
+
+      const scroll = el('div', { class: 'paper__scroll' });
+      r.sheets.forEach((src, i) => {
+        /* The ratio is declared in content.js rather than measured, so the
+           space is reserved before the bytes arrive: without it the second page
+           snaps into existence under your thumb the moment it decodes. */
+        const wrap = el('div', {
+          class: 'paper__pg',
+          style: `aspect-ratio:${r.ratio || 0.7727}`,
+        });
+        const img = el('img', {
+          src, alt: `${r.title || 'Resume'}, page ${i + 1}`,
+          decoding: 'async', ...(i ? { loading: 'lazy' } : {}),
+        });
+        wrap.appendChild(img);
+        scroll.appendChild(wrap);
+      });
+      win.appendChild(scroll);
+
+      this.el = el('div', { class: 'paper', hidden: '' });
+      this.el.appendChild(el('div', { class: 'paper__veil' }));
+      this.el.appendChild(win);
+      document.body.appendChild(this.el);
+
+      this.x = x;
+      x.addEventListener('click', () => this.close());
+      $('.paper__veil', this.el).addEventListener('click', () => this.close());
+      addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.open_) this.close();
+      });
+    },
+
+    open() {
+      this.build();
+      if (this.open_) return;
+      this.open_ = true;
+      this.keep = window.scrollY;
+
+      /* PINNED, AND THE SCROLLBAR'S WIDTH GIVEN BACK.
+         Taking the page out of flow removes the scrollbar with it, and on a
+         desktop that is 15px of the layout disappearing — the whole page slides
+         sideways behind the viewer, which you see at the edges. The padding
+         puts back exactly what the scrollbar was taking. */
+      const bar = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.top = `-${this.keep}px`;
+      if (bar > 0) document.body.style.paddingRight = `${bar}px`;
+      document.body.classList.add('is-held');
+
+      this.el.hidden = false;
+      requestAnimationFrame(() => this.el.classList.add('is-up'));
+      setTimeout(() => this.x && this.x.focus({ preventScroll: true }), 240);
+      Sound.chime();
+    },
+
+    close() {
+      if (!this.open_) return;
+      this.open_ = false;
+      this.el.classList.remove('is-up');
+      document.body.classList.remove('is-held');
+      document.body.style.top = '';
+      document.body.style.paddingRight = '';
+      window.scrollTo(0, this.keep);
+      const back = $('[data-action="resume"]');
+      if (back) back.focus({ preventScroll: true });
+      setTimeout(() => { if (!this.open_) this.el.hidden = true; }, REDUCED ? 1 : 420);
+    },
+  };
+
   const Sheet = {
     init() {
       this.el = $('.sheet');
       this.outro = $('.outro');
+      /* the two floating pods, collected once — they are built by
+         Shell.controls() before this runs */
+      this.pods = $$('.controls, .mute');
       this.last = -1;
       this.lastEnd = -1;
       this.measure();
@@ -5595,17 +6293,38 @@
       this.travel = Math.max(120, this.outro ? this.outro.offsetHeight : 340);
     },
 
+    /* WRITTEN ON THE ELEMENTS THAT READ THEM, NOT ON THE ROOT.
+       These five properties used to be set on documentElement, which is the
+       expensive place to put anything that changes while you scroll: a custom
+       property on the root invalidates the computed style of every element that
+       inherits it, and every element inherits it. Measured over a scroll from
+       just above the footer to the end of the page — 1,450ms of style
+       recalculation, against 318ms with the same properties held still.
+
+       The sheet's three are read only by `.sheet`, and the two that raise the
+       pods are read only by the pods, so each write now dirties one subtree
+       instead of the document. */
     tick(vh) {
       if (!this.el) return;
       const r = this.el.getBoundingClientRect();
       /* 32px inset, 24px corner radius — both measured off the reference */
       const p = clamp((vh - r.bottom) / this.travel);
-      const s = document.documentElement.style;
 
-      /* changing margin reflows, so only write on a whole-pixel change */
+      /* CHANGING THIS MARGIN RE-LAYS-OUT THE WHOLE PAGE, because `.sheet` is
+         the paper and the paper contains everything. Measured with Chromium's
+         layout counters over a scroll from just above the footer to the end:
+         48 layout passes costing 74ms, against 3 costing 1ms with the margin
+         held still.
+         The fix is in the stylesheet rather than here — below 48rem the margin
+         simply does not move, so none of those passes happen. Above it the
+         desktop keeps the composition it was measured against, and this stays
+         at one write per whole pixel. Quantising it coarsely was tried and
+         reverted: rounding to three pixels puts full detachment at 33 rather
+         than 32, and the desktop is the reference. */
       const px = Math.round(p * 32);
       if (px !== this.last) {
         this.last = px;
+        const s = this.el.style;
         s.setProperty('--sheet-inset', `${px}px`);
         s.setProperty('--sheet-round', `${Math.round(p * 24)}px`);
         s.setProperty('--sheet-lift', p.toFixed(3));
@@ -5618,8 +6337,12 @@
       const q = Math.round(end * 50) / 50;
       if (q !== this.lastEnd) {
         this.lastEnd = q;
-        s.setProperty('--end', q.toFixed(2));
-        s.setProperty('--end-events', q > 0.5 ? 'auto' : 'none');
+        const v = q.toFixed(2);
+        const e = q > 0.5 ? 'auto' : 'none';
+        for (const n of this.pods) {
+          n.style.setProperty('--end', v);
+          n.style.setProperty('--end-events', e);
+        }
       }
     },
   };

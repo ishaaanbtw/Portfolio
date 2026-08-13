@@ -50,6 +50,36 @@
   --dots: radial-gradient(circle at 1px 1px, rgb(205, 203, 204) 1px, transparent 0);
   --dots-step: 24px 24px;
 
+  /* --- the safe area --------------------------------------------------------
+     Read once, here, so nothing downstream has to remember the env() syntax or
+     the fallback. THE FALLBACK IS NOT OPTIONAL: `env()` with no second argument
+     is invalid in a browser that does not implement it, and an invalid value
+     drops the whole declaration — so a padding written without one does not
+     degrade to zero, it disappears, taking the padding with it. */
+  --sa-top: env(safe-area-inset-top, 0px);
+  --sa-right: env(safe-area-inset-right, 0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left: env(safe-area-inset-left, 0px);
+
+  /* --- the breakpoints ------------------------------------------------------
+     Four tiers, written down so the next person picks from them instead of
+     inventing a thirteenth number. These are the query values themselves —
+     `@media (max-width: 48rem)` — because a media query cannot read a custom
+     property; the tokens exist to be quoted, not interpolated.
+
+       --bp-desktop   90rem   1440px and up
+       --bp-laptop    80rem   1280–1439
+       --bp-tablet    64rem   1024–1279   (the wide half of the tablet tier)
+       --bp-portrait  48rem    768        mobile ceiling / tablet floor
+       --bp-phone     30rem    480
+       --bp-small     22.5rem  360        the narrowest screen designed for  */
+  --bp-desktop: 90rem;
+  --bp-laptop: 80rem;
+  --bp-tablet: 64rem;
+  --bp-portrait: 48rem;
+  --bp-phone: 30rem;
+  --bp-small: 22.5rem;
+
   --step--1: clamp(0.75rem, 0.73rem + 0.1vw, 0.8125rem);
   --step-0: clamp(0.875rem, 0.85rem + 0.12vw, 0.9375rem);
   /* Between body and the first heading step. Without it, anything wanting mild
@@ -128,7 +158,9 @@
 *::before,
 *::after { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+/* The viewport scrolls <html>, not <body>, so a guard on body alone lets the
+   page slide sideways anyway — both need it. */
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   margin: 0;
@@ -319,7 +351,9 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
 
 .nav {
   position: fixed;
-  top: clamp(1.25rem, 3vh, 2rem);
+  /* The inset is ADDED to the measured offset rather than replacing it, so on
+     any screen without a notch this resolves to exactly the value it had. */
+  top: calc(clamp(1.25rem, 3vh, 2rem) + var(--sa-top));
   /* The paper insets 32px at the footer, so anything closer to the edge than
      that ends up hanging over the sky once the page detaches. Deliberately a
      flat value, not a vw one: at ~900px wide, 3vw is only 27px and the nav
@@ -1316,7 +1350,8 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   isolation: isolate;
   border-top: 1px solid var(--line);
   background: var(--paper-2);
-  padding: clamp(2.75rem, 8vw, 4.75rem) var(--gut) clamp(1.75rem, 4vw, 2.5rem);
+  padding: clamp(2.75rem, 8vw, 4.75rem) var(--gut)
+           calc(clamp(1.75rem, 4vw, 2.5rem) + var(--sa-bottom));
   display: grid;
   /* the said column takes what it needs; the two link columns hug their content
      and sit together on the right, as in the reference */
@@ -1381,6 +1416,35 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 }
 .foot__col a:hover { color: var(--ink-2); transform: translateX(3px); }
 .foot__col a[aria-current='page'] { color: var(--ink); }
+
+/* --- and the same link with a glyph in place of the word -------------------
+   The word is still there, still laid out, still setting the height of the row —
+   it is only invisible, with the mark placed over it. That is what keeps this
+   column in step with Pages beside it without a single hand-set dimension: the
+   pitch is whatever the type scale says a label row is, at every width.
+   `visibility` rather than `opacity` or a clip: it takes the word out of the
+   accessibility tree as well as off the screen, and the anchor's aria-label —
+   the same string — is what gets announced instead. */
+.foot__ico { position: relative; }
+.foot__ico__w { visibility: hidden; }
+.foot__ico svg {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  /* 16 rather than 18: three of these four marks are solid fills, and at 18 the
+     column carried visibly more ink than the words beside it. 16 is also the
+     cap height of the label it replaced, so the two columns share a baseline
+     rhythm as well as a pitch. */
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  /* A glyph carries less ink than a word, so at --ink-dim it reads lighter than
+     the labels next to it AND sits under 2:1 against the paper. This is the
+     tone that puts it at 3:1 — the floor for something that is not text — and
+     lands it at about the apparent weight of the words in the other column. */
+  color: #8f8a82;
+}
+.foot__ico:hover svg { color: var(--ink-2); }
 
 @media (max-width: 52rem) {
   .foot {
@@ -2043,7 +2107,10 @@ body.is-field .people-trigger {
   overflow-x: hidden;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding: var(--drawer-top) clamp(1.25rem, 4vw, 2.5rem) 6rem;
+  /* the last 6rem is the run-out past the final section; the inset keeps it
+     clear of the home indicator rather than ending underneath it */
+  padding: var(--drawer-top) clamp(1.25rem, 4vw, 2.5rem)
+           calc(6rem + var(--sa-bottom));
 }
 
 /* the two-column doc layout: small grey label in a gutter, content beside it */
@@ -3502,7 +3569,10 @@ body[data-page='project'] .nav { display: none; }
   z-index: 120;                      /* above the dock (90) and the tooltip (95) */
   display: grid;
   place-items: center;
-  padding: clamp(1.5rem, 5vw, 4rem);
+  /* full-bleed, so it has to clear both ends of the screen */
+  padding: calc(clamp(1.5rem, 5vw, 4rem) + var(--sa-top))
+           clamp(1.5rem, 5vw, 4rem)
+           calc(clamp(1.5rem, 5vw, 4rem) + var(--sa-bottom));
   opacity: 0;
   pointer-events: none;
   transition: opacity 300ms var(--ease);
@@ -4042,7 +4112,10 @@ body.is-lbox { overflow: hidden; }
 
 .tools {
   position: fixed;
-  right: 24px;
+  /* The dock's behaviour is untouched — this is only its distance from the
+     screen edge, so it cannot end up under a rounded corner. Added to the
+     measured 24px, so with no inset it is still exactly 24px. */
+  right: calc(24px + var(--sa-right));
   top: 50%;
   translate: 0 -50%;
   /* Order: drawer 80, ink 85, dock 90, tooltip 95, click spark 96. */
@@ -4844,6 +4917,7 @@ body.past-hero .sel { opacity: 0; }
   touch-action: none;
   transform:
     translate3d(var(--x, 0px), var(--y, 0px), 0)
+    translateY(var(--float, 0px))
     translateY(var(--lift, 0px))
     rotate(var(--r, 0deg))
     scale(var(--sx, 1), var(--sy, 1))
@@ -5590,4 +5664,1515 @@ body.past-hero .sel { opacity: 0; }
     --sp-7: 3rem;       /*  48px */
     --sp-8: 4.25rem;    /*  68px */
   }
+}
+
+/* ==========================================================================
+   30. THE PHONE AND THE TABLET  —  home page
+   Desktop is the source of truth and is not touched below. Every rule here
+   sits inside a max-width query, so at 1280 and above the cascade is byte for
+   byte what it was.
+
+   The tiers, from the scale in :root:
+     ≥ 90rem / 1440   desktop      untouched
+       80rem / 1280   laptop       untouched
+       64rem / 1024   tablet       recomposed
+       48rem /  768   mobile       recomposed
+       22.5rem / 360  small phone  display steps trimmed
+   ========================================================================== */
+
+/* --- 30a. the type scale for a phone --------------------------------------
+   A separate scale, not the desktop clamps read at a narrow width. Two things
+   move in opposite directions and that is the whole point of writing it out.
+
+   BODY GOES UP. 15px is comfortable on a monitor at arm's length and thin on a
+   phone held in one hand — and below 16px iOS zooms the viewport the moment a
+   field takes focus, and does not zoom back. 16px is the floor for that reason,
+   not for taste.
+
+   HEADINGS COME DOWN, HARD. --step-3 tops out at 56px, which is a wall across
+   390px. The hierarchy is preserved by keeping the ratio between the steps, not
+   by keeping their sizes. */
+@media (max-width: 48rem) {
+  :root {
+    --step--1: 0.8125rem;    /* 13px — captions, never 12 */
+    --step-0: 1rem;          /* 16px — body, the iOS zoom floor */
+    --step-05: 1.0625rem;    /* 17px */
+    --step-1: 1.375rem;      /* 22px */
+    --step-2: 1.75rem;       /* 28px */
+    --step-3: 2.125rem;      /* 34px */
+  }
+}
+
+/* At 360 the display steps are still a shade wide; body and captions are not
+   touched, because they are already at the floor and taking them below it is
+   the iOS-zoom bug again. */
+@media (max-width: 22.5rem) {
+  :root {
+    --step-1: 1.3125rem;     /* 21px */
+    --step-2: 1.5625rem;     /* 25px */
+    --step-3: 1.875rem;      /* 30px */
+  }
+}
+
+/* --- 30b. touch ------------------------------------------------------------
+   Hit areas, not sizes. Where a control is deliberately small — an ink swatch
+   is 19px because a larger dot stops reading as a swatch — the box it draws
+   stays exactly as designed and a transparent 44px pad is centred underneath
+   it. Nothing moves, nothing is redrawn, and a thumb finds it. */
+@media (pointer: coarse) {
+  /* `.tool:not(.tool--obj)`, and the exclusion is load-bearing. `.tool--obj` —
+     the pencil and the sticky note — is `position: absolute` a thousand lines
+     up, and a bare `.tool { position: relative }` here is the same specificity
+     later in the file, so it won every time the pointer was coarse: both
+     objects fell back into the flow, collapsed from 46px wide to 12, and the
+     note dropped 12px down the panel. It was invisible from a desk, because a
+     mouse never matches this query — it broke the dock on every phone and on
+     every touch tablet. The objects need no help from this rule in any case:
+     they are already positioned, so their hit pad below resolves against them.
+
+     AND `.mute` WAS THE SAME BUG, FOUND THE SAME WAY ONE PASS LATER.
+     It is `position: fixed; right: 20px; bottom: 20px` a thousand lines up, and
+     this rule outranked that on every touch device, so it dropped into the flow
+     as the last child of body — where `right: 20px` on a relatively positioned
+     element means "shift LEFT by twenty", and it landed at x = -20 with a third
+     of itself off the edge of the screen. That is the half-circle stuck to the
+     left margin beside the time slider. Like the objects above, it is already
+     positioned and needs nothing from this rule for its hit pad to resolve. */
+  .inks button,
+  .tool:not(.tool--obj),
+  .drawerpad button,
+  .tools__tab,
+  .tab,
+  .stack { position: relative; }
+
+  .inks button::after,
+  .mute::after,
+  .tool::after,
+  .drawerpad button::after,
+  .tools__tab::after,
+  .tab::after,
+  .stack::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+    background: transparent;   /* a surface, never a mark */
+  }
+
+  /* Links that own a whole row get the whole row, width included — a footer
+     link occupying a line should be tappable across that line, not just across
+     its word. Height alone left them at 37x44. */
+  .foot li > a {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+  }
+  .row { min-height: 44px; }
+
+  /* the email is the largest thing in the footer and was a 23px target */
+  .foot__mail {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* and the buttons get it outright, since they have room */
+  .btn { min-height: 44px; }
+}
+
+/* --- 30c. the phone's navigation ------------------------------------------
+   Fixed bar, hamburger, full-screen sheet. Desktop keeps its row; the two are
+   mutually exclusive and the switch is here, not in JS. */
+.mbar, .msheet { display: none; }
+
+@media (max-width: 48rem) {
+  /* `body[data-page='home'] .nav` sets display on the hero, so hiding the row
+     needs a selector of the same weight — a bare `.nav` loses and the links
+     stay on screen underneath the sheet. */
+  .nav,
+  body[data-page] .nav { display: none; }
+
+  .mbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 94;
+    height: calc(52px + var(--sa-top));
+    padding: var(--sa-top) calc(var(--sa-right) + 0.75rem) 0 calc(var(--sa-left) + 0.75rem);
+    pointer-events: none;              /* only the button is live */
+  }
+
+  /* --- THERE IS NO BAR ANY MORE, ONLY A BUTTON ----------------------------
+     What used to be here was a translucent strip across the top of the screen
+     with a 10px backdrop-filter behind it. The intention was that the page's
+     dotted field would still read through; what it did in practice was smear
+     every line of text into grey mush on the way underneath, with a hard
+     horizontal seam at the bottom edge where the blur stopped. It read as a
+     rendering fault rather than as a surface, and the busier the page behind
+     it, the worse it looked.
+
+     A blurred strip is also the most expensive thing a fixed element can be on
+     a page that scrolls: a backdrop-filter makes the compositor re-snapshot and
+     re-blur everything behind it on every frame that might have changed, which
+     while scrolling is all of them.
+
+     So the strip is gone and the button carries its own surface — an opaque
+     paper disc with a hairline and a soft shadow, which is exactly the
+     treatment the toolbar already uses at the opposite corner of the same
+     screen. Nothing is smeared, because nothing passes under anything: text
+     scrolls past a small solid object instead of beneath a pane of frosted
+     glass. */
+  .mbar__btn {
+    display: grid;
+    place-content: center;
+    gap: 5px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid rgba(20, 16, 12, 0.06);
+    border-radius: 50%;
+    background: var(--paper);
+    box-shadow:
+      0 2px 5px rgba(20, 16, 12, 0.08),
+      0 10px 24px -12px rgba(20, 16, 12, 0.22);
+    pointer-events: auto;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      transform 200ms var(--ease),
+      background-color 220ms var(--ease),
+      border-color 220ms var(--ease),
+      box-shadow 220ms var(--ease);
+  }
+  .mbar__btn:active { transform: scale(0.9); }
+
+  /* Over the menu it is not an object sitting on the page any longer, so the
+     disc goes with the page. The delay matches the ink's: by then the panels
+     have carried something dark under it, and a paper disc fading out over
+     paper would only be visible as a flicker. */
+  .mbar.is-open .mbar__btn {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    transition:
+      transform 200ms var(--ease),
+      background-color 1ms linear 240ms,
+      border-color 1ms linear 240ms,
+      box-shadow 1ms linear 240ms;
+  }
+
+  /* Two bars, not three: they cross into the X. Nothing appears or disappears,
+     so the shape reads as one object turning rather than a swap. */
+  .mbar__bar {
+    display: block;
+    width: 18px;
+    height: 1.5px;
+    border-radius: 2px;
+    background: var(--ink);
+    transition: transform 420ms var(--spring-soft, var(--ease));
+  }
+  .mbar__btn.is-open .mbar__bar:first-child { transform: translateY(3.25px) rotate(45deg); }
+  .mbar__btn.is-open .mbar__bar:last-child  { transform: translateY(-3.25px) rotate(-45deg); }
+
+  /* THE BUTTON HAS TO SURVIVE THE PANELS PASSING UNDER IT.
+     It sits above the sheet (z 94 against 93) and does not move, so four
+     colours cross behind it in turn: the top strip of the screen goes page →
+     lavender → purple → violet → ink on the way in, and back the other way on
+     the way out. Its wash has to go and its ink has to invert somewhere in
+     there.
+
+     THE INK SWITCHES IN ONE STEP, NOT AS A CROSSFADE, and the timings are
+     different in each direction because the strip behind it is. A 120ms
+     crossfade puts a mid-grey line over a moving purple at about 1.4:1 — the
+     one thing here that would read as a bug rather than as a transition. A step
+     has no midpoint, so all it needs is to land at a moment when both the old
+     colour and the new one are legible, and the panels' measured times say when
+     that is: 240ms in, when purple has just reached the top (dark reads 3.5:1
+     on it, light 4.6:1), and 490ms out, when the strip has come back up to
+     lavender. */
+  .mbar .mbar__bar {
+    transition:
+      transform 420ms var(--spring-soft, var(--ease)),
+      width 420ms var(--spring-soft, var(--ease)),
+      background-color 1ms linear 490ms;
+  }
+  /* the lines also grow into the cross, so the shape changes size as well as
+     angle — a rotation on its own reads as a flip */
+  .mbar.is-open .mbar__bar {
+    width: 21px;
+    background: var(--paper);
+    transition:
+      transform 420ms var(--spring-soft, var(--ease)),
+      width 420ms var(--spring-soft, var(--ease)),
+      background-color 1ms linear 240ms;
+  }
+
+  /* --- the sheet is a stack, not a surface --------------------------------
+     `.msheet` itself paints nothing. It is the fixed frame that holds four
+     coloured panels and the content, and everything visible belongs to one of
+     those. No background here on purpose: a background on the frame would be
+     the one thing on screen that cannot slide, and it is exactly what would
+     show as a flash at the seams between panels. */
+  .msheet {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 93;
+    /* the panels overspill the frame by 12% at each edge; nothing escapes */
+    overflow: hidden;
+    /* The sheet comes out of `display: none` on pointerdown, a frame or two
+       before the tap it belongs to, so its first layout is not charged to the
+       first frame of the animation. Until it moves it is inert — otherwise a
+       press that turned into a scroll would leave an invisible full-screen
+       element swallowing the page's taps. */
+    pointer-events: none;
+  }
+  .msheet[hidden] { display: none; }
+  .msheet.is-moving,
+  .msheet.is-lit { pointer-events: auto; }
+
+  .msheet__lay {
+    position: absolute;
+    left: 0; right: 0;
+    top: -12%;
+    height: 124%;
+    /* JS owns the transform. This is only the resting place — above the top
+       edge — for the frame before the first one is written. */
+    transform: translate3d(0, -100%, 0);
+    /* the panels are the only thing moving, and they move on the compositor */
+    backface-visibility: hidden;
+  }
+  .msheet.is-moving .msheet__lay { will-change: transform; }
+
+  /* Lavender, purple, deep violet, ink — one darkening cascade, and every step
+     of it is already in the site: the violet is the colour that means "the
+     current thing" on the phone's toolbar, and the last is the site's own ink
+     rather than a colour invented for the menu.
+     Ordered so the LAST panel is the one the menu is written on, which is what
+     makes the close worth watching: the panels lift in reverse, so the ink
+     gives way to violet, then purple, then lavender, then the page. */
+  .msheet__lay--a { background: #ede9fe; }
+  .msheet__lay--b { background: #7c3aed; }
+  .msheet__lay--c { background: #4c1d95; }
+  .msheet__lay--d { background: var(--ink); }
+
+  /* --- what is written on it ---------------------------------------------
+     Above all four panels, and it only lights once the fourth has landed — so
+     the menu is never seen arriving on a surface that is still moving. */
+  .msheet__body {
+    position: relative;
+    z-index: 5;
+    /* NOT PAINTED AT ALL UNTIL IT IS WANTED.
+       Every row in here starts at `opacity: 0` with a 6px blur on it, and an
+       invisible element with a filter is still a composited layer that gets
+       painted on every frame. That did not matter while the pages were 35px
+       rows; at 41px, tightly leaded, over a full-screen stack, it cost the
+       panel animation seven frames out of thirty-eight — the springs starved
+       badly enough that two of the four panels landed on the same frame.
+       `visibility` removes it from the paint entirely, and unlike `display` it
+       can be timed: it flips on at the instant the class lands, and on the way
+       out it waits the 140ms the content takes to fade before switching off. */
+    visibility: hidden;
+    transition: visibility 0s linear 160ms;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: calc(var(--sa-top) + 4.5rem) calc(var(--sa-right) + 1.75rem)
+             calc(var(--sa-bottom) + 1.75rem) calc(var(--sa-left) + 1.75rem);
+    color: var(--paper);
+  }
+
+  /* Every child rises through the same three properties on the same curve, and
+     the only thing that differs is when — `--i` is set once per element in JS,
+     counting down the sheet in reading order. The blur is what stops it looking
+     like six things fading in: it makes each line resolve rather than appear. */
+  .msheet__brand,
+  .msheet__eyebrow,
+  .msheet__list > a,
+  .msheet__soc > li,
+  .msheet__cta {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+    filter: blur(6px);
+    transition:
+      opacity 380ms var(--ease),
+      transform 420ms var(--spring-soft, var(--ease)),
+      filter 380ms var(--ease);
+    transition-delay: calc(var(--i, 0) * 58ms);
+  }
+  .msheet.is-lit .msheet__body { visibility: visible; transition: visibility 0s; }
+
+  .msheet.is-lit .msheet__brand,
+  .msheet.is-lit .msheet__eyebrow,
+  .msheet.is-lit .msheet__list > a,
+  .msheet.is-lit .msheet__soc > li,
+  .msheet.is-lit .msheet__cta {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  /* Going out is not the same shape as coming in. It is quick and it is
+     together — the panels are what the eye should be following on the way
+     back, so the content gets out of their way rather than performing. */
+  .msheet:not(.is-lit) .msheet__brand,
+  .msheet:not(.is-lit) .msheet__eyebrow,
+  .msheet:not(.is-lit) .msheet__list > a,
+  .msheet:not(.is-lit) .msheet__soc > li,
+  .msheet:not(.is-lit) .msheet__cta {
+    transition-duration: 140ms;
+    transition-delay: 0ms;
+  }
+
+  .msheet__brand {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(247, 246, 243, 0.42);
+  }
+
+  /* --- THE PAGES ARE A MASTHEAD, NOT A LIST -------------------------------
+     Two columns: a small standing word, and the pages set past it. The block
+     sits in the top third and the room is left underneath.
+
+     The version this replaces put the four rows at the BOTTOM of the screen
+     with a rule under each, on the reasoning that a thumb reaches the bottom
+     third. That reasoning is right for a settings screen and it is exactly what
+     made this one look like a settings screen: four evenly ruled rows of equal
+     weight, arriving after a second of choreography, with the entire upper half
+     of the phone empty above them. Nothing in it said whose site it was.
+     Anchored high, indented past a standing word, tightly leaded, with no rules
+     at all, the same four words read as a masthead. It is the same quantity of
+     empty space — it has moved to the other side of the type, which is the
+     difference between a page that was composed and a page that ran out. The
+     two rows that exist to be tapped, the links and the button, stay where a
+     thumb can reach them. */
+  .msheet__nav {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    /* The gap is doing the work the indent does in a masthead, so it is wide —
+       but it is bounded by the longest word that has to survive beside it. At
+       12vw on a 390 the pages start about a quarter of the way across and
+       "Writing" still has 9px to spare; much past that and the longest label
+       wraps, which would undo the whole block. */
+    column-gap: clamp(1.5rem, 12vw, 4rem);
+    margin-top: clamp(1.5rem, 6vh, 3.5rem);
+  }
+
+  /* The standing word, set on the first line's cap rather than on its box: a
+     13px label aligned to the top of a 41px line box floats well above the
+     letter it is meant to stand beside. */
+  .msheet__eyebrow {
+    margin: 0;
+    padding-top: 0.62em;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: rgba(247, 246, 243, 0.42);
+  }
+
+  .msheet__list { display: flex; flex-direction: column; }
+
+  /* Big, and tightly leaded. The size is what carries the voice — a full-screen
+     menu that arrives with that much ceremony and then shows four small ruled
+     rows looks unfinished. 10.5vw fills a 390 to about 41px and stops climbing
+     at 52 so it cannot run off the widest phone.
+     The leading is the other half of it: at 0.98 the four words lock into one
+     block of type instead of four separate rows, which is what the rules used
+     to be doing badly. The vertical padding is what keeps a 41px line a 48px
+     target without putting air between the lines. */
+  .msheet__link {
+    display: flex;
+    align-items: center;
+    /* The floor, and it costs nothing where it is not needed. A 41px line with
+       this padding is a 48px row on a 390, so the declaration is inert there;
+       on a 320 the type drops to 34 and the row would come out at 39, which is
+       under the target size everything else on this phone was given. It lifts
+       only that case, and only to the minimum. */
+    min-height: 44px;
+    padding-block: 0.09em;
+    font-size: clamp(1.875rem, 10.5vw, 3.25rem);
+    font-weight: 620;
+    letter-spacing: -0.038em;
+    line-height: 0.98;
+    color: rgba(247, 246, 243, 0.62);
+    text-decoration: none;
+  }
+  .msheet__link[aria-current='page'] { color: var(--paper); }
+  /* The press is on the row, so the whole line answers the thumb. Scoped under
+     `.is-lit` because that rule is what holds the row's transform at `none` —
+     an unscoped `:active` loses to it and the press does nothing. */
+  .msheet.is-lit .msheet__link:active {
+    color: var(--paper);
+    transform: scale(0.985);
+    transition-duration: 90ms;
+  }
+
+  /* pushed to the bottom of the sheet: the masthead holds the top, and the
+     space between them is the composition rather than a gap */
+  .msheet__soc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: auto 0 1.25rem;
+    padding: 0;
+    list-style: none;
+  }
+  .msheet__soc a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 0.9375rem;
+    border: 1px solid rgba(247, 246, 243, 0.16);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(247, 246, 243, 0.78);
+    text-decoration: none;
+  }
+  .msheet__soc a:active { background: rgba(247, 246, 243, 0.1); }
+
+  .msheet__cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    border-radius: 999px;
+    background: #7c3aed;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-decoration: none;
+    transition: transform 200ms var(--ease);
+  }
+  .msheet.is-lit .msheet__cta:active { transform: scale(0.97); }
+
+  /* Pinned, not just overflow-hidden: iOS Safari loses the scroll position
+     with overflow alone, and the reader comes back to the top of the page. */
+  body.m-locked {
+    position: fixed;
+    left: 0; right: 0;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* the hero's own content starts below the bar */
+  body[data-page='home'] .canvas__intro { padding-top: calc(var(--sa-top) + 3.25rem); }
+}
+
+@media (max-width: 48rem) and (prefers-reduced-motion: reduce) {
+  /* The panels do not travel at all under reduced motion — JS puts them
+     straight at their resting places and never starts the loop, so what is left
+     to neutralise here is the CSS: the content's rise, its blur, and the
+     hamburger's spring. The menu still works exactly the same; it simply
+     appears. */
+  .mbar .mbar__bar,
+  .mbar.is-open .mbar__bar,
+  .msheet__brand,
+  .msheet__list > a,
+  .msheet__soc > li,
+  .msheet__cta { transition-duration: 1ms; transition-delay: 0ms; }
+
+  .msheet__brand,
+  .msheet__list > a,
+  .msheet__soc > li,
+  .msheet__cta { transform: none; filter: none; }
+}
+
+/* --- 30d. the hero, kept alive --------------------------------------------
+   Desktop's hero breathes because the dot field drifts with the cursor. A
+   phone has no cursor, so that motion simply never happens and the hero goes
+   completely still — which is the difference between an immersive page and a
+   screenshot of one.
+
+   So the objects float instead. Two things make this safe rather than a fight
+   with the drag code:
+
+     · it animates --float, a registered custom property, NOT `transform`. Drag
+       owns the transform and rewrites --x/--y on every pointer event; a
+       keyframe on the same property would either be overwritten or would throw
+       the object across the screen. --float is one more term in the same
+       transform chain and the two never touch.
+     · @property is what makes a length interpolate at all. Without the
+       registration the value would jump between keyframes rather than glide,
+       and in a browser that does not support it the variable stays at its
+       initial 0px and the object simply sits still — which is a fine outcome.
+
+   6px over 7s, offset per object so they are never in step. It reads as drift
+   rather than as animation. */
+@property --float {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes heroFloat {
+  0%, 100% { --float: 0px; }
+  50%      { --float: -6px; }
+}
+
+@media (max-width: 48rem) {
+  .peelstk {
+    animation: heroFloat 7s ease-in-out infinite;
+    animation-delay: var(--float-delay, 0s);
+  }
+  .peelstk:nth-of-type(2) { --float-delay: -2.4s; }
+  .peelstk:nth-of-type(3) { --float-delay: -4.1s; }
+  /* the moment it is in your hand, or being transformed, it holds still */
+  .peelstk.is-drag, .peelstk.is-xf, .peelstk.is-sel { animation-play-state: paused; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peelstk { animation: none; }
+}
+
+/* --- 30e. the sections below the hero -------------------------------------
+   The showcase and the index already fall to one column on their own — what
+   they lack on a phone is measure and air, not a different structure. These
+   are spacing and reading-width rules, not a relayout.
+
+   The footer is the exception: a three-column grid built for a wide screen,
+   which at 390px becomes two 161px columns with the email spanning them. */
+@media (max-width: 48rem) {
+  /* Line length. Prose that runs the full width of a phone is uncomfortable
+     to read at any size; the gutter does most of the work, this caps the rest. */
+  .story p,
+  .story .line,
+  .foot__note { max-width: 34ch; }
+
+  /* one column, in reading order, with the email first as it is on desktop */
+  .foot {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5, 1.75rem);
+  }
+  .foot__col { min-width: 0; }
+
+  /* the two link columns still sit side by side — they are short lists, and
+     stacking them would push the page down for no gain */
+  .foot__cols,
+  .foot > .foot__col { break-inside: avoid; }
+
+  /* Generous, consistent breathing room. One value, from the spacing scale,
+     rather than each section carrying its own guess. */
+  .story { padding-block: var(--sp-7, 3rem); }
+  .showcase { padding-block: var(--sp-6, 2.25rem); }
+  .index { padding-block: var(--sp-6, 2.25rem); }
+}
+
+/* --- 30f. images -----------------------------------------------------------
+   Proportional, never stretched, never overflowing their column. Scoped to
+   content imagery: the hero cut-outs, the tool illustrations and the pixel art
+   all carry their own sizing, and a blanket `max-width: 100%` is exactly the
+   reset that once shrank the sticker artwork to a third of its size. */
+@media (max-width: 48rem) {
+  .shotimg,
+  .hl__shot img,
+  .tick__card img,
+  .fig img,
+  .card img,
+  .showcase img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;      /* scale, do not crop */
+  }
+}
+
+/* --- 30g. motion -----------------------------------------------------------
+   Adapted, not removed. The spring stays — it is most of what makes the page
+   feel built rather than generated. What comes down is travel: a 40px entrance
+   crossing a 1440px screen is a flourish, and the same 40px on a 390px screen
+   is a third of the viewport moving, which reads as jank however smooth it is. */
+@media (max-width: 48rem) {
+  :root {
+    --rv-rise: 12px;          /* was ~24px */
+    --marq-speed: 0.6;        /* the ticker eases off on a small screen */
+  }
+  .rv { --rv-blur: 8px; }     /* less blur to resolve = less to composite */
+}
+
+/* ==========================================================================
+   31. THE PHONE'S TOOLBAR  —  the same dock, on a button
+   ==========================================================================
+
+   The dock is 286px tall and pinned to the middle of the right edge. On a 390px
+   screen that is 40% of the viewport standing across the hero, half of it off
+   the side, exactly where a right thumb is trying to scroll. It has to fold
+   away on a phone.
+
+   WHAT IT FOLDS TO IS A BUTTON, NOT A DIFFERENT TOOLBAR. Open it and what comes
+   up is the dock itself — the same 48px panel, the same two hairlines, the same
+   pencil and sticky note sliding out of their slots, the same plus and the same
+   undo, in the same order at the same sizes. Nothing here redraws a tool. The
+   only new object on the page is the button, and all it does is decide whether
+   the dock is up.
+
+   That is the same trade the desktop already makes: past the hero the dock
+   collapses to the edge tab and the tab brings it back. A tab hanging off the
+   side of a phone is a 26px target under the scroll thumb, so the phone gets a
+   corner button instead. Two affordances, one toolbar.
+
+   767.98px, not 48rem. The brief puts the tablet at 768 and up, and 48rem would
+   claim 768 itself — an iPad in portrait is exactly that wide. This is the
+   exclusive complement of the tablet floor, not a thirteenth breakpoint; at 768
+   and above every rule below is inert and the dock is the dock, byte for byte.  */
+
+/* Off by default, so this is additive: at 768 and above the button does not
+   exist and nothing in section 24 is overridden. */
+.fab,
+.fab__veil { display: none; }
+
+@media (max-width: 767.98px) {
+
+  /* --- the swap ---------------------------------------------------------- */
+
+  /* the edge tab is what the DESKTOP folds to; the phone folds to the button */
+  .tools__tab { display: none; }
+  /* the welcome bubble is a desktop nicety with nowhere to sit beside a corner
+     button; the shortcut flash stays, because Undo still has to say it did
+     something */
+  .tools__say:not(.tools__flash) { display: none; }
+
+  .tools {
+    /* 20px from both edges, plus whatever the device reserves for its rounded
+       corners, its home indicator or its gesture bar — so the button is never
+       against the absolute edge and never under the chrome */
+    right: calc(20px + var(--sa-right));
+    bottom: calc(20px + var(--sa-bottom));
+    left: auto;
+    top: auto;
+    translate: none;
+  }
+
+  .fab { display: grid; }
+  .fab__veil { display: block; }
+
+  .tools__flash {
+    top: 50%;
+    right: calc(100% + 12px);
+  }
+
+  /* --- the dock, unchanged, moved ---------------------------------------- */
+
+  /* Lifted out of the flow so the button stays put: `.tools` is pinned by its
+     bottom edge, and a 286px panel in the flow above the button would push the
+     button 286px up the screen. Absolute instead, hung off the top of it. */
+  .tools__panel {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 16px);
+  }
+
+  /* And drawn exactly as the desktop draws it. An older rule narrows the panel
+     to 44px and pads it below 46rem, which shifts every one of the measured
+     offsets inside it — the pencil's tip, the note's edge, both hairlines. The
+     whole point of this section is that the phone gets the same object, so the
+     measurements are restored. */
+  .tools__panel {
+    width: var(--p-w);
+    padding: 0;
+    border-radius: 12px;
+  }
+  [data-tool-btn='select'] { width: 32px; height: 32px; }
+
+  /* Visibility moves from the dock's own scroll state to the button. `.tools`
+     is held open on a phone (see Rack.applyScope) so that placing, drawing and
+     the ink layer keep the one condition they test for — which would otherwise
+     leave the panel permanently on screen. Same specificity as the rule it
+     replaces, later in the file, so it wins by order rather than by weight. */
+  .tools.is-open .tools__panel {
+    opacity: 0;
+    /* it grows out of the button's own corner, rather than arriving from the
+       edge of the screen — one object opening, not two objects appearing */
+    transform: scale(0.9) translateY(10px);
+    transform-origin: 100% 100%;
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+      opacity 180ms var(--ease),
+      transform 420ms var(--spring),
+      visibility 0s linear 420ms;
+  }
+
+  .tools.is-dock .tools__panel {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    visibility: visible;
+    transition:
+      opacity 160ms var(--ease),
+      transform 460ms var(--spring),
+      visibility 0s;
+  }
+
+  /* The sticker drawer hangs off the dock's left edge on a desktop, centred on
+     a 286px panel. Here it keeps the edge and takes the panel's bottom instead
+     of its middle, because the panel is now anchored from below. */
+  .drawerpad {
+    /* 48 + 8: the panel's width and the gap the desktop already leaves. Written
+       out rather than read from --p-w, because that token is declared on the
+       panel and this is its sibling — the var would resolve to nothing, take
+       the whole declaration down with it, and drop the drawer straight back on
+       top of the dock. */
+    right: 56px;
+    left: auto;
+    top: auto;
+    bottom: calc(100% + 16px);
+    margin-right: 0;
+    transform-origin: 100% 100%;
+    /* Two columns. A single file of sprites is eight rows long and climbed most
+       of the hero; two columns halve that for the same reach. */
+    --pad-cell: 3rem;
+    --pad-rows: 4;
+    grid-template-columns: repeat(2, 1fr);
+    width: calc(var(--pad-cell) * 2 + var(--pad-gap) + var(--pad-pad) * 2);
+    max-height: min(38vh, calc(100dvh - 18rem));
+    transform: translateY(8px) scale(0.94);
+  }
+  /* the base rule keeps a -50% in both states, for a drawer centred on a 286px
+     dock; there is no centring left to preserve */
+  .tools.has-pad .drawerpad { transform: none; }
+
+  /* --- the button -------------------------------------------------------- */
+
+  /* Width is `auto` against a 64px floor rather than a flat 64px, and that is
+     what makes the status pill possible: the label below animates its own
+     max-width from 0, the button's width follows it continuously, and the
+     circle stretches into a pill instead of snapping to a new box. */
+  .fab {
+    position: relative;
+    grid-auto-flow: column;
+    align-items: center;
+    justify-content: center;
+    /* 48, which is the dock's width. The button and the panel it opens are one
+       column stacked in the corner, the same width top to bottom, rather than a
+       disc parked under a narrower object — 64px made it the largest thing in
+       the corner and it read as the subject rather than the control. It is also
+       still a 48px touch target, four over the minimum. */
+    min-width: 48px;
+    width: auto;
+    height: 48px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    /* Filled, in the accent. A white disc on a #f7f6f3 page is a white shape on
+       an off-white page — it has a shadow and nothing else, and at 64px across
+       with a 22px glyph inside it read as an empty plate. This is the only
+       floating control on a phone and the only thing on the page that is purely
+       an affordance, so it takes the one colour the site reserves for exactly
+       that: the same #7c3aed as the armed tool in the dock.
+
+       The rule the rest of this section follows from: purple is the control,
+       charcoal is the status. The dock's own speech bubbles are already #2c2c2e
+       — status has been charcoal on this site all along. */
+    background: #7c3aed;
+    /* a wide accent-tinted glow to float it, a neutral one to seat it */
+    box-shadow:
+      0 10px 24px -8px rgba(124, 58, 237, 0.58),
+      0 2px 5px rgba(20, 16, 12, 0.10);
+    color: #ffffff;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      min-width 380ms var(--spring),
+      height 380ms var(--spring),
+      padding 380ms var(--spring),
+      background 240ms var(--ease),
+      color 240ms var(--ease),
+      box-shadow 300ms var(--ease),
+      transform 380ms var(--spring);
+  }
+
+  /* 16px, and the number comes from the dock rather than from the circle it
+     sits in. The dock's own Move chip draws this exact cursor at 15px, and when
+     the dock is up the two are on screen together, sixteen pixels apart — so
+     sizing this one as a fraction of its button made the same glyph appear at
+     two different sizes in one column.
+
+     A pixel over the dock's 15 rather than equal to it: this one is white on a
+     filled disc, and a light mark on a dark ground reads slightly smaller than
+     the same mark drawn dark on white. */
+  .fab__ico {
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+  }
+  .fab__ico svg { width: 16px; height: 16px; }
+
+  .fab__say {
+    max-width: 0;
+    margin-left: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    opacity: 0;
+    transition:
+      max-width 380ms var(--spring),
+      margin 380ms var(--spring),
+      opacity 200ms var(--ease);
+  }
+
+  /* a fine pointer inside this range — a small window on a laptop, a tablet in
+     a stand — still gets the lift; a thumb never sees it */
+  :root:not(.hover-cold) .fab:hover {
+    background: #6d28d9;
+    box-shadow:
+      0 14px 30px -8px rgba(124, 58, 237, 0.68),
+      0 2px 5px rgba(20, 16, 12, 0.10);
+    transform: translateY(-2px);
+  }
+  /* 96% and back on the spring, over the 97.5% every other button gets: this
+     one is 64px and needs a deeper dip to register as pressed at that size */
+  .fab.is-press { transform: scale(0.96); transition-duration: 110ms; }
+
+  /* The dock is up, so the button is the thing that puts it away — pressed in
+     rather than floating out: a deeper purple and the glow pulled back in. */
+  .tools.is-dock .fab {
+    background: #5b21b6;
+    box-shadow:
+      0 5px 13px -6px rgba(124, 58, 237, 0.52),
+      0 1px 3px rgba(20, 16, 12, 0.10);
+  }
+
+  /* --- the status pill --------------------------------------------------- */
+
+  /* A live tool folds the dock away, and the button becomes the thing telling
+     you what is in your hand — and the way to put it down. */
+  /* Charcoal, which is what everything on this site that is telling you
+     something is already made of — the welcome line and the shortcut flash are
+     both #2c2c2e. Keeping the pill purple would have made purple mean both "tap
+     me" and "here is what you are holding", and the two states would have
+     differed only in outline. */
+  /* Height is inherited now that the circle is 48 too, so the pill grows
+     sideways out of the circle and the dock above it never moves. */
+  .tools.is-live .fab {
+    padding: 0 0.9375rem 0 0.8125rem;
+    background: #1f1c19;
+    color: #ffffff;
+    box-shadow:
+      0 10px 24px -8px rgba(20, 16, 12, 0.42),
+      0 2px 5px rgba(20, 16, 12, 0.08);
+  }
+  :root:not(.hover-cold) .tools.is-live .fab:hover {
+    background: #2c2823;
+    box-shadow:
+      0 14px 30px -8px rgba(20, 16, 12, 0.48),
+      0 2px 5px rgba(20, 16, 12, 0.08);
+  }
+
+  .tools.is-live .fab__say {
+    max-width: 10rem;
+    margin-left: 0.5rem;
+    opacity: 1;
+  }
+  /* The sticker tool leaves the dock up, and while the dock is up the button is
+     simply the button — no pill. Two reasons. The dock already says which tool
+     is live, on the same chip the desktop lights up, so a pill beside it is the
+     same fact twice. And the pill is 16px shorter than the circle, which with
+     the dock anchored to the top of this button would have slid the whole dock
+     down the screen the moment you tapped Add. */
+  .tools.is-dock.is-live .fab {
+    padding: 0;
+    background: #5b21b6;
+    color: #ffffff;
+    box-shadow:
+      0 5px 13px -6px rgba(124, 58, 237, 0.52),
+      0 1px 3px rgba(20, 16, 12, 0.10);
+  }
+  .tools.is-dock.is-live .fab__say { max-width: 0; margin-left: 0; opacity: 0; }
+
+  /* --- dismissal --------------------------------------------------------- */
+
+  /* Behind the dock and inside `.tools`, both deliberately. Behind, so it never
+     eats a tap meant for a tool; inside, because the canvas places a note
+     wherever you press and its listener already skips anything within the dock
+     — so folding it away by tapping the page cannot also drop a note where you
+     tapped. It is inert until the dock is up, so it can never be the reason the
+     page stops scrolling. */
+  .fab__veil {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: transparent;
+    pointer-events: none;
+  }
+  .tools.is-dock .fab__veil { pointer-events: auto; }
+
+  /* --- the ink palette ----------------------------------------------------- */
+
+  /* It flies out to the LEFT of the dock on a desktop, alongside the pen. Here
+     the pen folds the dock away — you armed it to reach the canvas — so the
+     palette has nowhere to be alongside, and it becomes a row above the button
+     instead, level with the "Drawing" pill that replaced the dock. */
+  .inks {
+    right: 0;
+    left: auto;
+    top: auto;
+    bottom: calc(100% + 12px);
+    margin-right: 0;
+    grid-auto-flow: column;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    transform-origin: 100% 100%;
+    transform: translateY(8px) scale(0.92);
+  }
+  /* 20px is a swatch; 26 is a swatch you can hit with a thumb without it
+     starting to read as a button */
+  .inks button { width: 26px; height: 26px; }
+
+  /* the two can only meet via a keyboard shortcut, but a row of swatches laid
+     over the dock is not a state worth having */
+  .tools.is-dock .inks { opacity: 0; pointer-events: none; }
+
+  /* --- the rest of the hero ---------------------------------------------- */
+
+  /* The rotating hint runs along the bottom of the hero and the button now sits
+     at the end of that line, so the hint gets a right edge to wrap against
+     rather than sliding underneath it. */
+  .canvas__hint {
+    /* 20 to the screen edge plus the button's own 48 */
+    right: calc(68px + var(--sa-right));
+    max-width: 24ch;
+  }
+
+  /* --- drawing under a finger -------------------------------------------- */
+
+  /* The pen has to accept a finger on a phone, because there is no second
+     pointer — and a finger only draws if the browser stops treating the press
+     as the start of a scroll. This is the smallest surface that can be true of:
+     the drawing surface itself, and only while the pen is actually armed. The
+     bar, everything below the hero and the whole of every other page keep
+     scrolling normally, and putting the pen down hands the hero back. */
+  body[data-tool='marker'] .canvas { touch-action: none; }
+}
+
+/* ==========================================================================
+   32. THE PHONE'S PROJECTS  —  the same card, uncollided
+   ==========================================================================
+
+   The showcase is a grid of preview panels, each with a caption under it. The
+   caption is a two-column row: the title on the left, `meta` pushed to the
+   right with `margin-left: auto` and set `text-align: right`.
+
+   That row is the only thing about this section that does not survive a phone.
+   At 390px the title needs two lines and the meta needs two lines, and they
+   take them SIDE BY SIDE — "Designing the Digital / Identity of Cypherock X0"
+   against a ragged-right "Product identity, / 2026, Bengaluru" — so the two
+   read as one collided block with a hole down the middle. Right-aligned text
+   in a 150px column is hard to read on its own; alongside a wrapping title it
+   stops being a caption at all.
+
+   The fix is the row, and only the row: the two parts stack instead of sitting
+   beside each other. Same panel, same 4px radius, same 1.45 frame, same
+   scroll-driven entrance, same type at the same sizes and the same colours.
+   Nothing here is a mobile design — it is the desktop card with its caption
+   given the second line it needs.
+
+   767.98px, as in section 31: at 768 and above every rule here is
+   inert, and the caption is the row it has always been.                     */
+
+@media (max-width: 767.98px) {
+  .wcard__meta {
+    flex-direction: column;
+    align-items: flex-start;
+    /* the 1rem that separated two columns is far too much between two stacked
+       lines — they belong to each other */
+    gap: 0.125rem;
+  }
+
+  /* `margin-left: auto` is what pushed the meta to the far side of the row.
+     In a column it pushes nothing, but it stays explicit here so the rule
+     reads as the reversal of the one above it rather than a leftover. */
+  .wcard__tags {
+    margin-left: 0;
+    text-align: left;
+  }
+}
+
+/* ==========================================================================
+   33. THE PHONE'S CASE STUDIES
+   ==========================================================================
+
+   Opening a project on a phone gave you the desktop study at desktop width:
+   every heading, paragraph, block and figure 960px wide inside a 390px panel,
+   with the right two thirds of every line off the screen.
+
+   ONE CAUSE, INHERITED BY EVERYTHING. `.drawer__study` is a two-column grid
+   that collapses to `grid-template-columns: 1fr` below 60rem. `1fr` is
+   shorthand for `minmax(auto, 1fr)`, and that `auto` minimum is the largest
+   min-content contribution of anything in the track. One block inside the
+   study cannot get narrower than 960px, so the track cannot either — and every
+   descendant then stretches to the track. Nothing else was wrong; there was one
+   number, and a thousand elements repeating it.
+
+   `minmax(0, 1fr)` removes the automatic minimum, so the track is the width of
+   the panel and the study lays out against the screen. Anything that genuinely
+   cannot fit then overflows on its own, where it can be seen and dealt with,
+   instead of silently widening the page.                                    */
+
+@media (max-width: 767.98px) {
+  .drawer__study,
+  .proj__grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* THE ONE THING THAT DID NOT FOLLOW FROM THE TRACK.
+
+     A `shot` block writes its own caps inline, from the figures in content.js:
+     `max-width: 900px; max-height: 640px; width: auto`. With the width auto it
+     is the HEIGHT cap that sizes the image — 640px tall comes out 612px wide —
+     and a 900px max-width never binds inside a 350px column, so the picture
+     simply hangs out of the frame.
+
+     `!important` because the cap it has to beat is an inline style, and that is
+     the only thing that beats one. The height cap is left alone: once the width
+     is bounded the aspect ratio takes care of the rest. */
+  .shotimg { max-width: 100% !important; height: auto; }
+
+  /* A table of long phrases has a min-content width that no column on a phone
+     can satisfy, so it gets to scroll on its own rather than push the page —
+     the columns stay aligned and readable, and the reader swipes the table
+     instead of the article. No study carries one today; this is here so that
+     the first one to do so does not repeat the overflow above. */
+  .drawer__scroll table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* --- the section rail, kept on screen ---------------------------------- *
+
+     On a desktop the rail is a sticky column beside the article: you always
+     know which section you are in and you can jump to any other. Below 60rem it
+     becomes `position: static` and wraps to three lines at the very top, so it
+     scrolls away with the first paragraph and never comes back — the one piece
+     of navigation in a nine-section article, gone after two swipes.
+
+     WHY IT CANNOT SIMPLY BE MADE STICKY. `position: sticky` on a GRID ITEM can
+     only travel inside its own grid area. In the collapsed single-column grid
+     that area is exactly the rail's own height, so it comes unstuck the instant
+     it starts. The study is laid out as blocks here instead, which makes the
+     rail's containing block the whole article — the same relationship it has to
+     the content column on a desktop, arrived at differently.
+
+     AND WHY IT DOES NOT BLOCK THE READING. It is one line, not three: the chips
+     sit in a row that scrolls sideways, so nine sections cost 44px of height
+     instead of 132. It is the pattern the standalone project page already uses
+     at 46rem — a translucent blurred strip with a hairline under it — so this
+     is the same object in a second place rather than a new one. */
+  .drawer__study { display: block; }
+
+  .drawer__study > .drawer__rail,
+  .drawer__study--darktop .drawer__rail {
+    position: sticky;
+    /* NEGATIVE, by exactly the scroller's own top padding. A sticky element's
+       constraint rectangle is inset by that padding, so `top: 0` pinned the
+       rail 42px down the panel and left a strip above it that the article
+       scrolled through — a gap that looked like a rendering fault. Pulling it
+       back by the same amount puts it flush against the header bar. */
+    top: calc(-1 * var(--drawer-top));
+    z-index: 6;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    /* the chips carry 0.7rem of their own padding a side now */
+    gap: 0.15rem;
+    /* full bleed, so the strip reads as chrome across the panel rather than a
+       floating box — the negative margin matches the scroller's own padding and
+       is clipped by its overflow-x */
+    margin-inline: calc(-1 * clamp(1.25rem, 4vw, 2.5rem));
+    margin-bottom: 1.5rem;
+    padding: 0.7rem clamp(1.25rem, 4vw, 2.5rem);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .drawer__rail::-webkit-scrollbar { display: none; }
+
+  /* --- THE BAR FOLLOWS THE BAND ------------------------------------------- *
+
+     The desktop rail is transparent and recolours its links per band. Here the
+     bar has a background too, so BOTH have to move, and the hard part is that
+     they move in opposite directions: the surface goes light while the label
+     goes dark. Interpolate them over the same 320ms and their luminances cross
+     at almost exactly the halfway point — 245→35 against 18→255 meet at t=0.51
+     — so for one frame the label is the same brightness as the bar it is on.
+     That was the grey-on-grey in the screenshot, and matching the durations is
+     what causes it rather than what fixes it.
+
+     So the two are deliberately out of step. The surface glides over 320ms; the
+     ink waits 240ms and then switches in 80. By the time it moves, the bar is
+     four fifths of the way to its new tone, and the worst contrast at any
+     instant during the whole crossing is about 2.9:1 — on either side of the
+     switch, never at the crossing point, because there no longer is one.
+
+     ONE STATE, NOT TWO. Every colour here comes off `.is-dark` on the bar,
+     including the ink. The links' own `data-ink` — the per-band signal the
+     desktop uses — is explicitly overridden, because two systems colouring the
+     same text from two separately-timed sources is what broke twice. */
+  .drawer__study .drawer__rail,
+  .drawer__study--darktop .drawer__rail {
+    --bar: rgba(247, 246, 243, 0.92);
+    --bar-line: var(--line-soft);
+    --bar-ink: #6f6a63;
+    --bar-on: #14100c;
+
+    background: var(--bar);
+    border-bottom: 1px solid var(--bar-line);
+    transition:
+      background-color 260ms var(--ease),
+      border-color 260ms var(--ease);
+  }
+
+  .drawer__study .drawer__rail.is-dark,
+  .drawer__study--darktop .drawer__rail.is-dark {
+    --bar: rgba(18, 38, 51, 0.94);
+    --bar-line: rgba(255, 255, 255, 0.12);
+    --bar-on: #ffffff;
+  }
+
+  /* THE LABELS COME OFF THE BAR ENTIRELY, AND THAT IS THE WHOLE FIX.
+     Three attempts failed here for one reason, and it is arithmetic rather than
+     taste: text sitting directly on a surface that travels from light to dark
+     cannot stay readable. The surface passes through every luminance between
+     its two tones on the way — including the ink's own — so at some instant of
+     every crossing the two match. Measured: rgb(126,134,138) on
+     rgba(133,143,147) at 1.1:1. Crossfading the ink too only moves the
+     collision; a single fixed ink still gets run over (rgb(132,128,122) on
+     rgba(79,93,102), 2.4:1); staggering the timings cannot help because the
+     band crossing and the section change are independent triggers arriving at
+     arbitrary offsets.
+     So every chip carries its own opaque pill and the ink lives on that. The
+     pill and its ink are one fixed pair — 5.6:1, invariant, no transition, no
+     midpoint — and the bar is then free to glide between tones behind them,
+     which is the part that was asked to be smooth. It reads as a segmented
+     control: nearly invisible on the light bar, a light track on the dark one. */
+  .drawer__study .drawer__rail,
+  .drawer__study .drawer__rail.is-dark,
+  .drawer__study--darktop .drawer__rail,
+  .drawer__study--darktop .drawer__rail.is-dark {
+    --bar-chip: #efece6;
+    --bar-ink: #5f5a53;
+  }
+
+  /* THE SELECTED CHIP DOES NOT TAKE PART IN ANY OF IT.
+
+     Two staggered transitions was the second attempt and it was still wrong:
+     the bar flips when you cross a band and the selected chip moves when you
+     enter a section, two independent triggers at arbitrary offsets, so there is
+     always some pair of moments where a half-faded label sits on a half-faded
+     surface. The choreography cannot be tuned, because the events it is trying
+     to choreograph do not arrive together.
+
+     So the selected state stops being a text colour and becomes a filled pill —
+     white on #7c3aed, the same purple that means "the current thing" on the
+     phone's toolbar. Its contrast is 4.6:1 against its own background and owes
+     the bar nothing, at any point in any transition. The bar underneath is then
+     free to glide with the band, which is what was asked for.
+
+     EVERY chip carries the padding, not just the selected one, so the pill
+     appears and disappears without a single width changing — otherwise the strip
+     would re-lay-out and jump sideways each time the active section moved. */
+  .drawer__rail .rail__link,
+  .drawer__rail .rail__link[data-ink='light'],
+  .drawer__rail .rail__link[data-ink='dark'],
+  /* aria-current is set by the same scroll-spy and the desktop paints it white
+     on a light band — which over the light bar is white on off-white. It is
+     covered explicitly here rather than left to specificity. */
+  .drawer__rail .rail__link[data-ink='light'][aria-current='true'],
+  .drawer__rail .rail__link[data-ink='dark'][aria-current='true'] {
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: var(--bar-chip);
+    color: var(--bar-ink);
+    /* and the pill does not fade either. A purple fading up from transparent is
+       a half-purple, and white on half-purple over a light bar measures 2.4:1
+       at the midpoint. The chip is a scroll-spy — it is meant to answer "where
+       am I" instantly, so switching instantly is also the better interaction. */
+    transition: none;
+  }
+
+  .drawer__rail .rail__link.is-active,
+  .drawer__rail .rail__link[data-ink='light'].is-active,
+  .drawer__rail .rail__link[data-ink='dark'].is-active {
+    background: #7c3aed;
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  /* hover darkens the ink WITHIN the chip; --bar-on is the bar's own contrast
+     colour and would put white on the light pill when the bar goes dark */
+  :root:not(.hover-cold) .drawer__rail .rail__link:hover { color: #14100c; }
+
+  .drawer__rail .rail__link {
+    height: auto;
+    line-height: 1.6;
+    /* a chip that wraps is a chip that breaks the row */
+    white-space: nowrap;
+  }
+
+  /* The heading has to land BELOW the strip now, not underneath it. --nav-land
+     is the desktop allowance; the rail's own height is added to it here, so a
+     tap on a chip still puts the heading on the reading line. */
+  .drawer__scroll .sec__anchor { scroll-margin-top: calc(var(--nav-land) + 3rem); }
+}
+
+/* --- 34. the phone's footer ------------------------------------------------
+   Shorter by a whole column, and the links lie down.
+
+   PAGES GOES, and not because it is in the way. 48rem is the width at which the
+   header's row of links is replaced by the hamburger, so below it every page in
+   that column is already one tap away in the menu — the footer list is a second
+   copy of the same array on the same screen. It is hidden rather than removed:
+   the markup is what proves the header and the footer are generated from one
+   source, and a harness checks exactly that.
+
+   What is left is the address, the note, the copyright and the four marks. Four
+   marks do not want a column. */
+@media (max-width: 48rem) {
+  .foot__col--pages { display: none; }
+
+  /* The list is a grid; this turns its flow rather than replacing it.
+     The pull to the left is the padding inside the first square. Each mark is
+     centred in a 44px target, so its ink starts 14px in, and without it the row
+     of glyphs sits visibly indented from the heading above and from every other
+     left edge in the footer. The number is derived rather than guessed: half of
+     what is left of the target once the 16px mark is taken out of it. */
+  .foot__col--links ul {
+    grid-auto-flow: column;
+    justify-content: start;
+    gap: 0.375rem;
+    margin-left: calc((44px - 16px) / -2);
+  }
+
+  /* A SQUARE, NOT THE WIDTH OF A WORD.
+     On a desktop these anchors are as wide as the label they replaced, which is
+     what keeps their rows locked to the Pages column beside them. In a ROW that
+     same trick spaces them by how long each word happens to be — Twitter,
+     LinkedIn, GitHub, Email — and the four marks end up at four unequal
+     intervals. With Pages gone there is no rhythm left to match, so here they
+     become 44px squares: even spacing, and the target size the rest of the
+     phone got. The word stays hidden exactly as it was; it is only taken out of
+     the flow so that it stops setting the box.
+     The selector carries two classes so it outranks the `width: 100%` that the
+     touch-target pass gives every footer link — that rule is about the pointer
+     and lives in a `pointer: coarse` block, so source order cannot be relied on
+     to settle it. */
+  .foot li > a.foot__ico,
+  .foot__col--links a.foot__ico {
+    justify-content: center;
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+  }
+  .foot__ico__w { position: absolute; }
+  .foot__ico svg { left: 50%; transform: translate(-50%, -50%); }
+}
+
+/* --- 35. the phone's end of the page --------------------------------------
+   The paper detaches from the sky at the end: it insets 32px each side, rounds
+   its bottom corners and lifts a shadow. Three properties, and one of them is
+   ruinous here.
+
+   `.sheet` IS THE PAPER, AND THE PAPER CONTAINS THE ENTIRE PAGE. Changing its
+   horizontal margin re-lays-out every box in the document, and it was being
+   changed continuously while you scrolled into the footer. Measured with
+   Chromium's own layout counters, over a scroll from just above the footer to
+   the end: 48 layout passes costing 74ms, against 3 costing 1ms with the margin
+   held still. It is worse than one pass per write, because the frame loop reads
+   geometry from several modules and a write between two reads makes the second
+   one force its own pass. That stretch is exactly where the scrolling felt like
+   it was dragging.
+
+   So on a phone the inset does not animate. The other two do, and neither
+   touches layout — a corner radius and a shadow are paint. What is lost is 32px
+   of horizontal travel on a 390px screen, which was most of the gutter and read
+   as the page narrowing rather than as paper lifting; what is left is the lift
+   itself, which is the part that meant something.
+
+   Above 48rem nothing changes at all: that is the composition the desktop was
+   measured against, and it is not the one that was dragging. */
+@media (max-width: 48rem) {
+  .sheet { margin: 0; }
+}
+
+/* --- 36. the phone's floating controls -------------------------------------
+   With `.mute` positioned again it goes back to where it is declared — bottom
+   right, 20px in — which on a phone is underneath the toolbar's button, to the
+   pixel. Two round controls of different sizes stacked on the same corner.
+
+   So on a phone it moves up by one dock: 48px of button, a 10px gap, and the
+   safe area underneath both. The two now read as one column of controls on the
+   right, which is where the toolbar lives on a desktop anyway, and the time
+   slider keeps the left corner to itself. */
+@media (max-width: 48rem) {
+  .mute {
+    right: calc(20px + var(--sa-right));
+    bottom: calc(20px + var(--sa-bottom) + 48px + 10px);
+  }
+
+  /* and the slider clears the safe area on the other side */
+  .controls {
+    left: calc(20px + var(--sa-left));
+    bottom: calc(20px + var(--sa-bottom));
+  }
+}
+
+/* --- 37. the paper --------------------------------------------------------
+   The resume viewer. Built out of the site's own parts on purpose: the ink the
+   menu is written on, the corner radius the project cards use, the spring
+   everything else moves with. The point of showing the pages here rather than
+   linking to the file is that it should not feel like leaving. */
+.paper {
+  position: fixed;
+  inset: 0;
+  z-index: 96;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.75rem, 3vw, 2.5rem);
+  padding-top: max(clamp(0.75rem, 3vw, 2.5rem), var(--sa-top));
+  padding-bottom: max(clamp(0.75rem, 3vw, 2.5rem), var(--sa-bottom));
+}
+.paper[hidden] { display: none; }
+
+.paper__veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 16, 12, 0.62);
+  opacity: 0;
+  transition: opacity 320ms var(--ease);
+}
+.paper.is-up .paper__veil { opacity: 1; }
+
+/* One column, capped at a comfortable reading width for a letter page and
+   never taller than the room it has. `min-height: 0` because a grid item's
+   automatic minimum is its content, and without it a 1553px-tall stack of
+   pages pushes the window past the bottom of the screen instead of scrolling
+   inside it — the same auto-minimum that broke the case studies. */
+.paper__win {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 54rem);
+  max-height: 100%;
+  min-height: 0;
+  border-radius: clamp(12px, 2vw, 18px);
+  background: var(--ink);
+  box-shadow: 0 32px 80px -24px rgba(20, 16, 12, 0.55);
+  overflow: hidden;
+  opacity: 0;
+  transform: translate3d(0, 18px, 0) scale(0.985);
+  transition:
+    opacity 300ms var(--ease),
+    transform 520ms var(--spring-soft, var(--ease));
+}
+.paper.is-up .paper__win { opacity: 1; transform: none; }
+
+.paper__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex: 0 0 auto;
+  padding: 0.6875rem 0.6875rem 0.6875rem 1.125rem;
+  border-bottom: 1px solid rgba(247, 246, 243, 0.1);
+}
+.paper__title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(247, 246, 243, 0.52);
+}
+.paper__acts { display: flex; align-items: center; gap: 0.5rem; }
+
+.paper__get {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 0.875rem;
+  border: 1px solid rgba(247, 246, 243, 0.18);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(247, 246, 243, 0.82);
+  text-decoration: none;
+  transition: background-color 200ms var(--ease), color 200ms var(--ease);
+}
+:root:not(.hover-cold) .paper__get:hover {
+  background: rgba(247, 246, 243, 0.1);
+  color: var(--paper);
+}
+
+.paper__x {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(247, 246, 243, 0.7);
+  cursor: pointer;
+  transition: background-color 200ms var(--ease), color 200ms var(--ease);
+}
+.paper__x svg { width: 16px; height: 16px; }
+:root:not(.hover-cold) .paper__x:hover {
+  background: rgba(247, 246, 243, 0.1);
+  color: var(--paper);
+}
+
+/* The pages themselves. `overscroll-behavior: contain` is what stops a flick
+   at the end of the last page from carrying on into the page underneath —
+   the body is pinned while this is open, so without it the scroll simply
+   stops dead and feels broken. */
+.paper__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: grid;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  background: #0d0a08;
+}
+
+/* 100% of the width it is given, which is the whole point — a resume shown at
+   a third of the screen in a grey plugin box is the thing this replaces. */
+.paper__pg {
+  width: 100%;
+  border-radius: 6px;
+  background: var(--paper);
+  overflow: hidden;
+  box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.6);
+}
+.paper__pg img { display: block; width: 100%; height: auto; }
+
+/* Pinned rather than `overflow: hidden`, for the same reason the phone's menu
+   is: iOS forgets the scroll position with overflow alone. */
+body.is-held {
+  position: fixed;
+  left: 0; right: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper__veil, .paper__win { transition-duration: 1ms; }
+  .paper__win { transform: none; }
 }

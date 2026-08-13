@@ -28,7 +28,22 @@ window.SITE = {
     // Shown next to the name in the hero. Keep it to one breath.
     tagline: 'designing best-in-class products for hyperonline startups',
     email: 'product@cypherock.com',
-    resumeUrl: '#', // put a link to your PDF here
+    /* The address the hero's Copy button puts on the clipboard. It is separate
+       from `email` above on purpose: that one is the work address the page is
+       written from, this one is where you want to be written back to. */
+    copyEmail: 'ishaangupta.888@gmail.com',
+    resumeUrl: 'assets/resume/ishaan-gupta-resume.pdf',
+    /* The resume is shown IN the page rather than handed to the browser's PDF
+       plugin, so the pages are here as images and the file above is what the
+       download button gives you. Re-export both together: render the PDF at
+       150dpi, resize to 1200 wide, save as webp. */
+    resume: {
+      title: 'Resume',
+      sheets: ['assets/resume/p1.webp', 'assets/resume/p2.webp'],
+      /* the aspect of one page, so the viewer can hold its shape before the
+         image has loaded and nothing jumps when it does */
+      ratio: 1200 / 1553,
+    },
     location: 'Bengaluru, IN',
     // Used for the browser tab and social previews
     metaDescription:
@@ -166,20 +181,22 @@ window.SITE = {
       {
         id: 'airpods', label: 'AirPods Pro', src: 'assets/img/stickers/airpods.png',
         x: 63, y: 15, w: 100, rot: -10, dir: 20, hover: 30, active: 42,
+        mobile: { x: 83, y: 81, w: 68, tall: { x: 33, y: 63, w: 76 } },
       },
       {
         id: 'ps5', label: 'PS5 controller', src: 'assets/img/stickers/ps5.png',
         x: 9, y: 76, w: 118, rot: 5, dir: 340, hover: 32, active: 44,
+        mobile: { x: 15, y: 85, w: 88, tall: { x: 22, y: 84, w: 92 } },
       },
       {
         id: 'coke', label: 'Diet Coke', src: 'assets/img/stickers/coke.png',
         x: 88, y: 22, w: 56, rot: 8, dir: 45, hover: 26, active: 36,
-        mobile: false,
+        mobile: { x: 63, y: 80, w: 36, tall: { x: 84, y: 58, w: 40 } },
       },
       {
         id: 'lego', label: 'Lego F1', src: 'assets/img/stickers/lego.png',
         x: 84, y: 80, w: 125, rot: -9, dir: 45, hover: 34, active: 46,
-        mobile: false,
+        mobile: { x: 41, y: 77, w: 84, tall: { x: 72, y: 82, w: 90 } },
       },
     ],
 
