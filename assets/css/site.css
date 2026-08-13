@@ -6939,46 +6939,20 @@ body.past-hero .sel { opacity: 0; }
    the markup is what proves the header and the footer are generated from one
    source, and a harness checks exactly that.
 
-   What is left is the address, the note, the copyright and the four marks. Four
-   marks do not want a column. */
+   LINKS GOES TOO, for the same reason Pages does. Every mark in it is already
+   on the screen: the address above it is the mail link written out in full, and
+   the rest are in the menu behind the hamburger. Laid down as a row of four
+   squares under a heading it read as a toolbar rather than as a footer — a
+   second navigation, at the end of a page whose whole job by then is to hand
+   you the sky.
+
+   Both are hidden rather than removed: the markup is what proves the header and
+   the footer are generated from one source, and a harness checks exactly that.
+
+   What is left is the address, the note and the copyright. */
 @media (max-width: 48rem) {
-  .foot__col--pages { display: none; }
-
-  /* The list is a grid; this turns its flow rather than replacing it.
-     The pull to the left is the padding inside the first square. Each mark is
-     centred in a 44px target, so its ink starts 14px in, and without it the row
-     of glyphs sits visibly indented from the heading above and from every other
-     left edge in the footer. The number is derived rather than guessed: half of
-     what is left of the target once the 16px mark is taken out of it. */
-  .foot__col--links ul {
-    grid-auto-flow: column;
-    justify-content: start;
-    gap: 0.375rem;
-    margin-left: calc((44px - 16px) / -2);
-  }
-
-  /* A SQUARE, NOT THE WIDTH OF A WORD.
-     On a desktop these anchors are as wide as the label they replaced, which is
-     what keeps their rows locked to the Pages column beside them. In a ROW that
-     same trick spaces them by how long each word happens to be — Twitter,
-     LinkedIn, GitHub, Email — and the four marks end up at four unequal
-     intervals. With Pages gone there is no rhythm left to match, so here they
-     become 44px squares: even spacing, and the target size the rest of the
-     phone got. The word stays hidden exactly as it was; it is only taken out of
-     the flow so that it stops setting the box.
-     The selector carries two classes so it outranks the `width: 100%` that the
-     touch-target pass gives every footer link — that rule is about the pointer
-     and lives in a `pointer: coarse` block, so source order cannot be relied on
-     to settle it. */
-  .foot li > a.foot__ico,
-  .foot__col--links a.foot__ico {
-    justify-content: center;
-    width: 44px;
-    min-width: 44px;
-    padding: 0;
-  }
-  .foot__ico__w { position: absolute; }
-  .foot__ico svg { left: 50%; transform: translate(-50%, -50%); }
+  .foot__col--pages,
+  .foot__col--links { display: none; }
 }
 
 /* --- 35. the phone's end of the page --------------------------------------
@@ -6996,31 +6970,119 @@ body.past-hero .sel { opacity: 0; }
    one force its own pass. That stretch is exactly where the scrolling felt like
    it was dragging.
 
-   So on a phone the inset does not animate. The other two do, and neither
-   touches layout — a corner radius and a shadow are paint. What is lost is 32px
-   of horizontal travel on a 390px screen, which was most of the gutter and read
-   as the page narrowing rather than as paper lifting; what is left is the lift
-   itself, which is the part that meant something.
+   So on a phone the margin still does not animate. The gap comes from
+   `clip-path` instead, which trims the painted paper back from the screen edge
+   without moving a single box — it is a paint operation, so the 48 layout
+   passes stay at zero and the horizontal travel comes back.
+
+   Two things follow from trimming rather than re-laying-out. The content does
+   not re-centre, so the gutter has to be wide enough to give the gap away —
+   see below. And `clip-path` cuts the box-shadow off with everything else,
+   because a shadow is painted outside the border box and the border box is
+   exactly what was just clipped away — so the lift is redrawn below, by the
+   outro.
+
+   THE GUTTER PAYS FOR THE GAP. On a desktop the paper can inset 32px without
+   crowding anything, because `.col` is a fixed 38.5rem sitting in 1384px of
+   paper — there is slack on both sides, and the text does not move at all as
+   the edge comes in. A phone has no slack: `.col` is `100% - 2×gut`, so every
+   pixel the paper trims is a pixel off the gutter.
+
+   Giving that slack back by narrowing the sheet for real was measured and
+   rejected. At 390px the footer's lead paragraph rewraps to a third line past
+   a 24px inset, and the document height wanders 44px over the range — and the
+   height is the input to the detachment itself, so it feeds back into the
+   scroll and shakes. Instead the gutter is widened by the full trim up front,
+   once, statically. The content is then laid out exactly where it will stand
+   at the end, and holds that position for the whole scroll: the edge travels,
+   the words never move, nothing rewraps, and at full detachment the paper sits
+   the ordinary gutter away from the text.
 
    Above 48rem nothing changes at all: that is the composition the desktop was
    measured against, and it is not the one that was dragging. */
 @media (max-width: 48rem) {
-  .sheet { margin: 0; }
+  :root {
+    /* the one number to turn — how far the paper leaves the screen edge, and
+       therefore how much wider the resting gutter has to be */
+    --sheet-trim-max: 18px;
+    --gut: calc(clamp(1.25rem, 4vw, 2.5rem) + var(--sheet-trim-max));
+  }
+
+  /* Driven off --sheet-lift rather than --sheet-inset: lift is unitless, so the
+     trim can be a fraction of its own maximum instead of a fraction of the
+     desktop's 32px. Declared on both because the outro is a sibling of the
+     sheet, not a descendant — it cannot inherit the value, so the scroll loop
+     writes the same three properties to each of them. */
+  .sheet,
+  .outro { --sheet-trim: calc(var(--sheet-lift, 0) * var(--sheet-trim-max)); }
+
+  .sheet {
+    margin: 0;
+    clip-path: inset(
+      0 var(--sheet-trim, 0px)
+      round 0 0 var(--sheet-round, 0px) var(--sheet-round, 0px)
+    );
+  }
+
+  /* The outro floats on the sky, not on the paper. Nothing trims it, so it is
+     held at the plain gutter — the widened one would rewrap its sentence for a
+     gap that never reaches it. */
+  .outro {
+    --outro-pad: calc(var(--gut) - var(--sheet-trim-max));
+    padding-inline: var(--outro-pad);
+  }
+
+  /* The shadow the trim costs, given back. An empty box standing exactly where
+     the sheet's last viewport is — same inset, same bottom radius — carrying
+     nothing but the shadow the sheet can no longer paint. It is not clipped by
+     anything, and a non-inset shadow never paints over its own box, so the only
+     part of it that lands anywhere is the part on the sky: down the two gaps
+     and out under the bottom edge. */
+  .outro::after {
+    content: '';
+    position: absolute;
+    /* An absolutely positioned box is offset from its containing block's
+       PADDING box, so the outro's own gutter has to come back off before this
+       lines up with the paper's edge. */
+    left: calc(var(--sheet-trim, 0px) - var(--outro-pad));
+    right: calc(var(--sheet-trim, 0px) - var(--outro-pad));
+    bottom: 100%;
+    height: 100vh;
+    border-radius: 0 0 var(--sheet-round, 0px) var(--sheet-round, 0px);
+    pointer-events: none;
+    box-shadow:
+      0 calc(var(--sheet-lift, 0) * 18px) calc(var(--sheet-lift, 0) * 46px)
+        calc(var(--sheet-lift, 0) * -18px) rgba(20, 16, 12, calc(var(--sheet-lift, 0) * 0.28));
+  }
 }
 
 /* --- 36. the phone's floating controls -------------------------------------
-   With `.mute` positioned again it goes back to where it is declared — bottom
-   right, 20px in — which on a phone is underneath the toolbar's button, to the
-   pixel. Two round controls of different sizes stacked on the same corner.
+   `.mute` is declared bottom right, 20px in, which on a phone is underneath the
+   toolbar's button to the pixel: two round controls of different sizes stacked
+   on one corner. It used to be moved up by a dock's height to clear it.
 
-   So on a phone it moves up by one dock: 48px of button, a 10px gap, and the
-   safe area underneath both. The two now read as one column of controls on the
-   right, which is where the toolbar lives on a desktop anyway, and the time
-   slider keeps the left corner to itself. */
+   IT NO LONGER HAS TO CLEAR ANYTHING, because the dock is not there when the
+   mute is. The mute only exists at the end of the page — its opacity IS --end —
+   and by then the drawing surface has been taken away by `body.past-hero`
+   anyway, so the dock is a button for a tool that cannot be used. It leaves on
+   the same number the mute arrives on, read backwards, which puts a crossfade
+   in the corner rather than a disappearance: the dock goes as the mute comes,
+   in the same place, and the sky ends up with one control on each side.
+
+   Above 48rem the dock stays where it is — the sheet detaches there too, but it
+   detaches into a window with room for both. */
 @media (max-width: 48rem) {
   .mute {
     right: calc(20px + var(--sa-right));
-    bottom: calc(20px + var(--sa-bottom) + 48px + 10px);
+    bottom: calc(20px + var(--sa-bottom));
+  }
+
+  .tools {
+    opacity: calc(1 - var(--end, 0));
+    /* `pointer-events` is a keyword, so it cannot be derived from --end here —
+       the scroll loop writes the opposite one. */
+    pointer-events: var(--end-events-inv, auto);
+    transition: opacity 420ms var(--ease);
   }
 
   /* and the slider clears the safe area on the other side */

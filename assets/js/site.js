@@ -6276,9 +6276,11 @@
     init() {
       this.el = $('.sheet');
       this.outro = $('.outro');
-      /* the two floating pods, collected once — they are built by
-         Shell.controls() before this runs */
-      this.pods = $$('.controls, .mute');
+      /* The floating pods, collected once — the first two are built by
+         Shell.controls() and the dock by Rack.init(), both before this runs.
+         The dock is in the list because it reads the same --end, backwards: on
+         a phone it leaves the corner as the slider and the mute arrive in it. */
+      this.pods = $$('.controls, .mute, .tools');
       this.last = -1;
       this.lastEnd = -1;
       this.measure();
@@ -6291,6 +6293,13 @@
        at any viewport size. */
     measure() {
       this.travel = Math.max(120, this.outro ? this.outro.offsetHeight : 340);
+      /* Below 48rem the paper is trimmed by `clip-path` rather than by its
+         margin, and the shadow the clip removes is redrawn by the outro. Both
+         read the same three properties, and the outro is a sibling of the
+         sheet, so it cannot inherit them — it has to be written to as well.
+         Read here rather than in the tick: this runs on resize, which is the
+         only thing that can change the answer. */
+      this.narrow = matchMedia('(max-width: 48rem)').matches;
     },
 
     /* WRITTEN ON THE ELEMENTS THAT READ THEM, NOT ON THE ROOT.
@@ -6324,10 +6333,20 @@
       const px = Math.round(p * 32);
       if (px !== this.last) {
         this.last = px;
+        const round = `${Math.round(p * 24)}px`;
+        const lift = p.toFixed(3);
         const s = this.el.style;
         s.setProperty('--sheet-inset', `${px}px`);
-        s.setProperty('--sheet-round', `${Math.round(p * 24)}px`);
-        s.setProperty('--sheet-lift', p.toFixed(3));
+        s.setProperty('--sheet-round', round);
+        s.setProperty('--sheet-lift', lift);
+        /* the phone's second reader — see measure(). Two subtrees dirtied
+           instead of one, and neither write touches layout. */
+        if (this.narrow && this.outro) {
+          const o = this.outro.style;
+          o.setProperty('--sheet-inset', `${px}px`);
+          o.setProperty('--sheet-round', round);
+          o.setProperty('--sheet-lift', lift);
+        }
       }
 
       /* the controls only exist at the end of the page. They start appearing a
@@ -6339,9 +6358,14 @@
         this.lastEnd = q;
         const v = q.toFixed(2);
         const e = q > 0.5 ? 'auto' : 'none';
+        /* `pointer-events` takes a keyword, not a number, so the dock cannot
+           derive its own state from --end the way it derives its opacity. It
+           gets the opposite keyword written for it instead. */
+        const inv = q > 0.5 ? 'none' : 'auto';
         for (const n of this.pods) {
           n.style.setProperty('--end', v);
           n.style.setProperty('--end-events', e);
+          n.style.setProperty('--end-events-inv', inv);
         }
       }
     },
