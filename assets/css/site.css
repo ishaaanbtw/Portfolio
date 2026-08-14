@@ -5223,7 +5223,13 @@ body.past-hero .sel { opacity: 0; }
    The swell is worth the 1.2%: it grows the hit box by slightly more than the
    1px lift shrinks it at the bottom edge, so the pointer can't fall out of the
    element it just entered and start flickering between the two states. */
-:root:not(.hover-cold) .drg:not(.is-drag):not(.is-sel):hover {
+/* NOT THE BRICKS. The swell is right for a lone object on paper and wrong for
+   a part in an assembly: it scales each piece about its own centre, so running
+   the cursor along a welded row opens and closes a 0.3px gap at every seam
+   under it, and the 1px lift raises one brick out of a structure the rest of
+   which stays put. Bricks get their own hover a few blocks down, applied to
+   the whole structure at once and with no scale in it. */
+:root:not(.hover-cold) .drg:not(.brk):not(.is-drag):not(.is-sel):hover {
   --lift: -1px;
   --hs: 1.012;
   filter: drop-shadow(0 4px 10px rgba(20, 16, 12, 0.10));
@@ -5250,6 +5256,7 @@ body.past-hero .sel { opacity: 0; }
 .drg.is-drag,
 .drg.is-xf,
 .drg.is-settle,
+.drg.is-spin,
 .canvas__pills .drg.is-drag,
 .canvas__pills .drg.is-xf {
   transition: box-shadow 320ms var(--ease), filter 320ms var(--ease);
@@ -5272,6 +5279,33 @@ body.past-hero .sel { opacity: 0; }
    see is a piece you cannot place. */
 .brk { z-index: 4; line-height: 0; }
 
+/* --- THE RECTANGLE IS NOT THE BRICK ----------------------------------------
+   An L is four cells in a 2x3 box, so a third of its bounding box is empty
+   paper — and that empty paper was hit-testing as the piece. Two consequences,
+   both of them in the recording: a press in the notch picked up a brick the
+   cursor was not on, and two pieces standing beside each other each reached
+   into the other's silhouette through the corner of a box, so moving between
+   them handed hover back and forth without the cursor ever leaving either.
+
+   So nothing in the tree takes pointer events except the painted cell rects.
+   `.brk__hit` is the body group in `Bricks.art()` — the same rects that draw
+   the silhouette — which makes the hit region and the picture the same object
+   by construction rather than by two lists agreeing. Events still bubble to
+   the wrapper, so Drag's listeners are untouched, and pointer capture is
+   unaffected by hit-testing and keeps working through a drag. */
+.brk,
+.brk .brk__art { pointer-events: none; }
+.brk .brk__hit { pointer-events: auto; }
+
+/* A piece in flight is not yours to grab — `.is-auto` says so on the wrapper,
+   and the rule above would otherwise hand the events straight back through the
+   child. It has to be spelled out at the same depth to win. */
+.brk.is-auto .brk__hit { pointer-events: none; }
+
+/* The wrapper's own shadow would sit under the art's, doubled and offset,
+   the moment a brick were selected. The art owns every shadow a brick has. */
+.brk.is-sel { filter: none; }
+
 .brk .brk__art {
   display: block;
   /* the global reset caps every svg at 100% of its box; these are sized in
@@ -5290,11 +5324,57 @@ body.past-hero .sel { opacity: 0; }
     drop-shadow(0 14px 22px rgba(20, 16, 12, 0.20));
 }
 
-/* THE ONLY FEEDBACK THE SNAP GETS. Inside the threshold the piece sits a
-   little heavier — the shadow it would cast if it had already come to rest
-   against the other one. No outline, no ghost, no connection line, no glow:
-   the pull itself is the signal, and this only confirms that letting go now
-   will commit. */
+/* --- HOVER, AND ONLY ONE OF IT ---------------------------------------------
+   Driven from JS, not from `:hover`, and applied to every member of a
+   structure at once. The reason is that a structure is what the press picks
+   up: hovering one brick of a welded row and lifting only that brick promises
+   a gesture the canvas does not have. One class on all of them, so the whole
+   thing acknowledges the cursor and the seams stay true.
+
+   NO SCALE. The generic `.drg` hover swells by 1.2%, which is invisible on a
+   sticker and is a visible crack at every joint on a brick. The lift is
+   uniform across the structure, so the piece under the cursor does not move
+   relative to the pieces it is joined to — the whole assembly rises 1px.
+
+   The outline is the last drop-shadow: zero offset, half a pixel of blur, so
+   it hugs the actual silhouette including the concave corners rather than
+   drawing a box around it. */
+.brk.is-hov .brk__art {
+  filter:
+    drop-shadow(0 1px 0.5px rgba(20, 16, 12, 0.13))
+    drop-shadow(0 5px 12px rgba(20, 16, 12, 0.15))
+    drop-shadow(0 0 0.5px rgba(20, 16, 12, 0.34));
+}
+.brk.is-hov { --lift: -1px; }
+
+/* IN HAND. Every member of the set being dragged, not just the one under the
+   cursor — the same reasoning as hover, and the reason there is a class here
+   at all rather than reusing `.is-drag`, which Drag only ever puts on the lead
+   node. A shade more lift than hover, a longer shadow, and the outline firms
+   up: the piece reads as held rather than as pointed at. */
+.brk.is-hold { --lift: -2px; }
+.brk.is-hold .brk__art {
+  filter:
+    drop-shadow(0 2px 2px rgba(20, 16, 12, 0.14))
+    drop-shadow(0 16px 26px rgba(20, 16, 12, 0.20))
+    drop-shadow(0 0 0.6px rgba(20, 16, 12, 0.42));
+}
+
+/* THE PIECE BEING AIMED AT. The other half of the snap indicator — the ghost
+   says where, this says what to. Every member of the target structure warms
+   very slightly, which is enough to tell two candidate structures apart
+   without a callout, an arrow or a highlight box anywhere on the canvas. */
+.brk.is-tgt .brk__art {
+  filter:
+    drop-shadow(0 1px 0.5px rgba(20, 16, 12, 0.11))
+    drop-shadow(0 2px 5px rgba(20, 16, 12, 0.10))
+    drop-shadow(0 0 1.5px rgba(20, 16, 12, 0.26));
+}
+
+/* THE FEEDBACK THE SNAP GETS ONCE IT IS COMMITTED. Inside the threshold the
+   piece sits a little heavier — the shadow it would cast if it had already
+   come to rest against the other one. It is the last step of a sequence that
+   now starts much earlier: pull, then ghost, then this. */
 .brk.is-near .brk__art {
   filter:
     drop-shadow(0 1px 1px rgba(20, 16, 12, 0.15))
@@ -5313,6 +5393,134 @@ body.past-hero .sel { opacity: 0; }
   0%   { opacity: 0.55; }
   100% { opacity: 1; }
 }
+
+/* --- the ghost -------------------------------------------------------------
+   WHERE IT WILL LAND, DRAWN AT THE PLACE IT WILL LAND. Everything above tells
+   you that something is about to happen; only this tells you what. It is the
+   held set redrawn — same silhouettes, same colours, same relative offsets, at
+   the exact cells `plan()` chose — so it is not a hint about the connection,
+   it is the connection, shown early.
+
+   Faint enough to be plainly not the piece, solid enough to read as plastic.
+   It never takes a pointer event and it is never in the model: `plan()` reads
+   `Bricks.groups`, and nothing in this layer is a member of a group, so a
+   ghost cannot be snapped to and cannot become one of the things a later
+   ghost is drawn against. */
+.brkghost {
+  position: absolute;
+  inset: 0;
+  z-index: 39;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms var(--ease);
+}
+.brkghost.is-on { opacity: 1; }
+
+.brkghost__pc {
+  position: absolute;
+  left: 0;
+  top: 0;
+  line-height: 0;
+  opacity: 0.4;
+  /* The ghost is redrawn from the plan on every pointer event, so the element
+     is already where it should be by the time the frame paints. A transition
+     on transform here would make it lag the piece it is previewing, which is
+     the one thing it must never do. */
+  transition: none;
+}
+.brkghost__pc svg {
+  display: block;
+  max-width: none;
+  filter:
+    saturate(0.72)
+    drop-shadow(0 0 1px rgba(20, 16, 12, 0.4));
+}
+
+/* --- the rotate hint -------------------------------------------------------
+   Only while a piece is actually in the hand, only when rotating it would do
+   something, and never on hover — a permanent legend for a shortcut you are
+   not currently able to use is furniture. It rides above the held piece and
+   is nudged aside when that would put it off the canvas. */
+.brkhint {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 41;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 0.34em;
+  padding: 0.3em 0.62em;
+  border-radius: 999px;
+  background: rgba(20, 16, 12, 0.78);
+  color: var(--paper-2);
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
+  line-height: 1.5;
+  white-space: nowrap;
+  opacity: 0;
+  /* left/top are the middle of the piece's top edge, so the pill hangs off
+     that point rather than starting at it. */
+  transform: translate(-50%, -100%) scale(0.94);
+  transform-origin: 50% 100%;
+  transition: opacity 140ms var(--ease), transform 220ms var(--spring-soft);
+}
+.brkhint.is-on {
+  opacity: 1;
+  transform: translate(-50%, -100%) scale(1);
+}
+.brkhint kbd {
+  font: inherit;
+  font-weight: 600;
+  padding: 0 0.34em;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* THE SAME PILL, AS A BUTTON. On a touchscreen there is no R to press, so the
+   hint stops describing a shortcut and becomes the control itself — one thumb
+   holds the brick, the other taps this. Bigger than the text version because
+   it is now a target rather than a label, and it is the only thing in the
+   brick layer that takes a pointer event. */
+.brkhint--tap {
+  pointer-events: auto;
+  touch-action: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0.46em 0.78em;
+  gap: 0.42em;
+  /* clear of the piece and of the finger already holding it */
+  margin-top: -4px;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.brkhint--tap svg { display: block; }
+.brkhint--tap:active { background: rgba(20, 16, 12, 0.92); }
+
+@media (prefers-reduced-motion: reduce) {
+  .brkghost, .brkhint { transition-duration: 1ms; }
+}
+
+/* --- the debug overlay -----------------------------------------------------
+   Never on unless `?brkdebug` is in the URL or `__brickDebug()` is called from
+   the console, and it takes no pointer events, so at worst it is looked
+   through. Every colour here is a wire colour on purpose — nothing in this
+   block should be mistakable for part of the page. */
+.brkdbg {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  overflow: visible;
+}
+.brkdbg .d-hit { fill: rgba(0, 132, 255, 0.09); stroke: rgba(0, 132, 255, 0.5); stroke-width: 0.75; }
+.brkdbg .d-held { fill: rgba(255, 60, 0, 0.12); stroke: rgba(255, 60, 0, 0.75); }
+.brkdbg .d-land { fill: rgba(0, 190, 90, 0.16); stroke: rgba(0, 160, 70, 0.9); stroke-width: 1; }
+.brkdbg .d-anchor { fill: rgba(0, 132, 255, 0.85); }
+.brkdbg .d-detect { fill: none; stroke: rgba(255, 60, 0, 0.35); stroke-width: 1; stroke-dasharray: 5 4; }
+.brkdbg .d-magnet { fill: none; stroke: rgba(255, 60, 0, 0.6); stroke-width: 1; stroke-dasharray: 2 3; }
+.brkdbg .d-cand { fill: rgba(150, 0, 200, 0.55); }
+.brkdbg .d-pick { fill: rgba(0, 160, 70, 0.9); stroke: rgba(0, 160, 70, 0.9); stroke-width: 1.5; }
 
 /* --- the builds shelf ------------------------------------------------------
    NOT A MODAL. It is the toolbar's own drawer: the same white, the same 12px
@@ -5503,8 +5711,14 @@ body.past-hero .sel { opacity: 0; }
    The nudge rides on `left` rather than the transform because Drag owns the
    transform and keeps writing --x every frame during the release glide; a
    transition there would smear the throw. */
-:root:not(.hover-cold) .drg:not(.is-drag):hover,
-.drg.is-sel { z-index: 6; }
+/* Bricks are exempt for the same reason. A hovered pill has nothing beside it
+   that it has to stay level with; a hovered brick is usually welded to three
+   others, and lifting it a band takes it out of its own structure and puts it
+   in front of the piece it is joined to. Crossing a seam then pops one piece
+   forward and drops the last one back, which is the flicker. Their order comes
+   from `Drag.raise` on the piece you actually touched, and nothing else. */
+:root:not(.hover-cold) .drg:not(.brk):not(.is-drag):hover,
+.drg:not(.brk).is-sel { z-index: 6; }
 
 .canvas__pills .drg {
   left: calc(var(--col, 0px) + var(--nudge, 0px));
