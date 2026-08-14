@@ -4374,14 +4374,21 @@ body.is-lbox { overflow: hidden; }
    `gap: 10px` version could only approximate them. */
 .tools__panel {
   --p-w: 48px;
-  --p-h: 286px;
+  /* 327.6, up from 286 — one more slot at the pitch the lower group already
+     uses. The bottom group was plus at 220.8 and undo at 262.4, so 41.6px
+     apart; Builds takes 262.4 and undo moves to 304, and the 23.6px of air
+     under the last chip is unchanged. Nothing is re-spaced and no other
+     number in this block moves: the panel is one control taller, which is
+     what adding a control honestly looks like. */
+  --p-h: 327.6px;
   --y-cursor: 23.5px;   /* centre */
   --y-div1: 50px;
   --y-pencil: 85.7px;   /* centre */
   --y-note: 160px;      /* centre */
   --y-div2: 194px;
   --y-plus: 220.8px;    /* centre */
-  --y-undo: 262.4px;    /* centre */
+  --y-preset: 262.4px;  /* centre */
+  --y-undo: 304px;      /* centre */
   --div-w: 32.5px;
   /* how far each object's near edge sits from the panel's inner left edge */
   --x-pencil: 10.5px;
@@ -4404,7 +4411,11 @@ body.is-lbox { overflow: hidden; }
 /* The objects are excluded here rather than overridden below: this selector is a
    class plus an attribute and .tool--obj is one class, so an override loses and the
    objects were being centred instead of spanning the inner width. */
+/* `.tool--preset` is listed by class rather than by `data-tool-btn` on
+   purpose: it opens a shelf instead of arming the pointer, so it must stay out
+   of the mutually-exclusive tool state that attribute drives. */
 .tools__panel > [data-tool-btn]:not(.tool--obj),
+.tools__panel > .tool--preset,
 .tools__panel > .tools__div {
   position: absolute;
   left: 50%;
@@ -4412,6 +4423,7 @@ body.is-lbox { overflow: hidden; }
 }
 .tools__panel > [data-tool-btn='select'] { top: var(--y-cursor); margin-top: -16px; }
 .tools__panel > [data-tool-btn='sticker'] { top: var(--y-plus); margin-top: -16px; }
+.tools__panel > .tool--preset { top: var(--y-preset); margin-top: -16px; }
 .tools__panel > [data-tool-btn='undo'] { top: var(--y-undo); margin-top: -16px; }
 .tools__panel > .tools__div:nth-of-type(1) { top: var(--y-div1); }
 .tools__panel > .tools__div:nth-of-type(2) { top: var(--y-div2); }
@@ -4496,6 +4508,17 @@ body.is-lbox { overflow: hidden; }
   color: #fff;
   box-shadow: 0 6px 18px -6px rgba(124, 58, 237, 0.55);
 }
+
+/* Builds. Same 30px disc, same hover wash and same press scale as the plus and
+   the undo it sits between — the only chip in the column that is neither a tool
+   nor an action, and it takes the shape of both. `is-on` while its shelf is
+   open, using the pale plate the object tools use rather than the filled purple
+   Move wears, because an open drawer is not an armed pointer. */
+.tool--preset { width: 30px; height: 30px; border-radius: 50%; }
+.tool--preset svg { width: 19.5px; height: 19.5px; }
+:root:not(.hover-cold) .tool--preset:hover { background: rgba(20, 16, 12, 0.055); }
+.tool--preset.is-press { transform: scale(0.94); }
+.tool--preset.is-on { background: #f0ebfd; }
 
 /* undo: rotates a touch on hover, background fades in */
 .tool--undo { width: 30px; height: 30px; border-radius: 50%; }
@@ -5276,6 +5299,96 @@ body.past-hero .sel { opacity: 0; }
   filter:
     drop-shadow(0 1px 1px rgba(20, 16, 12, 0.15))
     drop-shadow(0 7px 12px rgba(20, 16, 12, 0.22));
+}
+
+/* IN FLIGHT. A piece the preset is carrying is not yours to grab — the drag
+   would fight the animation for the same two numbers — and it is not a place
+   for another piece to land either (see the guard in `plan()`). */
+.brk.is-auto { pointer-events: none; }
+
+/* recruited into a build, and repainted on the way there. The art is
+   regenerated rather than swapped, so this is a cross-fade of one element. */
+.brk.is-tint .brk__art { animation: brktint 400ms var(--ease); }
+@keyframes brktint {
+  0%   { opacity: 0.55; }
+  100% { opacity: 1; }
+}
+
+/* --- the builds shelf ------------------------------------------------------
+   NOT A MODAL. It is the toolbar's own drawer: the same white, the same 12px
+   radius, the same 1px inside stroke and the same shadow, hung off the panel's
+   left edge and vertically centred on the button that opened it. It covers a
+   corner of the canvas and nothing else, and the canvas underneath keeps
+   working the entire time it is open. */
+.shelf {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  translate: 0 -50%;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  width: 172px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 1px #e2e2e2,
+    0 8px 24px -10px rgba(20, 16, 12, 0.22);
+  opacity: 0;
+  transform: translateX(6px) scale(0.97);
+  transform-origin: 100% 50%;
+  pointer-events: none;
+  transition:
+    opacity 200ms var(--ease),
+    transform 300ms var(--spring-soft, var(--ease));
+  z-index: 2;
+}
+.shelf.is-up { opacity: 1; transform: none; pointer-events: auto; }
+
+.shelf__it {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px 6px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 180ms var(--ease);
+}
+:root:not(.hover-cold) .shelf__it:hover { background: rgba(20, 16, 12, 0.05); }
+
+/* the lift is on the ARTWORK, not the row — a row that moves under the pointer
+   drags the label with it and the whole shelf looks loose */
+.shelf__art {
+  display: grid;
+  place-items: center;
+  height: 34px;
+  filter: drop-shadow(0 1px 1.5px rgba(20, 16, 12, 0.16));
+  transition:
+    transform 240ms var(--spring-soft, var(--ease)),
+    filter 240ms var(--ease);
+}
+.shelf__art svg { display: block; max-width: 40px; max-height: 34px; }
+:root:not(.hover-cold) .shelf__it:hover .shelf__art {
+  transform: translateY(-1.5px) scale(1.06);
+  filter: drop-shadow(0 3px 5px rgba(20, 16, 12, 0.2));
+}
+.shelf__it.is-press .shelf__art { transform: scale(0.94); transition-duration: 90ms; }
+
+.shelf__lb {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf { transition-duration: 1ms; }
+  .shelf__art { transition-duration: 1ms; }
+  .brk.is-tint .brk__art { animation: none; }
 }
 
 /* a double-click frees a brick from its structure where it stands; this is the

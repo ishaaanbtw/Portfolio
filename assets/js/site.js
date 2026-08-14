@@ -3979,6 +3979,15 @@
        recording's plus is 13.7px across at a 1.83px stroke; the old one was
        10.2px across at 1.85. Same line, two thirds the icon. */
     plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.07" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>',
+    /* PRESETS. Three stacked bars with two studs on the top one — bricks seen
+       end-on. Monochrome, same 16 viewBox and the same hairline stroke the plus
+       and the undo are drawn with, so it sits in the column without announcing
+       that it arrived later than the rest. It says "builds"; a gear would have
+       said "settings". */
+    preset: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M5.4 2.7h1.7M9.8 2.7h1.7"/>'
+      + '<rect x="3.6" y="4.4" width="9.8" height="4.2" rx="0.9"/>'
+      + '<rect x="2.1" y="9.9" width="9.8" height="4.2" rx="0.9"/></svg>',
     /* A CIRCLE, NOT A HOOK. This was a bent return arrow — the shape a text
        field's undo takes. The recording's is a ring: a near-complete circle
        broken at the upper left, with an L-tick closing it. On a canvas that is
@@ -4060,6 +4069,17 @@
       }, TOOL_ICON.plus);
       add.addEventListener('click', () => this.pick('sticker'));
       panel.appendChild(add);
+
+      /* PRESETS, between Add and Undo. It is not a `pick()` tool — it opens a
+         shelf rather than arming the pointer — so it carries no `data-tool-btn`
+         and never joins the mutually-exclusive tool state. Everything else
+         about it is the existing chip: same box, same hover, same press. */
+      const pre = el('button', {
+        class: 'tool tool--preset', type: 'button',
+        'data-tip': 'Builds', 'aria-label': 'LEGO builds', 'aria-expanded': 'false',
+      }, TOOL_ICON.preset);
+      pre.addEventListener('click', (e) => { e.stopPropagation(); Bricks.shelf(pre); });
+      panel.appendChild(pre);
 
       const undo = el('button', {
         class: 'tool tool--undo', type: 'button', 'data-tool-btn': 'undo',
@@ -5390,6 +5410,13 @@
     ell:    { cells: [[0, 0], [0, 1], [0, 2], [1, 2]] },
     corner: { cells: [[0, 0], [1, 0], [0, 1]] },
     tee:    { cells: [[0, 0], [1, 0], [2, 0], [1, 1]] },
+    /* Two more bar lengths. The first eight were a scatter to play with; a
+       recognisable object needs to end a row on an odd number, and with only
+       2 and 5 available every silhouette came out as a slab. These are never
+       scattered — they exist so the builds have something to draw with, and
+       they arrive by being summoned. */
+    p13:    { cells: [[0, 0], [1, 0], [2, 0]] },
+    p14:    { cells: [[0, 0], [1, 0], [2, 0], [3, 0]] },
   };
 
   /* SATURATED, because a brick that is not is not a brick. The first pass at
@@ -5410,6 +5437,118 @@
     const to = t > 0 ? 255 : 0, k = Math.abs(t);
     const m = (v) => Math.round(v + (to - v) * k);
     return `rgb(${m(r)},${m(g)},${m(b)})`;
+  };
+
+  /* Colours the presets need that the eight scattered pieces do not have —
+     a wheel is black, a can is silver. A blueprint names a hue; a piece
+     recruited into a build is repainted to it on the way there. */
+  const HUE = {
+    red: '#d8232a', blue: '#1163c7', yellow: '#f3c218', green: '#24a148',
+    orange: '#f5871f', azure: '#2aa3d4', purple: '#9b4fbf', lime: '#9cbf2e',
+    black: '#2a2c30', slate: '#5d646b', silver: '#c3c9cf', white: '#ecebe7',
+  };
+
+  /* ---------------------------------------------------------- the builds
+     Each is an ASSEMBLY GRAPH, not a picture: a list of lattice placements
+     with a stage number. Pieces sharing a stage are independent and travel
+     together — two wheels arrive at once — and a stage never starts until the
+     one before it has seated, so the thing assembles in an order that makes
+     physical sense and gets more recognisable as it goes.
+
+     Every placement is one of the eight silhouettes the canvas already has,
+     on the same unit grid, obeying the same rule the manual snap obeys: no
+     two cells overlap and the whole set is edge-connected. Which means these
+     are not special objects — a preset builds something you could have built
+     by hand, out of the pieces you already have.
+
+     The pieces do not rotate (see `.tool--obj` in the CSS for why), so the
+     silhouettes are worked out within that: an L is an L whichever end of the
+     car it is on. */
+  const PLAN = {
+    /* SIDE ELEVATION, and the four things that make an F1 car an F1 car: a
+       body far longer than it is tall, a wing hung high at the back, wheels
+       standing proud below the floor at each end with a long gap between
+       them, and a nose that runs out to a flat wing at the very front. The
+       first attempt had none of that — it was a red slab on two black squares.
+       This is 15 studs long and 6 tall, which is the proportion. */
+    f1: {
+      label: 'Ferrari F1',
+      parts: [
+        { kind: 'long',  gx: 3,  gy: 3, c: 'red',   s: 0 },  /* floor front  */
+        { kind: 'long',  gx: 8,  gy: 3, c: 'red',   s: 0 },  /* floor rear   */
+        { kind: 'p13',   gx: 0,  gy: 3, c: 'red',   s: 4 },  /* front wing   */
+        { kind: 'small', gx: 13, gy: 3, c: 'red',   s: 4 },  /* diffuser     */
+        { kind: 'sq2',   gx: 3,  gy: 4, c: 'black', s: 1 },  /* front wheel  */
+        { kind: 'sq2',   gx: 11, gy: 4, c: 'black', s: 1 },  /* rear wheel   */
+        { kind: 'long',  gx: 5,  gy: 2, c: 'red',   s: 2 },  /* cockpit      */
+        { kind: 'long',  gx: 10, gy: 2, c: 'red',   s: 2 },  /* sidepod      */
+        { kind: 'p13',   gx: 2,  gy: 2, c: 'red',   s: 2 },  /* nose         */
+        { kind: 'conn',  gx: 7,  gy: 1, c: 'slate', s: 3 },  /* halo         */
+        { kind: 'p13',   gx: 11, gy: 1, c: 'black', s: 3 },  /* engine cover */
+        { kind: 'p14',   gx: 11, gy: 0, c: 'red',   s: 5 },  /* rear wing    */
+      ],
+    },
+
+    /* A CAN IS A TAPER. Five studs wide in the barrel and three at each end,
+       which is what reads as a cylinder seen flat — the earlier four-wide
+       stack of bricks was a box. Silver, with the red band across the middle
+       where the label is. */
+    coke: {
+      label: 'Diet Coke',
+      parts: [
+        { kind: 'p13',  gx: 1, gy: 7, c: 'silver', s: 0 },   /* base rim   */
+        { kind: 'long', gx: 0, gy: 6, c: 'silver', s: 0 },
+        { kind: 'long', gx: 0, gy: 5, c: 'silver', s: 1 },
+        { kind: 'long', gx: 0, gy: 4, c: 'red',    s: 2 },   /* label band */
+        { kind: 'long', gx: 0, gy: 3, c: 'red',    s: 2 },
+        { kind: 'long', gx: 0, gy: 2, c: 'silver', s: 3 },
+        { kind: 'long', gx: 0, gy: 1, c: 'silver', s: 3 },
+        { kind: 'p13',  gx: 1, gy: 0, c: 'silver', s: 4 },   /* top rim    */
+      ],
+    },
+
+    /* THE SHAPE EVERYONE KNOWS is two round heads on two straight stems,
+       standing out of the top of a rounded case. So: a pair of 2x2 heads,
+       a single stud of stem under each, and a case three deep and six wide
+       under both. Read at thumbnail size that is unmistakably AirPods. */
+    pods: {
+      label: 'AirPods Pro',
+      parts: [
+        { kind: 'long', gx: 0, gy: 5, c: 'white',  s: 0 },   /* case floor */
+        { kind: 'conn', gx: 5, gy: 5, c: 'white',  s: 0 },
+        { kind: 'long', gx: 0, gy: 4, c: 'white',  s: 1 },
+        { kind: 'conn', gx: 5, gy: 4, c: 'white',  s: 1 },
+        { kind: 'long', gx: 0, gy: 3, c: 'white',  s: 1 },   /* case lip   */
+        { kind: 'conn', gx: 5, gy: 3, c: 'white',  s: 1 },
+        { kind: 'conn', gx: 1, gy: 2, c: 'silver', s: 2 },   /* stems      */
+        { kind: 'conn', gx: 4, gy: 2, c: 'silver', s: 2 },
+        { kind: 'sq2',  gx: 1, gy: 0, c: 'white',  s: 3 },   /* left bud   */
+        { kind: 'sq2',  gx: 4, gy: 0, c: 'white',  s: 3 },   /* right bud  */
+      ],
+    },
+
+    /* WIDE, WITH TWO GRIPS HANGING DOWN and a dark panel up the middle —
+       that outline is the controller. Eleven studs across, grips dropping
+       two below the body at either end, touchpad black at the top centre,
+       two sticks inboard of the grips. */
+    ps5: {
+      label: 'PS5 Controller',
+      parts: [
+        { kind: 'p13',  gx: 0,  gy: 2, c: 'white', s: 0 },   /* body lower */
+        { kind: 'long', gx: 3,  gy: 2, c: 'white', s: 0 },
+        { kind: 'p13',  gx: 8,  gy: 2, c: 'white', s: 0 },
+        { kind: 'long', gx: 0,  gy: 1, c: 'white', s: 1 },
+        { kind: 'small', gx: 5, gy: 1, c: 'black', s: 2 },   /* touchpad   */
+        { kind: 'p14',  gx: 7,  gy: 1, c: 'white', s: 1 },
+        { kind: 'p14',  gx: 0,  gy: 0, c: 'white', s: 3 },   /* top edge   */
+        { kind: 'p13',  gx: 4,  gy: 0, c: 'black', s: 2 },
+        { kind: 'p14',  gx: 7,  gy: 0, c: 'white', s: 3 },
+        { kind: 'sq2',  gx: 1,  gy: 3, c: 'white', s: 4 },   /* left grip  */
+        { kind: 'sq2',  gx: 8,  gy: 3, c: 'white', s: 4 },   /* right grip */
+        { kind: 'conn', gx: 4,  gy: 3, c: 'slate', s: 5 },   /* sticks     */
+        { kind: 'conn', gx: 6,  gy: 3, c: 'slate', s: 5 },
+      ],
+    },
   };
 
   const Bricks = {
@@ -5506,6 +5645,27 @@
       const defs = (S.canvas && S.canvas.bricks) || [];
       if (!defs.length) return;
       this.host = host;
+
+      /* WAIT FOR THE HERO TO BE ITS FULL HEIGHT.
+
+         Every brick's position is a percentage of this box, so measuring it
+         before the layout has finished puts all eighteen somewhere else. On a
+         warm load the hero measured 534px against 900 on a cold one, and the
+         same page settled into two different compositions — the pieces an
+         eighth of the way up the screen on one and a quarter of the way on the
+         other. Nothing about it was random and nothing looked broken, which is
+         exactly why it went unnoticed until two loads were compared side by
+         side.
+
+         Nothing has been created at this point, so bailing out and coming back
+         next frame is free and cannot duplicate anything. The cap is there so
+         a hero that genuinely is short — an odd viewport, a print stylesheet —
+         still gets its bricks rather than none. */
+      if (host.getBoundingClientRect().height < innerHeight * 0.72) {
+        this.tries = (this.tries || 0) + 1;
+        if (this.tries < 40) { requestAnimationFrame(() => this.init(host)); return; }
+      }
+
       const r = host.getBoundingClientRect();
       const narrow = r.width <= 768;
       /* One stud, sized off the same reference the peel objects use. Fixed at
@@ -5518,44 +5678,22 @@
       defs.forEach((d, i) => {
         const def = PIECE[d.kind];
         if (!def) return;
+        /* `mobile: false` opts a piece out of narrow screens entirely, the same
+           way a peel object does. Checked before anything is built, so a piece
+           that is not wanted on a phone costs nothing there. */
+        if (narrow && d.mobile === false) return;
         const m = (narrow && d.mobile) || d;
         const tone = TONE[d.tone != null ? d.tone % TONE.length : i % TONE.length];
         const bx = Math.round(r.width * (m.x / 100));
         const by = Math.round(r.height * (m.y / 100));
 
-        const wrap = el('div', {
-          class: 'drg brk', style: `left:${bx}px;top:${by}px`,
-          'data-brick': d.kind, 'aria-label': `Building block, ${d.kind}`,
-        });
-        wrap.innerHTML = this.art(d.kind, tone, `${i}`);
-        host.appendChild(wrap);
-
-        /* No resting tilt. Everything else loose on this canvas sits at a
-           slight angle because it was dropped there; a brick is a machined
-           part, and a lattice cannot be built out of pieces that are each a
-           degree off true. */
-        /* no chrome: see the note in Drag.make. A brick is a machined part on
-           a lattice — the one object on this canvas that has a correct size and
-           a correct angle, and no business being given handles to change them. */
-        const it = Drag.make(wrap, { r: 0, chrome: false });
-        const rec = { it, def, bx, by, gx: 0, gy: 0, kind: d.kind };
-        const g = { members: [rec] };
-        rec.g = g;
-        it.brick = rec;
-        this.groups.push(g);
-        this.recs.push(rec);
-
-        it.onGrab = (item, e) => this.grab(rec, item, e);
-        it.onMove = () => this.move(rec);
-        it.onDrop = () => this.drop(rec);
-        it.onDetach = () => this.forget(rec);
-        it.onReattach = () => this.remember(rec);
+        const rec = this.mk(d.kind, tone, bx, by);
 
         /* The touch-reachable way out of a structure, and the discoverable one:
            double-click a brick and it comes loose where it stands. Alt-drag
            does the same thing in one gesture for a mouse. Neither adds any
            chrome, which is the constraint. */
-        wrap.addEventListener('dblclick', (e) => {
+        rec.it.node.addEventListener('dblclick', (e) => {
           if (Rack.tool !== 'select') return;
           if (rec.g.members.length < 2) return;
           e.preventDefault();
@@ -5567,10 +5705,307 @@
         });
       });
 
+      /* NO TWO OF THEM MAY START ON TOP OF EACH OTHER.
+
+         The coordinates are percentages and the lattice unit is clamped, so
+         the two scale differently: below about 1000px the positions have
+         shrunk faster than the bricks and pieces that were 20px apart at 1440
+         are touching. Rather than hand-tune a second set of numbers for every
+         width, the scatter is relaxed after it is laid — overlapping pairs
+         push apart along the line between their centres until nothing
+         intersects. It converges in a handful of passes and does nothing at
+         all at the widths where the layout was designed. */
+      this.relax();
+
+      /* THE ARRIVAL. relax() has just decided where every piece belongs; rain()
+         takes those positions as the destination and throws the pieces in from
+         above to reach them. Order matters — the physics needs somewhere to
+         land before it can start. */
+      this.rain();
+
       /* A window that got smaller must not leave a structure stranded off the
          edge — but nothing is re-laid and nothing is re-scaled, so a build
          survives a resize exactly as it was made. */
       addEventListener('resize', () => this.reclaim(), { passive: true });
+    },
+
+    /* ONE PLACE A BRICK IS BORN. init() calls it for the scattered eight-
+       -teen; spawn() calls it for a piece summoned in mid-build. Everything
+       that makes a brick a brick — the drag hooks, the group of one, the
+       registration in `recs` and `groups` — happens here and only here, so a
+       summoned piece is not a special kind of object with its own rules. */
+    mk(kind, tone, bx, by) {
+      const wrap = el('div', {
+        class: 'drg brk', style: `left:${bx}px;top:${by}px`,
+        'data-brick': kind, 'aria-label': `Building block, ${kind}`,
+      });
+      this.uid = (this.uid || 0) + 1;
+      wrap.innerHTML = this.art(kind, tone, `${this.uid}`);
+      this.host.appendChild(wrap);
+
+      /* No resting tilt. Everything else loose on this canvas sits at a slight
+         angle because it was dropped there; a brick is a machined part, and a
+         lattice cannot be built out of pieces that are each a degree off true.
+         No chrome either — see the note in Drag.make. */
+      const it = Drag.make(wrap, { r: 0, chrome: false });
+      const rec = { it, def: PIECE[kind], bx, by, gx: 0, gy: 0, kind, tone };
+      const g = { members: [rec] };
+      rec.g = g;
+      it.brick = rec;
+      this.groups.push(g);
+      this.recs.push(rec);
+      it.onGrab = (item, e) => this.grab(rec, item, e);
+      it.onMove = () => this.move(rec);
+      it.onDrop = () => this.drop(rec);
+      it.onDetach = () => this.forget(rec);
+      it.onReattach = () => this.remember(rec);
+      return rec;
+    },
+
+    /* Repaint in place. The art is generated from the cell list and a colour,
+       so a piece changing hue is a re-render, not a swap — same node, same
+       drag item, same identity, same position. The CSS cross-fades it. */
+    retint(rec, hue) {
+      if (!hue || rec.tone === hue) return;
+      rec.tone = hue;
+      this.uid = (this.uid || 0) + 1;
+      rec.it.node.classList.add('is-tint');
+      rec.it.node.innerHTML = this.art(rec.kind, hue, `${this.uid}`);
+      setTimeout(() => rec.it.node.classList.remove('is-tint'), 420);
+    },
+
+    relax() {
+      const h = this.host.getBoundingClientRect();
+      const box = (r) => {
+        const x = this.px(r), y = this.py(r);
+        let W = 0, H = 0;
+        r.def.cells.forEach(([c, w]) => { W = Math.max(W, c + 1); H = Math.max(H, w + 1); });
+        return { x, y, w: W * this.U, h: H * this.U, r };
+      };
+      const PAD = 12;
+      for (let pass = 0; pass < 24; pass += 1) {
+        let hit = false;
+        const bs = this.recs.map(box);
+        for (let i = 0; i < bs.length; i += 1) {
+          for (let j = i + 1; j < bs.length; j += 1) {
+            const a = bs[i], b = bs[j];
+            const ox = Math.min(a.x + a.w + PAD, b.x + b.w + PAD) - Math.max(a.x, b.x);
+            const oy = Math.min(a.y + a.h + PAD, b.y + b.h + PAD) - Math.max(a.y, b.y);
+            if (ox <= 0 || oy <= 0) continue;
+            hit = true;
+            /* separate along the shallower axis — the shorter way out */
+            let dx = 0, dy = 0;
+            if (ox < oy) dx = (a.x + a.w / 2 <= b.x + b.w / 2 ? -1 : 1) * (ox / 2 + 0.5);
+            else dy = (a.y + a.h / 2 <= b.y + b.h / 2 ? -1 : 1) * (oy / 2 + 0.5);
+            this.moveTo(a.r, a.x + dx, a.y + dy);
+            this.moveTo(b.r, b.x - dx, b.y - dy);
+            a.x += dx; a.y += dy; b.x -= dx; b.y -= dy;
+          }
+        }
+        if (!hit) break;
+      }
+      /* and nothing may have been pushed off the edge doing it */
+      this.recs.forEach((r) => {
+        const b = box(r);
+        const x = Math.min(Math.max(b.x, 8), Math.max(8, h.width - b.w - 8));
+        const y = Math.min(Math.max(b.y, 8), Math.max(8, h.height - b.h - 8));
+        if (x !== b.x || y !== b.y) this.moveTo(r, x, y);
+      });
+    },
+
+    /* =====================================================================
+       THE ARRIVAL
+
+       The hero used to be finished before you saw it: eighteen bricks already
+       lying in their places while the type was still resolving. Nothing was
+       wrong with it and nothing about it said the page had been built.
+
+       So the pieces are thrown in instead. What runs below is a small rigid-
+       body integrator — gravity, velocity, spin, restitution, friction, and
+       pairwise contact — over the eighteen bricks and nothing else. It is not
+       a path they are following. Each piece has its own mass, its own drop
+       height, its own entry moment and its own spin, and when two of them meet
+       on the way down they actually push each other apart, which is why no two
+       runs land the same way.
+
+       AND YET IT ALWAYS ENDS IN THE SAME PLACE. Every body carries the
+       position relax() gave it as a target, and over the last third of the
+       sequence a spring takes over from the physics and closes the remaining
+       distance to zero. The journey is simulated; the destination is not up
+       for negotiation. The hero is pixel-identical the moment it settles.
+
+       PERFORMANCE. Eighteen bodies, 153 possible contacts, one rAF loop, and
+       the only thing written per frame is three custom properties per piece —
+       --x, --y and --r, all composited. No layout is read inside the loop and
+       nothing else on the page re-renders while it runs.
+       ===================================================================== */
+    rain() {
+      const bodies = this.recs.map((r) => ({ r }));
+      if (!bodies.length) return;
+
+      /* EVERY LOAD, DELIBERATELY. The fall is not a curtain in front of the
+         page, it IS the page arriving. Reduced motion skips it — that is an
+         accessibility setting, not a preference about novelty — and is the one
+         path that still shows the laid-out composition. This never fired on
+         in-page navigation anyway: it hangs off Bricks.init(), which runs once
+         per document. */
+      if (REDUCED) return;
+
+      /* ===================================================================
+         A DUMP, AND NOTHING ELSE.
+
+         There is no target in this function. Not a hidden one, not a soft one,
+         not one that only applies at the end — the words `tx` and `ty` do not
+         appear below and neither does the position any piece was laid out at.
+         A brick's entry, its velocity, its spin, its mass, its bounce and the
+         line it comes to rest on are all rolled fresh on every load, it is
+         pushed around by whatever it meets on the way down, and where it stops
+         is wherever that leaves it.
+
+         When the last one stops moving the loop ends and the transform each
+         piece is already wearing is simply kept. No interpolation, no
+         normalisation, no restore — the arrangement physics produced IS the
+         loaded state, and it is different every refresh.
+
+         The laid-out coordinates in content.js still exist and are still what
+         `relax()` arranges, but from here they are only the reduced-motion
+         composition and the anchor the transforms are measured from. They are
+         not a destination.
+
+         The preset builds are the OTHER system — that is where pieces travel
+         to known places and assemble. Nothing in this function is shared with
+         them on purpose.
+         =================================================================== */
+      const h = this.host.getBoundingClientRect();
+      const rnd = (a2, b2) => a2 + Math.random() * (b2 - a2);
+
+      bodies.forEach((b2, i) => {
+        const cells = b2.r.def.cells;
+        let W = 0, H = 0;
+        cells.forEach(([c, w]) => { W = Math.max(W, c + 1); H = Math.max(H, w + 1); });
+        b2.w = W * this.U; b2.h = H * this.U;
+        b2.m = cells.length * rnd(0.82, 1.25);      /* mass varies per load too */
+        b2.e = rnd(0.14, 0.42);                     /* and so does the bounce   */
+        b2.fr = rnd(0.86, 0.95);                    /* and the friction         */
+        b2.wait = 110 + (i / bodies.length) * 430 + rnd(-110, 110);
+        b2.x = rnd(0.06, 0.9) * h.width;
+        b2.y = -rnd(150, 760) - b2.h;
+        b2.vx = rnd(-90, 90);
+        b2.vy = rnd(0, 190);
+        b2.a = rnd(-180, 180);
+        b2.va = (Math.random() < 0.4 ? rnd(-560, 560) : rnd(-200, 200));
+        /* The line it happens to stop on. Spread across most of the canvas
+           rather than one shelf, so the result is a scatter with a cluster or
+           two in it and not a row. It starts below the intro column because a
+           brick resting on the headline is a mess of the wrong kind. */
+        b2.floor = h.height * rnd(0.34, 0.86);
+        b2.hits = 0; b2.live = false; b2.still = 0;
+      });
+
+      const G = 2750;
+      const CAP = 2600;                   /* a backstop, never the plan */
+      const t0 = performance.now();
+      let ticks = 0;
+
+      bodies.forEach((b2) => { b2.r.auto = true; b2.r.it.node.classList.add('is-auto', 'is-settle'); });
+
+      const step = (now) => {
+        const el = now - t0;
+        const dt = Math.min(0.032, (now - (this.last || now)) / 1000) || 0.016;
+        this.last = now;
+
+        bodies.forEach((b2) => {
+          if (!b2.live) { if (el >= b2.wait) b2.live = true; else return; }
+          b2.vy += G * dt;
+          b2.x += b2.vx * dt;
+          b2.y += b2.vy * dt;
+          b2.a += b2.va * dt;
+          if (b2.y >= b2.floor) {
+            b2.y = b2.floor;
+            if (b2.vy > 55) {
+              b2.vy = -b2.vy * b2.e;
+              b2.va *= 0.5;
+              b2.vx *= 0.7;
+              b2.hits += 1;
+              if (b2.hits === 1 && ticks < 10) {
+                ticks += 1;
+                Sound.voice({ freq: 290 + Math.random() * 240, gain: 0.016, dur: 0.035,
+                  bright: 2600, drop: 1.7, noise: 0.55 });
+              }
+            } else {
+              /* down on the table: it slides and spins to a stop against
+                 friction. Nothing pulls it anywhere. */
+              b2.vy = 0; b2.vx *= b2.fr; b2.va *= b2.fr - 0.04;
+            }
+          }
+          b2.vx *= 0.995;
+          if (b2.x < 6) { b2.x = 6; b2.vx = Math.abs(b2.vx) * 0.45; }
+          /* clear of the toolbar's column, which is the one place a piece must
+             not come to rest — it would sit under a control */
+          const rlim = h.width - b2.w - 72;
+          if (b2.x > rlim) { b2.x = rlim; b2.vx = -Math.abs(b2.vx) * 0.45; }
+        });
+
+        for (let i = 0; i < bodies.length; i += 1) {
+          const A = bodies[i];
+          if (!A.live) continue;
+          for (let j = i + 1; j < bodies.length; j += 1) {
+            const C = bodies[j];
+            if (!C.live) continue;
+            const ox = Math.min(A.x + A.w, C.x + C.w) - Math.max(A.x, C.x);
+            const oy = Math.min(A.y + A.h, C.y + C.h) - Math.max(A.y, C.y);
+            if (ox <= 0 || oy <= 0) continue;
+            const tot = A.m + C.m, sa = C.m / tot, sc = A.m / tot;
+            if (ox < oy) {
+              const d = (A.x < C.x ? -1 : 1) * ox;
+              A.x += d * sa; C.x -= d * sc;
+              const v = (A.vx - C.vx) * 0.36;
+              A.vx -= v * sa; C.vx += v * sc;
+              A.va += d * 0.5 * sa; C.va -= d * 0.5 * sc;
+            } else {
+              const d = (A.y < C.y ? -1 : 1) * oy;
+              A.y += d * sa; C.y -= d * sc;
+              const v = (A.vy - C.vy) * 0.36;
+              A.vy -= v * sa; C.vy += v * sc;
+              A.va += (A.x - C.x) * 0.5 * sa;
+              C.va -= (A.x - C.x) * 0.5 * sc;
+            }
+          }
+        }
+
+        bodies.forEach((b2) => {
+          if (!b2.live) { this.moveTo(b2.r, b2.x, -900); return; }
+          this.moveTo(b2.r, b2.x, b2.y);
+          const st = Math.min(0.06, Math.abs(b2.vy) / 22000);
+          b2.r.it.rest = b2.a;
+          b2.r.it.sy = 1 + st; b2.r.it.sx = 1 - st * 0.5;
+          b2.r.it.node.style.setProperty('--r', `${b2.a.toFixed(2)}deg`);
+          b2.r.it.node.style.setProperty('--sx', (1 - st * 0.5).toFixed(4));
+          b2.r.it.node.style.setProperty('--sy', (1 + st).toFixed(4));
+        });
+
+        const resting = bodies.every((b3) => b3.live && b3.y >= b3.floor - 1.5
+          && Math.abs(b3.vy) < 18 && Math.abs(b3.vx) < 18 && Math.abs(b3.va) < 26);
+        if (!resting && el < CAP) { requestAnimationFrame(step); return; }
+
+        /* STOP. This is the whole ending: the loop exits and every piece keeps
+           the position, the angle and the neighbours physics gave it. The only
+           writes here undo the speed-stretch — which is a motion cue, not a
+           position — and hand the pieces back to the drag system, which picks
+           them up exactly where they are. */
+        bodies.forEach((b2) => {
+          b2.r.it.sx = 1; b2.r.it.sy = 1;
+          b2.r.it.rest = b2.a;
+          b2.r.auto = false;
+          b2.r.it.node.classList.remove('is-auto', 'is-settle');
+          Drag.apply(b2.r.it);
+        });
+        delete document.body.dataset.arriving;
+      };
+
+      document.body.dataset.arriving = 'dump';
+      bodies.forEach((b2) => this.moveTo(b2.r, b2.x, -900));
+      requestAnimationFrame(step);
     },
 
     /* --- the snap plan ----------------------------------------------------
@@ -5606,6 +6041,9 @@
       this.groups.forEach((g) => {
         if (g === skip || !g.members.length) return;
         if (set.indexOf(g.members[0]) >= 0) return;
+        /* a piece the preset is currently flying is not a place to land: its
+           position is changing between frames and it has not seated yet */
+        if (g.members.some((r) => r.auto)) return;
         const b = g.members[0];
         const ox = this.px(b) - b.gx * U, oy = this.py(b) - b.gy * U;
         const gc = this.cellsOf(g);
@@ -5769,7 +6207,15 @@
       /* Re-place every member from the lattice, not just the ones that moved.
          Float error accumulated over a dozen drags is what eventually leaves a
          structure a third of a pixel out of true. */
-      target.members.forEach((r) => this.moveTo(r, plan.ox + r.gx * U, plan.oy + r.gy * U));
+      target.members.forEach((r) => {
+        this.moveTo(r, plan.ox + r.gx * U, plan.oy + r.gy * U);
+        /* A piece can now arrive at a join still wearing the angle it landed
+           at, because the load leaves it wherever it fell. The lattice has no
+           notion of rotation, so a tilted brick would weld into a straight
+           structure and stay tilted. Coming true is part of the click — the
+           150ms transform transition on `.drg` does it. */
+        if (r.it.rest) { r.it.rest = 0; Drag.apply(r.it); }
+      });
     },
 
     /* Take a piece out of its structure, in place. The remainder may fall into
@@ -5910,6 +6356,372 @@
         e.r.g = g;
       });
       this.groups = [...by.values()];
+    },
+
+    /* ===================================================================
+       THE BUILDS
+
+       A preset is not a picture and not a shortcut — it is an INSTRUCTION TO
+       THE CANVAS. Everything below drives the pieces through exactly the path
+       a hand drives them through: travel, approach, magnetic pull, snap,
+       settle, weld. Nothing here places a brick by assignment; if the manual
+       interaction changed tomorrow this would change with it, because it is
+       the same three moves in the same order.
+
+       What it adds is only the choreography — who goes when, and from where.
+       =================================================================== */
+
+    wait(ms) { return new Promise((r) => setTimeout(r, ms)); },
+
+    /* --- the shelf -------------------------------------------------------
+       Not a modal. A second panel the same width-ish as the toolbar, hung off
+       its left edge in the same white, the same radius, the same 1px inside
+       stroke and the same shadow — so it reads as the toolbar having opened a
+       drawer rather than as a dialog having arrived over the canvas. */
+    shelf(btn) {
+      if (this.sh && this.sh.classList.contains('is-up')) return this.unshelf();
+      if (!this.sh) {
+        const sh = el('div', {
+          class: 'shelf', role: 'menu', 'aria-label': 'LEGO builds',
+        });
+        Object.keys(PLAN).forEach((k) => {
+          const bp = PLAN[k];
+          const b = el('button', { class: 'shelf__it', type: 'button', role: 'menuitem' },
+            `<span class="shelf__art">${this.thumb(bp)}</span>`
+            + `<span class="shelf__lb">${esc(bp.label)}</span>`);
+          b.addEventListener('click', (e) => {
+            e.stopPropagation();
+            b.classList.add('is-press');
+            this.unshelf();
+            setTimeout(() => b.classList.remove('is-press'), 180);
+            this.run(k);
+          });
+          sh.appendChild(b);
+        });
+        (Rack.rack || this.host).appendChild(sh);
+        this.sh = sh;
+        this.shBtn = btn;
+        addEventListener('keydown', (e) => { if (e.key === 'Escape') this.unshelf(); });
+        document.addEventListener('pointerdown', (e) => {
+          if (!this.sh || !this.sh.classList.contains('is-up')) return;
+          if (e.target.closest('.shelf, .tool--preset')) return;
+          this.unshelf();
+        }, true);
+      }
+      this.sh.classList.add('is-up');
+      btn.classList.add('is-on');
+      btn.setAttribute('aria-expanded', 'true');
+      Sound.voice({ freq: 900, gain: 0.022, dur: 0.03, bright: 4200, drop: 1.1, noise: 0.4 });
+    },
+
+    unshelf() {
+      if (!this.sh) return;
+      this.sh.classList.remove('is-up');
+      if (this.shBtn) {
+        this.shBtn.classList.remove('is-on');
+        this.shBtn.setAttribute('aria-expanded', 'false');
+      }
+    },
+
+    /* The preview is the build, drawn small. Same cell list, same hues, same
+       stud on every cell — so what the thumbnail shows is literally what the
+       canvas will assemble, and it cannot drift from it. */
+    thumb(bp) {
+      const u = 5, pad = 1;
+      let W = 0, H = 0;
+      bp.parts.forEach((pt) => PIECE[pt.kind].cells.forEach(([c, r]) => {
+        W = Math.max(W, pt.gx + c + 1); H = Math.max(H, pt.gy + r + 1);
+      }));
+      let body = '';
+      bp.parts.forEach((pt) => {
+        const hue = HUE[pt.c] || pt.c;
+        PIECE[pt.kind].cells.forEach(([c, r]) => {
+          const x = (pt.gx + c) * u + pad, y = (pt.gy + r) * u + pad;
+          body += `<rect x="${x}" y="${y}" width="${u}" height="${u}" fill="${hue}"/>`
+            + `<circle cx="${x + u / 2}" cy="${y + u / 2}" r="${u * 0.2}" `
+            + `fill="#000" opacity=".16"/>`;
+        });
+      });
+      return `<svg viewBox="0 0 ${W * u + pad * 2} ${H * u + pad * 2}" `
+        + `width="${W * u + pad * 2}" height="${H * u + pad * 2}" aria-hidden="true">${body}</svg>`;
+    },
+
+    /* --- recruiting ------------------------------------------------------
+       In the order the spec demands: a loose compatible piece first, then a
+       compatible piece out of an existing structure, and only then a new one
+       summoned from off-canvas. Somebody's careful build is the LAST thing
+       raided, and a piece taken from one is animated out of it like any other
+       traveller rather than vanishing. */
+    recruit(bp) {
+      const used = new Set();
+      const pick = (kind, loose) => {
+        let best = null, bd = Infinity;
+        this.recs.forEach((r) => {
+          if (used.has(r) || r.kind !== kind) return;
+          if (loose && r.g.members.length !== 1) return;
+          if (!loose && r.g.members.length === 1) return;
+          const d = Math.abs(this.px(r)) + Math.abs(this.py(r));
+          if (d < bd) { bd = d; best = r; }
+        });
+        return best;
+      };
+      return bp.parts.map((pt) => {
+        const r = pick(pt.kind, true) || pick(pt.kind, false);
+        if (r) used.add(r);
+        return { part: pt, rec: r };
+      });
+    },
+
+    /* A piece that does not exist yet arrives from off the edge nearest to
+       where it is needed, so it travels INTO frame rather than appearing in
+       it. It is a normal brick from the moment it is made — mk() is the only
+       constructor — it simply starts outside the window. */
+    spawn(kind, hue, tx, ty) {
+      const h = this.host.getBoundingClientRect();
+      const side = [
+        { x: -140, y: ty },                 /* left  */
+        { x: h.width + 90, y: ty },         /* right */
+        { x: tx, y: -120 },                 /* top   */
+        { x: tx, y: h.height + 90 },        /* below */
+      ];
+      const near = [tx, h.width - tx, ty, h.height - ty];
+      let far = 0;
+      near.forEach((v, i) => { if (v > near[far]) far = i; });
+      const from = side[far];
+      const rec = this.mk(kind, hue, Math.round(from.x), Math.round(from.y));
+      rec.spawned = true;
+      return rec;
+    },
+
+    /* --- one piece's journey --------------------------------------------
+       Three movements, and they are the three the hand makes:
+
+         TRAVEL     a curved run to a point one and a bit studs short of the
+                    join. Curved because a piece carried across a desk does
+                    not travel on a ruled line; the bow is perpendicular to
+                    the run and its size and sign vary per piece.
+         MAGNET     the last stretch, on an ACCELERATING ease. This is the
+                    manual magnet's rising force written as time instead of
+                    distance — same shape of motion, same feeling of the
+                    piece being taken out of your control near the end.
+         SETTLE     the damped cosine `animate()` already uses for a manual
+                    snap. Identical, deliberately.  */
+    async flyTo(rec, tx, ty, seed) {
+      const sx = this.px(rec), sy = this.py(rec);
+      const dx = tx - sx, dy = ty - sy;
+      const dist = Math.hypot(dx, dy) || 1;
+      /* 300-560ms of travel, scaled by how far it has to come. It was up to
+         760 and a ten-piece build ran to eight seconds, which crosses the line
+         from "it is building itself" to "I am waiting for an animation". */
+      const T1 = Math.max(300, Math.min(470, 230 + dist * 0.38));
+      const bow = (dist * 0.17) * (seed % 2 ? 1 : -1) * (0.7 + (seed % 5) * 0.12);
+      /* the hand-off point: one and a bit studs out, on the line of approach */
+      const back = Math.min(dist * 0.5, this.U * 1.25);
+      const hx = tx - (dx / dist) * back, hy = ty - (dy / dist) * back;
+      const cx = (sx + hx) / 2 - (hy - sy) / dist * bow;
+      const cy = (sy + hy) / 2 + (hx - sx) / dist * bow;
+
+      rec.auto = true;
+      rec.it.node.classList.add('is-auto', 'is-settle');
+      await new Promise((done) => {
+        const t0 = performance.now();
+        const step = (now) => {
+          const t = Math.min(1, (now - t0) / T1);
+          /* out slowly, along quickly, easing off into the hand-off */
+          const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2.4) / 2;
+          const m = 1 - e;
+          const x = m * m * sx + 2 * m * e * cx + e * e * hx;
+          const y = m * m * sy + 2 * m * e * cy + e * e * hy;
+          this.moveTo(rec, x, y);
+          if (t < 1) requestAnimationFrame(step); else done();
+        };
+        requestAnimationFrame(step);
+      });
+
+      const mx = this.px(rec), my = this.py(rec);
+      await new Promise((done) => {
+        const t0 = performance.now(), T2 = 130;
+        const step = (now) => {
+          const t = Math.min(1, (now - t0) / T2);
+          const e = t * t;                        /* accelerating: the pull */
+          this.moveTo(rec, mx + (tx - mx) * e, my + (ty - my) * e);
+          if (t < 1) requestAnimationFrame(step); else done();
+        };
+        requestAnimationFrame(step);
+      });
+
+      /* THE SETTLE IS NOT AWAITED. It is 150ms of the piece giving under its
+         own weight after it has already seated — the join is made, and holding
+         the whole queue for it added three quarters of a second to a ten-piece
+         build for no visible gain. The next piece starts while this one is
+         still ringing, which is what an assembly actually looks like. */
+      {
+        const t0 = performance.now(), T3 = 150;
+        const ox = this.px(rec) - tx, oy = this.py(rec) - ty;
+        const step = (now) => {
+          const t = Math.min(1, (now - t0) / T3);
+          const e = 1 - Math.exp(-8.5 * t) * Math.cos(7.4 * t);
+          this.moveTo(rec, tx + ox * (1 - e), ty + oy * (1 - e));
+          if (t < 1) { requestAnimationFrame(step); return; }
+          this.moveTo(rec, tx, ty);
+          rec.auto = false;
+          rec.it.node.classList.remove('is-auto', 'is-settle');
+        };
+        requestAnimationFrame(step);
+      }
+      Sound.voice({ freq: 520, gain: 0.03, dur: 0.05, bright: 3000, drop: 1.5, noise: 0.35 });
+      Sound.voice({ freq: 185, gain: 0.024, dur: 0.08, bright: 1200, drop: 0.5, noise: 0.5 });
+    },
+
+    /* take a piece out of whatever it belongs to, without forgetting it */
+    unbind(rec) {
+      const g = rec.g;
+      if (!g) return;
+      const i = g.members.indexOf(rec);
+      if (i >= 0) g.members.splice(i, 1);
+      if (!g.members.length) {
+        const k = this.groups.indexOf(g);
+        if (k >= 0) this.groups.splice(k, 1);
+      } else this.resplit(g);
+      rec.g = null;
+    },
+
+    /* --- the orchestrator ------------------------------------------------ */
+    async run(key) {
+      const bp = PLAN[key];
+      if (!bp || this.busy || !this.host) return;
+      this.busy = true;
+      /* A build in progress is a state the page can be asked about — by CSS,
+         by a test, by anything. Without it "is it finished?" can only be
+         guessed at from whether a piece happens to be mid-flight this instant,
+         which is false in every gap between two waves. */
+      document.body.dataset.building = key;
+      const before = this.snapshot();
+      const spawned = [];
+
+      /* WHERE IT GETS BUILT. Roughly where the pieces already are, so they do
+         not all have to cross the canvas — but clamped well inside it, and
+         kept clear of the intro column in the top left. */
+      const h = this.host.getBoundingClientRect();
+      let W = 0, H = 0;
+      bp.parts.forEach((pt) => PIECE[pt.kind].cells.forEach(([c, r]) => {
+        W = Math.max(W, pt.gx + c + 1); H = Math.max(H, pt.gy + r + 1);
+      }));
+      const bw = W * this.U, bh = H * this.U;
+      let cx = 0, cy = 0, n = 0;
+      this.recs.forEach((r) => { cx += this.px(r); cy += this.py(r); n += 1; });
+      cx = n ? cx / n : h.width * 0.55;
+      cy = n ? cy / n : h.height * 0.55;
+      const jobs = this.recruit(bp);
+
+      /* AND NOT ON TOP OF SOMETHING ALREADY BUILT. The centroid alone put a
+         Diet Coke straight through the middle of a finished Ferrari — both
+         structures intact, both unreadable. So the standing structures are
+         measured first (minus any piece about to be recruited out of one, which
+         is leaving anyway) and the origin walks outward in a small spiral until
+         it finds clear canvas. It still starts from where the pieces are, so
+         nothing has to cross the whole hero; it just refuses to land on work
+         that already exists. */
+      const keep = new Set(jobs.map((j) => j.rec).filter(Boolean));
+      const taken = [];
+      this.groups.forEach((g) => {
+        const ms = g.members.filter((r) => !keep.has(r));
+        /* EVERY piece that is staying put, not just the ones in structures.
+           This said `< 2` and skipped lone bricks, so a build would land
+           squarely on top of whichever loose pieces happened to be in the
+           way — two bricks occupying the same square, which is the one thing
+           a lattice is supposed to make impossible. */
+        if (!ms.length) return;
+        let L = 1e9, T = 1e9, R = -1e9, B = -1e9;
+        ms.forEach((r) => {
+          const x = this.px(r), y = this.py(r);
+          r.def.cells.forEach(([c, w]) => {
+            L = Math.min(L, x + c * this.U); T = Math.min(T, y + w * this.U);
+            R = Math.max(R, x + (c + 1) * this.U); B = Math.max(B, y + (w + 1) * this.U);
+          });
+        });
+        taken.push({ L, T, R, B });
+      });
+      const clear = (x, y) => !taken.some((q) =>
+        x < q.R + 26 && q.L - 26 < x + bw && y < q.B + 26 && q.T - 26 < y + bh);
+      const fit = (x, y) => [
+        Math.round(Math.min(Math.max(x, h.width * 0.24), Math.max(h.width * 0.24, h.width - bw - 80))),
+        Math.round(Math.min(Math.max(y, 110), Math.max(110, h.height - bh - 70))),
+      ];
+      let [ox, oy] = fit(cx - bw / 2, cy - bh / 2);
+      if (!clear(ox, oy)) {
+        const step = this.U * 3;
+        outer:
+        for (let ring = 1; ring <= 7; ring += 1) {
+          for (const [sx, sy] of [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+            const [tx2, ty2] = fit(cx - bw / 2 + sx * ring * step, cy - bh / 2 + sy * ring * step);
+            if (clear(tx2, ty2)) { ox = tx2; oy = ty2; break outer; }
+          }
+        }
+      }
+
+      /* PHASE 1 — the beat before. Nothing moves, and that is the point: it
+         is what turns a build into something that was decided rather than
+         something that was always going to happen. */
+      await this.wait(210);
+
+      const bg = { members: [] };
+      this.groups.push(bg);
+
+      const stages = [...new Set(bp.parts.map((pt) => pt.s))].sort((a, b) => a - b);
+      let seed = 0;
+      for (const st of stages) {
+        const wave = jobs.filter((j) => j.part.s === st);
+        await Promise.all(wave.map(async (j, k) => {
+          seed += 1;
+          const tx = ox + j.part.gx * this.U, ty = oy + j.part.gy * this.U;
+          let rec = j.rec;
+          if (!rec) { rec = this.spawn(j.part.kind, HUE[j.part.c], tx, ty); spawned.push(rec); }
+          /* a piece leaving somebody's structure comes loose first, visibly */
+          this.unbind(rec);
+          rec.g = bg; bg.members.push(rec);
+          rec.gx = j.part.gx; rec.gy = j.part.gy;
+          Drag.raise(rec.it);
+          this.retint(rec, HUE[j.part.c]);
+          /* pieces in one wave are independent, so they overlap — staggered
+             just enough that they read as separate decisions */
+          await this.wait(k * 55);
+          await this.flyTo(rec, tx, ty, seed);
+        }));
+        await this.wait(40);
+      }
+
+      /* PHASE FINAL — everything already seated gives once, together, and
+         stops. No banner, no tick, no percentage: the object is the message. */
+      bg.members.forEach((r) => this.moveTo(r, ox + r.gx * this.U, oy + r.gy * this.U));
+      const st0 = performance.now();
+      bg.members.forEach((r) => r.it.node.classList.add('is-settle'));
+      await new Promise((done) => {
+        const step = (now) => {
+          const t = Math.min(1, (now - st0) / 200);
+          const k = Math.exp(-9 * t) * Math.sin(9 * t) * 1.6;
+          bg.members.forEach((r) => this.moveTo(r,
+            ox + r.gx * this.U, oy + r.gy * this.U + k));
+          if (t < 1) { requestAnimationFrame(step); return; }
+          bg.members.forEach((r) => {
+            this.moveTo(r, ox + r.gx * this.U, oy + r.gy * this.U);
+            r.it.node.classList.remove('is-settle');
+          });
+          done();
+        };
+        requestAnimationFrame(step);
+      });
+
+      const after = this.snapshot();
+      History.push(() => {
+        spawned.forEach((r) => Drag.detach(r.it));
+        this.restore(before);
+      }, 'build', () => {
+        spawned.forEach((r) => Drag.reattach(r.it));
+        this.restore(after);
+      });
+      delete document.body.dataset.building;
+      this.busy = false;
     },
 
     /* A smaller window must not put a structure out of reach. Whole groups are

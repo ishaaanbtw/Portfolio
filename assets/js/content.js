@@ -254,28 +254,21 @@ window.SITE = {
        high enough to leave a deep strip underneath. There is no such case now —
        the text is always at the bottom on a phone — so there is one mobile
        arrangement and `roomy` in Peel.place() never picks a second.          */
-    peel: [
-      {
-        id: 'airpods', label: 'AirPods Pro', src: 'assets/img/stickers/airpods.png',
-        x: 63, y: 15, w: 100, rot: -10, dir: 20, hover: 30, active: 42,
-        mobile: { x: 32, y: 20, w: 76 },
-      },
-      {
-        id: 'ps5', label: 'PS5 controller', src: 'assets/img/stickers/ps5.png',
-        x: 9, y: 76, w: 118, rot: 5, dir: 340, hover: 32, active: 44,
-        mobile: { x: 26, y: 42, w: 92 },
-      },
-      {
-        id: 'coke', label: 'Diet Coke', src: 'assets/img/stickers/coke.png',
-        x: 88, y: 22, w: 56, rot: 8, dir: 45, hover: 26, active: 36,
-        mobile: { x: 80, y: 18, w: 40 },
-      },
-      {
-        id: 'lego', label: 'Lego F1', src: 'assets/img/stickers/lego.png',
-        x: 84, y: 80, w: 125, rot: -9, dir: 45, hover: 34, active: 46,
-        mobile: { x: 74, y: 44, w: 88 },
-      },
-    ],
+    /* EMPTY, AND THE MACHINERY STAYS. Peel.init() returns before it builds
+       anything when this list is empty, so the layer, its SVG filters, the
+       resize handler and the collision guard are all simply never created —
+       there is no dead code path running for four objects that are not there.
+
+       Everything needed to bring them back is still here: the module, the
+       artwork in assets/img/stickers/, `peelStyle` below, and the coordinates
+       in the note above. Re-adding one is a single entry:
+
+         { id: 'airpods', label: 'AirPods Pro', src: 'assets/img/stickers/airpods.png',
+           x: 63, y: 15, w: 100, rot: -10, dir: 20, hover: 30, active: 42,
+           mobile: { x: 32, y: 20, w: 76 } }
+
+       The four that were here: airpods 63/15, ps5 9/76, coke 88/22, lego 84/80. */
+    peel: [],
 
     /* ---------------------------------------------------------------- bricks
        Building blocks, scattered the way everything else on this canvas is
@@ -288,30 +281,47 @@ window.SITE = {
                  objects use, so a build survives a resize without being re-laid
          tone    index into the palette; omit and it follows the list order
 
-       THEY START IN THE BOTTOM RIGHT, TOGETHER. Scattered evenly across the
-       whole hero they read as litter — eight unrelated things the page forgot
-       to clean up. Gathered in one quarter they read as a pile of parts, which
-       is a different and much better first impression: it says these belong to
-       each other and something could be made of them.
+       EIGHTEEN OF THEM, SCATTERED THROUGH A TRACED REGION. The coordinates are
+       not hand-picked. The region was lifted off a marked-up screenshot as a
+       mask, eroded by half a brick so nothing overhangs its edge, cleared of
+       the toolbar's column and the shortcut bar along the bottom, and then
+       filled by dropping the largest pieces in first and rejecting any position
+       within 20px of one already placed. The scatter therefore follows the
+       SHAPE of the region rather than a bounding box, and no two pieces touch
+       at rest — every connection on this canvas is one somebody made.
 
        This is a STARTING ARRANGEMENT and nothing more. There is still no zone,
        no tray and no boundary — the moment one is picked up it goes anywhere on
        the canvas and connects anywhere, and nothing ever puts it back.
 
-       The block sits clear of the intro in the top-left, the PS5 controller at
-       9/76, the F1 car at 84/80 and the toolbar's column on the right. On a
-       phone the bottom right is where the text lives, so the same huddle moves
-       to the middle band instead — grouped, which was the point, rather than
-       bottom-right, which cannot be. */
+       They were eight, huddled in the bottom-right corner around the F1 car and
+       the controller. Those are gone, and with them the reason for the huddle —
+       the space they were avoiding is now the space to fill.
+
+       ON A PHONE, NINE OF THE EIGHTEEN. The text sits at the bottom there and
+       the free space is the upper two fifths of a 390px screen, which eighteen
+       pieces would fill wall to wall. The other nine carry `mobile: false` and
+       are never built, the same way a peel object opts out. Same canvas, same
+       rules, fewer parts. */
     bricks: [
-      { kind: 'br24',   x: 56, y: 55, tone: 1, mobile: { x: 6,  y: 29 } },
-      { kind: 'long',   x: 56, y: 63, tone: 0, mobile: { x: 6,  y: 37 } },
-      { kind: 'tee',    x: 56, y: 71, tone: 4, mobile: { x: 6,  y: 44 } },
-      { kind: 'ell',    x: 71, y: 54, tone: 2, mobile: { x: 45, y: 36 } },
-      { kind: 'sq2',    x: 79, y: 54, tone: 3, mobile: { x: 45, y: 28 } },
-      { kind: 'corner', x: 68, y: 71, tone: 5, mobile: { x: 62, y: 28 } },
-      { kind: 'small',  x: 76, y: 71, tone: 7, mobile: { x: 62, y: 44 } },
-      { kind: 'conn',   x: 83, y: 71, tone: 6, mobile: { x: 78, y: 44 } },
+      { kind: 'tee',     x: 75.4, y: 15.9, tone: 0, mobile: { x: 12.3, y: 41.7 } },
+      { kind: 'ell',     x: 83.8, y: 24.5, tone: 1, mobile: false },
+      { kind: 'conn',    x: 74.4, y: 33.2, tone: 2, mobile: { x: 55.9, y: 43.7 } },
+      { kind: 'sq2',     x: 77.8, y: 35.9, tone: 3, mobile: false },
+      { kind: 'conn',    x: 60.8, y: 48.0, tone: 4, mobile: { x: 23.6, y: 19.0 } },
+      { kind: 'sq2',     x: 66.2, y: 50.4, tone: 5, mobile: false },
+      { kind: 'br24',    x: 74.6, y: 50.7, tone: 6, mobile: { x: 34.9, y: 40.9 } },
+      { kind: 'long',    x: 42.5, y: 55.6, tone: 7, mobile: { x:  4.6, y: 33.4 } },
+      { kind: 'sq2',     x: 36.5, y: 56.7, tone: 0, mobile: false },
+      { kind: 'corner',  x: 71.1, y: 59.1, tone: 1, mobile: { x: 34.4, y: 16.6 } },
+      { kind: 'small',   x: 52.9, y: 59.3, tone: 2, mobile: false },
+      { kind: 'corner',  x: 80.5, y: 59.3, tone: 3, mobile: { x: 75.9, y: 33.8 } },
+      { kind: 'tee',     x: 41.7, y: 66.9, tone: 4, mobile: false },
+      { kind: 'br24',    x: 49.5, y: 69.6, tone: 5, mobile: { x: 20.8, y: 27.4 } },
+      { kind: 'ell',     x: 78.1, y: 70.0, tone: 6, mobile: false },
+      { kind: 'small',   x: 22.8, y: 73.0, tone: 7, mobile: false },
+      { kind: 'br24',    x: 53.4, y: 77.8, tone: 0, mobile: { x: 65.9, y: 40.2 } },
+      { kind: 'long',    x: 67.2, y: 81.3, tone: 1, mobile: false },
     ],
 
     /* Defaults for anything a sticker doesn't set for itself. */
