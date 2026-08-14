@@ -5,6 +5,11 @@ _to_delete/
 *.zip
 *.tgz
 .vercel/
+.vite/
+.vite
 node_modules/
 .vscode/
 node_modules
+dist/
+build/
+
