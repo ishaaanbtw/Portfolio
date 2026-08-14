@@ -169,13 +169,20 @@ window.SITE = {
     /* One weight, no emphasis. The `*word*` syntax still works — the parser and
        `.hdl-em` are both still there — so wrapping a word puts the italic back. */
     headline: 'I’m Ishaan, a product designer who engineers.',
-    /* Three tags. `detail` appears on hover (and stays while selected).
-       `icon` is a built-in glyph — currently 'pin'. `logo` is any SVG path,
-       so swapping in a real company mark is a one-line change. */
+    /* The tags. `detail` appears on hover (and stays while selected).
+
+       `icon` is a built-in glyph — 'pin' or 'cypherock', both drawn inline in
+       site.js so they take the label's own colour. `logo` is any SVG path
+       instead, for a mark that should keep its brand colours.
+
+       WHERE THE GLYPH SITS IS WRITTEN IN THE LABEL. `{}` is the slot, the same
+       way `*word*` in the headline is the italic: put it at the end and the pin
+       trails the place name, put it between two words and the mark stands in
+       for the one you left out. Leave it out entirely and the glyph leads,
+       which is what every tag used to do. */
     pills: [
-      { label: 'Product Designer', detail: '2.5 years experience' },
-      { label: 'Delhi', icon: 'pin' },
-      { label: 'Currently @ Cypherock', logo: 'assets/img/logos/cypherock.svg' },
+      { label: 'Based in Gurugram {}', icon: 'pin' },
+      { label: 'Currently {} Cypherock', icon: 'cypherock' },
     ],
 
     /* Load reveal, in ms. Measured off the reference; lower every number by the

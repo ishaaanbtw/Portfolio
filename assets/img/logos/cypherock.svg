@@ -1,8 +1,13 @@
-<!-- Placeholder mark. Drop the real Cypherock logo in at this path and it just
-     works — the pill sizes it to 14px and doesn't recolour it. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#0f1115"/>
-  <path d="M15.6 8.6a4.6 4.6 0 1 0 0 6.8" fill="none" stroke="#39e6a8"
-        stroke-width="2.4" stroke-linecap="round"/>
-  <circle cx="16.4" cy="12" r="1.6" fill="#39e6a8"/>
+<!-- The Cypherock mark. Traced from the supplied artwork at 4x: it is all
+     straight lines, so this is two polygons rather than a curve fit, and 0.44%
+     of pixels differ from the original — all of it the antialias fringe.
+
+     `currentColor`, so wherever this is inlined it takes the surrounding text's
+     colour. Used as an <img> it falls back to black; set a fill there instead.
+     The hero tag does not use this file — it inlines the same paths from
+     PILL_ICON in site.js so the mark can inherit the label's grey. Keep the two
+     in step. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120.72" fill="currentColor" fill-rule="evenodd">
+  <path d="M0 64.71 39.42 120.52 69.94 75.61 85.38 75.5 64.4 106.3 60.14 100.23 55.63 106.99 64.56 120.72 100 68.64 65.55 68.49 39.63 106.56 15.18 72.01 30.67 71.83 43.74 90.1 48.25 83.31 35.29 64.94Z"/>
+  <path d="M100 52.18 64.58 0 55.63 13.83 60.14 20.49 64.07 14.52 64.51 14.62 85.38 45.22 70.04 45.22 39.42 0.2 0.1 55.98 35.06 56.01 48.15 37.61 43.74 30.62 30.67 48.99 15.34 48.89 15.28 48.61 39.63 14.16 65.55 52.23Z"/>
 </svg>

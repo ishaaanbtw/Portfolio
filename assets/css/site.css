@@ -5371,6 +5371,43 @@ body.past-hero .sel { opacity: 0; }
     drop-shadow(0 0 1.5px rgba(20, 16, 12, 0.26));
 }
 
+/* IT CANNOT STAY HERE, SAID ON THE BRICK.
+
+   The piece is over the hero. The rule is that it will not be left there, and
+   the page has to say so — but on the object the rule is about, not on the
+   sentence underneath it. There was a red hatched rectangle over the hero here
+   once and it was the collision model in the user's face: a debugger, shipped.
+   Objects on a canvas do not draw their own bounding boxes, and the hero is an
+   object on this canvas.
+
+   So: the piece dims and cools, the way a thing does when it is not going to
+   stay where it is. Two thirds opacity is enough to read as provisional and not
+   so little that you lose the piece under your finger, and the shadow goes
+   flatter because a piece that is about to be moved is not resting on anything.
+   No red wash on the art — the ghost is already telling you where it goes, and
+   an alarm colour would make a resolved, reversible interaction look like an
+   error. The cursor carries the only hard "no" in the whole thing.
+
+   Notice what this rule does NOT touch: the hero. Nothing here has a selector
+   that reaches it. */
+.brk.is-block .brk__art {
+  opacity: 0.62;
+  filter:
+    saturate(0.72)
+    drop-shadow(0 1px 1px rgba(20, 16, 12, 0.10))
+    drop-shadow(0 3px 8px rgba(20, 16, 12, 0.10));
+  transition: opacity 140ms var(--ease), filter 140ms var(--ease);
+}
+.brk.is-block .brk__hit { cursor: not-allowed; }
+
+/* the held lift reads as "picked up"; a piece that has nowhere to land settles
+   back down toward the paper instead */
+.brk.is-block { --lift: 0px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .brk.is-block .brk__art { transition-duration: 1ms; }
+}
+
 /* THE FEEDBACK THE SNAP GETS ONCE IT IS COMMITTED. Inside the threshold the
    piece sits a little heavier — the shadow it would cast if it had already
    come to rest against the other one. It is the last step of a sequence that
@@ -5521,6 +5558,14 @@ body.past-hero .sel { opacity: 0; }
 .brkdbg .d-magnet { fill: none; stroke: rgba(255, 60, 0, 0.6); stroke-width: 1; stroke-dasharray: 2 3; }
 .brkdbg .d-cand { fill: rgba(150, 0, 200, 0.55); }
 .brkdbg .d-pick { fill: rgba(0, 160, 70, 0.9); stroke: rgba(0, 160, 70, 0.9); stroke-width: 1.5; }
+/* the hero blocks: the lattice rectangle, and the four edges a brick may seat
+   against. If one of these is not sitting exactly on the block it stands for,
+   that is the bug, and it is visible in one glance. */
+.brkdbg .d-wall { fill: rgba(150, 62, 44, 0.07); stroke: rgba(150, 62, 44, 0.65); stroke-width: 1; }
+.brkdbg .d-wedge { fill: rgba(150, 62, 44, 0.55); }
+/* the edge the current landing is seated against */
+.brkdbg .d-whot { fill: rgba(0, 160, 70, 0.95); }
+.brkdbg .d-stud { fill: rgba(0, 132, 255, 0.75); }
 
 /* --- the builds shelf ------------------------------------------------------
    NOT A MODAL. It is the toolbar's own drawer: the same white, the same 12px
@@ -5664,16 +5709,47 @@ body.past-hero .sel { opacity: 0; }
 
 .pill__label { display: inline-block; }
 
-/* a glyph slot before the label: an inline icon, or a company logo */
+/* A glyph slot in the label — before it, after it, or in the middle of it;
+   see the `{}` token in Canvas's pill builder.
+
+   SIZED IN em, AND OFF THE CAP HEIGHT. These sit in a line of type and have to
+   read as part of it, so their size is a ratio to the letters beside them
+   rather than a pixel count that stops being right the moment the label's size
+   changes.
+
+   Both ratios come from measuring the reference art rather than from taste —
+   ink extents, letter by letter, as a fraction of the cap they stand next to:
+
+       pin ....... 76px against a 58px 'B'  = 1.31 cap
+       mark ...... 90px against a 60px 'C'  = 1.50 cap
+
+   Geist's caps measure 0.75em, so those land at 0.98em and 1.18em. Both viewBoxes
+   are tight to the ink, so these numbers are the height you actually see. They
+   differ on purpose: a pin is a symbol standing beside a word, and the mark is
+   standing in FOR one — it has to hold its own against the caps either side. */
 .pill__icon {
   display: inline-grid;
   place-items: center;
   /* 15px: the reference's glyph measures 15 x 16 of ink */
   width: 15px; height: 15px;
   flex: none;
-  color: var(--ink-dim);
+  color: inherit;
 }
 .pill__icon svg { width: 100%; height: 100%; display: block; }
+
+/* Both keep their own proportions — 14.1 x 18.48 and 100 x 120.72. Height is
+   the dimension that has to agree with the type, so it is the one set, and the
+   width follows from the ratio rather than being squared off into a box that
+   would letterbox the drawing or stretch it. */
+.pill__icon--pin {
+  height: 0.98em;
+  width: calc(0.98em * 14.1 / 18.48);
+}
+
+.pill__icon--cypherock {
+  height: 1.18em;
+  width: calc(1.18em * 100 / 120.72);
+}
 .pill__icon--logo { width: 15px; height: 15px; border-radius: 4px; overflow: hidden; }
 .pill__icon--logo img { width: 100%; height: 100%; display: block; object-fit: contain; }
 
@@ -6469,9 +6545,11 @@ body.past-hero .sel { opacity: 0; }
 }
 
 /* --- 30c. the phone's navigation ------------------------------------------
-   Fixed bar, hamburger, full-screen sheet. Desktop keeps its row; the two are
-   mutually exclusive and the switch is here, not in JS. */
-.mbar, .msheet { display: none; }
+   A bar with the name at one end and one control at the other. The control is
+   not a menu: it is the handle for the same reveal the desktop has, turned
+   through ninety degrees — see section 38. Desktop keeps its own handle; the
+   two are mutually exclusive and the switch is here, not in JS. */
+.mbar { display: none; }
 
 @media (max-width: 48rem) {
   /* `body[data-page='home'] .nav` sets display on the hero, so hiding the row
@@ -6541,338 +6619,21 @@ body.past-hero .sel { opacity: 0; }
      and what pays for it now is the page itself: everything that passes under
      this corner is paper or paper-2, and dark ink on either is legible without
      help. The 44px target is untouched; only the surface is. */
-  .mbar__btn {
-    display: grid;
-    place-content: center;
-    gap: 5px;
-    width: 44px;
-    height: 44px;
-    margin-right: -10px;               /* optical: the bars, not the box, align */
-    padding: 0;
-    border: 0;
-    background: none;
-    pointer-events: auto;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform 200ms var(--ease), opacity 220ms var(--ease);
-  }
-  .mbar__btn:active { transform: scale(0.9); }
+  /* THE NAME IS FOR THE TOP OF THE PAGE, AND IT LEAVES WITH IT.
 
-  /* Two bars, not three: they cross into the X. Nothing appears or disappears,
-     so the shape reads as one object turning rather than a swap. */
-  .mbar__bar {
-    display: block;
-    width: 18px;
-    height: 1.5px;
-    border-radius: 2px;
-    background: var(--ink);
-    transition: transform 420ms var(--spring-soft, var(--ease));
-  }
-  .mbar__btn.is-open .mbar__bar:first-child { transform: translateY(3.25px) rotate(45deg); }
-  .mbar__btn.is-open .mbar__bar:last-child  { transform: translateY(-3.25px) rotate(-45deg); }
+     Its whole job is that until you scroll there is nothing above the fold
+     saying whose site this is. Once you have scrolled there is: the work, the
+     writing, the footer. And it has no surface — deliberately, a label given a
+     disc becomes a chip — so anything that scrolls under it collides with it,
+     which at the experience table is two headings written on top of each other.
 
-  /* THE BUTTON HAS TO SURVIVE THE PANELS PASSING UNDER IT.
-     It sits above the sheet (z 94 against 93) and does not move, so four
-     colours cross behind it in turn: the top strip of the screen goes page →
-     lavender → purple → violet → ink on the way in, and back the other way on
-     the way out. Its wash has to go and its ink has to invert somewhere in
-     there.
-
-     THE INK SWITCHES IN ONE STEP, NOT AS A CROSSFADE, and the timings are
-     different in each direction because the strip behind it is. A 120ms
-     crossfade puts a mid-grey line over a moving purple at about 1.4:1 — the
-     one thing here that would read as a bug rather than as a transition. A step
-     has no midpoint, so all it needs is to land at a moment when both the old
-     colour and the new one are legible, and the panels' measured times say when
-     that is: 240ms in, when purple has just reached the top (dark reads 3.5:1
-     on it, light 4.6:1), and 490ms out, when the strip has come back up to
-     lavender. */
-  .mbar .mbar__bar {
-    transition:
-      transform 420ms var(--spring-soft, var(--ease)),
-      width 420ms var(--spring-soft, var(--ease)),
-      background-color 1ms linear 490ms;
-  }
-  /* the lines also grow into the cross, so the shape changes size as well as
-     angle — a rotation on its own reads as a flip */
-  .mbar.is-open .mbar__bar {
-    width: 21px;
-    background: var(--paper);
-    transition:
-      transform 420ms var(--spring-soft, var(--ease)),
-      width 420ms var(--spring-soft, var(--ease)),
-      background-color 1ms linear 240ms;
-  }
-
-  /* --- the sheet is a stack, not a surface --------------------------------
-     `.msheet` itself paints nothing. It is the fixed frame that holds four
-     coloured panels and the content, and everything visible belongs to one of
-     those. No background here on purpose: a background on the frame would be
-     the one thing on screen that cannot slide, and it is exactly what would
-     show as a flash at the seams between panels. */
-  .msheet {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 93;
-    /* the panels overspill the frame by 12% at each edge; nothing escapes */
-    overflow: hidden;
-    /* The sheet comes out of `display: none` on pointerdown, a frame or two
-       before the tap it belongs to, so its first layout is not charged to the
-       first frame of the animation. Until it moves it is inert — otherwise a
-       press that turned into a scroll would leave an invisible full-screen
-       element swallowing the page's taps. */
-    pointer-events: none;
-  }
-  .msheet[hidden] { display: none; }
-  .msheet.is-moving,
-  .msheet.is-lit { pointer-events: auto; }
-
-  .msheet__lay {
-    position: absolute;
-    left: 0; right: 0;
-    top: -12%;
-    height: 124%;
-    /* JS owns the transform. This is only the resting place — above the top
-       edge — for the frame before the first one is written. */
-    transform: translate3d(0, -100%, 0);
-    /* the panels are the only thing moving, and they move on the compositor */
-    backface-visibility: hidden;
-  }
-  .msheet.is-moving .msheet__lay { will-change: transform; }
-
-  /* Lavender, purple, deep violet, ink — one darkening cascade, and every step
-     of it is already in the site: the violet is the colour that means "the
-     current thing" on the phone's toolbar, and the last is the site's own ink
-     rather than a colour invented for the menu.
-     Ordered so the LAST panel is the one the menu is written on, which is what
-     makes the close worth watching: the panels lift in reverse, so the ink
-     gives way to violet, then purple, then lavender, then the page. */
-  .msheet__lay--a { background: #ede9fe; }
-  .msheet__lay--b { background: #7c3aed; }
-  .msheet__lay--c { background: #4c1d95; }
-  .msheet__lay--d { background: var(--ink); }
-
-  /* --- what is written on it ---------------------------------------------
-     Above all four panels, and it only lights once the fourth has landed — so
-     the menu is never seen arriving on a surface that is still moving. */
-  .msheet__body {
-    position: relative;
-    z-index: 5;
-    /* NOT PAINTED AT ALL UNTIL IT IS WANTED.
-       Every row in here starts at `opacity: 0` with a 6px blur on it, and an
-       invisible element with a filter is still a composited layer that gets
-       painted on every frame. That did not matter while the pages were 35px
-       rows; at 41px, tightly leaded, over a full-screen stack, it cost the
-       panel animation seven frames out of thirty-eight — the springs starved
-       badly enough that two of the four panels landed on the same frame.
-       `visibility` removes it from the paint entirely, and unlike `display` it
-       can be timed: it flips on at the instant the class lands, and on the way
-       out it waits the 140ms the content takes to fade before switching off. */
-    visibility: hidden;
-    transition: visibility 0s linear 160ms;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding: calc(var(--sa-top) + 4.5rem) calc(var(--sa-right) + 1.75rem)
-             calc(var(--sa-bottom) + 1.75rem) calc(var(--sa-left) + 1.75rem);
-    color: var(--paper);
-  }
-
-  /* Every child rises through the same three properties on the same curve, and
-     the only thing that differs is when — `--i` is set once per element in JS,
-     counting down the sheet in reading order. The blur is what stops it looking
-     like six things fading in: it makes each line resolve rather than appear. */
-  .msheet__brand,
-  .msheet__eyebrow,
-  .msheet__list > a,
-  .msheet__soc > li,
-  .msheet__cta {
-    opacity: 0;
-    transform: translate3d(0, 14px, 0);
-    filter: blur(6px);
-    transition:
-      opacity 380ms var(--ease),
-      transform 420ms var(--spring-soft, var(--ease)),
-      filter 380ms var(--ease);
-    transition-delay: calc(var(--i, 0) * 58ms);
-  }
-  .msheet.is-lit .msheet__body { visibility: visible; transition: visibility 0s; }
-
-  .msheet.is-lit .msheet__brand,
-  .msheet.is-lit .msheet__eyebrow,
-  .msheet.is-lit .msheet__list > a,
-  .msheet.is-lit .msheet__soc > li,
-  .msheet.is-lit .msheet__cta {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-  /* Going out is not the same shape as coming in. It is quick and it is
-     together — the panels are what the eye should be following on the way
-     back, so the content gets out of their way rather than performing. */
-  .msheet:not(.is-lit) .msheet__brand,
-  .msheet:not(.is-lit) .msheet__eyebrow,
-  .msheet:not(.is-lit) .msheet__list > a,
-  .msheet:not(.is-lit) .msheet__soc > li,
-  .msheet:not(.is-lit) .msheet__cta {
-    transition-duration: 140ms;
-    transition-delay: 0ms;
-  }
-
-  .msheet__brand {
-    margin: 0;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(247, 246, 243, 0.42);
-  }
-
-  /* --- THE PAGES ARE A MASTHEAD, NOT A LIST -------------------------------
-     Two columns: a small standing word, and the pages set past it. The block
-     sits in the top third and the room is left underneath.
-
-     The version this replaces put the four rows at the BOTTOM of the screen
-     with a rule under each, on the reasoning that a thumb reaches the bottom
-     third. That reasoning is right for a settings screen and it is exactly what
-     made this one look like a settings screen: four evenly ruled rows of equal
-     weight, arriving after a second of choreography, with the entire upper half
-     of the phone empty above them. Nothing in it said whose site it was.
-     Anchored high, indented past a standing word, tightly leaded, with no rules
-     at all, the same four words read as a masthead. It is the same quantity of
-     empty space — it has moved to the other side of the type, which is the
-     difference between a page that was composed and a page that ran out. The
-     two rows that exist to be tapped, the links and the button, stay where a
-     thumb can reach them. */
-  .msheet__nav {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-    /* The gap is doing the work the indent does in a masthead, so it is wide —
-       but it is bounded by the longest word that has to survive beside it. At
-       12vw on a 390 the pages start about a quarter of the way across and
-       "Writing" still has 9px to spare; much past that and the longest label
-       wraps, which would undo the whole block. */
-    column-gap: clamp(1.5rem, 12vw, 4rem);
-    margin-top: clamp(1.5rem, 6vh, 3.5rem);
-  }
-
-  /* The standing word, set on the first line's cap rather than on its box: a
-     13px label aligned to the top of a 41px line box floats well above the
-     letter it is meant to stand beside. */
-  .msheet__eyebrow {
-    margin: 0;
-    padding-top: 0.62em;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    color: rgba(247, 246, 243, 0.42);
-  }
-
-  .msheet__list { display: flex; flex-direction: column; }
-
-  /* Big, and tightly leaded. The size is what carries the voice — a full-screen
-     menu that arrives with that much ceremony and then shows four small ruled
-     rows looks unfinished. 10.5vw fills a 390 to about 41px and stops climbing
-     at 52 so it cannot run off the widest phone.
-     The leading is the other half of it: at 0.98 the four words lock into one
-     block of type instead of four separate rows, which is what the rules used
-     to be doing badly. The vertical padding is what keeps a 41px line a 48px
-     target without putting air between the lines. */
-  .msheet__link {
-    display: flex;
-    align-items: center;
-    /* The floor, and it costs nothing where it is not needed. A 41px line with
-       this padding is a 48px row on a 390, so the declaration is inert there;
-       on a 320 the type drops to 34 and the row would come out at 39, which is
-       under the target size everything else on this phone was given. It lifts
-       only that case, and only to the minimum. */
-    min-height: 44px;
-    padding-block: 0.09em;
-    font-size: clamp(1.875rem, 10.5vw, 3.25rem);
-    font-weight: 620;
-    letter-spacing: -0.038em;
-    line-height: 0.98;
-    color: rgba(247, 246, 243, 0.62);
-    text-decoration: none;
-  }
-  .msheet__link[aria-current='page'] { color: var(--paper); }
-  /* The press is on the row, so the whole line answers the thumb. Scoped under
-     `.is-lit` because that rule is what holds the row's transform at `none` —
-     an unscoped `:active` loses to it and the press does nothing. */
-  .msheet.is-lit .msheet__link:active {
-    color: var(--paper);
-    transform: scale(0.985);
-    transition-duration: 90ms;
-  }
-
-  /* pushed to the bottom of the sheet: the masthead holds the top, and the
-     space between them is the composition rather than a gap */
-  .msheet__soc {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: auto 0 1.25rem;
-    padding: 0;
-    list-style: none;
-  }
-  .msheet__soc a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding: 0 0.9375rem;
-    border: 1px solid rgba(247, 246, 243, 0.16);
-    border-radius: 999px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: rgba(247, 246, 243, 0.78);
-    text-decoration: none;
-  }
-  .msheet__soc a:active { background: rgba(247, 246, 243, 0.1); }
-
-  .msheet__cta {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 52px;
-    border-radius: 999px;
-    background: #7c3aed;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #ffffff;
-    text-decoration: none;
-    transition: transform 200ms var(--ease);
-  }
-  .msheet.is-lit .msheet__cta:active { transform: scale(0.97); }
-
-  /* This used to pin the body, because a document scroller on iOS loses its
-     position under `overflow: hidden` and the reader came back to the top.
-     `.app` is an element scroller and keeps its scrollTop, so the phone's menu
-     now holds the page still the same way everything else does — see
-     `body.is-locked .app`. */
+     So it goes on the first scroll and comes back at the top. The handle does
+     not: it is the navigation, and it carries its own paper. */
+  .mbar { transition: opacity 240ms var(--ease); }
+  .mbar.is-away { opacity: 0; pointer-events: none; }
 
   /* the hero's own content starts below the bar */
   body[data-page='home'] .canvas__intro { padding-top: calc(var(--sa-top) + 3.25rem); }
-}
-
-@media (max-width: 48rem) and (prefers-reduced-motion: reduce) {
-  /* The panels do not travel at all under reduced motion — JS puts them
-     straight at their resting places and never starts the loop, so what is left
-     to neutralise here is the CSS: the content's rise, its blur, and the
-     hamburger's spring. The menu still works exactly the same; it simply
-     appears. */
-  .mbar .mbar__bar,
-  .mbar.is-open .mbar__bar,
-  .msheet__brand,
-  .msheet__list > a,
-  .msheet__soc > li,
-  .msheet__cta { transition-duration: 1ms; transition-delay: 0ms; }
-
-  .msheet__brand,
-  .msheet__list > a,
-  .msheet__soc > li,
-  .msheet__cta { transform: none; filter: none; }
 }
 
 /* --- 30d. the hero, kept alive --------------------------------------------
@@ -8052,8 +7813,15 @@ body.past-hero .sel { opacity: 0; }
   /* how far the shell travels, and therefore how much deck there is */
   --deck-w: clamp(19rem, 30vw, 27rem);
 
-  /* the shell's resting state — read by all three layers */
+  /* the shell's resting state — read by all three layers.
+
+     TWO AXES, ONE TRANSFORM. Above the breakpoint the shell travels sideways
+     and `--app-y` stays zero; below it the shell travels down and `--app-x`
+     stays zero. It is one interaction with one set of layers, one curve and one
+     open state — the only thing that differs between a laptop and a phone is
+     which of these two numbers the open state writes to. */
   --app-x: 0px;
+  --app-y: 0px;
   --app-s: 1;
   --app-r: 0px;
   --app-lit: 0;
@@ -8138,7 +7906,7 @@ body.deck-open {
     -1px 0 0 rgba(20, 16, 12, calc(0.05 * var(--frame))),
     -10px 0 26px -12px rgba(20, 16, 12, calc(0.16 * var(--frame))),
     -34px 0 70px -34px rgba(20, 16, 12, calc(0.26 * var(--frame)));
-  transform: translate3d(var(--app-x), 0, 0) scale(var(--app-s));
+  transform: translate3d(var(--app-x), var(--app-y), 0) scale(var(--app-s));
   transition: transform var(--deck-move), border-radius var(--deck-move);
 }
 
@@ -8181,7 +7949,7 @@ body.is-locked .app { overflow: hidden; }
    travelled, and that gap is what read as segmented motion. Declared always, at
    a radius that is zero when closed, it interpolates with everything else. */
 .hud {
-  transform: translate3d(var(--app-x), 0, 0) scale(var(--app-s));
+  transform: translate3d(var(--app-x), var(--app-y), 0) scale(var(--app-s));
   clip-path: inset(0 round calc(var(--app-r) * (1 - var(--sheet-lift, 0))));
   transition: transform var(--deck-move), clip-path var(--deck-move);
 }
@@ -8518,12 +8286,211 @@ body.deck-shut .deck__close { display: none; }
    hero, and at the same weight, so it wins on order. */
 body[data-page] .nav { display: none; }
 
-/* The phone keeps its own menu — a sheet that comes down over the page. There
-   is nowhere for a canvas to slide to on a 390px screen. */
+/* --- 38b. the same reveal, turned ninety degrees ---------------------------
+   THE PHONE GETS THE INTERACTION, NOT A MENU.
+
+   What used to be here was a second navigation entirely: four coloured panels
+   that came down over the page, with their own type, their own physics and
+   their own idea of what a menu is. It worked, and it was a different product
+   on a phone than it is on a laptop — the one thing this page is about, that
+   the interface is a sheet of paper on a desk and the menu is the desk, was
+   simply not true below 48rem.
+
+   There is nowhere to slide sideways on a 390px screen, and that is the only
+   real constraint. So the shell goes DOWN instead, and everything else is
+   already built: the same `.deck` behind the same `.app`, the same one sky in
+   `.pane` underneath both, the same six links, the same segmented rail with the
+   same spring on it, the same 600ms curve on all three layers. The open state
+   below writes `--app-y` where the desktop's writes `--app-x`. That is the
+   whole of the difference.
+
+   THE CANVAS IS THE THING THAT MOVES, and it moves as one object because it
+   always was one: the header, the hero, the bricks, the toolbar, the projects
+   and the footer are all inside `.app`, and the furniture in `.hud` takes the
+   identical transform on the identical curve. Nothing is re-parented, nothing
+   is animated onto the screen, and there is no second surface anywhere. */
 @media (max-width: 48rem) {
-  .deck, .tab-menu { display: none; }
-  .pane, .hud, .app { transform: none; }
-  .pane { border-radius: 0; box-shadow: none; overflow: visible; }
+  :root {
+    /* HOW FAR THE CANVAS TRAVELS. Enough menu for six links, the rail, the way
+       out and the two pods, and NOT more: the canvas has to stay plainly
+       visible underneath or the reveal reads as a page change rather than as a
+       sheet pushed down.
+
+       This is the travel, not the strip: the scale below adds about 22px of sky
+       on top of it. But the travel is also the strip's HEIGHT, and the strip has
+       a floor — the way out, six 44px rows, the rail and the two pods have to
+       stand in it without touching. Trimming this to 57svh to pay for the scale
+       cost the nav 22px it did not have, and the last link went under the
+       brightness pod. So the number goes back and the floor is stated: 23rem is
+       the shortest strip the contents fit in — measured, on a 320×568 screen,
+       as the height at which the last link still clears the pods by 15px of
+       ink — and every vertical measure below shrinks with the viewport so that
+       floor is reachable there rather than merely asserted. */
+    --deck-h: clamp(23rem, 62svh, 27.5rem);
+    --deck-pad: 1.5rem;
+    /* The strip's own gutters — the close sits in the top one, the pods in the
+       bottom one, and the nav clears both. Both scale with the viewport for the
+       reason above: on a short phone the gutters give way before the type does,
+       because a cramped margin still reads and a clipped link does not. */
+    --deck-top: clamp(0.9rem, 2.2svh, 1.35rem);
+    --deck-bot: clamp(0.85rem, 1.9svh, 1.15rem);
+  }
+
+  body.deck-open {
+    --app-x: 0px;
+    --app-y: var(--deck-h);
+
+    /* 0.935 — THE DESKTOP'S OWN NUMBER, and the second correction to it.
+
+       It was 0.97 first, on the reasoning that a phone wants less of everything.
+       Six pixels of sky down each side is not a margin, it is a seam: too thin
+       to read as space left on purpose, wide enough to look like the canvas
+       failed to reach the edge. Taking the scale out altogether fixed that and
+       lost the margin with it, which is the wrong trade — the sheet then sits
+       flush against the glass on three sides and lifted on one.
+
+       So the mechanism was never the problem, the amount was, and the amount
+       that works is the one the laptop already uses. At 390px it puts 12.7px of
+       sky down each side, which is a margin you can see the intent of. It also
+       means the sheet lifts by the same proportion at every width and only the
+       direction of travel changes — which is the whole claim this interaction
+       makes about itself.
+
+       A uniform scale is also the only way to inset horizontally without either
+       distorting the page or relaying it out: `width` and `left` would reflow
+       every line of type in the workspace on the frame the animation starts. */
+    --app-s: 0.935;
+    --app-r: 22px;
+    --app-lit: 1;
+  }
+
+  /* --- the handle, which is the desktop's handle -------------------------
+     Not a hamburger, and not a second design. This is `.tab-menu` — the same
+     element, the same paper, the same hairline and shadow, the same uppercase
+     word — turned through the same ninety degrees as the interaction it opens.
+     On a laptop it is welded to the canvas's left edge because that is the
+     leading edge; here the canvas leads with its top, so that is where it goes.
+
+     It rides `.hud`, so it travels with the canvas and is the first thing the
+     menu appears from behind, exactly as it is on a laptop. And it leaves when
+     the deck is out — `body.deck-open .tab-menu` is declared once, above, for
+     both widths — so the way back is the ✕ in the menu and there is never a
+     second control on screen. */
+  .tab-menu {
+    top: calc(var(--sa-top) + 0px);
+    left: auto;
+    right: calc(var(--sa-right) + 1.25rem);
+    transform: none;
+    padding: 0.55rem 0.85rem 0.6rem;
+    border-radius: 0 0 10px 10px;
+    box-shadow:
+      0 1px 0 rgba(20, 16, 12, 0.05),
+      0 6px 22px -12px rgba(20, 16, 12, 0.22);
+    transition: padding-bottom 260ms var(--ease), background-color 260ms var(--ease);
+  }
+  .tab-menu span {
+    writing-mode: horizontal-tb;
+    font-size: 0.6875rem;
+  }
+  .tab-menu:hover { padding-left: 0.85rem; padding-bottom: 0.85rem; }
+  .tab-menu:active { transform: scale(0.97); }
+
+  /* --- the menu, at the top ---------------------------------------------- */
+
+  /* Same layer, same paint order, pinned to the top of the viewport instead of
+     the left of it. Its lower half stays under the canvas at all times, which
+     is what makes the canvas read as lying ON it. */
+  .deck {
+    align-items: flex-start;
+    justify-content: stretch;
+  }
+
+  /* THE WAY OUT IS IN THE MENU, in the corner the handle was in — so the thumb
+     that opened it does not have to go anywhere else to close it. Mirrored from
+     the desktop's left-hand corner for the same reason the handle is: this side
+     is the one this layout leads from. */
+  .deck__close {
+    top: calc(var(--sa-top) + var(--deck-top));
+    left: auto;
+    right: calc(var(--sa-right) + var(--deck-pad) - 0.5rem);
+    margin: 0;
+  }
+  .deck__close:hover,
+  .deck__close:focus-visible { transform: none; }
+  .deck__close:active { transform: scale(0.97); }
+
+  .deck__inner {
+    width: 100%;
+    height: var(--deck-h);
+    padding-inline: calc(var(--deck-pad) + var(--sa-left)) calc(var(--deck-pad) + var(--sa-right));
+    /* Clears the ✕ above and the two pods below. Both reserves are measured in
+       svh as well as rem, so the whole column compresses together instead of
+       the nav being the only thing that gives. */
+    padding-top: calc(var(--sa-top) + var(--deck-top) + clamp(1.9rem, 4.6svh, 2.5rem));
+    padding-bottom: calc(var(--deck-bot) + clamp(3rem, 7.5svh, 3.5rem));
+    gap: 0;
+    justify-content: flex-start;
+  }
+
+  .deck__navwrap { gap: 0.9rem; }
+  .deck__rail { width: 22px; }
+  .deck__rail i { width: 14px; }
+
+  .deck__nav { gap: 0; }
+
+  /* THE TARGET IS THE ROW, NOT THE WORD. `width: fit-content` is what the
+     desktop wants — a cursor lands where it is pointed and a hit area wider
+     than the ink is a hit area you cannot see. A finger is not a cursor: the
+     row is 44px tall and reaches the full width of the column, so the whole
+     line answers rather than the eleven characters in it. */
+  .deck__link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    /* 44px is the target, and on any phone tall enough to hold six of them it
+       is what you get. Below that the row gives up to 4px rather than let the
+       list run into the pods — 40px is still inside the thumb's own tolerance,
+       and the rows are stacked flush so the reachable area is continuous. */
+    min-height: clamp(40px, 6.6svh, 44px);
+    font-size: clamp(1.4rem, 6.4vw, 1.85rem);
+    line-height: 1.2;
+  }
+  /* tap feedback, on the aim transform so the two never fight */
+  .deck__link:active { transform: translateX(6px) scale(0.985); }
+
+  /* --- the two pods ------------------------------------------------------
+     They keep their fixed corners and translate into the foot of the menu
+     strip, on the shell's own curve, exactly as they do on a laptop. Sideways
+     is pure arithmetic — both are anchored 20px in and want the strip's own
+     gutter, and the safe area cancels. Upward is not: it depends on the pod's
+     own height, on the strip's resolved height and on the bottom safe area, so
+     `Deck.podFit()` measures it once and writes the answer here. */
+  body.deck-open .controls {
+    transform: translate3d(calc(var(--deck-pad) - 20px), var(--deck-podup, 0px), 0);
+  }
+  body.deck-open .mute,
+  body.deck-open .mute:hover {
+    transform: translate3d(calc(20px - var(--deck-pad)), var(--deck-podup, 0px), 0);
+  }
+
+  /* --- the canvas edge ---------------------------------------------------
+     THREE SIDES ARE ON SCREEN NOW, not one. The top is the edge that comes into
+     view and the scale puts sky down both flanks, so the hairline goes all the
+     way round and the cast falls upward off the leading edge — the same
+     asymmetry the desktop uses, turned ninety degrees with everything else. */
+  .app {
+    box-shadow:
+      0 0 0 1px rgba(20, 16, 12, calc(0.045 * var(--frame))),
+      0 -8px 22px -12px rgba(20, 16, 12, calc(0.16 * var(--frame))),
+      0 -26px 60px -30px rgba(20, 16, 12, calc(0.24 * var(--frame)));
+  }
+  /* and the paper catches the light on all three, the top most of all */
+  .hud::after {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      inset 1px 0 0 rgba(255, 255, 255, 0.3),
+      inset -1px 0 0 rgba(255, 255, 255, 0.3);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -8662,9 +8629,22 @@ body[data-page] .nav { display: none; }
   .peek {
     width: min(26rem, calc(100vw - 2rem));
     padding-bottom: calc(1rem + var(--sa-bottom));
-    pointer-events: auto;
     border-radius: 22px;
   }
+  /* ONLY WHILE IT IS ACTUALLY OPEN.
+     This used to be a flat `pointer-events: auto` on `.peek`, and that is the
+     one line that made a third of the phone's hero dead to the touch. The card
+     is built once at boot and parked — opacity 0, no transform yet, so it is
+     lying at top:0 left:0 — and `tick()` returns before writing a transform
+     while it is closed, so it never moves out of the way. A 336x250 invisible
+     rectangle in the top-left corner of the viewport, taking every tap: which
+     is exactly the set of bricks that would not respond. Measured with a
+     hit-map sweep of the hero, 1391 of 4032 sample points landed on it.
+
+     `aria-hidden` is already the module's own open/closed flag — `point()`
+     removes it and `hide()` puts it back — so this hangs off the state that
+     exists rather than adding a second one that could disagree with it. */
+  .peek:not([aria-hidden='true']) { pointer-events: auto; }
   /* the tail points at a word the finger is covering, so it goes */
   .peek::after { display: none; }
 }

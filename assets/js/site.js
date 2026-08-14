@@ -537,9 +537,12 @@
   const Deck = {
     built: false,
 
-    init() {
-      if (window.matchMedia('(max-width: 48rem)').matches) return;  // the phone has its sheet
+    /* Below 48rem the canvas travels down instead of sideways and the bar's
+       button is the handle. Everything else — this whole module — is shared.
+       Read live rather than cached, because a phone can be turned. */
+    mob() { return matchMedia('(max-width: 48rem)').matches; },
 
+    init() {
       const deck = el('div', { class: 'deck', id: 'deck' });
 
       const here = (location.pathname.split('/').pop() || 'index.html');
@@ -588,6 +591,15 @@
         if (a) this.aim(a);
       });
       nav.addEventListener('pointerleave', () => this.aim(null));
+      /* A FINGER DOES NOT HOVER. `pointerover` does fire once on a tap, but it
+         fires with the tap — the indicator would start moving in the same frame
+         the page starts unloading, which is no indicator at all. `pointerdown`
+         is the earliest honest moment: the item is chosen, the rail travels to
+         it, and the navigation follows on the click a beat later. */
+      nav.addEventListener('pointerdown', (e) => {
+        const a = hit(e, '.deck__link');
+        if (a) this.aim(a);
+      }, { passive: true });
 
       wrap.appendChild(nav);
       inner.appendChild(wrap);
@@ -687,10 +699,44 @@
       [$('.controls'), $('.mute')].forEach((n) => n && App.free.appendChild(n));
 
       this.railFit();
-      addEventListener('resize', () => this.railFit());
+      this.podFit();
+      addEventListener('resize', () => { this.railFit(); this.podFit(); });
       this.markY = this.markTo = 0; this.markV = 0;
       this.aim(null);
     },
+
+    /* --- the two pods, on a phone ------------------------------------------
+       They translate into the menu strip on the shell's own curve, the same as
+       they do on a laptop. Only one number has to be measured: where the pod
+       sits when nothing has moved it. It cannot be written in CSS because it
+       depends on the pod's own height AND on `env(safe-area-inset-bottom)`,
+       and it cannot be read off a rect either, because both pods are already
+       carrying a transform of their own — the `--end` rise. So the transform is
+       lifted for one read and put straight back. One forced layout, on resize
+       and at boot, and never during the animation. */
+    podFit() {
+      const root = document.documentElement;
+      const pod = $('.controls');
+      if (!pod) return;
+      if (!this.mob()) { root.style.removeProperty('--deck-podup'); return; }
+      /* The pod is already carrying a transform of its own — the `--end` rise —
+         so its rect is not where CSS put it. Lift it for one read and put it
+         straight back. `--deck-h` cannot be read instead: an unregistered custom
+         property comes back as the literal `clamp(...)` it was written as, so
+         the strip is measured off the element that resolves it. */
+      const prev = pod.style.transform;
+      pod.style.transform = 'none';
+      const r = pod.getBoundingClientRect();
+      pod.style.transform = prev;
+      const inner = $('.deck__inner');
+      const strip = inner ? inner.getBoundingClientRect().height : 0;
+      const gut = parseFloat(getComputedStyle(root).fontSize) * 1.15 || 18;
+      root.style.setProperty('--deck-podup', `${Math.round(strip - gut - r.height - r.top)}px`);
+    },
+
+    /* One handle at both widths — the paper tab. It is welded to whichever
+       edge the canvas leads with, and it is gone while the deck is out. */
+    handle() { return $('.tab-menu'); },
 
     /* --- the rail ------------------------------------------------------- */
 
@@ -772,13 +818,17 @@
          it can be read, scrolled and drawn on where it stands. That is the whole
          reason the scroll container moved off the document — see App.y(). */
       clearTimeout(this.t);
+      /* measured BEFORE the class lands: the pods read `--deck-podup` on the
+         frame the transition starts, and a value written after it would send
+         them to one target and then re-aim them mid-flight */
+      this.podFit();
       document.body.classList.remove('deck-shut');
       document.body.classList.add('deck-open');
       /* the list has a height now that it is on screen */
       requestAnimationFrame(() => { this.railFit(); this.aim(null); });
       this.el.removeAttribute('aria-hidden');
-      const tab = $('.tab-menu');
-      if (tab) tab.setAttribute('aria-expanded', 'true');
+      const h = this.handle();
+      if (h) h.setAttribute('aria-expanded', 'true');
       /* the exit takes focus, so Tab starts from the way out rather than
          landing on it last */
       setTimeout(() => this.closeBtn && this.closeBtn.focus({ preventScroll: true }), 260);
@@ -793,8 +843,8 @@
       document.body.classList.remove('deck-open');
       document.body.classList.add('deck-shut');
       this.el.setAttribute('aria-hidden', 'true');
-      const tab = $('.tab-menu');
-      if (tab) { tab.setAttribute('aria-expanded', 'false'); tab.focus({ preventScroll: true }); }
+      const h = this.handle();
+      if (h) { h.setAttribute('aria-expanded', 'false'); h.focus({ preventScroll: true }); }
 
       clearTimeout(this.t);
       this.t = setTimeout(() => {
@@ -858,297 +908,52 @@
     },
 
     /* --- the phone's navigation -----------------------------------------------
-       A row of four links is a desktop pattern: it assumes a cursor and a page
+       A row of six links is a desktop pattern: it assumes a cursor and a page
        wide enough to spare the room. At 390px it is 262px of 16px-tall targets
        sitting on top of the headline.
 
-       Below 48rem it is replaced — not reflowed — by a fixed bar and a sheet.
-       Both live in the DOM at all times and CSS alone decides which is on
-       screen, so a rotation or a resized window can never leave the page with
-       neither.
+       So below 48rem the row is replaced by a bar with two things on it — the
+       name, and one control. The control is NOT a menu of its own. It is the
+       handle for the same reveal the desktop has: it opens `Deck`, the same
+       object, with the same links, the same rail and the same sky behind it,
+       and the only difference is that the canvas travels down instead of
+       sideways (see section 38b in the stylesheet).
 
-       Project pages already hide `.nav` entirely, and the bar is hidden with
-       it, so nothing here can reach a case study. */
+       What used to be here was a second navigation entirely — four coloured
+       panels that came down over the page, with their own type, their own
+       physics and their own idea of what a menu is. Three hundred lines of it,
+       and all of them said something this page does not believe: that the
+       interface is a sheet of paper on a desk everywhere except on a phone.
+
+       Project pages already hide `.nav` entirely, and the bar goes with it, so
+       nothing here can reach a case study. */
     menu() {
       if (this.page === 'project' || $('.mbar')) return;
 
       const bar = el('div', { class: 'mbar', 'aria-hidden': 'false' });
 
-      /* THE NAME, WHICH THE PHONE DID NOT HAVE. A desktop reads the four nav
-         links and knows whose site it is from the headline; below 48rem the
-         links collapse into the hamburger and the headline is at the bottom of
-         the hero, so until you scroll there is nothing above the fold saying
-         who this is. It is a link rather than a label because on Work, People
-         and Writing it is the only way back to the front page that is not
-         behind the menu. */
+      /* THE NAME, AND ONLY THE NAME. A desktop reads the nav links and knows
+         whose site it is from the headline; below 48rem the links collapse and
+         the headline is at the bottom of the hero, so until you scroll there is
+         nothing above the fold saying who this is.
+
+         There is no button in here. The handle is `.tab-menu` — the same paper
+         tab the desktop has, on the canvas's top edge instead of its left one,
+         because that is the edge the canvas leads with at this width. One
+         component, one design, two orientations; see section 38b.
+
+         AND THE NAME LEAVES ON THE FIRST SCROLL. It has no surface, on purpose,
+         so anything that scrolls under it collides with it — at the experience
+         table that is two headings written over each other. Its job is done by
+         then anyway: the page below it says whose site this is at length. */
       bar.appendChild(el('a', { class: 'mbar__name', href: 'index.html' },
         esc(S.person.name)));
 
-      const btn = el('button', {
-        class: 'mbar__btn', type: 'button',
-        'aria-label': 'Menu', 'aria-expanded': 'false', 'aria-controls': 'm-sheet',
-      });
-      btn.innerHTML = '<span class="mbar__bar"></span><span class="mbar__bar"></span>';
-      bar.appendChild(btn);
+      const away = () => bar.classList.toggle('is-away', App.y() > 24);
+      addEventListener('scroll', away, { passive: true });
+      if (App.app) App.app.addEventListener('scroll', away, { passive: true });
 
-      const sheet = el('div', {
-        class: 'msheet', id: 'm-sheet', hidden: '',
-        role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Menu',
-      });
-
-      /* --- the four panels -------------------------------------------------
-         Opening is not a sheet fading up. Four coloured panels come down over
-         the page one after another, each starting about 110ms after the one
-         ahead of it — so at any instant you are looking at a staircase of
-         leading edges rather than at a single moving thing, which is what makes
-         it read as layers of paper sliding over each other instead of a drawer.
-
-         EACH ONE STOPS WHERE IT LANDS. The first version had them continue on
-         out of the bottom, which looked right in a video of somebody else's
-         site and was wrong here for a measurable reason: a panel that passes
-         through has to travel two screens instead of one, and at any duration
-         that keeps the whole sequence under a second that makes the leading
-         edge cross the glass in about 150ms. Filmed at 60fps against the
-         reference — 430ms to cross — it read as a flash rather than as fabric.
-         Landing halves the distance, so the same spring covers it in the same
-         time the reference takes, and the colours simply pile up: only the top
-         one is visible at rest, and the three beneath it are what the close
-         uncovers on the way back out.
-
-         Each panel is 124% of the viewport, offset -12%, and travels in units
-         of its own height. That margin is not decoration: the springs overshoot
-         by about 5%, and without the overspill an overshoot would show a strip
-         of the page along the top edge at the moment the panel settles. */
-      const PANELS = [
-        /* in: the order they come down.  out: reversed, because they are
-           stacked — the top one has to lift before the one beneath it can be
-           seen, so leaving in the order they arrived would just hide the
-           cascade under the panel that had not moved yet. */
-        { k: 'a', in: 0, out: 270 },
-        { k: 'b', in: 110, out: 180 },
-        { k: 'c', in: 220, out: 90 },
-        { k: 'd', in: 330, out: 0 },
-      ];
-      const lays = PANELS.map((P, i) => {
-        const n = el('div', {
-          class: `msheet__lay msheet__lay--${P.k}`, 'aria-hidden': 'true',
-          style: `z-index:${i + 1}`,
-        });
-        sheet.appendChild(n);
-        return { n, at: P.in, out: P.out, pos: -100, vel: 0, to: -100 };
-      });
-      const last = lays[3];    /* the surface the menu is written on */
-
-      /* --- what is written on it -------------------------------------------
-         Ordered the way it arrives: the name, the pages, the places to find me,
-         then the one thing I want tapped. Each carries its own `--i`, so the
-         stagger is a single multiplication in CSS rather than a queue of
-         timeouts that would need cancelling on a fast close. */
-      const body = el('div', { class: 'msheet__body' });
-      let i = 0;
-      const step = (n) => { n.style.setProperty('--i', String(i++)); return n; };
-
-      body.appendChild(step(el('p', { class: 'msheet__brand' }, esc(S.person.name))));
-
-      /* --- the pages, set as a masthead rather than a list -------------------
-         The nav sits in its own two-column block: a small standing word on the
-         left and the pages themselves indented past it, large and tightly
-         leaded, anchored to the top third of the screen with the room left
-         under them.
-
-         That indent is the whole idea. Four rows of the same size with rules
-         between them and a gap above is a settings screen; the same four words
-         set as a stack with something standing beside them is a masthead, and a
-         masthead has a voice. The word is "Pages" rather than something written
-         for the occasion because that is what this site already calls this list
-         in its own footer — a menu is not the place to introduce a new noun. */
-      const nav = el('div', { class: 'msheet__nav' });
-      nav.appendChild(step(el('p', { class: 'msheet__eyebrow' }, 'Pages')));
-
-      const list = el('nav', { class: 'msheet__list', 'aria-label': 'Pages' });
-      S.nav.forEach((item) => {
-        const cur = item.href.startsWith(this.page === 'home' ? 'index' : this.page);
-        list.appendChild(step(el('a', {
-          class: 'msheet__link', href: item.href,
-          ...(cur ? { 'aria-current': 'page' } : {}),
-        }, esc(item.label))));
-      });
-      nav.appendChild(list);
-      body.appendChild(nav);
-
-      const fc = S.footer || {};
-      const soc = el('ul', { class: 'msheet__soc' });
-      (fc.links || []).filter((l) => !/^mailto:/.test(l.href)).forEach((l) => {
-        soc.appendChild(step(el('li', {}, ''))).appendChild(el('a', {
-          href: l.href, target: '_blank', rel: 'noopener',
-        }, esc(l.label)));
-      });
-      if (soc.children.length) body.appendChild(soc);
-
-      const mail = fc.email || S.person.email;
-      body.appendChild(step(el('a', { class: 'msheet__cta', href: `mailto:${mail}` },
-        esc(fc.lead || 'Get in touch'))));
-
-      sheet.appendChild(body);
       App.mount(bar);
-      App.mount(sheet);
-
-      /* --- the physics -----------------------------------------------------
-         One spring per panel, all four integrated in ONE requestAnimationFrame
-         loop that writes four transforms and reads nothing. A spring rather
-         than a bezier for a reason that matters here: the button can be tapped
-         again mid-flight, and a spring simply gets a new target and carries its
-         current velocity into it, so an interrupted open turns into a close
-         without a seam. A CSS transition would restart from a standstill.
-
-         zeta 0.7 — under-damped on purpose. It arrives, goes about 5% past, and
-         settles. Critically damped would be correct and would feel like
-         software.
-
-         omega 6.4 rather than 13.2, and it was set by measurement rather than
-         by feel. The frequency is what decides how long the leading edge takes
-         to cross the glass, which is the one number that separates fabric from
-         a flash. Filmed at 60fps: 13.2 over two screens gave 150ms, 9 over one
-         screen gave 230ms, and the reference — filmed the same way — takes
-         about 400. 6.4 puts it at 330: slower than a UI transition wants to be,
-         which is the point, and still leaves the whole sequence inside 1.1s. */
-      const W = 6.4;                    /* rad/s   */
-      const Z = 0.7;                    /* damping */
-      const K = W * W;
-      const C = 2 * Z * W;
-      let raf = 0, t0 = 0, prev = 0, lit = false, dir = 1;
-
-      const write = () => {
-        for (const L of lays) L.n.style.transform = `translate3d(0,${L.pos.toFixed(2)}%,0)`;
-      };
-
-      const frame = (now) => {
-        raf = 0;
-        const t = now - t0;
-        let dt = Math.min((now - prev) / 1000, 0.05);
-        prev = now;
-        let live = false;
-
-        for (const L of lays) {
-          if (t < (dir > 0 ? L.at : L.out)) { live = true; continue; }
-          /* substepped so a dropped frame cannot make the spring explode */
-          let rest = dt;
-          while (rest > 0) {
-            const h = Math.min(rest, 1 / 120);
-            rest -= h;
-            L.vel += (-K * (L.pos - L.to) - C * L.vel) * h;
-            L.pos += L.vel * h;
-          }
-          /* A PANEL THAT IS OFF THE SCREEN IS FINISHED, WHATEVER THE SPRING
-             THINKS. On the way out it overshoots past -100 and eases back, all
-             of it above the top edge — a third of a second of arithmetic and
-             transform writes that cannot be seen. Clamping the moment it clears
-             ends the loop with the animation instead of long after it. */
-          if (L.to < 0 && L.pos <= -100) { L.pos = -100; L.vel = 0; }
-          else if (Math.abs(L.pos - L.to) > 0.15 || Math.abs(L.vel) > 0.6) live = true;
-          else { L.pos = L.to; L.vel = 0; }
-        }
-        write();
-
-        /* The content is lit from inside the loop, off the last panel's real
-           position rather than a timer, so it cannot appear early on a slow
-           frame: the surface it is written on has to be down first.
-
-           AND IT LATCHES. The first version re-tested the condition every frame
-           and the surface's own overshoot — 2.8% past its resting place — took
-           it back out of the window, so the class went on at 656ms, off at
-           690ms and on again at 806ms. Each flip restarted six staggered CSS
-           transitions from zero, which is why the menu used to finish arriving
-           a third of a second later than it should. Turning it off is the
-           closing tap's job, and nothing else's. */
-        if (!lit && dir > 0 && last.pos > -3) {
-          lit = true;
-          sheet.classList.add('is-lit');
-          const first = $('.msheet__link', sheet);
-          if (first) first.focus({ preventScroll: true });
-        }
-
-        if (live) raf = requestAnimationFrame(frame);
-        else {
-          sheet.classList.remove('is-moving');
-          if (dir < 0) { sheet.hidden = true; document.body.style.top = ''; }
-        }
-      };
-
-      /* The delay clock restarts on every call, including one that lands
-         mid-flight — the positions and velocities carry over untouched, so a
-         reversal keeps its momentum while the stagger is measured from the tap
-         that caused it. */
-      const run = () => {
-        t0 = prev = performance.now();
-        sheet.classList.add('is-moving');
-        if (!raf) raf = requestAnimationFrame(frame);
-      };
-
-      let open = false, keep = 0;
-      const set = (next) => {
-        if (next === open) return;
-        open = next;
-        dir = open ? 1 : -1;
-        btn.setAttribute('aria-expanded', String(open));
-        btn.classList.toggle('is-open', open);
-        bar.classList.toggle('is-open', open);
-
-        if (open) {
-          /* Locking with `overflow: hidden` alone lets iOS Safari forget where
-             the reader was; pinning the body at its current offset and putting
-             it back on close is what keeps the position. */
-          keep = App.y();
-          App.lock(true);
-          sheet.hidden = false;
-          for (const L of lays) { L.to = 0; }
-          if (REDUCED) {
-            for (const L of lays) { L.pos = L.to; L.vel = 0; }
-            write();
-            sheet.classList.add('is-lit');
-            lit = true;
-            const first = $('.msheet__link', sheet);
-            if (first) first.focus({ preventScroll: true });
-            return;
-          }
-          /* start from above without a paint at the old position */
-          write();
-          run();
-          return;
-        }
-
-        sheet.classList.remove('is-lit');
-        lit = false;
-        App.lock(false);
-        App.to(keep);
-        btn.focus({ preventScroll: true });
-
-        for (const L of lays) { L.to = -100; }
-        if (REDUCED) {
-          for (const L of lays) { L.pos = -100; L.vel = 0; }
-          write();
-          sheet.hidden = true;
-          document.body.style.top = '';
-          return;
-        }
-        run();
-      };
-
-      /* THE FIRST FRAME IS THE EXPENSIVE ONE, SO IT HAPPENS BEFORE THE TAP
-         LANDS. Unhiding the sheet inside the click handler means style, layout
-         and the first paint of four full-screen panels and ten blurred rows all
-         fall in the same frame as the first panel's first move — measured at
-         53ms, against 16.7 for every frame after it. Taking the sheet out of
-         `display: none` on pointerdown instead spends that work in the gap
-         between a finger touching the glass and the click event, which on a
-         phone is 80ms or more, and the animation starts on a warm layout.
-         Nothing is visible either way: the panels are parked above the top
-         edge and the sheet does not take pointer events until it moves. */
-      btn.addEventListener('pointerdown', () => { if (!open) sheet.hidden = false; }, { passive: true });
-      btn.addEventListener('click', () => set(!open));
-      list.addEventListener('click', (e) => { if (hit(e, 'a')) set(false); });
-      body.addEventListener('click', (e) => { if (hit(e, '.msheet__cta')) set(false); });
-      addEventListener('keydown', (e) => { if (e.key === 'Escape' && open) set(false); });
     },
 
     /* The footer answers the header. Same dotted field, same nav — the Pages
@@ -3440,6 +3245,18 @@
     items: [],
     selected: null,
 
+    /* HOW THE BRICK ENGINE KNOWS THE HERO MOVED.
+
+       Some objects on this canvas are walls to a brick — the headline, the tags,
+       the button row (see Bricks.wallHosts). Their collision geometry has to
+       follow them, and the cheapest correct way to arrange that is to make the
+       geometry lazy and give it something to compare against: this counter is
+       bumped by `apply` for wall-bearing items only, so a brick being dragged
+       does not touch it and the headline being dragged a single pixel does.
+       Bricks.wallsNow() re-measures when the number has changed and otherwise
+       does one integer compare. */
+    gen: 0,
+
     /* Clicking away from the selection clears it. Bound once, in capture, so it
        runs before any object's own handler: press another object and this
        deselects the old one a moment before that one selects itself. The guard
@@ -3629,6 +3446,12 @@
     },
 
     apply(it) {
+      /* The single write point for every position, angle and scale on this
+         canvas, which is why the wall invalidation hangs off it rather than off
+         the drag handlers — a resize handle, a rotate grip, an undo and a
+         programmatic move all come through here, and none of them has to
+         remember to tell anybody. */
+      if (it.wall) this.gen += 1;
       const s = it.node.style;
       s.setProperty('--x', `${it.x.toFixed(1)}px`);
       s.setProperty('--y', `${it.y.toFixed(1)}px`);
@@ -3968,8 +3791,65 @@
   };
 
   /* built-in pill glyphs */
+  /* --- the glyphs a tag can carry ------------------------------------------
+     Inline rather than files, and that is the whole reason they are here: an
+     `<img>` cannot inherit `currentColor`, and both of these are meant to be
+     the same grey as the label they sit in. The company mark in particular is
+     type, not decoration — it stands in for a word in the middle of a sentence
+     — so it has to take the sentence's colour, at every state the tag has.
+
+     Both are drawn on a 24 box except the mark, which keeps its own
+     proportions: it is taller than it is wide (100 x 120.7) and squaring it
+     into a 24 box would either letterbox it or stretch it. */
+  /* --- THE ONE SWITCH FOR COLLISION GEOMETRY -------------------------------
+     SHIP THIS FALSE. It is the only thing in the file that can put the snap
+     model on screen, and it exists so that "is the debug layer off?" is a
+     question you answer by reading one line rather than by auditing a module.
+
+     False: the hero's regions, its edges and the search radii are numbers and
+     nothing else — no node, no SVG, no class on the hero, nothing in the DOM at
+     all. The user sees the piece in their hand and the ghost, and that is the
+     whole of it.
+
+     True (or `?brkdebug` on the URL, or `__brickDebug(true)` from the console,
+     which are the two ways to get it without editing this): `debugDraw` puts
+     the model over the canvas — every region, its four snap edges, the edge the
+     current landing is against, each piece's true footprint, the anchor, the
+     detect and magnet radii, every candidate the solver found and which one it
+     took. That is the picture worth having when a snap misbehaves, and it is
+     also the only place any of it is ever drawn. */
+  const DEBUG_SNAP_GEOMETRY = false;
+
   const PILL_ICON = {
-    pin: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14.2s4.6-4 4.6-7.4a4.6 4.6 0 1 0-9.2 0C3.4 10.2 8 14.2 8 14.2Z"/><circle cx="8" cy="6.6" r="1.7"/></svg>',
+    /* SOLID, not the outline this used to be. Measured off the reference: the
+       pin is 58 x 76 of ink with a 26px hole, so the head is a circle of the
+       full width, the hole is concentric with it at 0.45 of the width, and the
+       flanks are the two tangents from the point back onto that circle. Every
+       number below is that measurement scaled into the 24 box — the tangent
+       angle included, which is what makes the shoulders meet the head cleanly
+       instead of denting it. */
+    /* THE viewBox IS TIGHT TO THE INK, and that is not tidiness. A glyph in a
+       line of type is sized by how tall the drawing is, and a 24 box with the
+       pin sitting in 77% of it means the number in the stylesheet is 77% of
+       what it appears to be — which is exactly how the first pass came out a
+       third too small against the reference. Box height == ink height, so
+       `height: 0.98em` puts 0.98em of pin on the screen. */
+    pin: '<svg viewBox="0 0 14.1 18.48" fill="currentColor" fill-rule="evenodd">'
+      + '<path d="M12.6 11.4A7.05 7.05 0 1 0 1.5 11.4L7.05 18.48Z'
+      + 'M3.89 7.05a3.16 3.16 0 1 0 6.32 0a3.16 3.16 0 1 0-6.32 0Z"/></svg>',
+    /* The Cypherock mark. Traced from the supplied artwork at 4x and reduced to
+       two 16/18-point polygons — it is all straight lines, so there is nothing
+       for a curve to fit and the trace is the shape rather than an impression
+       of it (0.44% of pixels differ from the original, all of it the antialias
+       fringe). The same mark is at assets/img/logos/cypherock.svg for anywhere
+       that wants it as a file; keep the two in step. */
+    cypherock: '<svg viewBox="0 0 100 120.72" fill="currentColor" fill-rule="evenodd">'
+      + '<path d="M0 64.71 39.42 120.52 69.94 75.61 85.38 75.5 64.4 106.3 60.14 100.23'
+      + ' 55.63 106.99 64.56 120.72 100 68.64 65.55 68.49 39.63 106.56 15.18 72.01'
+      + ' 30.67 71.83 43.74 90.1 48.25 83.31 35.29 64.94Z"/>'
+      + '<path d="M100 52.18 64.58 0 55.63 13.83 60.14 20.49 64.07 14.52 64.51 14.62'
+      + ' 85.38 45.22 70.04 45.22 39.42 0.2 0.1 55.98 35.06 56.01 48.15 37.61'
+      + ' 43.74 30.62 30.67 48.99 15.34 48.89 15.28 48.61 39.63 14.16 65.55 52.23Z"/></svg>',
   };
 
   const TOOL_ICON = {
@@ -5089,13 +4969,50 @@
         const item = typeof raw === 'string' ? { label: raw } : raw;
         const wrap = el('div', { class: 'drg' });
         const pill = el('span', { class: 'pill' });
-        if (item.icon && PILL_ICON[item.icon]) {
-          pill.appendChild(el('span', { class: 'pill__icon' }, PILL_ICON[item.icon]));
-        } else if (item.logo) {
-          pill.appendChild(el('span', { class: 'pill__icon pill__icon--logo' },
-            `<img src="${item.logo}" alt="">`));
+
+        /* WHERE THE GLYPH GOES IS THE LABEL'S BUSINESS.
+
+           It used to be "before the text", always, which is fine for a leading
+           icon and cannot express either of the two tags this hero actually
+           wants: a pin that trails the place name, and a company mark that
+           stands in for a word in the MIDDLE of a sentence — "Currently ◈
+           Cypherock". Three positions, and a `position: 'start' | 'end'` enum
+           would still not reach the third.
+
+           So the label says where. `{}` in the string is the slot, exactly the
+           way `*word*` in the headline is the italic — the copy stays a piece
+           of copy you can read and rewrite, and the placement lives with the
+           words rather than in a second field that has to be kept in step with
+           them. No `{}` and nothing changes: the glyph leads, as before. */
+        const glyph = () => {
+          if (item.icon && PILL_ICON[item.icon]) {
+            return el('span', { class: `pill__icon pill__icon--${item.icon}` },
+              PILL_ICON[item.icon]);
+          }
+          if (item.logo) {
+            return el('span', { class: 'pill__icon pill__icon--logo' },
+              `<img src="${item.logo}" alt="">`);
+          }
+          return null;
+        };
+        const parts = String(item.label).split('{}');
+        if (parts.length > 1) {
+          parts.forEach((txt, k) => {
+            /* trimmed, because the spacing between a word and the mark is the
+               row's `gap` — one number, in the stylesheet, rather than however
+               many spaces happen to be either side of the token */
+            const t = txt.trim();
+            if (t) pill.appendChild(el('span', { class: 'pill__label' }, esc(t)));
+            if (k < parts.length - 1) {
+              const g = glyph();
+              if (g) pill.appendChild(g);
+            }
+          });
+        } else {
+          const g = glyph();
+          if (g) pill.appendChild(g);
+          pill.appendChild(el('span', { class: 'pill__label' }, esc(item.label)));
         }
-        pill.appendChild(el('span', { class: 'pill__label' }, esc(item.label)));
         if (item.detail) pill.appendChild(el('span', { class: 'pill__detail' }, esc(item.detail)));
         pill.classList.add('rv');
         pill.style.setProperty('--rv-dur', `${rv.pills || 850}ms`);
@@ -5104,7 +5021,21 @@
         wrap.appendChild(pill);
         pills.appendChild(wrap);
 
-        const pit = Drag.make(wrap, { r: (i % 2 ? 0.5 : -0.6) });
+        /* STRAIGHT.
+
+           These used to be laid down at alternating half-degree angles — -0.6
+           and +0.5 — on the idea that a thing lying on a canvas is never quite
+           square to it. It is a nice idea about stickers and a bad one about
+           type. Half a degree is far too small to read as "placed by hand" and
+           far too large to read as level: over a 190px tag it drops the far end
+           about 1.7px, which is exactly the amount that looks like a rendering
+           fault rather than a choice. And the two tags lean opposite ways, so
+           the eye gets a reference for level right next to the thing that is
+           not level. Set square and they read as set square.
+
+           `tilt` is still there for a tag that genuinely wants an angle; the
+           default is zero because the default should be. */
+        const pit = Drag.make(wrap, { r: item.tilt || 0 });
         pit.duplicate = () => {
           const clone = wrap.cloneNode(true);
           clone.classList.remove('is-sel');
@@ -5635,14 +5566,485 @@
        says which of the two arrangements it is: a column at the foot is
        something the pieces come to rest ON, one at the head is something they
        are simply never laid over. */
-    keepBox(h) {
+    keepBox(h, pad) {
       const k = this.keep;
       if (!k) return null;
-      const pad = 14;
+      const p = pad == null ? 14 : pad;
       return {
-        L: k.x0 * h.width - pad, R: k.x1 * h.width + pad,
-        T: k.y0 * h.height - pad, B: k.y1 * h.height + pad,
+        L: k.x0 * h.width - p, R: k.x1 * h.width + p,
+        T: k.y0 * h.height - p, B: k.y1 * h.height + p,
         shelf: k.y0 > 0.5,
+      };
+    },
+
+    /* --- THE HERO CONTENT IS A SET OF PHYSICAL OBJECTS ---------------------
+       The intro — the headline, the three tags, the button row — is not yours
+       to bury, and until recently the brick engine did not know it existed.
+       The fall was taught to keep off it (see `lim`, and the shelf floor), but
+       a piece in the HAND could be carried anywhere, so the arrangement the
+       load composed so carefully was one drag away from a brick sitting on the
+       middle of the sentence.
+
+       Fencing the gesture was the obvious answer and it is the wrong one. A
+       wall you cannot cross is a thing the page refuses to do; and this canvas
+       has exactly one rule about a held object, which is that it goes where you
+       put it. So the intro is not a fence. It is a set of PARTS — immovable to a
+       brick, with the same lattice and the same studs as everything else. Bring
+       a brick to an edge and it clicks onto it the way it clicks onto another
+       brick. Push one INTO a block and it seats against the nearest side of it,
+       because that is where a part that will not fit inside another part ends up.
+
+       FIVE OBJECTS, NOT ONE. This is the correction that matters, and it is not
+       a detail. The intro column LOOKS like one block and is not: the headline
+       is a `.drg`, each tag is a `.drg`, and every one of them can be dragged,
+       resized and turned independently. A single box drawn around the column is
+       therefore wrong the instant any one of them is moved — and it was wrong in
+       exactly the way that is hardest to see, because the box was invisible.
+       Drag the headline to the top of the screen and the old geometry left a
+       dead rectangle behind at the foot of the canvas, blocking empty paper,
+       while the sentence itself sat in the open with bricks welding straight
+       through it.
+
+       MEASURED AS PAINTED, NOT AS LAID OUT. Every box below comes from
+       `getBoundingClientRect` on the live node, which carries the object's
+       transform — its drag, its resize, its rotation — and is converted into the
+       host's own coordinates, the same space the bricks' lattice is in. Nothing
+       reads `offsetTop` here. That is the whole difference between geometry that
+       follows the object and geometry that remembers where it used to be.
+
+       (`zone()` DOES read offsets, on purpose, and the two are not in conflict.
+       It answers a different question — where should the eighteen pieces be
+       COMPOSED — at a moment when the reveal is still animating the column and
+       the painted position is a lie. This answers where the objects ARE, during
+       a gesture, long after any of that has settled.)
+
+       They are pseudo-groups and they are deliberately NOT in `this.groups`.
+       That list is the model — welds, splits, undo and the snapshot all walk it —
+       and putting an object in it that has no members, cannot be dragged and
+       must never be merged into means every one of those has to learn about a
+       special case. They are handed to the solver explicitly instead, which is
+       the one place that actually needs them. */
+    WALLPAD: 6,
+
+    /* How near two hero blocks have to be to count as one object, in studs.
+       See the note in makeWalls. */
+    WALLJOIN: 3,
+
+    /* ONE DEFINITION OF "TOUCHING", and it is in PIXELS rather than in studs.
+
+       A piece seated flush lands within about half a pixel of the boundary
+       rather than exactly on it: the held group's lattice and a block's are not
+       necessarily the same one, and positions are written to a tenth of a pixel.
+       So every test that asks "is this cell inside that block" has to allow the
+       same margin, or two of them disagree about a placement and undo each
+       other's work — the safety net pushing out a seat the solver had just
+       certified, or rejecting it outright.
+
+       The first version of this was a quarter of a stud, which is four to six
+       pixels, and that is not rounding — it is a licence to lie four pixels deep
+       into the headline, and the hammer test duly found bricks doing exactly
+       that. The error being absorbed here is a float artefact and does not scale
+       with the lattice, so neither does the number. Measured worst case across
+       every viewport: 0.61px. */
+    WALLEPS: 1.25,
+
+    walls: [],
+    wallStamp: -1,
+
+    /* WHICH NODES ARE WALLS. The movable blocks inside the intro, plus the
+       button row, which is the one piece of hero content that is not draggable
+       and still must not be built over. Collected once — the DOM structure does
+       not change — and measured every time it matters. */
+    wallHosts() {
+      if (this._wh) return this._wh;
+      const intro = this.introEl || (this.host && $('.canvas__intro', this.host));
+      this.introEl = intro;
+      if (!intro) return (this._wh = []);
+      const list = $$('.drg', intro).filter((n) => !n.classList.contains('brk'));
+      const cta = $('.canvas__cta', intro);
+      if (cta) list.push(cta);
+      /* Anything that IS a wall gets flagged on its drag item, and Drag.apply
+         bumps a counter for flagged items only. That counter is the whole
+         invalidation strategy: one integer compare per pointer event while
+         nothing has moved, one fresh measurement on the first event after the
+         headline is dragged a pixel. "Use the current geometry every frame"
+         costs nothing when the geometry only changes when something moves. */
+      Drag.items.forEach((it) => { if (list.indexOf(it.node) >= 0) it.wall = true; });
+      return (this._wh = list);
+    },
+
+    /* THE BOX AS IT IS PAINTED.
+
+       The union of the node and its descendants rather than the node's own
+       rect, because the two are not the same and the difference is visible: at
+       390px the headline's `.drg` wrapper measures 266 wide and the `h1` inside
+       it measures 342, so a box drawn on the wrapper leaves 76px of the sentence
+       outside the wall — the last word of every line unprotected. The union is
+       also what makes this correct for a ROTATED object: a rect from a rotated
+       element is already the axis-aligned box of the rotated shape, so the
+       region grows and shrinks with the turn instead of staying square to a
+       page the object is no longer square to.
+
+       `.sel` is skipped. It is the selection chrome — eight handles and a rotate
+       grip, positioned by transform well outside the object — and unioning it
+       would make the wall jump by a hundred pixels the moment you clicked the
+       headline. */
+    wallBox(node, h) {
+      let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+      const add = (n) => {
+        if (n.classList && n.classList.contains('sel')) return;
+        const q = n.getBoundingClientRect();
+        if (q.width || q.height) {
+          L = Math.min(L, q.left); T = Math.min(T, q.top);
+          R = Math.max(R, q.right); B = Math.max(B, q.bottom);
+        }
+        for (let c = n.firstElementChild; c; c = c.nextElementSibling) add(c);
+      };
+      add(node);
+      if (!isFinite(L)) return null;
+      const p = this.WALLPAD;
+      return {
+        L: L - h.left - p, T: T - h.top - p,
+        R: R - h.left + p, B: B - h.top + p,
+      };
+    },
+
+    makeWalls() {
+      const h = this.host && this.host.getBoundingClientRect();
+      /* The stamp is only taken on a measurement that succeeded. A canvas with
+         no width yet must be re-measured on the next event rather than being
+         remembered as "no walls anywhere" for the rest of the session. */
+      if (!h || !h.width) { this.walls = []; return; }
+      this.wallStamp = Drag.gen;
+      const U = this.U;
+
+      const boxes = [];
+      this.wallHosts().forEach((node) => {
+        const b = this.wallBox(node, h);
+        if (b) { b.nodes = [node]; boxes.push(b); }
+      });
+
+      /* --- ONE OBJECT, NOT FIVE ---------------------------------------------
+         The hero is five separate draggable blocks and the engine used to hold
+         five separate regions, which is faithful to the DOM and wrong about the
+         thing. While the composition is intact those five boxes ARE one object:
+         the tag row sits inside the headline's shadow, the buttons a dozen
+         pixels under that, and no gap between any of them is wide enough for a
+         brick to occupy. Modelling them apart bought nothing and cost the
+         obvious statement of the rule — "the hero is a block".
+
+         Merging them unconditionally would be the older mistake in reverse: the
+         headline can be dragged to the far corner, and one box around it and the
+         tags it left behind is a dead rectangle across the paper in between.
+
+         So the regions are the CONNECTED COMPONENTS of the blocks, and the join
+         rule is the one that matters to a brick: two blocks are the same object
+         when the space between them is not somewhere a brick belongs. Their
+         region is then the bounding box of the group. Intact hero: one
+         rectangle. Headline dragged out: two, each hugging what is actually
+         there. The rule holds at both ends and there is no arrangement it has to
+         be told about.
+
+         WALLJOIN IS THREE STUDS, and the first version was one — "merge only if
+         a brick could not physically fit". Measured, the widest gap inside the
+         intact composition is the 27px between the tags and the buttons, which
+         at a 17px stud a 1x1 fits inside with ten pixels to spare. So the rule
+         held and the hero came out as two regions, and a piece could be wedged
+         into the composition's own breathing room. It fits, and it is still
+         debris: three studs is the distance at which a brick in the gap reads as
+         placed rather than dropped. Far below any distance a block gets dragged,
+         so a piece pulled out of the composition still becomes its own region. */
+      const near = U * this.WALLJOIN / 2;
+      const root = boxes.map((_, i) => i);
+      const find = (i) => {
+        let r = i;
+        while (root[r] !== r) r = root[r];
+        while (root[i] !== r) { const n = root[i]; root[i] = r; i = n; }
+        return r;
+      };
+      for (let i = 0; i < boxes.length; i += 1) {
+        for (let j = i + 1; j < boxes.length; j += 1) {
+          const a = boxes[i], b = boxes[j];
+          if (a.L - near < b.R + near && b.L - near < a.R + near
+            && a.T - near < b.B + near && b.T - near < a.B + near) {
+            const ra = find(i), rb = find(j);
+            if (ra !== rb) root[ra] = rb;
+          }
+        }
+      }
+      const merged = new Map();
+      boxes.forEach((b, i) => {
+        const k = find(i);
+        const m = merged.get(k);
+        if (!m) { merged.set(k, { L: b.L, T: b.T, R: b.R, B: b.B, nodes: b.nodes.slice() }); return; }
+        m.L = Math.min(m.L, b.L); m.T = Math.min(m.T, b.T);
+        m.R = Math.max(m.R, b.R); m.B = Math.max(m.B, b.B);
+        m.nodes.push(b.nodes[0]);
+      });
+
+      this.walls = [...merged.values()].map((box) => {
+        /* CEIL, THEN CENTRE.
+
+           Rounding to the NEAREST whole stud can produce a lattice SHORTER than
+           the region it stands for, and every pixel it gives up is a pixel of
+           hero content a brick is then free to sit on. 169px of intro at a 23px
+           stud is 7.35 studs; rounded, 7; and the eight pixels lost off the
+           bottom edge is exactly where the first drag test at 1440 parked a
+           brick, one stud into the buttons. Ceiling it means the lattice always
+           contains the region, and splitting the slack evenly means the seat on
+           each of the four sides stands the same distance off it. */
+        const nx = Math.max(1, Math.ceil((box.R - box.L) / U));
+        const ny = Math.max(1, Math.ceil((box.B - box.T) / U));
+        const ox = box.L - (nx * U - (box.R - box.L)) / 2;
+        const oy = box.T - (ny * U - (box.B - box.T)) / 2;
+        const cells = new Set();
+        for (let c = 0; c < nx; c += 1) for (let w = 0; w < ny; w += 1) cells.add(`${c},${w}`);
+        /* A piece that seats above a region has its bottom edge exactly on the
+           lattice's top row — and the second piece brought to the same side
+           lines up with the first, because both are now on this grid. */
+        return {
+          wall: true, members: [], nodes: box.nodes,
+          ox, oy, cells, nx, ny,
+          bb: { x0: 0, y0: 0, x1: nx, y1: ny },
+        };
+      });
+    },
+
+    /* One measurement per change, and the change is anything moving that has a
+       wall on it. Everything in the gesture path calls this rather than reading
+       `this.walls` directly, so there is no way to use a stale box. */
+    wallsNow() {
+      if (this.wallStamp !== Drag.gen) this.makeWalls();
+      return this.walls;
+    },
+
+    /* --- WHY THERE IS NO OVERLAY HERE ---------------------------------------
+       There was one, and it was the mistake. Each region got a node that drew
+       its outline while a brick was near it and hatched its interior in red
+       while a brick was on it — the reasoning being that a rule the user cannot
+       see is a rule they have to discover by trial.
+
+       It is still true that the rule has to be legible, and it was the wrong
+       conclusion. What it produced on screen was the collision model itself: a
+       red rectangle laid over the sentence, and beside it more rectangles for
+       every other block the piece happened to come near. That is a debugger,
+       and shipping a debugger is not the same thing as explaining a rule. It
+       also broke the page's own premise — this is a canvas with objects lying on
+       it, and objects do not announce their bounding boxes.
+
+       So the geometry below is DATA and nothing else. Not a node, not an SVG
+       rect, not a class on the hero. Everything the user needs to know is said
+       by the two things that are already theirs to look at: the piece in their
+       hand dims when it is somewhere it cannot stay (`.brk.is-block`), and the
+       ghost stands at the seat it will take instead. Both are about the brick.
+       Neither draws the hero.
+
+       The regions can still be SEEN, from `?brkdebug` — see `debugDraw`, which
+       is where a picture of the model belongs. */
+
+    /* WHICH SIDE THE LANDING IS ON, counted rather than inferred.
+
+       The first version of this compared the landing's bounding box against the
+       block's — if every cell is above row zero it is the top edge, and so on —
+       and it was wrong for any piece that is not a rectangle. An L seated into
+       the top-left corner has cells above the block AND cells to the left of it,
+       so a box test either picks whichever branch is written first or, when the
+       two arms straddle both axes, matches nothing at all and reports no edge.
+       That was the mobile failure exactly: four seats, four correct landings, no
+       edge lit, because the shape was an L.
+
+       So the contacts are counted. For each face, how many of this piece's cells
+       actually sit against it — which is the same question the solver answered
+       when it called this landing lawful, and it cannot come out empty for a
+       landing that touches. Most contacts wins; that is the side the piece is
+       really seated on, whatever shape it is. */
+    wallSide(w, p, set) {
+      const a = set[0];
+      const n = { t: 0, b: 0, l: 0, r: 0 };
+      set.forEach((r) => this.cells(r).forEach(([c, ww]) => {
+        const cx = p.cx + r.gx - a.gx + c, cy = p.cy + r.gy - a.gy + ww;
+        const inx = cx >= 0 && cx < w.nx, iny = cy >= 0 && cy < w.ny;
+        if (inx && cy === -1) n.t += 1;
+        if (inx && cy === w.ny) n.b += 1;
+        if (iny && cx === -1) n.l += 1;
+        if (iny && cx === w.nx) n.r += 1;
+      }));
+      let side = null, best = 0;
+      ['t', 'b', 'l', 'r'].forEach((s) => { if (n[s] > best) { best = n[s]; side = s; } });
+      return side;
+    },
+
+    /* WHICH WALL THE PIECE IS STANDING ON, by area rather than by first hit —
+       a brick lying across the gap between the headline and a tag overlaps two,
+       and the one it should be pushed out of is the one it is most inside. Rect
+       against rect rather than a rounded cell index, because a piece half a stud
+       onto the type is on the type. */
+    inWall(set) {
+      const U = this.U, eps = this.WALLEPS;
+      let best = null, area = 0;
+      this.wallsNow().forEach((w) => {
+        const L = w.ox, T = w.oy, R = w.ox + w.nx * U, B = w.oy + w.ny * U;
+        let a2 = 0;
+        set.forEach((r) => {
+          const bx = this.ax(r), by = this.ay(r);
+          this.cells(r).forEach(([c, ww]) => {
+            const x = bx + c * U, y = by + ww * U;
+            const ox = Math.min(x + U, R) - Math.max(x, L);
+            const oy = Math.min(y + U, B) - Math.max(y, T);
+            /* THE SAME SLOP AS EVERYWHERE ELSE. Without it this disagreed with
+               the solver about what "inside" means: a piece seated flush lands
+               within about half a pixel of the boundary — the group's lattice
+               and the block's are not the same one, and the position is written
+               to one decimal place — and a bare `> 0` reads that as an overlap.
+               The result was a placement the sweep had just certified as lawful
+               being pushed out again by the safety net, or rejected outright.
+               One definition of touching, in `WALLEPS`, used by all three. */
+            if (ox > eps && oy > eps) a2 += ox * oy;
+          });
+        });
+        if (a2 > area) { area = a2; best = w; }
+      });
+      return best;
+    },
+
+    /* THE WAY OUT, WHEN THE PIECE IS ALREADY ON THE HERO.
+
+       The ordinary sweep cannot answer this. Its whole design is a search of a
+       few studs around the piece, and a brick dropped in the middle of the
+       headline is a third of the block away from any lawful seat — widening the
+       sweep far enough to find one turns a 169-candidate search into a
+       2600-candidate one on every pointer event, for the one case that does not
+       need a search at all. Because the answer is not a search: there are four
+       ways off a rectangle and the piece takes the nearest.
+
+       AND OUT OF ALL OF IT, NOT JUST THE BLOCK IT IS MOST INSIDE. This is the
+       correction that took the last failing case, and it is the kind of thing
+       only a test finds. The hero is five blocks and they TOUCH — at 1440 the
+       headline's region and the tag row's overlap by twenty pixels, because the
+       tags sit that close under the type. So "the nearest way off the block you
+       are standing on" is not a way out at all: pushed off the tag the piece
+       lands in the headline, pushed off the headline it lands back in the tag,
+       and the version of this that only knew about one block at a time chose the
+       shortest of four moves that were all still inside something.
+
+       So each direction is resolved against every block that lies ACROSS it —
+       the ones whose cross-axis range overlaps the piece, which are exactly the
+       ones moving along this axis cannot avoid — and the piece slides until it
+       is clear of all of them, seating flush on the last one it passes. Four
+       directions, one pass over five walls each. The result is a real position
+       rather than the first plausible one. */
+    wallOut(set) {
+      const ws = this.wallsNow();
+      if (!ws.length) return null;
+      const U = this.U, a = set[0], eps = this.WALLEPS;
+
+      const rel = [];
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      set.forEach((r) => this.cells(r).forEach(([c, w]) => {
+        const cx = r.gx - a.gx + c, cy = r.gy - a.gy + w;
+        rel.push([cx, cy]);
+        x0 = Math.min(x0, cx); x1 = Math.max(x1, cx);
+        y0 = Math.min(y0, cy); y1 = Math.max(y1, cy);
+      }));
+      if (!isFinite(x0)) return null;
+
+      const ax = this.ax(a), ay = this.ay(a);
+      const h = this.host ? this.host.getBoundingClientRect() : null;
+      const busy = this.busyCells || null;
+
+      /* the blocks the piece is inside, with its anchor at (X, Y). A quarter of
+         a stud of slop, so a piece seated flush reads as touching rather than as
+         overlapping — the piece's lattice and a block's are not the same one. */
+      const hits = (X, Y) => ws.filter((w) => rel.some(([cx, cy]) => {
+        const x = X + cx * U, y = Y + cy * U;
+        return x + U - eps > w.ox && x + eps < w.ox + w.nx * U
+          && y + U - eps > w.oy && y + eps < w.oy + w.ny * U;
+      }));
+
+      if (!hits(ax, ay).length) return null;
+
+      const solve = (X, Y) => {
+        const out = [];
+        [['y', -1, 't'], ['y', 1, 'b'], ['x', -1, 'l'], ['x', 1, 'r']].forEach((dir) => {
+          const vert = dir[0] === 'y', sgn = dir[1], side = dir[2];
+          const across = ws.filter((w) => (vert
+            ? X + (x1 + 1) * U - eps > w.ox && X + x0 * U + eps < w.ox + w.nx * U
+            : Y + (y1 + 1) * U - eps > w.oy && Y + y0 * U + eps < w.oy + w.ny * U));
+          if (!across.length) return;
+          /* the furthest constraint in this direction is the one that decides
+             where the piece stops, and it is the block it ends up seated on */
+          let bind = null, cell = 0;
+          across.forEach((w) => {
+            const v = vert
+              ? (sgn < 0 ? -(y1 + 1) : w.ny - y0)
+              : (sgn < 0 ? -(x1 + 1) : w.nx - x0);
+            const px = vert ? w.oy + v * U : w.ox + v * U;
+            if (!bind || (sgn < 0 ? px < (vert ? bind.oy + cell * U : bind.ox + cell * U)
+              : px > (vert ? bind.oy + cell * U : bind.ox + cell * U))) { bind = w; cell = v; }
+          });
+          if (!bind) return;
+          /* seated on the binding block's own lattice, and kept in contact with
+             it along the free axis — so two pieces brought to the same side of
+             the same block are square to each other as well as to it */
+          let cx, cy;
+          if (vert) {
+            cy = cell;
+            cx = clamp(Math.round((X - bind.ox) / U), -x1, bind.nx - 1 - x0);
+          } else {
+            cx = cell;
+            cy = clamp(Math.round((Y - bind.oy) / U), -y1, bind.ny - 1 - y0);
+          }
+          out.push({ side, bind, cx, cy, X: bind.ox + cx * U, Y: bind.oy + cy * U });
+        });
+
+        let best = null;
+        out.forEach((c) => {
+          let buried = 0;
+          if (busy) {
+            rel.forEach((m) => {
+              const bx = Math.round((c.X + m[0] * U) / U), by = Math.round((c.Y + m[1] * U) / U);
+              if (busy.has(`${bx},${by}`)) buried += 1;
+            });
+          }
+          /* A seat off the edge of the hero is not a seat. On a phone the column
+             sits near the foot of the canvas with sixty pixels under it, so
+             "straight down" is both the nearest way off the sentence and the way
+             off the page. Ranked last rather than removed, so there is always an
+             answer even on a canvas with no room on any side. */
+          const off = !!h && (
+            c.X + x0 * U < -U * 0.5 || c.X + (x1 + 1) * U > h.width + U * 0.5
+            || c.Y + y0 * U < -U * 0.5 || c.Y + (y1 + 1) * U > h.height + U * 0.5);
+          const clash = hits(c.X, c.Y).length > 0;
+          const d = Math.hypot(c.X - ax, c.Y - ay);
+          const k = d + buried * U * 1.5 + (clash ? U * 60 : 0) + (off ? U * 600 : 0);
+          if (this.debug) {
+            (this._ej = this._ej || []).push({ s: c.side, X: +c.X.toFixed(1), Y: +c.Y.toFixed(1), d: +d.toFixed(1), k: +k.toFixed(1), off, clash });
+          }
+          if (best && k >= best.k) return;
+          best = Object.assign({ d, k, clash, off, buried }, c);
+        });
+        return best;
+      };
+
+      /* ONE OR TWO REPAIR PASSES. Aligning to the binding block's lattice moves
+         the piece up to half a stud along the free axis, and half a stud is
+         enough to catch the corner of a block that was not across the path when
+         the direction was chosen. Re-solving from where it landed is the same
+         rule applied again and it converges, because every step is strictly
+         outward from the union. */
+      let p = solve(ax, ay);
+      for (let i = 0; i < 3 && p && p.clash; i += 1) {
+        const q = solve(p.X, p.Y);
+        if (!q) break;
+        p = q;
+      }
+      if (!p) return null;
+
+      const w = p.bind;
+      return {
+        d: Math.hypot(p.X - ax, p.Y - ay), k: 0, slack: U * 2,
+        tx: p.X, ty: p.Y, g: w, cx: p.cx, cy: p.cy, ox: w.ox, oy: w.oy,
+        touch: 1, buried: p.buried || 0, force: true, side: p.side,
       };
     },
 
@@ -5896,7 +6298,19 @@
 
       /* Before a single piece is laid: everything below reads this. */
       this.Z = this.zone(host);
-      if (/[?&]brkdebug\b/.test(location.search)) this.debug = true;
+      /* NO WALL MEASUREMENT HERE, deliberately. The entry reveal is still
+         carrying the headline's words at this point, so a live rect taken now
+         describes where they are passing through rather than where they live —
+         and unlike `zone`, which sidesteps that by reading layout offsets, the
+         walls have to read the painted box because the painted box is the whole
+         point of them. They are measured on the first gesture that needs them
+         instead, which is necessarily after all of this has settled. */
+      this.introEl = $('.canvas__intro', host);
+      /* Collected (not measured) now, so the `it.wall` flags Drag.apply reads
+         are in place before anything can be dragged, rather than depending on
+         which gesture happens to be first. */
+      this.wallHosts();
+      if (DEBUG_SNAP_GEOMETRY || /[?&]brkdebug\b/.test(location.search)) this.debug = true;
 
       defs.forEach((d, i) => {
         const def = PIECE[d.kind];
@@ -6070,6 +6484,28 @@
         const y = Math.min(Math.max(b.y, top), Math.max(top, bot));
         if (x !== b.x || y !== b.y) this.anchorTo(r, x, y);
       });
+
+      /* AND NOTHING MAY BE LEFT ON THE TYPE. The zone is a region and the
+         column is a shape inside it, so at some widths — a long headline, a
+         wrap that puts the buttons a line lower — the two disagree and a piece
+         corrected back into the region lands on the sentence. This is the
+         guarantee rather than the intention: whatever the passes above
+         produced, anything still overlapping the block is slid straight out
+         the nearest side of it. Same rule as the drag, so the laid-out
+         composition and the one you make by hand obey the same law. */
+      const K = this.keepBox(h, this.WALLPAD);
+      if (!K) return;
+      this.recs.forEach((r) => {
+        const b = box(r);
+        if (b.x + b.w <= K.L || b.x >= K.R || b.y + b.h <= K.T || b.y >= K.B) return;
+        const outs = [
+          { d: b.y + b.h - K.T, x: b.x, y: K.T - b.h },
+          { d: K.B - b.y, x: b.x, y: K.B },
+          { d: b.x + b.w - K.L, x: K.L - b.w, y: b.y },
+          { d: K.R - b.x, x: K.R, y: b.y },
+        ].sort((p, q) => p.d - q.d)[0];
+        this.anchorTo(r, outs.x, outs.y);
+      });
     },
 
     /* =====================================================================
@@ -6148,6 +6584,12 @@
          so the column is read again here. */
       this.Z = this.zone(this.host);
       const Z = this.Z;
+      /* THE COMPOSITION USES THE LAYOUT BOX, NOT THE PAINTED ONE, and the two
+         answer different questions on purpose. Nothing has been dragged when
+         this runs — there is nowhere for a painted box to have moved TO — and
+         the reveal is still animating, so the layout box is both sufficient and
+         the only one that is stable. The interactive walls read the painted box
+         because by then things HAVE moved. See wallBox(). */
       const K = this.keepBox(h);
 
       /* WHERE THIS BODY MAY BE, AT THE ANGLE IT IS AT.
@@ -6474,15 +6916,45 @@
       mc.forEach(([c, w]) => { mx = Math.max(mx, c + 1); my = Math.max(my, w + 1); });
       const reachPad = Math.hypot(mx, my) * U;
 
+      /* NO LANDING MAY PUT A CELL ON HERO CONTENT — including a landing on
+         another BRICK. This is the case the walls as targets do not cover and it
+         is the one that showed up in testing: bring a piece to the far side of
+         the headline, find a neighbour there, and the lawful join to that
+         neighbour is two studs over the sentence. A block was a place to land
+         and it was not yet a place you could not land, so a legal weld walked
+         straight through it.
+
+         A quarter of a stud of slop, because the held group's lattice and a
+         block's are not necessarily the same one — a piece seating flush is
+         within rounding of touching, and that must read as touching rather than
+         as overlapping. */
+      const ws = this.wallsNow();
+      const wEps = this.WALLEPS;
+      const onWall = ws.length ? (px, py) => ws.some((w) => (
+        px + U - wEps > w.ox && px + wEps < w.ox + w.nx * U
+        && py + U - wEps > w.oy && py + wEps < w.oy + w.ny * U
+      )) : null;
+
       let best = null;
-      this.groups.forEach((g) => {
-        if (g === skip || !g.members.length) return;
-        if (set.indexOf(g.members[0]) >= 0) return;
-        /* a piece the preset is currently flying is not a place to land: its
-           position is changing between frames and it has not seated yet */
-        if (g.members.some((r) => r.auto)) return;
-        const b = g.members[0];
-        const ox = this.ax(b) - b.gx * U, oy = this.ay(b) - b.gy * U;
+
+      /* One sweep, run over the real groups and then over the block of type.
+         `bias` is what keeps the two from being the same thing: the intro is a
+         far larger target than any brick and it would otherwise win every
+         close call simply by having more edges. */
+      const consider = (g, bias) => {
+        let ox, oy, gb, gc;
+        if (g.wall) {
+          ox = g.ox; oy = g.oy; gb = g.bb; gc = g.cells;
+        } else {
+          if (g === skip || !g.members.length) return;
+          if (set.indexOf(g.members[0]) >= 0) return;
+          /* a piece the preset is currently flying is not a place to land: its
+             position is changing between frames and it has not seated yet */
+          if (g.members.some((r) => r.auto)) return;
+          const b = g.members[0];
+          ox = this.ax(b) - b.gx * U; oy = this.ay(b) - b.gy * U;
+          gb = this.bounds(g);
+        }
         /* CHEAP REJECT BEFORE THE SWEEP. Widening the search from 2.7 studs to
            4.2 more than doubled the candidate grid, and it was being walked
            once for every group on the canvas including the ones on the far
@@ -6490,12 +6962,16 @@
            bounding box, grown by our own, is still further than the search
            radius — one hypot per group throws most of them out before any of
            that work happens. */
-        const gb = this.bounds(g);
         if (Math.hypot(
           Math.max(0, Math.max(ox + gb.x0 * U - ax, ax - (ox + gb.x1 * U))),
           Math.max(0, Math.max(oy + gb.y0 * U - ay, ay - (oy + gb.y1 * U)))
         ) > REACH + reachPad) return;
-        const gc = this.cellsOf(g);
+        if (!gc) gc = this.cellsOf(g);
+        /* The block has one flat side per direction, so joining along ten of
+           its cells is not a better connection than joining along three — it
+           is the same connection. Capping the bonus stops the length of the
+           headline from deciding where a brick goes. */
+        const cap = g.wall ? 3 : 6;
         const qx = Math.round((ax - ox) / U), qy = Math.round((ay - oy) / U);
         for (let dy = -SPAN; dy <= SPAN; dy += 1) {
           for (let dx = -SPAN; dx <= SPAN; dx += 1) {
@@ -6503,11 +6979,22 @@
             /* cheap cull first: most of a wide sweep is out of reach anyway */
             const tx0 = ox + cx * U, ty0 = oy + cy * U;
             const d0 = Math.hypot(tx0 - ax, ty0 - ay);
-            if (d0 > REACH || (best && d0 - best.slack >= best.k)) continue;
+            if (d0 > REACH || (best && d0 + bias - best.slack >= best.k)) continue;
             let bad = false, touch = 0, buried = 0;
             for (let k = 0; k < mc.length; k += 1) {
               const x = cx + mc[k][0], y = cy + mc[k][1];
               if (gc.has(`${x},${y}`)) { bad = true; break; }
+              /* Including when the target IS a block. This exemption used to be
+                 here — "a landing against a wall obviously touches that wall" —
+                 and it was both unnecessary and the last hole in the guarantee.
+                 Unnecessary because `gc` already rejects cells inside the target
+                 and the rect test carries a quarter-stud of slop, so a flush
+                 seat reads as touching rather than as overlapping. A hole
+                 because the hero is FIVE blocks that touch: a five-stud bar
+                 seated legally along the bottom of the headline reached straight
+                 across the gap and lay over the tags, and nothing in the sweep
+                 was looking. */
+              if (onWall && onWall(tx0 + mc[k][0] * U, ty0 + mc[k][1] * U)) { bad = true; break; }
               if (gc.has(`${x + 1},${y}`)) touch += 1;
               if (gc.has(`${x - 1},${y}`)) touch += 1;
               if (gc.has(`${x},${y + 1}`)) touch += 1;
@@ -6526,13 +7013,40 @@
                every extra shared edge earns back a third of one, so a join
                along a whole side beats a join on a single corner when the two
                are otherwise equally close. */
-            const k2 = d0 + buried * U * 1.5 - Math.min(touch, 6) * U * 0.34;
+            const k2 = d0 + buried * U * 1.5 - Math.min(touch, cap) * U * 0.34 + bias;
             if (this.debug) this._cand.push({ tx: tx0, ty: ty0, d: d0, k: k2, touch, buried });
             if (best && k2 >= best.k) continue;
             best = { d: d0, k: k2, slack: U * 2, tx: tx0, ty: ty0, g, cx, cy, ox, oy, touch, buried };
           }
         }
-      });
+      };
+
+      this.groups.forEach((g) => consider(g, 0));
+      /* THE HERO LAST, AND AT A HANDICAP. Half a stud, which is enough that a
+         brick offered both a real neighbour and the edge of the sentence at the
+         same distance goes to the neighbour — bricks connect to bricks first,
+         and a block is where a piece ends up when there is nothing else there.
+         All four sides of every wall are searched by the same sweep, so left and
+         right are not a special case that could be forgotten; they are the same
+         case as top and bottom. */
+      ws.forEach((w) => consider(w, U * 0.5));
+
+      /* ONE SOLVER, AND THE INTERIOR IS PART OF IT.
+
+         The blocked interior is not a second system with its own answer. It is
+         this function's answer when the piece is standing on a block, computed
+         differently — analytically, four ways off a rectangle — because a
+         four-stud sweep cannot reach an edge from the middle of a headline. It
+         comes back in exactly the same shape, so the preview, the release and
+         the overlay all still read one object.
+
+         It wins outright when it applies, which is the priority the interaction
+         needs: blocked first, edges second, free drag last. `wallOut` returns
+         null when the piece is not inside anything, so "when it applies" is the
+         function's own answer rather than a condition written out here twice. */
+      if (this.debug) this._ej = [];
+      const out = this.wallOut(set);
+      if (out) { out.blocked = this.inWall(set); best = out; }
       return best;
     },
 
@@ -6578,6 +7092,35 @@
         p.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" `
           + `height="${ht.toFixed(1)}" class="${cls}"/>`);
 
+      /* THE HERO BLOCKS, AS THE ENGINE BELIEVES THEM.
+
+         This is the layer worth having. Everything about the hero's collision
+         geometry is invisible by construction, so a wall measured against where
+         the headline USED to be looks exactly like a wall measured correctly —
+         which is how a stale box survives a whole afternoon of testing. Drawn
+         here: the lattice rectangle of each block, the four edges a brick may
+         seat against, and the interior it may not enter. Drag the headline with
+         `?brkdebug` on and the outline follows it or it does not, and there is
+         nothing to interpret. */
+      const held = this.held && this.held.gest;
+      const plan = held && held.plan;
+      const live = plan && plan.g && plan.g.wall ? plan.g : null;
+      const side = live ? this.wallSide(live, plan, held.set) : null;
+      (this.walls || []).forEach((w) => {
+        const W = w.nx * U, H = w.ny * U;
+        rect(w.ox, w.oy, W, H, 'd-wall');
+        /* all four snap edges, and the one the current landing is actually
+           seated against drawn hot — which is the question you are asking when
+           a piece goes to the wrong side of the hero */
+        const edge = (s2, x, y, w2, h2) =>
+          rect(x, y, w2, h2, w === live && side === s2 ? 'd-wedge d-whot' : 'd-wedge');
+        edge('t', w.ox, w.oy - 1.5, W, 3);
+        edge('b', w.ox, w.oy + H - 1.5, W, 3);
+        edge('l', w.ox - 1.5, w.oy, 3, H);
+        edge('r', w.ox + W - 1.5, w.oy, 3, H);
+        p.push(`<circle cx="${w.ox.toFixed(1)}" cy="${w.oy.toFixed(1)}" r="3" class="d-anchor"/>`);
+      });
+
       /* every piece's true footprint, square by square */
       this.recs.forEach((r) => {
         const bx = this.ax(r), by = this.ay(r);
@@ -6598,6 +7141,15 @@
           + `r="${this.range().toFixed(1)}" class="d-magnet"/>`);
         (this._cand || []).forEach((c) => {
           p.push(`<circle cx="${c.tx.toFixed(1)}" cy="${c.ty.toFixed(1)}" r="3" class="d-cand"/>`);
+        });
+        /* every cell of the held set, so the connector geometry the solver is
+           actually testing is on screen next to the piece it belongs to */
+        g.set.forEach((r) => {
+          const bx = this.ax(r), by = this.ay(r);
+          this.cells(r).forEach(([c, w]) => {
+            p.push(`<circle cx="${(bx + (c + 0.5) * U).toFixed(1)}" `
+              + `cy="${(by + (w + 0.5) * U).toFixed(1)}" r="2" class="d-stud"/>`);
+          });
         });
         if (g.plan) {
           const q = g.plan;
@@ -6724,6 +7276,9 @@
         this.tgtg = plan.g;
         this.mark(this.tgtg, 'is-tgt', true);
       }
+      /* A wall has no members, so `mark` has nothing to light for it — and
+         nothing should be lit for it. A region is not an object on this canvas;
+         the ghost standing at its edge is the whole of what the user is told. */
     },
 
     /* --- the rotate hint --------------------------------------------------
@@ -6891,6 +7446,7 @@
       this.hintOff();
       this.mark({ members: this.heldSet || [] }, 'is-hold', false);
       this.ghost({}, null);
+      this.blocked(null);
       this.heldSet = null;
       this.busyCells = null;
       this.held = null;
@@ -6925,6 +7481,10 @@
       this.heldSet = set;
       /* what else is lying on the canvas, measured once — see occupancy() */
       this.busyCells = this.occupancy(rec.g);
+      /* And where the hero content is, NOW. Not at load, not the last time a
+         brick was dragged — read at the top of this gesture and re-read on any
+         event after something with a wall on it has moved. */
+      this.wallsNow();
       this.mark(this.hovg, 'is-hov', false);
       this.hovg = null;
       this.mark({ members: set }, 'is-hold', true);
@@ -7002,17 +7562,43 @@
          as it now is rather than drawing one frame of a promise that is about
          to stop being true. It runs at most once per structure per page. */
       if (plan && this.square(plan.g)) plan = this.plan(g.set, rec.g);
+
       g.plan = plan;
+
       if (!plan) {
         this.lit(g.set, false); this.ghost(g, null);
+        this.blocked(null);
         this.paint(g.set, rec); this.hintAt(rec); return;
       }
+
+      /* STANDING ON A BLOCK. Nothing is fenced, so the piece is there and the
+         question is only what happens when the hand opens. The blocked region
+         says it cannot stay; the ghost says where it will go instead. Both are
+         true and both are on screen, and as the piece is carried off the block
+         the blocked shading turns off under it while the same ghost slides along
+         to the edge it is now nearest — one continuous statement rather than an
+         invalid state that flips to a valid one.
+
+         The magnet stays off here. Pulling a piece a hundred pixels out from
+         under a finger that is still holding it is the one thing the magnet must
+         never do; the preview says where it is going and the release takes it
+         there. */
+      if (plan.force) {
+        this.lit(g.set, false);
+        this.paint(g.set, rec);
+        this.ghost(g, plan);
+        this.blocked(g.set);
+        this.hintAt(rec);
+        return;
+      }
+
 
       /* Range is generous on touch, where there is no cursor to aim with and
          the finger is covering the thing being aimed. */
       /* Beyond DETECT there is nothing to say, so nothing is said. */
       if (plan.d > this.detect()) {
         this.lit(g.set, false); this.ghost(g, null);
+        this.blocked(null);
         this.paint(g.set, rec); this.hintAt(rec); return;
       }
 
@@ -7024,6 +7610,7 @@
         this.lit(g.set, false);
         this.paint(g.set, rec);
         this.ghost(g, plan);
+        this.blocked(null);
         this.hintAt(rec);
         return;
       }
@@ -7055,6 +7642,7 @@
          the preview stands still at the landing while the piece is drawn into
          it. Two different things saying two different true things. */
       this.ghost(g, plan);
+      this.blocked(null);
       this.hintAt(rec);
       if (this.debug) this.debugDraw();
     },
@@ -7066,6 +7654,26 @@
        the threshold, so the commit is legible before you let go. No outline,
        no ghost, no connection line. */
     lit(set, on) { set.forEach((r) => r.it.node.classList.toggle('is-near', on)); },
+
+    /* CANNOT STAY HERE — SAID ON THE BRICK, NOT ON THE HERO.
+
+       The whole of the blocked state, and it is deliberately one class on the
+       piece in your hand rather than anything drawn around the thing it is over.
+       A rule about where a brick may go is a fact about the brick; the sentence
+       underneath it is not participating and should not light up, outline
+       itself, or acknowledge the drag in any way.
+
+       Held as its own field so the class is only ever written when it changes.
+       This runs on every pointer event and a `classList.toggle` per member per
+       event is a style invalidation per member per event, for a state that
+       changes perhaps twice in a gesture. */
+    blocked(set) {
+      const now = set && set.length ? set : null;
+      if (now === this.blockSet) return;
+      if (this.blockSet) this.blockSet.forEach((r) => r.it.node.classList.remove('is-block'));
+      this.blockSet = now;
+      if (now) now.forEach((r) => r.it.node.classList.add('is-block'));
+    },
 
     drop(rec) {
       const g = rec.gest;
@@ -7085,29 +7693,130 @@
          question. There is one now: if a ghost is on screen, releasing puts
          the piece exactly where the ghost is, and if there is no ghost nothing
          happens at all. The preview IS the promise. */
-      if (plan && plan.d <= this.detect()) {
+      if (plan && (plan.force || plan.d <= this.detect())) {
         const from = g.set.map((r) => ({ r, x: r.it.x, y: r.it.y }));
         this.weld(g.set, plan);
-        const to = g.set.map((r) => ({ x: r.it.x, y: r.it.y }));
-        this.animate(from, to);
-        Sound.voice({ freq: 540, gain: 0.038, dur: 0.055, bright: 3000, drop: 1.5, noise: 0.35 });
-        Sound.voice({ freq: 190, gain: 0.03, dur: 0.09, bright: 1200, drop: 0.5, noise: 0.5 });
+        if (this.wallSettle(g.set)) {
+          const to = g.set.map((r) => ({ x: r.it.x, y: r.it.y }));
+          this.animate(from, to);
+          Sound.voice({ freq: 540, gain: 0.038, dur: 0.055, bright: 3000, drop: 1.5, noise: 0.35 });
+          Sound.voice({ freq: 190, gain: 0.03, dur: 0.09, bright: 1200, drop: 0.5, noise: 0.5 });
+        } else {
+          /* NOWHERE LEGAL TO GO. Put it back where it was picked up. This is the
+             one branch that admits defeat and it is the correct behaviour rather
+             than a fallback: a release that cannot be resolved into a lawful
+             position is an invalid release, and the piece was somewhere lawful a
+             moment ago. `before` is the gesture's own snapshot, so this also
+             restores whatever the drag had already dislodged. */
+          this.restore(before);
+          /* eslint-disable-next-line no-console */
+          if (this.debug) console.warn('[brk] release had nowhere legal to go; put back');
+          Sound.voice({ freq: 210, gain: 0.03, dur: 0.07, bright: 900, drop: 0.9, noise: 0.7 });
+          this.endHold(rec);
+          return true;
+        }
       }
 
       this.endHold(rec);
+      /* THE AUDIT. Only ever on with `?brkdebug`, and it watches the one
+         invariant that is invisible when it breaks: nothing this GESTURE placed
+         may be left on hero content. Deliberately scoped to the group that was
+         just put down — a brick the user buried by dragging the headline over it
+         is not this system's doing and is not something to shout about. */
+      if (this.debug) {
+        const g2 = g.set[0] && g.set[0].g;
+        const bad = ((g2 && g2.members) || g.set).filter((r) => this.inWall([r]));
+        if (bad.length) {
+          /* eslint-disable-next-line no-console */
+          console.warn('[brk] PLACED ON THE HERO:',
+            bad.map((r) => `${this.recs.indexOf(r)}:${r.kind}`).join(', '),
+            '| plan', plan && (plan.g.wall ? `wall/${plan.side}` : 'brick'));
+        }
+      }
       const after = this.snapshot();
       History.push(() => this.restore(before), 'brick', () => this.restore(after));
       return true;                       // one entry for the whole gesture
+    },
+
+    /* THE GUARANTEE, CHECKED RATHER THAN ARGUED.
+
+       Everything upstream of this is designed so a piece cannot come to rest on
+       hero content: the sweep refuses those landings, and `wallOut` pushes out
+       of the union of the blocks. Both of those are arguments about geometry,
+       and geometry has corners — a welded structure carried by one brick, a
+       piece taller than the room beside a block, a canvas with nothing on the
+       side the piece wanted. In testing it was a five-stud bar welded to the
+       piece being dragged: the bar was three studs away from the brick under the
+       cursor, so it went where the cursor went, and it went onto the sentence.
+
+       So the invariant is not only reasoned about, it is TESTED — once, at the
+       only instant it has to hold, after the placement and before the settle. If
+       a cell is still on the hero the piece is pushed out again from where it
+       actually ended up, which is a different and better-informed question than
+       the one asked mid-drag. Two attempts, because each is strictly outward and
+       two is enough for any arrangement of five blocks; and if it still cannot
+       be resolved the caller puts the piece back where it was picked up.
+
+       This is the line that makes "a brick can never be left on the hero" a fact
+       about the program rather than a property of its cleverness. */
+    wallSettle(set) {
+      if (!this.wallsNow().length || !set.length) return true;
+      /* The group as it is NOW, which after a weld is not the list that was
+         handed in — everything the placement moved has to be tested, including
+         the structure the piece has just joined. */
+      const all = () => (set[0].g && set[0].g.members.length ? set[0].g.members : set);
+      for (let i = 0; i < 2; i += 1) {
+        if (!this.inWall(all())) return true;
+        const p = this.wallOut(all());
+        if (!p) return true;
+        this.weld(all(), p);
+      }
+      return !this.inWall(all());
     },
 
     /* --- welding ---------------------------------------------------------- */
     weld(set, plan) {
       this.dirty();
       const U = this.U, a = set[0];
-      const dgx = plan.cx - a.gx, dgy = plan.cy - a.gy;
-      set.forEach((r) => { r.gx += dgx; r.gy += dgy; });
-
       const src = a.g, target = plan.g;
+
+      /* THE WHOLE GROUP, NOT THE LIST THAT WAS PASSED IN.
+
+         For a single gesture these are the same thing — `set` is a copy of the
+         group's members taken at grab. They stop being the same the moment this
+         function is called TWICE in one release, which is exactly what the
+         safety net above does: the first call merges the held piece into some
+         other structure, so `a.g` is now the bigger group, and the second call
+         shifting only the original `set` leaves the newcomers' lattice
+         coordinates unshifted while re-placing them from that lattice against a
+         new origin. They teleport. That is the four stray cells the blocked-drag
+         stress test found sitting on the headline on a 1440 screen, and it is a
+         bug the single-call path could never have shown.
+
+         Shifting the group is also the honest statement of the rule: seating one
+         brick of a structure carries the structure. */
+      const moving = src.members;
+      const dgx = plan.cx - a.gx, dgy = plan.cy - a.gy;
+      moving.forEach((r) => { r.gx += dgx; r.gy += dgy; });
+
+      /* SEATED AGAINST THE TYPE, NOT WELDED TO IT. The block has no members to
+         join and it is not something you can later pull a piece out of, so
+         there is nothing to merge — the piece keeps its own group and simply
+         adopts the block's lattice. That last part is the whole point of doing
+         it this way rather than just clamping a position: the next piece
+         brought to the same edge lands on the same grid, so two bricks seated
+         along the headline are square to each other as well as to it, and can
+         then weld to one another normally. */
+      if (target.wall) {
+        src.members.forEach((r) => {
+          this.anchorTo(r, plan.ox + r.gx * U, plan.oy + r.gy * U);
+          const aim = (((r.rot || 0) % 4) + 4) % 4 * 90;
+          r.trued = true; r.aim = aim;
+          if (Math.abs(r.it.rest - aim) > 0.01) { r.it.rest = aim; Drag.apply(r.it); }
+        });
+        return;
+      }
+
       if (src !== target) {
         src.members.forEach((r) => { target.members.push(r); r.g = target; });
         const i = this.groups.indexOf(src);
@@ -7572,6 +8281,17 @@
         });
         taken.push({ L, T, R, B });
       });
+      /* AND NOT ON THE HERO. As far as this is concerned each block of hero
+         content is one more standing structure — measured now, so a build placed
+         after the headline has been dragged avoids it where it IS. The origin
+         clamp below (past 24% of the width, past 110px down) was doing this job
+         by accident at desktop widths, where the column happens to sit in the
+         top-left corner it excludes. On a phone the column is at the FOOT of the
+         canvas and that clamp says nothing about it at all, so a ten-piece build
+         could assemble straight over the sentence. */
+      this.wallsNow().forEach((w) => {
+        taken.push({ L: w.ox, T: w.oy, R: w.ox + w.nx * this.U, B: w.oy + w.ny * this.U });
+      });
       const clear = (x, y) => !taken.some((q) =>
         x < q.R + 26 && q.L - 26 < x + bw && y < q.B + 26 && q.T - 26 < y + bh);
       const fit = (x, y) => [
@@ -7588,6 +8308,29 @@
             if (clear(tx2, ty2)) { ox = tx2; oy = ty2; break outer; }
           }
         }
+      }
+
+      /* IF THE SPIRAL FOUND NOTHING the origin stays where the centroid put it,
+         and that is allowed to be on top of another build — two structures
+         overlapping is untidy and recoverable, and refusing to build at all
+         because the canvas is full would be worse. It is NOT allowed to be on
+         hero, so that one constraint is re-applied on its own afterwards:
+         straight out the nearest side, the same move a dragged piece makes. Two
+         passes, because pushing clear of the headline can push into a tag. */
+      for (let pass = 0; pass < 2; pass += 1) {
+        this.walls.forEach((w) => {
+          const U = this.U;
+          const WL = w.ox, WT = w.oy, WR = w.ox + w.nx * U, WB = w.oy + w.ny * U;
+          if (!(ox < WR && WL < ox + bw && oy < WB && WT < oy + bh)) return;
+          const out = [
+            { d: oy + bh - WT, x: ox, y: WT - bh },
+            { d: WB - oy, x: ox, y: WB },
+            { d: ox + bw - WL, x: WL - bw, y: oy },
+            { d: WR - ox, x: WR, y: oy },
+          ].sort((p, q) => p.d - q.d)[0];
+          ox = Math.round(clamp(out.x, 8, Math.max(8, h.width - bw - 8)));
+          oy = Math.round(clamp(out.y, 8, Math.max(8, h.height - bh - 8)));
+        });
       }
 
       /* PHASE 1 — the beat before. Nothing moves, and that is the point: it
@@ -7683,6 +8426,14 @@
       if (!this.host) return;
       const h = this.host.getBoundingClientRect();
       if (!h.width) return;
+      /* The hero reflows on a resize — a different wrap, a different height, a
+         different corner of the canvas on a phone — and a snap surface measured
+         against where it used to be is worse than none. A resize is the one thing
+         that moves these blocks WITHOUT going through Drag.apply, so it is the
+         one place the invalidation has to be done by hand. */
+      this.Z = this.zone(this.host);
+      this.wallStamp = -1;
+      if (this.walls.length) this.makeWalls();
       this.groups.forEach((g) => {
         let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
         g.members.forEach((r) => {
@@ -9350,6 +10101,14 @@
       if (!this.words.length || !S.peek) return;
 
       this.el = el('div', { class: 'peek', 'aria-hidden': 'true' });
+      /* PARKED OFF THE PAGE UNTIL IT IS FIRST WANTED. `tick()` returns before
+         writing a transform while the card is closed, so a card that has never
+         been opened is still sitting at its untransformed position — the very
+         top-left of the viewport, over the hero. Invisible, so nothing showed
+         it; the CSS keeps it from taking pointer events now, and this keeps it
+         from being a 336x250 rectangle parked on the composition at all. The
+         first `point()` re-seats it at the word before it fades in. */
+      this.el.style.transform = 'translate3d(-9999px, -9999px, 0)';
       this.el.innerHTML =
         '<div class="peek__in">' +
           '<div class="peek__media"><img alt="" decoding="async" loading="lazy"></div>' +
@@ -9668,6 +10427,37 @@
       ax: +Bricks.ax(r).toFixed(1), ay: +Bricks.ay(r).toFixed(1),
     }));
     window.__brickU = () => Bricks.U;
+    window.__brkEj = () => Bricks._ej || null;
+    /* WHAT THE GESTURE CURRENTLY INTENDS, as data.
+
+       The counterpart to taking the overlay away: the state a test used to read
+       off a coloured rectangle is still readable, it is just not painted on the
+       page to be readable. Returns the live plan — what it is aiming at, which
+       edge of it, whether the piece is standing somewhere it cannot stay. */
+    window.__brkPlan = () => {
+      const g = Bricks.held && Bricks.held.gest;
+      const p = g && g.plan;
+      if (!p) return { target: null, side: null, blocked: false };
+      return {
+        target: p.g && p.g.wall ? 'hero' : 'brick',
+        side: p.g && p.g.wall ? (p.side || Bricks.wallSide(p.g, p, g.set)) : null,
+        blocked: !!p.blocked,
+        d: +p.d.toFixed(1),
+      };
+    };
+    /* THE HERO'S COLLISION GEOMETRY, FROM THE OUTSIDE.
+
+       The counterpart to `__brickDebug` for the thing that is hardest to see:
+       every box the engine currently believes the hero content occupies, freshly
+       measured, in the host's coordinates. Drag the headline, call this, and the
+       numbers either moved with it or they did not. That is the whole test, and
+       it is the one an invisible rectangle cannot fail quietly. */
+    window.__brkWalls = () => Bricks.wallsNow().map((w) => ({
+      of: w.nodes.map((n) => n.className).join(' + '),
+      L: +w.ox.toFixed(1), T: +w.oy.toFixed(1),
+      R: +(w.ox + w.nx * Bricks.U).toFixed(1), B: +(w.oy + w.ny * Bricks.U).toFixed(1),
+      cells: `${w.nx}x${w.ny}`,
+    }));
     /* WHY A PIECE IS NOT SNAPPING, answered from the outside. `plan()` returns
        a landing or null, and null has four different causes that look
        identical on screen. This re-runs the same sweep and reports which one
