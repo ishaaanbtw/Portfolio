@@ -3473,7 +3473,21 @@
       node.classList.add('drg');
       this.bind();
       this.apply(it);
-      this.chrome(it);
+      /* SOME OBJECTS MUST NOT BE RESIZED OR ROTATED, and for them the chrome is
+         not merely redundant, it is destructive twice over.
+
+         A brick's art is generated from its cell list at a fixed lattice unit.
+         Scale it and the picture no longer matches the footprint the snap
+         engine tests against; rotate it and its cells no longer lie on any
+         lattice at all. Both silently break every future connection.
+
+         And there is a plainer problem underneath that. The eight handles are
+         hit targets sized for a hand, laid over the object's corners and edges.
+         On a 23px brick they cover it completely — every one of them carries
+         `data-nodrag`, so the press is read as a resize and the piece can never
+         be picked up again once it has been selected once. The first thing
+         built with these was unmovable. */
+      if (opts.chrome !== false) this.chrome(it);
 
       /* Absolute from the grab point, never accumulated per event. Summing
          deltas lets rounding drift, and the object slides out from under the
@@ -3513,6 +3527,19 @@
         it.fromX = it.x; it.fromY = it.y;
         gx = e.clientX; gy = e.clientY;
         ox = it.x; oy = it.y;
+
+        /* THE SOFT EDGE, MEASURED ONCE PER GESTURE.
+
+           Both boxes are cached at grab rather than read per move: the object's
+           rect already carries the transform it has at x = ox, so a later
+           position's rect is this one plus (x - ox). Reading it every
+           pointermove would be a forced layout inside the event that has to
+           paint this frame. */
+        this.edge(it, ox, oy);
+
+        /* Anything that needs to know a gesture began — see Bricks, which uses
+           it to pop a piece out of its structure when Alt is held. */
+        if (it.onGrab) it.onGrab(it, e);
       });
 
       node.addEventListener('pointermove', (e) => {
@@ -3529,6 +3556,15 @@
 
         it.x = ox + dx;
         it.y = oy + dy;
+        if (it.bounds) {
+          it.x = Math.min(Math.max(it.x, it.bounds.x0), it.bounds.x1);
+          it.y = Math.min(Math.max(it.y, it.bounds.y0), it.bounds.y1);
+        }
+        /* The type's own steering, BEFORE apply, so whatever it does to x/y is
+           what gets painted this frame rather than one frame late. Bricks use
+           it to lean toward a compatible connection and to carry the rest of
+           their structure along. */
+        if (it.onMove) it.onMove(it);
         /* written straight to the style, in the pointer event. Deferring to the
            next frame is what puts an object behind its own cursor. */
         this.apply(it);
@@ -3545,6 +3581,13 @@
         /* It stops where you left it. No glide, no settle — a thrown object
            that keeps travelling after release is the opposite of placing one. */
         const fx = it.fromX, fy = it.fromY;
+        /* A type that returns true from onDrop has pushed its own entry. A
+           brick's gesture can move six other bricks and change what is welded
+           to what, and none of that is expressible as "put this one back". */
+        if (it.onDrop && it.onDrop(it, fx, fy) === true) {
+          Sound.voice({ freq: 300, gain: 0.03, dur: 0.06, bright: 1800, drop: 0.6, noise: 0.4 });
+          return;
+        }
         History.push(() => {
           it.x = fx; it.y = fy;
           this.apply(it);
@@ -3556,6 +3599,33 @@
 
       this.items.push(it);
       return it;
+    },
+
+    /* --- the soft edge -------------------------------------------------------
+       Nothing is fenced into the middle of the canvas and nothing is ever
+       sprung back to it. The only rule is that an object cannot be pushed so
+       far out that there is nothing left to grab: KEEP pixels of it stay inside
+       the surface on every side, and within that it goes wherever it is put.
+
+       Objects larger than the surface would produce an inverted range, so each
+       axis is ordered before it is used. */
+    KEEP: 46,
+
+    edge(it, ox, oy) {
+      it.bounds = null;
+      const host = (Canvas && Canvas.host) || null;
+      if (!host || !host.contains(it.node)) return;
+      const r = it.node.getBoundingClientRect();
+      const h = host.getBoundingClientRect();
+      if (!r.width || !h.width) return;
+      const k = Math.min(this.KEEP, r.width * 0.9, r.height * 0.9);
+      let x0 = ox + (h.left + k) - r.right;
+      let x1 = ox + (h.right - k) - r.left;
+      let y0 = oy + (h.top + k) - r.bottom;
+      let y1 = oy + (h.bottom - k) - r.top;
+      if (x0 > x1) { const m = (x0 + x1) / 2; x0 = x1 = m; }
+      if (y0 > y1) { const m = (y0 + y1) / 2; y0 = y1 = m; }
+      it.bounds = { x0, x1, y0, y1 };
     },
 
     apply(it) {
@@ -3805,6 +3875,7 @@
     /* Removal detaches rather than destroys, so undo can put it back with its
        position, angle and text intact. */
     detach(it) {
+      if (it.onDetach) it.onDetach(it);
       const i = this.items.indexOf(it);
       if (i >= 0) this.items.splice(i, 1);
       if (this.selected === it) {
@@ -3816,6 +3887,7 @@
 
     reattach(it) {
       if (!it.parent) return;
+      if (it.onReattach) it.onReattach(it);
       it.parent.appendChild(it.node);
       if (!this.items.includes(it)) this.items.push(it);
       this.apply(it);
@@ -5178,6 +5250,7 @@
       /* The stickers go in last so the safe-zone pass in Peel.place() measures
          a headline and a pill row that are already laid out. */
       Peel.init(host);
+      Bricks.init(host);
 
       this.setSurface(host);
       this.placement();
@@ -5258,6 +5331,611 @@
       });
       History.clear();
       if (had) Sound.voice({ freq: 150, gain: 0.05, dur: 0.2, bright: 1100, drop: 0.4, noise: 0.5 });
+    },
+  };
+
+  /* ================================================ 5c2b. the bricks =====
+
+     LEGO-ish pieces, and the one idea that makes them work: THEY ARE NOT A
+     FEATURE. There is no board, no tray, no construction zone, no panel and no
+     tool of their own. A brick is a `.drg` like the AirPods and the pills are
+     `.drg`, it is appended to the same canvas host, and every rule the canvas
+     already has — the press-selects-then-travel-drags gesture, the 4px slop,
+     the elevation on pickup, the soft edge, the tool gating that makes Pencil
+     mode non-draggable, undo — applies to it because it is the same object
+     type, not because any of it was reimplemented here.
+
+     What this module adds is exactly one thing on top of that: two bricks that
+     come near each other anywhere on the canvas attract and lock together.
+
+     -------------------------------------------------------------------------
+     WHY A LATTICE RATHER THAN STUDS AND SOCKETS
+
+     The obvious model is a list of stud positions per piece and a list of
+     sockets, matched pairwise. It falls apart on the L and the T: a stud can
+     be near a socket while the two bodies are lying across each other, so
+     every match needs an overlap test anyway, and once you are testing bodies
+     the studs are doing no work.
+
+     So a piece is a SET OF CELLS on a unit grid, and a connection is the
+     ordinary grid relationship: land on the lattice, share at least one edge,
+     overlap nothing. That is one rule for all eight shapes including the
+     concave ones, it cannot produce a physically impossible join, and the
+     studs become what they are on a real brick — a drawing of where the grid
+     is, rather than the mechanism.
+
+     Every group carries its own lattice, derived from its first member. There
+     is no global grid and nothing is aligned to the page, which is what lets a
+     structure be built at any arbitrary offset in the top-left corner and
+     another one at an unrelated offset beside the F1 car.
+
+     -------------------------------------------------------------------------
+     WHY LEGO NEVER TOUCHES ANYTHING ELSE
+
+     `plan()` iterates `this.groups`. That list contains bricks and nothing
+     else — no stickers, no peel objects, no notes, no ink. There is no filter
+     to get wrong and no class check to forget: a non-brick is not in the data
+     structure the snap engine reads, so it cannot be snapped to, and a brick
+     dragged over the Coke can is a brick passing over a Coke can. */
+
+  /* Eight silhouettes on the unit grid. Cells are [col, row]; the art, the
+     anchors and the collision test are all generated from this one list, so a
+     new piece is a new entry here and nothing else. */
+  const PIECE = {
+    conn:   { cells: [[0, 0]] },
+    small:  { cells: [[0, 0], [1, 0]] },
+    sq2:    { cells: [[0, 0], [1, 0], [0, 1], [1, 1]] },
+    br24:   { cells: [[0, 0], [1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1], [3, 1]] },
+    long:   { cells: [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]] },
+    ell:    { cells: [[0, 0], [0, 1], [0, 2], [1, 2]] },
+    corner: { cells: [[0, 0], [1, 0], [0, 1]] },
+    tee:    { cells: [[0, 0], [1, 0], [2, 0], [1, 1]] },
+  };
+
+  /* SATURATED, because a brick that is not is not a brick. The first pass at
+     these was tuned to the paper — eight muted stones that sat politely in the
+     palette and read as interface chrome. Wrong instinct: the whole point of
+     the object is that it is a toy someone left on the desk, and the one thing
+     every person on earth already knows about this toy is that it is BRIGHT.
+     Muting it removed the only cue that said what it was.
+
+     These are the real colours, near enough: red, blue, yellow, green, orange,
+     azure, purple, lime. They are the loudest thing on the page and that is
+     correct — everything else here is paper, ink and one purple chip. */
+  const TONE = ['#d8232a', '#1163c7', '#f3c218', '#24a148', '#f5871f', '#2aa3d4', '#9b4fbf', '#9cbf2e'];
+
+  const shade = (hex, t) => {
+    const n = parseInt(hex.slice(1), 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    const to = t > 0 ? 255 : 0, k = Math.abs(t);
+    const m = (v) => Math.round(v + (to - v) * k);
+    return `rgb(${m(r)},${m(g)},${m(b)})`;
+  };
+
+  const Bricks = {
+    U: 22,
+    recs: [],
+    groups: [],
+
+    /* How far the magnet reaches, in pixels. ONE definition — `plan()` sizes
+       its search from it and `move()` shapes the pull from it, and the two
+       going out of step is a bug you cannot see, only feel. See the note over
+       the sweep in plan() for what that felt like. */
+    range() { return this.U * (this.touch ? 3.4 : 2.7); },
+
+    /* --- geometry helpers ------------------------------------------------- */
+    px(r) { return r.bx + r.it.x; },
+    py(r) { return r.by + r.it.y; },
+    moveTo(r, X, Y) { r.it.x = X - r.bx; r.it.y = Y - r.by; Drag.apply(r.it); },
+
+    /* every cell a group occupies, in that group's own lattice */
+    cellsOf(g) {
+      const set = new Set();
+      g.members.forEach((r) => r.def.cells.forEach(([c, w]) => set.add(`${r.gx + c},${r.gy + w}`)));
+      return set;
+    },
+
+    /* --- the art ----------------------------------------------------------
+       Cells are drawn as rounded rects that reach R past every edge they share
+       with a neighbour. The overlap swallows the rounding on internal seams
+       while leaving it on the silhouette, so an L reads as one moulded piece
+       and not as three squares pushed together — and it needs no outline path,
+       which is what would otherwise have to be computed and would stroke those
+       internal seams back in. */
+    art(kind, tone, uid) {
+      const U = this.U;
+      const cells = PIECE[kind].cells;
+      const has = new Set(cells.map(([c, w]) => `${c},${w}`));
+      const W = (Math.max(...cells.map((c) => c[0])) + 1) * U;
+      const H = (Math.max(...cells.map((c) => c[1])) + 1) * U;
+      const SR = U * 0.275;                 // stud radius, measured off the render
+      const arc = (cx, cy, r, a1, a2) => {
+        const rad = (d) => (d * Math.PI) / 180;
+        return `M${(cx + r * Math.cos(rad(a1))).toFixed(2)} ${(cy + r * Math.sin(rad(a1))).toFixed(2)}`
+          + `A${r.toFixed(2)} ${r.toFixed(2)} 0 0 1 `
+          + `${(cx + r * Math.cos(rad(a2))).toFixed(2)} ${(cy + r * Math.sin(rad(a2))).toFixed(2)}`;
+      };
+
+      let body = '', lite = '', dark = '', shad = '', studs = '', rings = '';
+      cells.forEach(([c, w]) => {
+        body += `<rect x="${c * U}" y="${w * U}" width="${U + 0.5}" height="${U + 0.5}"/>`;
+        /* Only the edges the silhouette actually exposes are lit or shaded.
+           An internal seam between two cells of the same piece is not an edge
+           of anything and drawing one there is what makes an L read as three
+           squares pushed together. */
+        if (!has.has(`${c},${w - 1}`)) lite += `<rect x="${c * U}" y="${w * U}" width="${U}" height="1.4"/>`;
+        if (!has.has(`${c - 1},${w}`)) lite += `<rect x="${c * U}" y="${w * U}" width="1.2" height="${U}"/>`;
+        if (!has.has(`${c},${w + 1}`)) dark += `<rect x="${c * U}" y="${(w + 1) * U - 2}" width="${U}" height="2"/>`;
+        if (!has.has(`${c + 1},${w}`)) dark += `<rect x="${(c + 1) * U - 1.6}" y="${w * U}" width="1.6" height="${U}"/>`;
+
+        const cx = c * U + U / 2, cy = w * U + U / 2;
+        shad += `<circle cx="${(cx + U * 0.055).toFixed(2)}" cy="${(cy + U * 0.085).toFixed(2)}" r="${SR.toFixed(2)}"/>`;
+        studs += `<circle cx="${cx}" cy="${cy}" r="${SR.toFixed(2)}"/>`;
+        /* The light is a whisper and the shadow does the work — measured off
+           the render, where a stud differs from the face it stands on by −9 on
+           its lit side and −180 on its shaded one. A symmetric pair of arcs
+           reads as a cartoon bevel; this reads as a cylinder. */
+        rings += `<path d="${arc(cx, cy, SR * 0.84, 190, 280)}" stroke="rgba(255,255,255,.30)" stroke-width="${(U * 0.045).toFixed(2)}" fill="none" stroke-linecap="round"/>`
+          + `<path d="${arc(cx, cy, SR * 0.88, 348, 116)}" stroke="rgba(0,0,0,.22)" stroke-width="${(U * 0.065).toFixed(2)}" fill="none" stroke-linecap="round"/>`;
+      });
+
+      /* SQUARE CORNERS. Measured: the reference's silhouettes have a corner
+         radius of exactly zero — the top row of every brick spans its full
+         width. The first pass rounded them at 0.16 of a stud, which is what
+         made these read as soft UI tiles rather than as moulded plastic. With
+         no radius the cell rects simply abut and the internal seams vanish on
+         their own, so the overlap trick the old art needed is gone too. */
+      return `<svg class="brk__art" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" `
+        + `aria-hidden="true" focusable="false">`
+        + `<defs><filter id="bf${uid}" x="-40%" y="-40%" width="180%" height="180%">`
+        + `<feGaussianBlur stdDeviation="${(U * 0.055).toFixed(2)}"/></filter></defs>`
+        + `<g fill="${tone}">${body}</g>`
+        + `<g fill="#fff" opacity=".26">${lite}</g>`
+        + `<g fill="#000" opacity=".17">${dark}</g>`
+        /* the studs stand on the face, so the shadow they cast is the only
+           thing that separates them from it — the face and the stud are the
+           same colour in the reference, top to bottom */
+        + `<g fill="#000" opacity=".30" filter="url(#bf${uid})">${shad}</g>`
+        + `<g fill="${tone}">${studs}</g>`
+        + rings
+        + `</svg>`;
+    },
+
+    /* --- build ------------------------------------------------------------ */
+    init(host) {
+      const defs = (S.canvas && S.canvas.bricks) || [];
+      if (!defs.length) return;
+      this.host = host;
+      const r = host.getBoundingClientRect();
+      const narrow = r.width <= 768;
+      /* One stud, sized off the same reference the peel objects use. Fixed at
+         build time: a lattice that changed under a structure on a window
+         resize would tear the structure apart. */
+      this.U = Math.round(narrow ? clamp(r.width / 430 * 19, 13, 20)
+        : clamp(r.width / 1440 * 23, 16, 25));
+      this.touch = matchMedia('(hover: none)').matches;
+
+      defs.forEach((d, i) => {
+        const def = PIECE[d.kind];
+        if (!def) return;
+        const m = (narrow && d.mobile) || d;
+        const tone = TONE[d.tone != null ? d.tone % TONE.length : i % TONE.length];
+        const bx = Math.round(r.width * (m.x / 100));
+        const by = Math.round(r.height * (m.y / 100));
+
+        const wrap = el('div', {
+          class: 'drg brk', style: `left:${bx}px;top:${by}px`,
+          'data-brick': d.kind, 'aria-label': `Building block, ${d.kind}`,
+        });
+        wrap.innerHTML = this.art(d.kind, tone, `${i}`);
+        host.appendChild(wrap);
+
+        /* No resting tilt. Everything else loose on this canvas sits at a
+           slight angle because it was dropped there; a brick is a machined
+           part, and a lattice cannot be built out of pieces that are each a
+           degree off true. */
+        /* no chrome: see the note in Drag.make. A brick is a machined part on
+           a lattice — the one object on this canvas that has a correct size and
+           a correct angle, and no business being given handles to change them. */
+        const it = Drag.make(wrap, { r: 0, chrome: false });
+        const rec = { it, def, bx, by, gx: 0, gy: 0, kind: d.kind };
+        const g = { members: [rec] };
+        rec.g = g;
+        it.brick = rec;
+        this.groups.push(g);
+        this.recs.push(rec);
+
+        it.onGrab = (item, e) => this.grab(rec, item, e);
+        it.onMove = () => this.move(rec);
+        it.onDrop = () => this.drop(rec);
+        it.onDetach = () => this.forget(rec);
+        it.onReattach = () => this.remember(rec);
+
+        /* The touch-reachable way out of a structure, and the discoverable one:
+           double-click a brick and it comes loose where it stands. Alt-drag
+           does the same thing in one gesture for a mouse. Neither adds any
+           chrome, which is the constraint. */
+        wrap.addEventListener('dblclick', (e) => {
+          if (Rack.tool !== 'select') return;
+          if (rec.g.members.length < 2) return;
+          e.preventDefault();
+          const before = this.snapshot();
+          this.pop(rec);
+          const after = this.snapshot();
+          History.push(() => this.restore(before), 'brick', () => this.restore(after));
+          Sound.voice({ freq: 320, gain: 0.03, dur: 0.05, bright: 2100, drop: 1.1, noise: 0.55 });
+        });
+      });
+
+      /* A window that got smaller must not leave a structure stranded off the
+         edge — but nothing is re-laid and nothing is re-scaled, so a build
+         survives a resize exactly as it was made. */
+      addEventListener('resize', () => this.reclaim(), { passive: true });
+    },
+
+    /* --- the snap plan ----------------------------------------------------
+       The best lawful landing for `set` against every OTHER group, or null.
+       Lawful means: on that group's lattice, no cell overlapping one of its
+       cells, and at least one cell edge-to-edge with one of its cells.
+
+       THE SWEEP HAS TO COVER THE WHOLE RANGE, and getting that wrong is
+       invisible in every screenshot and obvious in the hand.
+
+       It was a fixed 3x3 around the rounded cell, which is exactly right while
+       the magnet reaches one stud. Widening the magnet to 2.7 studs without
+       widening this left a dead band: from about 1.5 studs out to the edge of
+       the range the nearest LAWFUL cell was two or three cells away, outside
+       the sweep, so `plan` returned null and the piece drifted in feeling
+       nothing at all. The pull only woke up in the last third of the approach —
+       which is precisely the complaint that the magnet was weak. It was not
+       weak, it was absent for most of the distance it claimed to cover.
+
+       So the span is derived from the range rather than written down beside it,
+       and candidates past the range are culled instead of scored, which keeps
+       the wider search cheap. */
+    plan(set, skip) {
+      const U = this.U, a = set[0];
+      const REACH = this.range();
+      const SPAN = Math.ceil(REACH / U) + 1;
+      const ax = this.px(a), ay = this.py(a);
+      const mc = [];
+      set.forEach((r) => r.def.cells.forEach(([c, w]) =>
+        mc.push([r.gx - a.gx + c, r.gy - a.gy + w])));
+
+      let best = null;
+      this.groups.forEach((g) => {
+        if (g === skip || !g.members.length) return;
+        if (set.indexOf(g.members[0]) >= 0) return;
+        const b = g.members[0];
+        const ox = this.px(b) - b.gx * U, oy = this.py(b) - b.gy * U;
+        const gc = this.cellsOf(g);
+        const qx = Math.round((ax - ox) / U), qy = Math.round((ay - oy) / U);
+        for (let dy = -SPAN; dy <= SPAN; dy += 1) {
+          for (let dx = -SPAN; dx <= SPAN; dx += 1) {
+            const cx = qx + dx, cy = qy + dy;
+            /* cheap cull first: most of a wide sweep is out of reach anyway */
+            const tx0 = ox + cx * U, ty0 = oy + cy * U;
+            const d0 = Math.hypot(tx0 - ax, ty0 - ay);
+            if (d0 > REACH || (best && d0 >= best.d)) continue;
+            let bad = false, touch = false;
+            for (let k = 0; k < mc.length; k += 1) {
+              const x = cx + mc[k][0], y = cy + mc[k][1];
+              if (gc.has(`${x},${y}`)) { bad = true; break; }
+              if (!touch && (gc.has(`${x + 1},${y}`) || gc.has(`${x - 1},${y}`)
+                || gc.has(`${x},${y + 1}`) || gc.has(`${x},${y - 1}`))) touch = true;
+            }
+            if (bad || !touch) continue;
+            best = { d: d0, tx: tx0, ty: ty0, g, cx, cy, ox, oy };
+          }
+        }
+      });
+      return best;
+    },
+
+    /* --- the gesture ------------------------------------------------------ */
+    grab(rec, it, e) {
+      this.before = this.snapshot();
+      /* Alt pops the piece out first, so from here on the gesture is an
+         ordinary single-piece drag and there is no second code path for it. */
+      if ((e.altKey || e.metaKey) && rec.g.members.length > 1) this.pop(rec);
+
+      const set = rec.g.members.slice();
+      rec.gest = {
+        set,
+        leadX: it.x, leadY: it.y,
+        start: set.map((r) => ({ r, x: r.it.x, y: r.it.y })),
+        plan: null,
+      };
+      set.forEach((r) => { if (r !== rec) Drag.raise(r.it); });
+      Drag.raise(it);
+
+      /* The soft edge has to hold the whole structure, not the one brick the
+         pointer happens to be on — Drag measured the single node before this
+         ran. Re-derive it from the union of the set. */
+      if (set.length > 1 && this.host) {
+        const h = this.host.getBoundingClientRect();
+        let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+        set.forEach((r) => {
+          const q = r.it.node.getBoundingClientRect();
+          L = Math.min(L, q.left); T = Math.min(T, q.top);
+          R = Math.max(R, q.right); B = Math.max(B, q.bottom);
+        });
+        const k = Math.min(Drag.KEEP, (R - L) * 0.9, (B - T) * 0.9);
+        let x0 = it.x + (h.left + k) - R, x1 = it.x + (h.right - k) - L;
+        let y0 = it.y + (h.top + k) - B, y1 = it.y + (h.bottom - k) - T;
+        if (x0 > x1) { const mid = (x0 + x1) / 2; x0 = x1 = mid; }
+        if (y0 > y1) { const mid = (y0 + y1) / 2; y0 = y1 = mid; }
+        it.bounds = { x0, x1, y0, y1 };
+      }
+    },
+
+    /* Carry the rest of the structure, then lean toward whatever is in range.
+
+       The lean is applied on top of a position recomputed from the pointer's
+       absolute offset every event, never accumulated — so the magnet can pull
+       the piece 12px sideways and the piece is still exactly under the cursor
+       the moment it leaves the magnet's range again. An accumulated pull
+       cannot be undone and the object walks away from the hand holding it. */
+    move(rec) {
+      const g = rec.gest;
+      if (!g) return;
+      const dx = rec.it.x - g.leadX, dy = rec.it.y - g.leadY;
+      g.start.forEach((s) => {
+        if (s.r === rec) return;
+        s.r.it.x = s.x + dx; s.r.it.y = s.y + dy;
+      });
+
+      const plan = this.plan(g.set, rec.g);
+      g.plan = plan;
+      if (!plan) { this.lit(g.set, false); this.paint(g.set, rec); return; }
+
+      /* Range is generous on touch, where there is no cursor to aim with and
+         the finger is covering the thing being aimed. */
+      const RANGE = this.range();
+      if (plan.d > RANGE) { this.lit(g.set, false); this.paint(g.set, rec); return; }
+
+      /* HOW HARD THE MAGNET PULLS.
+
+         The first tuning was 0.62 at zero distance on a superlinear curve, and
+         it was too polite to feel like anything: by the time the pull was
+         strong enough to notice you were already close enough that you would
+         have hit the target anyway. The effect only exists in the middle of
+         the approach, and there was nothing there.
+
+         Now: 0.97 at contact on a SUBlinear curve, so the force arrives early
+         and keeps climbing. At half the range the piece already sits 54% of the
+         way over; at a fifth of it, 80%; at contact it is effectively locked
+         while still in your hand. Range went 1.7 studs -> 2.7 as well, so it
+         starts reaching from about two and a half studs out rather than one and
+         a half. That middle stretch — plainly being pulled, not yet committed —
+         is the whole sensation. */
+      const t = 1 - plan.d / RANGE;
+      const k = 0.97 * Math.pow(t, 0.85);
+      const ox = (plan.tx - this.px(g.set[0])) * k;
+      const oy = (plan.ty - this.py(g.set[0])) * k;
+      g.set.forEach((r) => { r.it.x += ox; r.it.y += oy; });
+      this.lit(g.set, plan.d <= this.U * (this.touch ? 2.2 : 1.7));
+      this.paint(g.set, rec);
+    },
+
+    /* the followers are written straight to the DOM; Drag.apply covers the lead */
+    paint(set, lead) { set.forEach((r) => { if (r !== lead) Drag.apply(r.it); }); },
+
+    /* The only feedback there is: a shade more shadow once the piece is inside
+       the threshold, so the commit is legible before you let go. No outline,
+       no ghost, no connection line. */
+    lit(set, on) { set.forEach((r) => r.it.node.classList.toggle('is-near', on)); },
+
+    drop(rec) {
+      const g = rec.gest;
+      rec.gest = null;
+      if (!g) return false;
+      const before = this.before;
+      this.before = null;
+      this.lit(g.set, false);
+
+      const plan = g.plan;
+      /* Commit from 1.7 studs out, up from 0.95. Held under the old number a
+         piece could be visibly three-quarters pulled into place and still drop
+         loose when you let go, which reads as the connection failing rather
+         than as you having missed. If it looks joined it joins. */
+      const THRESH = this.U * (this.touch ? 2.2 : 1.7);
+      if (plan && plan.d <= THRESH) {
+        const from = g.set.map((r) => ({ r, x: r.it.x, y: r.it.y }));
+        this.weld(g.set, plan);
+        const to = g.set.map((r) => ({ x: r.it.x, y: r.it.y }));
+        this.animate(from, to);
+        Sound.voice({ freq: 540, gain: 0.038, dur: 0.055, bright: 3000, drop: 1.5, noise: 0.35 });
+        Sound.voice({ freq: 190, gain: 0.03, dur: 0.09, bright: 1200, drop: 0.5, noise: 0.5 });
+      }
+
+      const after = this.snapshot();
+      History.push(() => this.restore(before), 'brick', () => this.restore(after));
+      return true;                       // one entry for the whole gesture
+    },
+
+    /* --- welding ---------------------------------------------------------- */
+    weld(set, plan) {
+      const U = this.U, a = set[0];
+      const dgx = plan.cx - a.gx, dgy = plan.cy - a.gy;
+      set.forEach((r) => { r.gx += dgx; r.gy += dgy; });
+
+      const src = a.g, target = plan.g;
+      if (src !== target) {
+        src.members.forEach((r) => { target.members.push(r); r.g = target; });
+        const i = this.groups.indexOf(src);
+        if (i >= 0) this.groups.splice(i, 1);
+      }
+      /* Re-place every member from the lattice, not just the ones that moved.
+         Float error accumulated over a dozen drags is what eventually leaves a
+         structure a third of a pixel out of true. */
+      target.members.forEach((r) => this.moveTo(r, plan.ox + r.gx * U, plan.oy + r.gy * U));
+    },
+
+    /* Take a piece out of its structure, in place. The remainder may fall into
+       two pieces — pull the middle brick out of a row of three — so what is
+       left is re-tested for connectivity and split if it has come apart. */
+    pop(rec, silent) {
+      const g = rec.g;
+      if (!g || g.members.length < 2) return false;
+      g.members.splice(g.members.indexOf(rec), 1);
+      const ng = { members: [rec] };
+      rec.g = ng; rec.gx = 0; rec.gy = 0;
+      this.groups.push(ng);
+      this.resplit(g);
+      if (!silent) rec.it.node.classList.add('is-pop');
+      setTimeout(() => rec.it.node.classList.remove('is-pop'), 240);
+      return true;
+    },
+
+    /* DELETE. Taking the node out of the DOM is not enough: `plan()` reads
+       `this.groups`, so a deleted brick left in there is a connection point
+       that is still live and no longer visible — the next piece dragged past
+       where it used to be would lock onto nothing. It has to leave the model,
+       not just the page.
+
+       Drag's delete pushes its own `reattach` undo entry, so `remember` is the
+       other half of the same round trip: the piece comes back loose, wherever
+       it was, and is immediately connectable again. */
+    forget(rec) {
+      const g = rec.g;
+      if (g) {
+        const i = g.members.indexOf(rec);
+        if (i >= 0) g.members.splice(i, 1);
+        if (!g.members.length) {
+          const k = this.groups.indexOf(g);
+          if (k >= 0) this.groups.splice(k, 1);
+        } else {
+          this.resplit(g);
+        }
+      }
+      rec.g = null;
+      const j = this.recs.indexOf(rec);
+      if (j >= 0) this.recs.splice(j, 1);
+    },
+
+    remember(rec) {
+      if (rec.g && this.groups.indexOf(rec.g) >= 0) return;
+      rec.gx = 0; rec.gy = 0;
+      const g = { members: [rec] };
+      rec.g = g;
+      this.groups.push(g);
+      if (this.recs.indexOf(rec) < 0) this.recs.push(rec);
+    },
+
+    resplit(g) {
+      const own = new Map();
+      g.members.forEach((r) => r.def.cells.forEach(([c, w]) =>
+        own.set(`${r.gx + c},${r.gy + w}`, r)));
+      const seen = new Set(), comps = [];
+      g.members.forEach((r) => {
+        if (seen.has(r)) return;
+        const comp = [], stack = [r];
+        seen.add(r);
+        while (stack.length) {
+          const cur = stack.pop();
+          comp.push(cur);
+          cur.def.cells.forEach(([c, w]) => {
+            const x = cur.gx + c, y = cur.gy + w;
+            [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([ax, ay]) => {
+              const n = own.get(`${x + ax},${y + ay}`);
+              if (n && !seen.has(n)) { seen.add(n); stack.push(n); }
+            });
+          });
+        }
+        comps.push(comp);
+      });
+      if (comps.length < 2) return;
+      g.members = comps[0];
+      comps.slice(1).forEach((c) => {
+        const ng = { members: c };
+        c.forEach((r) => { r.g = ng; });
+        this.groups.push(ng);
+      });
+    },
+
+    /* --- the settle -------------------------------------------------------
+       Purely cosmetic. The weld has already happened and the model is already
+       final by the time this runs, so an interruption cannot leave a structure
+       half-joined — the worst case is that the last few pixels are not
+       animated. A damped cosine: one small overshoot, then it stops. */
+    animate(from, to) {
+      /* 200ms and stiffer. The settle is the sound the connection makes; a long
+         soft one reads as the piece drifting into place, which is the opposite
+         of a part seating in a socket. */
+      const t0 = performance.now(), DUR = 200;
+      from.forEach((f) => f.r.it.node.classList.add('is-settle'));
+      const step = (now) => {
+        const t = Math.min(1, (now - t0) / DUR);
+        const e = 1 - Math.exp(-8.5 * t) * Math.cos(7.4 * t);
+        from.forEach((f, i) => {
+          f.r.it.x = f.x + (to[i].x - f.x) * e;
+          f.r.it.y = f.y + (to[i].y - f.y) * e;
+          Drag.apply(f.r.it);
+        });
+        if (t < 1) { requestAnimationFrame(step); return; }
+        from.forEach((f, i) => {
+          f.r.it.x = to[i].x; f.r.it.y = to[i].y;
+          Drag.apply(f.r.it);
+          f.r.it.node.classList.remove('is-settle');
+        });
+      };
+      requestAnimationFrame(step);
+    },
+
+    /* --- undo -------------------------------------------------------------
+       A brick gesture can move eight pieces and rewrite which structure each
+       one belongs to, and none of that is expressible as "put this one back".
+       So the whole brick world is snapshotted before and after — eight objects,
+       four numbers each — and undo restores a snapshot. One entry per gesture,
+       whatever the gesture did. */
+    snapshot() {
+      return this.recs.map((r) => ({
+        r, x: r.it.x, y: r.it.y, gx: r.gx, gy: r.gy, g: this.groups.indexOf(r.g),
+      }));
+    },
+
+    /* A brick that was deleted mid-history is not in `recs`, so it is not in
+       the snapshot either and restore() leaves it alone — which is right: its
+       existence is Drag's detach/reattach entry to undo, not this one's. */
+
+    restore(snap) {
+      const by = new Map();
+      snap.forEach((e) => {
+        e.r.it.x = e.x; e.r.it.y = e.y; e.r.gx = e.gx; e.r.gy = e.gy;
+        Drag.apply(e.r.it);
+        if (!by.has(e.g)) by.set(e.g, { members: [] });
+        const g = by.get(e.g);
+        g.members.push(e.r);
+        e.r.g = g;
+      });
+      this.groups = [...by.values()];
+    },
+
+    /* A smaller window must not put a structure out of reach. Whole groups are
+       moved as one so a build is never distorted, and only by the amount it
+       actually overhangs — nothing is recentred and nothing is re-laid. */
+    reclaim() {
+      if (!this.host) return;
+      const h = this.host.getBoundingClientRect();
+      if (!h.width) return;
+      this.groups.forEach((g) => {
+        let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+        g.members.forEach((r) => {
+          const q = r.it.node.getBoundingClientRect();
+          L = Math.min(L, q.left); T = Math.min(T, q.top);
+          R = Math.max(R, q.right); B = Math.max(B, q.bottom);
+        });
+        if (!isFinite(L)) return;
+        const k = Math.min(Drag.KEEP, (R - L) * 0.9, (B - T) * 0.9);
+        let dx = 0, dy = 0;
+        if (R < h.left + k) dx = (h.left + k) - R;
+        else if (L > h.right - k) dx = (h.right - k) - L;
+        if (B < h.top + k) dy = (h.top + k) - B;
+        else if (T > h.bottom - k) dy = (h.bottom - k) - T;
+        if (!dx && !dy) return;
+        g.members.forEach((r) => { r.it.x += dx; r.it.y += dy; Drag.apply(r.it); });
+      });
     },
   };
 
@@ -5497,7 +6175,20 @@
            behaves. */
         if (e.button !== 0 && e.button !== undefined) return;
         const t = e.target;
-        if (t && t.closest && t.closest('.tools, .drg, .lbox, .drawer__rail')) return;
+        /* UI ONLY. `.drg` used to be in this list, and it is the reason a
+           stroke could not be STARTED on top of anything lying on the canvas —
+           press on a sticker, or a brick, or the headline, and the pen simply
+           did nothing until the pointer found bare paper.
+
+           The guard was never needed. The first line of this handler already
+           requires the marker to be the live tool, and Drag's own pointerdown
+           returns immediately unless the tool is `select`, so in marker mode a
+           `.drg` has no behaviour to protect from a press. All the exclusion
+           did was carve object-shaped holes in the drawing surface.
+
+           The rest stay: the toolbar, the lightbox and the drawer rail are
+           chrome, and a stroke that begins on a button is a misfire. */
+        if (t && t.closest && t.closest('.tools, .lbox, .drawer__rail')) return;
         /* A finger is normally left to the page so touch scrolling keeps
            working — a mouse or a stylus has a second way to scroll the page and
            a finger does not. A phone has no mouse to fall back to, so the pen

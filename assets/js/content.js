@@ -277,6 +277,43 @@ window.SITE = {
       },
     ],
 
+    /* ---------------------------------------------------------------- bricks
+       Building blocks, scattered the way everything else on this canvas is
+       scattered. There is deliberately no cluster and no starting arrangement:
+       they are eight loose objects lying about, and two of them found near
+       each other is the entire discovery.
+
+         kind    one of the eight silhouettes defined in site.js
+         x, y    percent of the hero, the same coordinate system the peel
+                 objects use, so a build survives a resize without being re-laid
+         tone    index into the palette; omit and it follows the list order
+
+       THEY START IN THE BOTTOM RIGHT, TOGETHER. Scattered evenly across the
+       whole hero they read as litter — eight unrelated things the page forgot
+       to clean up. Gathered in one quarter they read as a pile of parts, which
+       is a different and much better first impression: it says these belong to
+       each other and something could be made of them.
+
+       This is a STARTING ARRANGEMENT and nothing more. There is still no zone,
+       no tray and no boundary — the moment one is picked up it goes anywhere on
+       the canvas and connects anywhere, and nothing ever puts it back.
+
+       The block sits clear of the intro in the top-left, the PS5 controller at
+       9/76, the F1 car at 84/80 and the toolbar's column on the right. On a
+       phone the bottom right is where the text lives, so the same huddle moves
+       to the middle band instead — grouped, which was the point, rather than
+       bottom-right, which cannot be. */
+    bricks: [
+      { kind: 'br24',   x: 56, y: 55, tone: 1, mobile: { x: 6,  y: 29 } },
+      { kind: 'long',   x: 56, y: 63, tone: 0, mobile: { x: 6,  y: 37 } },
+      { kind: 'tee',    x: 56, y: 71, tone: 4, mobile: { x: 6,  y: 44 } },
+      { kind: 'ell',    x: 71, y: 54, tone: 2, mobile: { x: 45, y: 36 } },
+      { kind: 'sq2',    x: 79, y: 54, tone: 3, mobile: { x: 45, y: 28 } },
+      { kind: 'corner', x: 68, y: 71, tone: 5, mobile: { x: 62, y: 28 } },
+      { kind: 'small',  x: 76, y: 71, tone: 7, mobile: { x: 62, y: 44 } },
+      { kind: 'conn',   x: 83, y: 71, tone: 6, mobile: { x: 78, y: 44 } },
+    ],
+
     /* Defaults for anything a sticker doesn't set for itself. */
     peelStyle: {
       /* How far the clip regions reach past the sticker's own box. The drop

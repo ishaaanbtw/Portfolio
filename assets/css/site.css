@@ -5226,6 +5226,7 @@ body.past-hero .sel { opacity: 0; }
    down re-declares `transition` and would otherwise put it back. */
 .drg.is-drag,
 .drg.is-xf,
+.drg.is-settle,
 .canvas__pills .drg.is-drag,
 .canvas__pills .drg.is-xf {
   transition: box-shadow 320ms var(--ease), filter 320ms var(--ease);
@@ -5234,6 +5235,61 @@ body.past-hero .sel { opacity: 0; }
 .drg.is-drag .pill,
 .drg.is-drag .note,
 .drg.is-drag .stk { box-shadow: 0 10px 24px -8px rgba(20, 16, 12, 0.3); }
+
+/* --- the bricks ------------------------------------------------------------
+   Almost nothing, and that is the point. A brick is a `.drg`, so it inherits
+   the canvas's entire interaction language from that one class — the press,
+   the drag threshold, the elevation, the tool gating, the selection chrome.
+   What is left for this block is the depth: a contact shadow tight under the
+   piece and a soft one further out, which is the whole of its physicality.
+
+   `z-index: 4` puts the bricks one band above the loose objects at 3 while
+   both stay far below the toolbar. It is only a RESTING order — Drag.raise
+   still lifts whatever was touched last to the top, because a piece you cannot
+   see is a piece you cannot place. */
+.brk { z-index: 4; line-height: 0; }
+
+.brk .brk__art {
+  display: block;
+  /* the global reset caps every svg at 100% of its box; these are sized in
+     absolute pixels off the lattice and must not be scaled to fit anything */
+  max-width: none;
+  filter:
+    drop-shadow(0 1px 0.5px rgba(20, 16, 12, 0.11))
+    drop-shadow(0 2px 5px rgba(20, 16, 12, 0.10));
+  transition: filter 260ms var(--ease);
+}
+
+/* in hand */
+.brk.is-drag .brk__art {
+  filter:
+    drop-shadow(0 2px 2px rgba(20, 16, 12, 0.13))
+    drop-shadow(0 14px 22px rgba(20, 16, 12, 0.20));
+}
+
+/* THE ONLY FEEDBACK THE SNAP GETS. Inside the threshold the piece sits a
+   little heavier — the shadow it would cast if it had already come to rest
+   against the other one. No outline, no ghost, no connection line, no glow:
+   the pull itself is the signal, and this only confirms that letting go now
+   will commit. */
+.brk.is-near .brk__art {
+  filter:
+    drop-shadow(0 1px 1px rgba(20, 16, 12, 0.15))
+    drop-shadow(0 7px 12px rgba(20, 16, 12, 0.22));
+}
+
+/* a double-click frees a brick from its structure where it stands; this is the
+   whole acknowledgement — 240ms, and it never touches the drag transform */
+.brk.is-pop .brk__art { animation: brkpop 240ms var(--ease); }
+@keyframes brkpop {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(1.055); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brk.is-pop .brk__art { animation: none; }
+}
 
 /* --- pills -------------------------------------------------------------- */
 
