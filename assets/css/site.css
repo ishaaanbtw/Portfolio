@@ -1747,9 +1747,25 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
    15c. TOOLTIP
    ========================================================================== */
 
+/* The surface is unchanged — same ink, same radius, same type, same shadow,
+   same spring up from under the anchor. What changed is where it is put and
+   how it gets there.
+
+   POSITION IS A TRANSLATE, NOT `left`/`top`. It has to be, because the label
+   travels between anchors: `left` and `top` are laid out, so animating them
+   costs a layout per frame, while `translate` is composited and — crucially —
+   is a separate property from `transform`, which is already spoken for by the
+   spring. The two compose without either having to know about the other.
+   `--tip-x`/`--tip-y` are the anchor point in viewport coordinates; the
+   percentage in each `calc` resolves against the label's own box, which is what
+   turns that point into a corner. */
 .tip {
   position: fixed;
-  z-index: 58;
+  left: 0;
+  top: 0;
+  --tip-x: 0px;
+  --tip-y: 0px;
+  --tip-slide: 150ms;
   padding: 0.24rem 0.5rem;
   border-radius: 6px;
   background: #1a1713;
@@ -1759,14 +1775,42 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   letter-spacing: 0.005em;
   white-space: nowrap;
   pointer-events: none;
-  translate: -50% -100%;
+  /* default: above the anchor, centred on it */
+  translate: calc(var(--tip-x) - 50%) calc(var(--tip-y) - 100%);
   transform: translateY(6px) scale(0.9);
   opacity: 0;
-  transition: transform 420ms var(--spring), opacity 200ms ease;
+  transition:
+    transform 420ms var(--spring),
+    opacity 200ms ease,
+    translate var(--tip-slide) var(--ease);
   box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.4);
 }
 
+/* Appearing is not travelling. The module turns the glide off for the frame in
+   which a label arrives from nothing, so it fades up in place instead of flying
+   across the screen from whatever was hovered last — and off again while the
+   anchor itself is moving, so the label stays welded to it rather than easing
+   along behind. */
+.tip.is-jump { --tip-slide: 0s; }
+
+/* Beside the anchor: right edge on the point, centred on it vertically. This is
+   what the dock gets, and it is chosen in the module from the anchor rather
+   than declared here per component — the label has one owner and one place that
+   decides where it goes. */
+.tip[data-side='left'] {
+  translate: calc(var(--tip-x) - 100%) calc(var(--tip-y) - 50%);
+  /* THE SPRING TURNS WITH THE LABEL. The default entrance rises 6px and settles
+     6px clear of the anchor, which is what a label above something should do —
+     and applied sideways it is just 6px of vertical misalignment against the
+     button it is naming. Here it comes out of the dock's edge instead, and
+     settles at nothing, so the 10px gap the module measured is the 10px gap you
+     get and the label's centre is the button's centre. */
+  transform-origin: 100% 50%;
+  transform: translateX(8px) scale(0.9);
+}
+
 .tip.is-up { transform: translateY(-6px) scale(1); opacity: 1; }
+.tip[data-side='left'].is-up { transform: none; }
 
 .tip::after {
   content: '';
@@ -1777,6 +1821,13 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   rotate: 45deg;
   background: #1a1713;
   border-radius: 1px;
+}
+
+/* the same square, turned to the side the label is now on */
+.tip[data-side='left']::after {
+  left: auto; right: -3px;
+  top: 50%; bottom: auto;
+  translate: 0 -50%;
 }
 
 /* ==========================================================================
@@ -4224,7 +4275,9 @@ body.is-lbox { overflow: hidden; }
   right: var(--dock-inset);
   top: 50%;
   translate: 0 -50%;
-  /* Order: drawer 80, ink 85, dock 90, tooltip 95, click spark 96. */
+  /* Order within this layer: drawer 80, ink 85, dock 90, click spark 96. The
+     tooltip is no longer on this scale at all — it is a layer above the shell,
+     for the reason given where the old `.tools .tip` block used to be. */
   z-index: 90;
 }
 
@@ -4386,7 +4439,9 @@ body.is-lbox { overflow: hidden; }
   --y-pencil: 85.7px;   /* centre */
   --y-note: 160px;      /* centre */
   --y-div2: 194px;
-  --y-plus: 220.8px;    /* centre */
+  /* named for the slot, not for the glyph in it — the glyph used to be a plus
+     and is now a die-cut sticker, and the measurement did not change */
+  --y-sticker: 220.8px; /* centre */
   --y-preset: 262.4px;  /* centre */
   --y-undo: 304px;      /* centre */
   --div-w: 32.5px;
@@ -4422,7 +4477,7 @@ body.is-lbox { overflow: hidden; }
   translate: -50% 0;
 }
 .tools__panel > [data-tool-btn='select'] { top: var(--y-cursor); margin-top: -16px; }
-.tools__panel > [data-tool-btn='sticker'] { top: var(--y-plus); margin-top: -16px; }
+.tools__panel > [data-tool-btn='sticker'] { top: var(--y-sticker); margin-top: -16px; }
 .tools__panel > .tool--preset { top: var(--y-preset); margin-top: -16px; }
 .tools__panel > [data-tool-btn='undo'] { top: var(--y-undo); margin-top: -16px; }
 .tools__panel > .tools__div:nth-of-type(1) { top: var(--y-div1); }
@@ -4461,7 +4516,7 @@ body.is-lbox { overflow: hidden; }
    Section 0 sets `img, svg, video { max-width: 100% }`, and 100% of a chip is
    its CONTENT box — a <button> carries 1px 6px of UA padding, so inside a 30px
    chip that is 18px. Every icon here silently stopped growing at 18 no matter
-   what width it was given, which is why the plus and the undo would not take a
+   what width it was given, which is why the sticker and the undo would not take a
    larger size. The object tools were never affected: their art is absolutely
    positioned inside the 600px-wide slot, so 100% of that is no cap at all. */
 .tool > svg { max-width: none; max-height: none; }
@@ -4495,7 +4550,7 @@ body.is-lbox { overflow: hidden; }
   color: #fff;
 }
 
-/* the plus: 48x48 touch area, purple disc fading in behind the glyph */
+/* the sticker chip: 48x48 touch area, purple disc fading in behind the glyph */
 [data-tool-btn='sticker'] {
   width: 30px; height: 30px;
   border-radius: 50%;
@@ -4509,8 +4564,8 @@ body.is-lbox { overflow: hidden; }
   box-shadow: 0 6px 18px -6px rgba(124, 58, 237, 0.55);
 }
 
-/* Builds. Same 30px disc, same hover wash and same press scale as the plus and
-   the undo it sits between — the only chip in the column that is neither a tool
+/* Builds. Same 30px disc, same hover wash and same press scale as the sticker
+   and the undo it sits between — the only chip in the column that is neither a tool
    nor an action, and it takes the shape of both. `is-on` while its shelf is
    open, using the pale plate the object tools use rather than the filled purple
    Move wears, because an open drawer is not an armed pointer. */
@@ -4745,23 +4800,21 @@ body[data-tool='marker'] .ink { pointer-events: none; }
 body.past-hero .ink { opacity: 0; pointer-events: none !important; }
 body.past-hero .sel { opacity: 0; }
 
-/* --- tooltips: to the LEFT of the dock ---------------------------------- */
+/* --- tooltips: to the LEFT of the dock ----------------------------------
+   Nothing here any more, and this note is why. There was a `.tools .tip` block
+   in this spot that set the label to `translate: -100% -50%` at `z-index: 95`,
+   which is exactly the behaviour wanted — and it never applied to a single
+   element, because the tooltip is one shared node mounted by the shell and has
+   never been a descendant of `.tools`. A rule that cannot match is worse than
+   no rule: it reads as the problem already being solved.
 
-.tools .tip {
-  z-index: 95;
-  translate: -100% -50%;
-  transform: translateY(4px) scale(0.97);
-  padding: 0.3rem 0.55rem;
-  border-radius: 8px;
-  background: #2c2c2e;
-  color: #fff;
-  font-size: 0.8125rem;
-  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.35);
-  /* 150ms before it appears, per the spec */
-  transition: transform 300ms var(--spring), opacity 180ms ease 150ms;
-}
-.tools .tip.is-up { transform: none; }
-.tools .tip::after { display: none; }
+   It cannot be made to match, either, by moving the label inside the dock.
+   `.tools` carries `translate: 0 -50%`, and a translate makes its element the
+   containing block for fixed descendants and a stacking context for all of
+   them — the label would be clipped to the dock's own paint order again, which
+   is the bug. So placement lives with the label, in section 15c: `.tips` is a
+   layer above the entire shell, and `[data-side='left']` is set on the label by
+   whichever anchor it is serving. The dock is styled here; its label is not. */
 
 @media (max-width: 46rem) {
   .tools { right: 12px; }
@@ -7937,6 +7990,27 @@ body.is-locked .app { overflow: hidden; }
   transition: transform var(--deck-move);
 }
 :where(.hud) > * { pointer-events: auto; }
+
+/* THE LABEL LAYER, AND THE ONE LAYER THAT HOLDS EXACTLY ONE THING.
+   A tooltip cannot live in `.hud` with the rest of the furniture. `.hud` is a
+   stacking context in which the dock declares 90, so no z-index the tooltip
+   could name would put it in front — which is why the dock's labels were being
+   drawn behind the dock. `.hud` also carries the shell transform and a
+   clip-path, either of which is enough to misplace an element positioned from a
+   viewport coordinate.
+
+   So the label gets the band above the shell: no transform, so the bounding
+   rectangles it is fed (which are post-transform already) mean what they say;
+   no clip; and nothing else in here to be behind. It stays a hole to the
+   pointer all the way down — the label must never become the hover target,
+   or the button it belongs to loses hover the moment the label reaches it. */
+.tips {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.tips > * { pointer-events: none; }
 
 /* The furniture takes the shell's transform to the pixel — same expression,
    same curve — so there is no frame in which the dock and the page it belongs

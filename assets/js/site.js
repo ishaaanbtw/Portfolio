@@ -466,21 +466,32 @@
        .hud    fixed. Every overlay the modules mount: nav, dock, drawer, menu
                sheet, toasts. Its box is the viewport, so its fixed children
                keep measuring from the viewport exactly as before.
+       .tips   fixed, untransformed, unclipped, and empty but for one label.
+               THE ONE THING `.hud` CANNOT HOLD. `.hud` is a stacking context in
+               which the dock declares 90, so a tooltip inside it could never be
+               drawn over the dock however high it declared; it carries the
+               shell transform, so viewport coordinates measured off a button
+               would land in the wrong place while the menu is out; and it
+               carries a clip-path. A label has to be above all three of those
+               facts, so it gets the band above them.
 
-     They move together because they are given one transform, from one pair of
-     variables, with one transition. There is no orchestration to drift. */
+     The first four move together because they are given one transform, from one
+     pair of variables, with one transition. There is no orchestration to drift.
+     `.tips` deliberately does not move: it is fed viewport coordinates read
+     from live bounding rectangles, which are post-transform already. */
   const App = {
     init() {
       this.pane = el('div', { class: 'pane', 'aria-hidden': 'true' });
       this.app = el('div', { class: 'app', id: 'app' });
       this.free = el('div', { class: 'free', id: 'free' });
       this.hud = el('div', { class: 'hud', id: 'hud' });
+      this.tips = el('div', { class: 'tips', id: 'tips', 'aria-hidden': 'false' });
 
       /* Everything already in the document is flow — the nav, the sheet, the
          outro. It goes into .app wholesale, and then the one fixed thing among
          them is lifted back out. */
       while (document.body.firstChild) this.app.appendChild(document.body.firstChild);
-      document.body.append(this.pane, this.app, this.free, this.hud);
+      document.body.append(this.pane, this.app, this.free, this.hud, this.tips);
 
       const nav = $('.nav', this.app);
       if (nav) this.hud.appendChild(nav);
@@ -493,6 +504,9 @@
 
     /* the sky goes under the flow, not over it */
     mountSky(node) { this.pane.appendChild(node); return node; },
+
+    /* and the label goes over everything, including the thing it labels */
+    mountTip(node) { this.tips.appendChild(node); return node; },
 
     /* THE PAGE SCROLLS INSIDE `.app`, NOT INSIDE THE WINDOW, and that is what
        lets the shell move while you are still reading. A rounded, scaled window
@@ -520,6 +534,74 @@
        neither does the scrollbar-width compensation, because the bar belongs to
        `.app` and `.app` is not going anywhere. */
     lock(on) { document.body.classList.toggle('is-locked', !!on); },
+  };
+
+  /* ================================================ 2b. ONE POINTER SPACE ===
+
+     THE SHELL MOVES, AND EVERY MEASUREMENT HAS TO KNOW IT.
+
+     `.app` and `.hud` carry `translate3d(--app-x, --app-y, 0) scale(--app-s)`.
+     A pointer event reports viewport coordinates — the only honest input there
+     is. Almost everything else in this file works in the LOCAL coordinate space
+     of something inside that transform: a brick's `--x`, a sticker's position on
+     the canvas, a stroke sample, a fixed overlay's `left`. The two spaces are
+     the same thing only while the menu is shut.
+
+     Open the menu and they diverge by a translate of several hundred pixels and
+     a scale of 0.935. That is why the sticker preview used to float a menu's
+     width away from the cursor steering it, why the click spark landed off to
+     one side, and why a sticker slid out from under the finger dragging it.
+
+     THERE IS ONE CONVERSION AND IT IS HERE. Nothing subtracts a menu offset,
+     nothing branches on whether the menu is open, nothing knows what `--app-x`
+     is. Every answer is derived from geometry the browser has actually rendered,
+     read now — which is what makes it right in the middle of the 600ms
+     transition as well as at either end of it. A cached rect or a hard-coded
+     offset would be correct in exactly the two states it was measured in. */
+  const Space = {
+    _k: 1, _fresh: false,
+
+    /* THE SHELL'S LIVE SCALE, from the rendered box and not from `--app-s`: a
+       custom property holds the TARGET from the frame the transition starts,
+       while the element is still back at the old value. `.app` is
+       `position: fixed; inset: 0`, so its laid-out width is the viewport and the
+       ratio of its rendered width to that IS the scale, whatever produced it.
+
+       Read at most once per frame. It forces a style flush, and pointermove can
+       fire several times between paints. */
+    k() {
+      if (this._fresh) return this._k;
+      const n = App.app;
+      if (n) {
+        const w = n.offsetWidth;
+        const r = w ? n.getBoundingClientRect().width / w : 1;
+        if (r > 0.01) this._k = r;
+      }
+      this._fresh = true;
+      requestAnimationFrame(() => { this._fresh = false; });
+      return this._k;
+    },
+
+    /* A VIEWPORT POINT, IN SOME ELEMENT'S OWN COORDINATES.
+
+       The divisor comes from the host's own rendered width against its laid-out
+       width, so this holds for a host under any transform — not only the
+       shell's — and needs no argument about which transforms are in play. Falls
+       back to the shell's scale for hosts with no layout width of their own. */
+    local(cx, cy, host) {
+      if (!host) return { x: cx, y: cy };
+      const r = host.getBoundingClientRect();
+      const w = host.offsetWidth;
+      const k = w && r.width ? r.width / w : this.k();
+      return { x: (cx - r.left) / k, y: (cy - r.top) / k };
+    },
+
+    /* A VIEWPORT DISTANCE, IN SHELL PIXELS. For drags and resizes: the pointer
+       travels in viewport pixels while the thing it is carrying is measured in
+       local ones, so 100px of cursor is 107 local pixels at 0.935 and the object
+       stays under the finger. Without it the object creeps away from the
+       pointer — slowly, and only while the menu is open. */
+    len(d) { return d / this.k(); },
   };
 
   /* ==================================================== 2c. the deck =====
@@ -824,6 +906,12 @@
       this.podFit();
       document.body.classList.remove('deck-shut');
       document.body.classList.add('deck-open');
+      /* THE SHELL IS ABOUT TO MOVE FOR 600ms, so anything that tracks the
+         pointer against it has to be running. The frame loop sleeps when
+         nothing is animating, and a cursor held still over the canvas is
+         exactly the case where it would be asleep while the ground moves
+         underneath the preview standing on it. */
+      wakeLoop();
       /* the list has a height now that it is on screen */
       requestAnimationFrame(() => { this.railFit(); this.aim(null); });
       this.el.removeAttribute('aria-hidden');
@@ -842,6 +930,7 @@
          once it has landed. Without it the page would teleport home. */
       document.body.classList.remove('deck-open');
       document.body.classList.add('deck-shut');
+      wakeLoop();                       // the same 600ms, travelling the other way
       this.el.setAttribute('aria-hidden', 'true');
       const h = this.handle();
       if (h) { h.setAttribute('aria-expanded', 'false'); h.focus({ preventScroll: true }); }
@@ -1121,11 +1210,19 @@
     /* Click spark. Six spokes at 60°, offset 36°, travelling outward and
        fading over ~95ms — every value here was measured off the recording
        frame by frame. Fires on any click, anywhere, like the reference. */
+    /* Takes VIEWPORT coordinates — where the click actually happened — and puts
+       the spark there. It is mounted into `.hud`, which rides the shell, so a
+       `position: fixed` child of it resolves `left` against the shell's own
+       moved, scaled box and not against the screen. Handed clientX directly, the
+       spark appeared a menu's width from the click that caused it. One
+       conversion at the point of writing; the caller keeps passing what the
+       event reported. */
     spark(x, y) {
       if (REDUCED) return;
+      const p = Space.local(x, y, App.hud);
       const s = el('span', { class: 'spark', 'aria-hidden': 'true' });
-      s.style.left = `${x}px`;
-      s.style.top = `${y}px`;
+      s.style.left = `${p.x}px`;
+      s.style.top = `${p.y}px`;
       for (let k = 0; k < 6; k++) {
         s.appendChild(el('i', { style: `--a:${36 + k * 60}deg` }));
       }
@@ -1139,36 +1236,147 @@
     },
 
     /* One tooltip element, repositioned on demand. It springs up from under the
-       badge rather than fading in place. */
+       badge rather than fading in place.
+
+       IT IS MOUNTED INTO `.tips`, NOT `.hud`, and that is the whole of the bug
+       it used to have. Inside `.hud` it was a `z-index: 58` in a stacking
+       context where the dock declares 90, so the label for a dock button was
+       painted behind the dock — legible only for the topmost button, whose
+       label happened to clear the panel's top edge, and cut in half for every
+       button below it. The `.tools .tip` block in section 24 of the stylesheet
+       was written to fix precisely this and never applied to anything, because
+       the tooltip has never been a descendant of `.tools` and never should be:
+       `.tools` carries `translate: 0 -50%`, which would make it the containing
+       block for the label and clip the label to the dock's own paint order all
+       over again. A portal is the fix, so the label gets a portal.
+
+       TWO PLACEMENTS, AND THE ANCHOR CHOOSES. A badge in the middle of a
+       paragraph wants its label above it with the arrow pointing down, which is
+       what everything on the page has always got. A button in a vertical dock
+       pinned to the right edge cannot: above means on top of the button over
+       it. So anything inside the dock is labelled off the dock's LEFT edge,
+       vertically centred on the button, and the arrow turns to match. */
     tooltip() {
       const tip = el('div', { class: 'tip', role: 'tooltip' });
-      App.mount(tip);
+      App.mountTip(tip);
       this.tipEl = tip;
 
-      let current = null;
+      const GAP = 10;      /* px between the label and the dock's outer edge */
+      const EDGE = 8;      /* and the least it may come to the screen's own */
+
+      let current = null;  /* the anchor being labelled, or null */
+      let key = '';        /* its last committed position, as a string */
+      let wide = 0;        /* the label's measured width, per label */
+      let frame = 0;       /* the follow loop, alive only while a label is up */
+      let leave = 0;       /* the pending dismissal, if any */
+
+      /* THE DOCK IS ONE OBJECT, so the label hangs off the object's edge and
+         not off each button's. Buttons in there are not all the same width —
+         the tools are 32px and the row beneath them is not — and anchoring per
+         button would step the label in and out as you run down the column. The
+         surface is the panel while the dock is open and the tab while it is
+         folded, because those are the two things actually on screen. */
+      const surface = (node) => node.closest('.tools__panel, .tools__tab');
+
+      const measure = (node) => {
+        const r = node.getBoundingClientRect();
+        const surf = surface(node);
+        if (surf) {
+          const s = surf.getBoundingClientRect();
+          /* Left is the placement, not a preference among equals: over, under,
+             inside and right are all worse than the thing being labelled. The
+             only honest fallback is the page's own default — above — and it
+             takes a viewport narrower than the label plus the dock to reach it,
+             which is why this is a guard and not a strategy. */
+          if (s.left - GAP - EDGE >= wide) {
+            return { x: s.left - GAP, y: r.top + r.height / 2, side: 'left' };
+          }
+        }
+        return { x: r.left + r.width / 2, y: r.top - 6, side: 'up' };
+      };
+
+      /* Rounded, because the position is compared against the last one every
+         frame and sub-pixel drift would read as a change on every one of them. */
+      const stamp = (t) => `${t.side}|${Math.round(t.x)}|${Math.round(t.y)}`;
+
+      const commit = (t, slide) => {
+        key = stamp(t);
+        tip.dataset.side = t.side;
+        /* `is-jump` is the difference between the label travelling and the
+           label being somewhere else. See the loop below. */
+        tip.classList.toggle('is-jump', !slide);
+        tip.style.setProperty('--tip-x', `${Math.round(t.x)}px`);
+        tip.style.setProperty('--tip-y', `${Math.round(t.y)}px`);
+      };
+
+      /* THE LABEL IS PINNED TO THE BUTTON, NOT TO A COORDINATE IT WAS HANDED
+         ONCE. The dock moves under it in four different ways — it opens, it
+         folds to a tab, it re-centres on resize, and it rides the shell when
+         the menu slides — and a position measured at hover time is wrong for
+         all four. So the anchor is re-read every frame while a label is up, and
+         the label is moved only when the answer actually changed.
+
+         That last clause is what keeps the two motions from fighting. Moving
+         between buttons is a 150ms glide, committed by show() with slide on.
+         The anchor itself moving is instant, committed here with slide off —
+         because a label that eases along behind its own button does not look
+         smooth, it looks detached. And during a glide the anchor is stationary,
+         so this loop sees no change and leaves the glide alone. */
+      const follow = () => {
+        if (!current) { frame = 0; return; }
+        const t = measure(current);
+        if (stamp(t) !== key) commit(t, false);
+        frame = requestAnimationFrame(follow);
+      };
 
       const show = (node) => {
         const label = node.dataset.tip;
         if (!label) return;
+        if (leave) { clearTimeout(leave); leave = 0; }
+        const up = tip.classList.contains('is-up');
+        if (tip.textContent !== label) { tip.textContent = label; wide = tip.offsetWidth; }
+        else if (!wide) wide = tip.offsetWidth;
         current = node;
-        tip.textContent = label;
-        const r = node.getBoundingClientRect();
-        tip.style.left = `${r.left + r.width / 2}px`;
-        tip.style.top = `${r.top - 6}px`;
+        /* Appear where you are; travel only between items. A label that has
+           been hidden and then flies in across the screen from the last thing
+           you hovered reads as a glitch, not as continuity. */
+        commit(measure(node), up);
         tip.classList.add('is-up');
+        if (!frame) frame = requestAnimationFrame(follow);
       };
 
-      const hide = () => { current = null; tip.classList.remove('is-up'); };
+      /* A GRACE PERIOD, NOT AN IMMEDIATE DISMISSAL. The dock's buttons have
+         gaps and hairline dividers between them, so the pointer crosses dead
+         pixels on the way from one to the next. Dropping the label on the first
+         frame with nothing under the cursor is what made it blink between
+         neighbours. 90ms is longer than any such transit and far shorter than
+         an intention to leave. The timer is started once and not restarted by
+         further movement, or a slow drag across empty page would postpone it
+         indefinitely. */
+      const hide = () => {
+        if (!current || leave) return;
+        leave = setTimeout(() => {
+          leave = 0;
+          current = null;
+          tip.classList.remove('is-up');
+        }, 90);
+      };
 
       document.addEventListener('pointermove', (e) => {
         const node = hit(e, '[data-tip]');
-        if (node === current) return;
+        if (node && node === current) {
+          /* back on the anchor within the grace period — call off the exit */
+          if (leave) { clearTimeout(leave); leave = 0; }
+          return;
+        }
         if (node) show(node);
         else hide();
       }, { passive: true });
 
-      /* a tooltip anchored to a moving page has to follow or disappear */
-      App.onScroll(() => { if (current) show(current); });
+      /* Scrolling used to need its own handler here. It does not any more: the
+         page moving is the anchor moving, and the follow loop above already
+         watches for that — from the rectangle itself rather than from a list of
+         the things that might have changed it. */
       document.addEventListener('focusin', (e) => {
         const node = e.target.closest?.('[data-tip]');
         if (node) show(node); else hide();
@@ -1400,8 +1608,9 @@
         const b = hit(e, '.btn');
         if (b) {
           Sound.press();
-          const r = b.getBoundingClientRect();
-          const ink = el('span', { class: 'btn__ink', style: `left:${e.clientX - r.left}px;top:${e.clientY - r.top}px` });
+          /* the ripple starts under the finger, in the button's own space */
+          const q = Space.local(e.clientX, e.clientY, b);
+          const ink = el('span', { class: 'btn__ink', style: `left:${q.x}px;top:${q.y}px` });
           b.appendChild(ink);
           setTimeout(() => ink.remove(), 640);
         } else {
@@ -3361,7 +3570,13 @@
 
       node.addEventListener('pointermove', (e) => {
         if (!armed) return;
-        const dx = e.clientX - gx, dy = e.clientY - gy;
+        /* THE GRAB POINT IS ALREADY PRESERVED — this is a delta applied to the
+           position the object had when it was grabbed, so it cannot jump. What
+           it could do was drift: the pointer travels in viewport pixels and
+           `it.x` is written in the shell's, so at 0.935 the object moved 93.5%
+           as far as the cursor and slid out from under it over a long drag.
+           One divide, and the two agree at any scale. */
+        const dx = Space.len(e.clientX - gx), dy = Space.len(e.clientY - gy);
 
         if (!it.dragging) {
           if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;
@@ -3436,10 +3651,16 @@
       const h = host.getBoundingClientRect();
       if (!r.width || !h.width) return;
       const k = Math.min(this.KEEP, r.width * 0.9, r.height * 0.9);
-      let x0 = ox + (h.left + k) - r.right;
-      let x1 = ox + (h.right - k) - r.left;
-      let y0 = oy + (h.top + k) - r.bottom;
-      let y1 = oy + (h.bottom - k) - r.top;
+      /* `ox/oy` are canvas coordinates and everything derived from the two
+         rects is screen distance, so the screen part is divided before it is
+         added. The bounds are what stops an object being dragged off the paper;
+         measured in the wrong unit they let it go 6.5% too far, or stopped it
+         6.5% short, depending on which edge you pushed against. */
+      const s = host.offsetWidth ? h.width / host.offsetWidth : Space.k();
+      let x0 = ox + ((h.left + k) - r.right) / s;
+      let x1 = ox + ((h.right - k) - r.left) / s;
+      let y0 = oy + ((h.top + k) - r.bottom) / s;
+      let y1 = oy + ((h.bottom - k) - r.top) / s;
       if (x0 > x1) { const m = (x0 + x1) / 2; x0 = x1 = m; }
       if (y0 > y1) { const m = (y0 + y1) / 2; y0 = y1 = m; }
       it.bounds = { x0, x1, y0, y1 };
@@ -3514,8 +3735,13 @@
       if (!host) { it.baseCX = null; return; }
       const cr = host.getBoundingClientRect();
       const nr = it.node.getBoundingClientRect();
-      it.baseCX = (nr.left + nr.right) / 2 - cr.left - it.x;
-      it.baseCY = (nr.top + nr.bottom) / 2 - cr.top - it.y;
+      /* Both rects are screen rects and `it.x` is a canvas coordinate, so the
+         screen part is converted before the two are subtracted. `baseW/H` below
+         are `offsetWidth/Height`, which are already canvas pixels — that pairing
+         is the reason to land on the canvas's units rather than the screen's. */
+      const k = host.offsetWidth ? cr.width / host.offsetWidth : Space.k();
+      it.baseCX = ((nr.left + nr.right) / 2 - cr.left) / k - it.x;
+      it.baseCY = ((nr.top + nr.bottom) / 2 - cr.top) / k - it.y;
       it.baseW = it.node.offsetWidth;
       it.baseH = it.node.offsetHeight;
       this.frame(it);
@@ -3604,7 +3830,9 @@
           it.node.classList.add('is-xf');
 
           const move = (ev) => {
-            const dx = ev.clientX - gx, dy = ev.clientY - gy;
+            /* `aabbW/H` are laid-out pixels — `baseW * sx` — so the pull that
+               is compared against them has to be in the same unit. */
+            const dx = Space.len(ev.clientX - gx), dy = Space.len(ev.clientY - gy);
 
             /* THE RATIO IS FIXED. Every handle scales, none stretches — these
                are photographs and a headline, and there is no width worth
@@ -3854,13 +4082,31 @@
 
   const TOOL_ICON = {
     cursor: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M3.6 1.4 13 8.2l-4.3.5-2 4Z"/></svg>',
-    /* stroke 1.05 against a 20px box renders the same 1.31px line the 1.5/14px
-       version did — the glyph grows, the weight does not. Measured: the
-       recording's plus is 13.7px across at a 1.83px stroke; the old one was
-       10.2px across at 1.85. Same line, two thirds the icon. */
-    plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.07" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>',
+    /* STICKERS. A round die-cut with its corner peeled back — which is the
+       object this tool places, not a metaphor for it: the artwork in
+       assets/img/pixel is cut-outs with a white die-cut edge, and `peelStyle`
+       lifts that edge on hover. A plus was here before and said "add
+       something", which is true of every button that adds something.
+
+       Round, and not the obvious dog-eared square, because the dog-eared square
+       is already on screen: the sticky-note tool sits directly above this one in
+       the same column and is drawn as exactly that silhouette. Two tools, one
+       shape, eighteen pixels apart.
+
+       THE FOLD IS FILLED, AND IT IS A BIG FOLD, because the honest version of
+       this icon does not survive. A tasteful peel — a corner turned back a
+       couple of degrees, drawn as a second hairline — is legible at 4x and is a
+       plain circle at the 19.5px this actually renders at: the first attempt
+       here put the flap's curve 0.1px inside its own chord, which is not a
+       drawing, it is a rounding error. A fold has to enclose real area to read,
+       so this one takes a 125-degree bite and fills it. Judged at 19.5px on the
+       real disc, in both the light and the purple state, against six
+       alternatives — not at 4x, where all six looked fine. */
+    sticker: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.07" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M13.16 6.42A5.4 5.4 0 1 0 6.42 13.16"/>'
+      + '<path fill="currentColor" d="M13.16 6.42 6.42 13.16Q7.4 7.4 13.16 6.42Z"/></svg>',
     /* PRESETS. Three stacked bars with two studs on the top one — bricks seen
-       end-on. Monochrome, same 16 viewBox and the same hairline stroke the plus
+       end-on. Monochrome, same 16 viewBox and the same hairline stroke the sticker
        and the undo are drawn with, so it sits in the column without announcing
        that it arrived later than the rest. It says "builds"; a gear would have
        said "settings". */
@@ -3946,7 +4192,7 @@
       const add = el('button', {
         class: 'tool', type: 'button', 'data-tool-btn': 'sticker',
         'data-tip': 'Add', 'aria-label': 'Add stickers', 'aria-pressed': 'false',
-      }, TOOL_ICON.plus);
+      }, TOOL_ICON.sticker);
       add.addEventListener('click', () => this.pick('sticker'));
       panel.appendChild(add);
 
@@ -4163,7 +4409,11 @@
       const map = {
         marker: TOOL_ICON.pencilTab,
         note: TOOL_ICON.noteTab,
-        sticker: TOOL_ICON.plus,
+        /* THE SAME GLYPH THE DOCK USES. This map is what the phone's button and
+           the desktop's collapsed tab wear while a tool is live, so a sticker
+           icon changed only in the panel would still be a plus everywhere the
+           panel is folded — which on a phone is most of the time. */
+        sticker: TOOL_ICON.sticker,
       };
       return map[name] || TOOL_ICON.cursor;
     },
@@ -4568,13 +4818,24 @@
           box.addEventListener('pointercancel', park);
           box.addEventListener('pointermove', (e) => {
             const r = box.getBoundingClientRect();
-            const x = e.clientX - r.left;
-            const y = e.clientY - r.top;
+            /* THE PEEL LIGHT FOLLOWS THE CURSOR ACROSS THE STICKER, and these
+               are SVG filter coordinates — the sticker's own user space, not the
+               screen's. Under the shell's scale the screen distance is the
+               smaller of the two, so the highlight trailed the cursor toward the
+               sticker's top-left corner: visible as soon as the menu was open,
+               invisible before it, which is why it read as the hover being in
+               the wrong place rather than as a scale error. */
+            const p = Space.local(e.clientX, e.clientY, box);
+            const x = p.x;
+            const y = p.y;
             a.setAttribute('x', x); a.setAttribute('y', y);
             /* Peeling straight down is the one case where the flap's light
                would sit on the wrong side of the fold; park it off-canvas. */
             if (Math.abs((d.dir || 0) % 360) !== 180) {
-              b.setAttribute('x', x); b.setAttribute('y', r.height - y);
+              /* mirrored across the sticker's own height — the laid-out one,
+                 since `y` is now local and `r.height` is what the screen shows */
+              const hh = box.offsetHeight || r.height;
+              b.setAttribute('x', x); b.setAttribute('y', hh - y);
             } else {
               b.setAttribute('x', -1000); b.setAttribute('y', -1000);
             }
@@ -4927,9 +5188,18 @@
         if (Rack.mode !== 'open') return;                // no panel, no placing
         if (hit(e, '.drg, .tools, .btn, .drawer__bar, .rail')) return;
         if (!host.contains(e.target) && host !== document.body) return;
-        const r = host.getBoundingClientRect();
-        const x = e.clientX - r.left + (host.scrollLeft || 0);
-        const y = e.clientY - r.top + (host.scrollTop || 0);
+        /* WHERE THE THING GOES, IN THE SURFACE'S OWN COORDINATES.
+
+           `clientX - r.left` was most of the answer and quietly wrong for the
+           rest: it is a distance measured on the screen, and it was being
+           written into a surface that may be scaled, so a press 700px into an
+           0.935 canvas placed the sticker 45px short of the cursor. The scroll
+           offsets are already local, so they are added after the conversion and
+           not before it — mixing the two is the same class of mistake one line
+           further down. */
+        const p = Space.local(e.clientX, e.clientY, host);
+        const x = p.x + (host.scrollLeft || 0);
+        const y = p.y + (host.scrollTop || 0);
         if (Rack.tool === 'note') {
           this.note(x, y);
           /* continuous placement keeps the tool armed; otherwise drop to Move */
@@ -5256,11 +5526,30 @@
     },
 
     sticker(glyph, x, y) {
-      const wrap = el('div', { class: 'drg', style: `left:${x - 20}px;top:${y - 20}px` });
+      const wrap = el('div', { class: 'drg', style: `left:${x}px;top:${y}px` });
       const base = S.canvas?.stickerPath || 'assets/img/pixel/';
       wrap.appendChild(el('span', { class: 'stk' },
         `<img src="${base}${glyph}.svg" alt="" draggable="false">`));
       this.host.appendChild(wrap);
+
+      /* CENTRED ON THE POINT, USING THE SIZE IT TURNED OUT TO BE.
+
+         This used to be `x - 20`, half of a sticker assumed to be 40px. They
+         are 49.86, so every sticker landed five pixels down and to the right of
+         the cursor that placed it — under the preview, which is centred, and
+         therefore visibly not where the preview had been standing. Re-centred
+         from `offsetWidth`, which is the laid-out size in the canvas's own
+         pixels, and again once the artwork loads, because an <img> with no
+         intrinsic size yet measures nothing. */
+      const mid = () => {
+        const w = wrap.offsetWidth, h = wrap.offsetHeight;
+        if (!w && !h) return;
+        wrap.style.left = `${x - w / 2}px`;
+        wrap.style.top = `${y - h / 2}px`;
+      };
+      mid();
+      const art = $('img', wrap);
+      if (art && !art.complete) art.addEventListener('load', mid, { once: true });
 
       const it = Drag.make(wrap, { r: (Math.random() - 0.5) * 6 });   // ±3°
       it.duplicate = () => this.sticker(glyph, it.x + x + 26, it.y + y + 26);
@@ -5650,6 +5939,7 @@
 
     walls: [],
     wallStamp: -1,
+    wallK: 0,          // the shell scale the walls were measured at
 
     /* WHICH NODES ARE WALLS. The movable blocks inside the intro, plus the
        button row, which is the one piece of hero content that is not draggable
@@ -5689,7 +5979,14 @@
        grip, positioned by transform well outside the object — and unioning it
        would make the wall jump by a hundred pixels the moment you clicked the
        headline. */
-    wallBox(node, h) {
+    /* `h` is the host's LIVE rect and `k` its live scale. Both are needed:
+       getBoundingClientRect answers in screen pixels, and every number this is
+       compared against — a brick's `ax`, `ay`, the stud size `U` — is in the
+       host's own pixels. Subtracting the origin alone leaves the two agreeing
+       only while the shell sits at scale 1, which is to say only while the menu
+       is shut. WALLPAD is applied after the divide, so six pixels of clearance
+       stays six of the host's pixels rather than six of the screen's. */
+    wallBox(node, h, k) {
       let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
       const add = (n) => {
         if (n.classList && n.classList.contains('sel')) return;
@@ -5704,8 +6001,8 @@
       if (!isFinite(L)) return null;
       const p = this.WALLPAD;
       return {
-        L: L - h.left - p, T: T - h.top - p,
-        R: R - h.left + p, B: B - h.top + p,
+        L: (L - h.left) / k - p, T: (T - h.top) / k - p,
+        R: (R - h.left) / k + p, B: (B - h.top) / k + p,
       };
     },
 
@@ -5717,10 +6014,12 @@
       if (!h || !h.width) { this.walls = []; return; }
       this.wallStamp = Drag.gen;
       const U = this.U;
+      /* the host's own scale, from its rendered width against its laid-out one */
+      const k = this.host.offsetWidth ? h.width / this.host.offsetWidth : Space.k();
 
       const boxes = [];
       this.wallHosts().forEach((node) => {
-        const b = this.wallBox(node, h);
+        const b = this.wallBox(node, h, k);
         if (b) { b.nodes = [node]; boxes.push(b); }
       });
 
@@ -5813,8 +6112,16 @@
     /* One measurement per change, and the change is anything moving that has a
        wall on it. Everything in the gesture path calls this rather than reading
        `this.walls` directly, so there is no way to use a stale box. */
+    /* THE SHELL'S SCALE INVALIDATES THE WALLS TOO, not just a drag.
+
+       `Drag.gen` counts moves of the hero blocks, which is what used to be the
+       only way this geometry could go stale. Opening the menu is the other way:
+       the walls are derived from screen rectangles, and every one of those
+       changes when the shell scales — so the stamp carries the scale as well and
+       a menu that opens mid-gesture re-measures on the next frame that asks. */
     wallsNow() {
-      if (this.wallStamp !== Drag.gen) this.makeWalls();
+      const k = Space.k();
+      if (this.wallStamp !== Drag.gen || this.wallK !== k) { this.wallK = k; this.makeWalls(); }
       return this.walls;
     },
 
@@ -8462,6 +8769,7 @@
      physical thing being carried. */
   const Ghost = {
     x: 0, y: 0, vx: 0, kind: 'none',
+    lx: 0, ly: 0,           // the last point written, in the shell's space
     SMOOTH: 0.07,           // seconds — the lag the spec asks for
     MAX_TILT: 2,            // degrees
 
@@ -8471,10 +8779,21 @@
       this.el.appendChild(this.inner);
       App.mount(this.el);
 
+      /* THE ONE POINTER, in the coordinates the browser reported it in. Nothing
+         is converted here: this is the raw truth, and each consumer converts
+         into its own space at the moment it needs to. */
       addEventListener('pointermove', (e) => {
         Pointer.x = e.clientX;
         Pointer.y = e.clientY;
         Pointer.seen = true;
+        /* AND THE LOOP HAS TO BE RUNNING TO ACT ON IT. This listener only ever
+           recorded the position; the frame loop sleeps when nothing is
+           animating, so with a tool armed and the page at rest the preview
+           simply stopped following the cursor until something else — a scroll,
+           a resize — happened to wake it. `wake()` is an integer store and an
+           early return when it is already live, so this is free on the hot
+           path and only costs a frame loop while a preview is actually up. */
+        if (this.kind !== 'none') wakeLoop();
       }, { passive: true });
     },
 
@@ -8513,10 +8832,26 @@
       this.apply();
     },
 
+    /* THE SPRING RUNS IN VIEWPORT SPACE, THE ELEMENT LIVES IN THE SHELL'S.
+
+       `this.x/y` chase `Pointer` in the coordinates the pointer was reported in,
+       and the conversion happens here, once, at the moment the transform is
+       written. That ordering is deliberate. Smoothing in local coordinates would
+       make the shell's own 600ms slide look like pointer movement — the ghost
+       would lag several hundred pixels behind the cursor for the length of the
+       menu animation and then catch up, which is precisely the artefact this is
+       fixing rather than a nicer version of it.
+
+       Returns whether the element actually moved, so the frame loop can stay
+       awake while the shell is travelling under a stationary cursor. */
     apply() {
       const tilt = clamp(this.vx * 0.06, -this.MAX_TILT, this.MAX_TILT);
+      const p = Space.local(this.x, this.y, App.hud);
+      const moved = Math.abs(p.x - this.lx) > 0.05 || Math.abs(p.y - this.ly) > 0.05;
+      this.lx = p.x; this.ly = p.y;
       this.el.style.transform =
-        `translate3d(${this.x.toFixed(1)}px, ${this.y.toFixed(1)}px, 0) rotate(${tilt.toFixed(2)}deg)`;
+        `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0) rotate(${tilt.toFixed(2)}deg)`;
+      return moved;
     },
 
     tick(dt) {
@@ -8527,8 +8862,9 @@
       this.x += dx;
       this.y += (Pointer.y - this.y) * k;
       this.vx = this.vx * 0.82 + dx * 0.18 * 60;
-      this.apply();
-      return Math.abs(Pointer.x - this.x) > 0.15 || Math.abs(Pointer.y - this.y) > 0.15
+      const shifted = this.apply();
+      return shifted
+          || Math.abs(Pointer.x - this.x) > 0.15 || Math.abs(Pointer.y - this.y) > 0.15
           || Math.abs(this.vx) > 0.4;
     },
   };
@@ -8673,15 +9009,22 @@
          coordinate of a sample depend on when it was measured rather than where
          the cursor was. Only scrollTop is read per sample, so a stroke stays
          anchored if the surface scrolls mid-draw. */
-      this.ox = 0; this.oy = 0;
+      this.ox = 0; this.oy = 0; this.ok = 1;
       const anchor = () => {
         const s = Canvas.surface;
         const r = s && s.getBoundingClientRect ? s.getBoundingClientRect() : null;
         this.ox = r ? (r.left || 0) : 0;
         this.oy = r ? (r.top || 0) : 0;
+        /* AND THE SCALE, taken with the origin and for the same reason. A
+           stroke is stored in the surface's own pixels; the pointer arrives in
+           the screen's. Subtracting the origin without dividing by the scale
+           drew a stroke that shrank toward the canvas's top-left corner —
+           straight lines stayed straight, so it read as the pen being offset
+           rather than as the geometry being wrong. */
+        this.ok = r && r.width && s.offsetWidth ? r.width / s.offsetWidth : Space.k();
       };
-      const px2 = (e) => e.clientX - this.ox;
-      const py2 = (e) => e.clientY - this.oy + this.offset();
+      const px2 = (e) => (e.clientX - this.ox) / this.ok;
+      const py2 = (e) => (e.clientY - this.oy) / this.ok + this.offset();
 
       const down = (e) => {
         if (Rack.tool !== 'marker') return;
