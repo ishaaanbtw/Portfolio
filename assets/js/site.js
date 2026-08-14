@@ -393,6 +393,21 @@
         ? `rgba(0, 0, 0, ${SCRIM})`
         : `rgba(255, 255, 255, ${SCRIM})`);
 
+      /* A surface for the controls that sit on the sky, decided by the same
+         light-or-dark answer the ink was. A frosted panel over a night sky and
+         a white one over a noon sky are the same idea: put the chip on the far
+         side of mid-luminance from its own text, so a button is legible at
+         every hour without anyone choosing a colour per hour. */
+      r.setProperty('--outro-chip', useLight
+        ? 'rgba(255, 255, 255, 0.13)'
+        : 'rgba(255, 255, 255, 0.55)');
+      r.setProperty('--outro-chip-hi', useLight
+        ? 'rgba(255, 255, 255, 0.2)'
+        : 'rgba(255, 255, 255, 0.74)');
+      r.setProperty('--outro-edge', useLight
+        ? 'rgba(255, 255, 255, 0.17)'
+        : 'rgba(20, 16, 12, 0.08)');
+
       const pod = $('.timepod');
       if (pod) {
         const lbl = $('.timepod__label', pod);
@@ -413,7 +428,6 @@
       }
       const fine = $('.outro .fine');
       if (fine && announce) fine.dataset.sky = p.name;
-      if (Deck.built) Deck.readout();
     },
   };
 
@@ -445,9 +459,13 @@
        .app    the document flow. Not fixed, so it is clipped per-open to the
                viewport rectangle in document coordinates — which is a constant,
                because the scroll is locked while the menu is out.
-       .hud    fixed. Every overlay the modules mount: nav, dock, pods, drawer,
-               menu sheet, toasts. Its box is the viewport, so its fixed
-               children keep measuring from the viewport exactly as before.
+       .free   fixed, and the one layer that never takes the transform. The two
+               weather pods live here: they have to stay put when the shell
+               slides, and they have to sit ABOVE the page rather than behind
+               it, which is the one thing the deck could not offer them.
+       .hud    fixed. Every overlay the modules mount: nav, dock, drawer, menu
+               sheet, toasts. Its box is the viewport, so its fixed children
+               keep measuring from the viewport exactly as before.
 
      They move together because they are given one transform, from one pair of
      variables, with one transition. There is no orchestration to drift. */
@@ -455,13 +473,14 @@
     init() {
       this.pane = el('div', { class: 'pane', 'aria-hidden': 'true' });
       this.app = el('div', { class: 'app', id: 'app' });
+      this.free = el('div', { class: 'free', id: 'free' });
       this.hud = el('div', { class: 'hud', id: 'hud' });
 
       /* Everything already in the document is flow — the nav, the sheet, the
          outro. It goes into .app wholesale, and then the one fixed thing among
          them is lifted back out. */
       while (document.body.firstChild) this.app.appendChild(document.body.firstChild);
-      document.body.append(this.pane, this.app, this.hud);
+      document.body.append(this.pane, this.app, this.free, this.hud);
 
       const nav = $('.nav', this.app);
       if (nav) this.hud.appendChild(nav);
@@ -574,15 +593,6 @@
       inner.appendChild(wrap);
       this.navEl = nav;
 
-      /* The two readouts. Both come off the sky rather than off a clock: the
-         hour is whatever the slider says, so dragging it moves the time here
-         too, which is the point — this is the same world as the footer. */
-      this.timeEl = el('span', { class: 'deck__time' });
-      this.skyEl = el('span', { class: 'deck__cond' });
-      const meta = el('div', { class: 'deck__meta' });
-      meta.append(this.timeEl, el('span', { class: 'deck__dot' }, '·'), this.skyEl);
-      inner.appendChild(meta);
-
       /* THE SAME TWO PODS THE FOOTER HAS — the same nodes, not copies. They are
          borrowed from `.hud` while the deck is out and handed back when it
          closes, so the hour you set here is the hour the footer is already at:
@@ -614,10 +624,17 @@
          back is a button riding a thing that just slid off. So it goes, and this
          takes over — in the corner the deck owns, where a close control belongs
          and where nothing else is. */
+      /* A GLYPH IS NOT AN AFFORDANCE — a bare ✕ asks you to know the convention
+         and gives the most important action on screen the smallest target on it.
+         So it says the word. But it says it in the deck's own voice: type, in
+         the deck's own ink, at the deck's own scale. A filled pill with a key
+         cap in it was a control borrowed from some other interface and dropped
+         on this sky, and it looked exactly like that. */
       this.closeBtn = el('button', {
         class: 'deck__close', type: 'button', 'aria-label': 'Close menu',
-      }, '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"'
-       + ' stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>');
+      }, '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"'
+       + ' stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>'
+       + '<span>Close</span>');
       this.closeBtn.addEventListener('click', () => this.close());
 
       deck.append(this.closeBtn, inner, this.pods);
@@ -656,20 +673,23 @@
 
       this.el = deck;
       this.built = true;
-      this.readout();
 
       /* Segment count follows the list's real height, so the rail always spans
          it whatever is in `deck.links`. Re-measured on resize because the type
          is clamped to the viewport. */
-      [$('.controls'), $('.mute')].forEach((n) => n && deck.appendChild(n));
+      /* NOT INTO THE DECK — INTO `.free`. They were put in the deck because it
+         is the layer that does not move, which was right, and it cost them
+         their clicks: the deck paints at z-index 1 and the page at 2, so at the
+         footer the outro was lying on top of both pods and `elementFromPoint`
+         over the slider returned `div.outro`. They looked fine and did nothing.
+         `.free` is the same idea one layer up — stationary, but above the page
+         rather than under it. */
+      [$('.controls'), $('.mute')].forEach((n) => n && App.free.appendChild(n));
 
       this.railFit();
       addEventListener('resize', () => this.railFit());
       this.markY = this.markTo = 0; this.markV = 0;
       this.aim(null);
-      /* a minute is finer than this readout needs, but it keeps the two in step
-         when the hour rolls over on its own rather than under the slider */
-      setInterval(() => this.readout(), 20000);
     },
 
     /* --- the rail ------------------------------------------------------- */
@@ -741,15 +761,6 @@
         this.segs[i].style.width = `${(18 + e * 6).toFixed(1)}px`;
       }
       return !this.settled;
-    },
-
-    readout() {
-      if (!this.timeEl) return;
-      const h = Sky.hour == null ? new Date().getHours() : Sky.hour;
-      const hh = String(Math.floor(h) % 24).padStart(2, '0');
-      const mm = String(Math.floor((h % 1) * 60)).padStart(2, '0');
-      this.timeEl.textContent = `${hh}:${mm}`;
-      this.skyEl.textContent = Sky.at(h).name;
     },
 
     open() {
@@ -3891,8 +3902,21 @@
 
   const TOOL_ICON = {
     cursor: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M3.6 1.4 13 8.2l-4.3.5-2 4Z"/></svg>',
-    plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>',
-    undo: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 6.2H8.6a4 4 0 1 1 0 8H5.2"/><path d="M6 3 3 6.2l3 3"/></svg>',
+    /* stroke 1.05 against a 20px box renders the same 1.31px line the 1.5/14px
+       version did — the glyph grows, the weight does not. Measured: the
+       recording's plus is 13.7px across at a 1.83px stroke; the old one was
+       10.2px across at 1.85. Same line, two thirds the icon. */
+    plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.07" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>',
+    /* A CIRCLE, NOT A HOOK. This was a bent return arrow — the shape a text
+       field's undo takes. The recording's is a ring: a near-complete circle
+       broken at the upper left, with an L-tick closing it. On a canvas that is
+       the right glyph, because what the button undoes is a mark you made in
+       space, not a character you typed.
+
+       The stroke is 1.1 rather than 1.5 because the box below is 21.5px, not
+       14px — see the note over `.tool--undo svg`. Widening the box without
+       thinning the stroke would have drawn the same icon in bold. */
+    undo: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.12" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8a6 6 0 1 0 2-4.47L2 5.33"/><path d="M2 2v3.33h3.33"/></svg>',
     pencilTab: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11.2 2.4 13.6 4.8 5.6 12.8 2.4 13.6l.8-3.2z"/><path d="M10 3.6l2.4 2.4"/></svg>',
     /* The sticky note as a line glyph. The dock draws the note as an
        illustrated object sliding out of a slot, which needs a slot to slide
@@ -3947,9 +3971,13 @@
 
       const note = chip('note', 'n', 'Sticky Notes', slot(TOOL_ART.note), 'tool tool--obj');
       /* the art is a 74x74 square, so width tracks height exactly */
-      note.style.setProperty('--oh', '46.5px');
-      note.style.setProperty('--ow', '46.5px');
-      note.style.setProperty('--vis', '16.3px');
+      /* Re-measured off the recording. The old pair came from the note's INK —
+         46.5px of purple — but --oh sizes the whole 74x74 art box, and the note
+         is drawn inset within it. Sized by the ink, the art came out a fifth
+         too small and showed 11.5px of purple where the recording shows 16.5. */
+      note.style.setProperty('--oh', '56.2px');
+      note.style.setProperty('--ow', '56.2px');
+      note.style.setProperty('--vis', '22.2px');
       panel.appendChild(note);
 
       panel.appendChild(el('span', { class: 'tools__div' }));
@@ -5024,7 +5052,10 @@
           m.col = x;
           m.wrap.style.setProperty('--col', `${x}px`);
           m.wrap.style.top = `${row * 40}px`;
-          x += w + 8;
+          /* 10px, measured off the reference: its three pills sit at
+             x 24/195/352.5 and are 161/147.5/225.5 wide, so the clear runs
+             between them are 10 and 10. Was 8. */
+          x += w + 10;
         });
         pills.style.height = `${(row + 1) * 40}px`;
       };
@@ -6620,15 +6651,38 @@
         /* The ratio is declared in content.js rather than measured, so the
            space is reserved before the bytes arrive: without it the second page
            snaps into existence under your thumb the moment it decodes. */
-        const wrap = el('div', {
-          class: 'paper__pg',
-          style: `aspect-ratio:${r.ratio || 0.7727}`,
-        });
+        const wrap = el('div', { class: 'paper__pg' });
         const img = el('img', {
           src, alt: `${r.title || 'Resume'}, page ${i + 1}`,
+          /* the ratio lives on the IMAGE, not on the wrapper. On the wrapper it
+             is a definite height, and a clipping box with a definite height in
+             a grid whose rows were being squeezed cropped every page halfway
+             down. On the image it only reserves space until the bytes land,
+             and after that the picture's own height is the page's height. */
+          style: `aspect-ratio:${r.ratio || 0.7727}`,
           decoding: 'async', ...(i ? { loading: 'lazy' } : {}),
         });
         wrap.appendChild(img);
+
+        /* THE ANCHORS, LAID BACK OVER THE PICTURE.
+           Everything above is a photograph of a page, and a photograph of a
+           mailto: is not a mailto:. These are the real links, positioned in
+           percentages of the page so they stay put at every size — see the
+           `links` note in content.js for where the numbers come from. They are
+           transparent: the blue underneath is the PDF's own. */
+        (r.links && r.links[i] || []).forEach(([href, x, y, w, h]) => {
+          const ext = /^https?:/i.test(href);
+          wrap.appendChild(el('a', {
+            class: 'paper__lnk',
+            href,
+            style: `left:${x}%;top:${y}%;width:${w}%;height:${h}%`,
+            ...(ext ? { target: '_blank', rel: 'noopener noreferrer' } : {}),
+            /* the page image carries no text, so the link has no accessible
+               name of its own — the address is the only honest one there is */
+            'aria-label': href.replace(/^mailto:|^tel:|^https?:\/\//i, ''),
+          }));
+        });
+
         scroll.appendChild(wrap);
       });
       win.appendChild(scroll);

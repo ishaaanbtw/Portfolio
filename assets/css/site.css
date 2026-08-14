@@ -1676,8 +1676,13 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   width: calc(100% + 0.8rem);
   margin: 0;
   opacity: 0;
-  cursor: ew-resize;
+  /* `grab` rather than `ew-resize`: resize is what you do to a window's edge,
+     and this is a thing you pick up and pull. It is the only cursor in the pod,
+     so it is also the pod's whole explanation of itself. */
+  cursor: grab;
 }
+.timepod input[type='range']:active { cursor: grabbing; }
+.timepod:active { cursor: grabbing; }
 
 .timepod__label {
   font-size: 0.625rem;
@@ -4439,9 +4444,21 @@ body.is-lbox { overflow: hidden; }
     transform 140ms cubic-bezier(0.34, 1.46, 0.64, 1);
 }
 
+/* THE ICONS ESCAPE THE GLOBAL CAP.
+
+   Section 0 sets `img, svg, video { max-width: 100% }`, and 100% of a chip is
+   its CONTENT box — a <button> carries 1px 6px of UA padding, so inside a 30px
+   chip that is 18px. Every icon here silently stopped growing at 18 no matter
+   what width it was given, which is why the plus and the undo would not take a
+   larger size. The object tools were never affected: their art is absolutely
+   positioned inside the 600px-wide slot, so 100% of that is no cap at all. */
+.tool > svg { max-width: none; max-height: none; }
+
 /* the move tool: 64x64, radius 16 */
 [data-tool-btn='select'] { width: 32px; height: 32px; border-radius: 9px; }
-[data-tool-btn='select'] svg { width: 15px; height: 15px; }
+/* 17.5, not 15: the arrow's own bbox is 9.4 x 11.3 of a 16 viewBox, so a 15px
+   box drew it 8.8 wide where the recording has it 10.1. */
+[data-tool-btn='select'] svg { width: 17.5px; height: 17.5px; }
 
 /* Hover warms the chip, it does not lift it. The old rule scaled to 1.03 and
    translated -2px with a drop shadow, which on the filled purple Move chip read
@@ -4449,18 +4466,21 @@ body.is-lbox { overflow: hidden; }
    these chips get. */
 :root:not(.hover-cold) .tool:hover { background: rgba(20, 16, 12, 0.055); }
 :root:not(.hover-cold) [data-tool-btn='select'].is-on:hover {
-  /* the armed plate is already lavender — deepen it rather than tint it grey */
-  background: #ddd0fa;
+  /* already purple — deepen it rather than wash the grey hover over the top */
+  background: #6d28d9;
 }
 .tool.is-press { transform: scale(0.96); transition-duration: 90ms; }
 
-/* Armed reads as a soft lavender plate behind the icon — the same treatment the
-   pencil and the note already get. It was a filled purple chip with a white icon,
-   so the arrow announced itself differently from every other tool: two selected
-   styles in one toolbar. */
+/* Armed is the filled purple chip with a white arrow, which is what the
+   reference frame shows. It reads differently from the pale plate behind the
+   pencil and the note ON PURPOSE: those two plates are a PREVIEW of a thing
+   about to be placed on the page, and Move places nothing. One is "here is what
+   you are holding", the other is "this mode is on". Flattening them into one
+   lavender treatment lost that, and lost the toolbar's only bit of colour with
+   it. */
 [data-tool-btn='select'].is-on {
-  background: #e7dffc;
-  color: var(--ink);
+  background: #7c3aed;
+  color: #fff;
 }
 
 /* the plus: 48x48 touch area, purple disc fading in behind the glyph */
@@ -4468,7 +4488,7 @@ body.is-lbox { overflow: hidden; }
   width: 30px; height: 30px;
   border-radius: 50%;
 }
-[data-tool-btn='sticker'] svg { width: 14px; height: 14px; }
+[data-tool-btn='sticker'] svg { width: 19.5px; height: 19.5px; }
 :root:not(.hover-cold) [data-tool-btn='sticker']:hover { background: #7c3aed; color: #fff; }
 [data-tool-btn='sticker'].is-press { transform: scale(0.94); }
 .tools.has-pad [data-tool-btn='sticker'] {
@@ -4479,7 +4499,10 @@ body.is-lbox { overflow: hidden; }
 
 /* undo: rotates a touch on hover, background fades in */
 .tool--undo { width: 30px; height: 30px; border-radius: 50%; }
-.tool--undo svg { width: 14px; height: 14px; transition: transform 320ms var(--spring); }
+/* 21.5px. The ring fills 12 of its 16 viewBox units, so the box has to run well
+   past the 17.5px the drawn glyph measures in the recording. Its stroke is
+   thinned to 1.1 in the art to hold the line weight — see TOOL_ICON.undo. */
+.tool--undo svg { width: 21.1px; height: 21.1px; transition: transform 320ms var(--spring); }
 :root:not(.hover-cold) .tool--undo:hover { background: rgba(0, 0, 0, 0.05); }
 :root:not(.hover-cold) .tool--undo:hover svg { transform: rotate(-22deg); }
 .tool--undo.is-press { transform: scale(0.94); }
@@ -4525,15 +4548,52 @@ body.is-lbox { overflow: hidden; }
   overflow: hidden;
   pointer-events: none;
 }
-/* The objects get a soft lavender plate behind them on hover and while armed,
-   as in the reference. No transform and no shadow though — the object itself
-   slides, and scaling the plate underneath it fought that motion. */
+/* No transform and no shadow on the object buttons — the object itself slides,
+   and scaling the plate underneath it fought that motion. */
 :root:not(.hover-cold) .tool--obj:hover,
 .tool--obj.is-on,
 .tool--obj.is-press { transform: none !important; box-shadow: none !important; }
 
-:root:not(.hover-cold) .tool--obj:hover { background: #efeafe; }
-.tool--obj.is-on { background: #e7dffc; }
+/* THE PREVIEW PLATE.
+
+   `.tool__plate` is in the markup — see `slot()` in site.js — but it had no rule
+   here at all, so it rendered as a bare inline span and the lavender fell back
+   onto the BUTTON. That is the bug you could see: a button in this row is not a
+   chip, it is a full-width, square-cornered strip as tall as the object, so the
+   tint came out as a purple band bleeding the whole way across the panel and
+   past its rounded corners. The plate is a separate element precisely so the
+   tint can be inset and rounded while the button stays the full hit area.
+
+   MEASURED OFF THE RECORDING, frame by frame, at 2.1875x. The plate is a FIXED
+   rectangle — it is not sized from the object it sits behind:
+
+       38px wide, inset 5px from each of the panel's outer edges
+       64px tall, centred on the tool's own y
+       radius ~9px, fill #F4E8FD
+
+   Sizing it from the object was the "cramped" look: the pencil's art is only
+   24px tall, so `inset: -3px` gave it a 30px plate — a thin lozenge tight
+   around the pencil instead of the roomy square the recording shows. The note's
+   art is 46.5px, so the same rule gave IT a 52px plate. Two different plates
+   for what is one repeated shape.
+
+   AND IT IS ARMED-ONLY. On hover the recording shows the object slide out over
+   plain white, no plate at all. The plate is what says "this tool is the live
+   one", so putting it under the pointer as well made hover and armed say the
+   same thing. */
+.tool__plate {
+  position: absolute;
+  top: 50%;
+  left: 4px;    /* the button is already inset 1px from the panel, so 5px total */
+  right: 4px;
+  height: 64px;
+  margin-top: -32px;
+  border-radius: 9px;
+  background: transparent;
+  transition: background-color 220ms var(--ease);
+  pointer-events: none;
+}
+.tool--obj.is-on .tool__plate { background: #f4e8fd; }
 
 .tool--obj svg {
   position: absolute;
@@ -4551,26 +4611,43 @@ body.is-lbox { overflow: hidden; }
   pointer-events: none;
 }
 
-/* The drawer opening: hover slides the object out 12px, arming it slides it a
-   further 6px. Outward is negative X because the panel is pinned to the right
-   edge, so the object emerges leftward into the page.
+/* THE DRAWER OPENING. Outward is negative X because the panel is pinned to the
+   right edge, so the object emerges leftward into the page.
+
+   THE SLIDE BELONGS TO THE POINTER, NOT TO THE STATE. Tracking the pencil's nib
+   across the recording:
+
+       rest ................ tip 36.1px in from the panel's right edge
+       hover ............... 49.4px   — slid out 13
+       armed, not hovered .. 36.1px   — back home, exactly where it started
+       armed AND hovered ... 53.0px   — slid out 17
+
+   So arming does not pull the object out; only the pointer does. The old rule
+   had arming slide it 18px and hold it there, which left the pencil jutting out
+   of a panel nobody was pointing at — and, with the tight plate, sitting half
+   off its own highlight. Arming is the plate alone now.
 
    Pure translation, no tilt. An earlier version rotated -6deg on arming, which
    on a 94px pencil swung the far end visibly and broke the illusion that it is
-   sliding along a slot. Removing the tool slides it back in, since the base
-   rule is transform: none. */
-:root:not(.hover-cold) .tool--obj:hover svg { transform: translateX(-12px); }
+   sliding along a slot. */
+:root:not(.hover-cold) .tool--obj:hover svg { transform: translateX(-13px); }
 .tool--obj.is-on svg {
-  transform: translateX(-18px);
+  transform: none;
+  filter: drop-shadow(0 6px 11px rgba(0, 0, 0, 0.2));
+}
+/* the pointer is what pulls it out, so an armed tool under the pointer goes
+   further than an unarmed one — it is already the live tool */
+:root:not(.hover-cold) .tool--obj.is-on:hover svg {
+  transform: translateX(-17px);
   filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.24));
 }
-/* hovering an already-armed tool should not pull it back to the hover offset */
-:root:not(.hover-cold) .tool--obj.is-on:hover svg { transform: translateX(-22px); }
 .tool--obj.is-press svg { transform: translateX(-7px) rotate(-3deg) scale(0.98); transition-duration: 120ms; }
 
-/* the note tool sits on a soft lavender plate, as in the reference */
-[data-tool-btn='note'] { background: #f0ebfd; }
-:root:not(.hover-cold) [data-tool-btn='note']:hover { background: #e9e1fc; }
+/* The note used to carry `background: #f0ebfd` here permanently. On a chip that
+   would have been the soft plate it was named for; on this button it was the
+   full-width band again, painted at rest, which is what made the note look like
+   a spill rather than a sticky note in a slot. It gets the same plate as the
+   pencil now, and the same nothing at rest. */
 
 /* --- cursors ------------------------------------------------------------- */
 
@@ -4984,13 +5061,30 @@ body.past-hero .sel { opacity: 0; }
    several hundred px past the last word, and stickers placed at the percentages
    in content.js got shoved out of the arrangement by a collision with empty
    space. Hugging the content means the safe zone is the text itself. */
+/* THE CORNER, MEASURED. The reference plants the whole intro block in the very
+   top-left corner — text-box top 26px, left 23px in a 1470x836 window, derived
+   by taking the headline's ink top/left off the 2x capture (31.5 / 25.5) and
+   backing out the line box's own 5.7px / 2.6px ink offsets.
+
+   This used to be top ~104px, left ~112px: a hero floating in a generous
+   margin. The reference has no margin at all, and that is most of why it reads
+   as a canvas with something lying on it rather than as a centred composition.
+
+   Kept as clamps so the corner does not go slack on a huge monitor or crush on
+   a small one, but both land on the measured value at desktop. The 48rem query
+   below overrides all of this for phones, where the intro moves to the bottom. */
 .canvas__intro {
   position: absolute;
-  top: clamp(3.5rem, 11vh, 6.5rem);
-  left: clamp(2rem, 7vw, 7rem);
+  top: clamp(1.25rem, 3.2vh, 1.625rem);
+  left: clamp(1.25rem, 1.6vw, 1.4375rem);
   z-index: 2;
   width: fit-content;
-  max-width: min(44rem, 60vw);
+  /* 48rem, up from 44. At 34px the sentence measures ~693px and the old 704px
+     cap left 11px of slack — one metric change away from breaking "engineers."
+     onto a line by itself. `.canvas__head` is `width: fit-content`, so the box
+     still hugs the words and this cannot push anything into the objects on the
+     right; it only decides where the line is allowed to break. */
+  max-width: min(48rem, 62vw);
   padding: 0;
   pointer-events: none;              /* only the pills inside are interactive */
 }
@@ -5007,21 +5101,67 @@ body.past-hero .sel { opacity: 0; }
    shrinks the box onto the result, and `text-wrap: balance` keeps the lines
    near-equal so there is little slack left inside the box.
 
-   `18ch` is the one number to nudge if the wrap lands badly — `ch` rather than
-   rem so it tracks the font size instead of fighting it. */
+   `52ch` is the one number to nudge if the wrap lands badly — `ch` rather than
+   rem so it tracks the font size instead of fighting it.
+
+   ------------------------------------------------------------------------
+   MEASURED OFF THE REFERENCE (Jerry Zhang's hero, DevTools open on it).
+
+   Everything below came out of that screenshot rather than out of taste. The
+   method, for whenever this needs redoing: normalise by the ink height of one
+   line, which makes every ratio scale-invariant, then bisect.
+
+       size ........ 26px, straight off the inspector
+       weight ...... 500. Stem-width / ink-height is 0.135 there; rendering
+                     Geist at 400/450/500/550/600/700 gives
+                     .109/.109/.130/.130/.152/.170, so 500 — decisively not
+                     the 600 this was, and nowhere near 700.
+       tracking .... -0.023em. Line width / ink height is 26.49; the same
+                     string at 0/-.008/-.015/-.023/-.03em measures
+                     27.85/27.37/26.96/26.48/26.04. Already correct — this
+                     value is unchanged, and it is the one thing that was.
+       leading ..... 1.21. First estimated as 1.27 off a 1.52x scale guessed
+                     from cap metrics; the full-page 2x capture settles it —
+                     line tops 63px apart, and line 1's ink width of 612px
+                     against 615px for the same string rendered at 26px pins
+                     the scale at exactly 2.0, so 63/2 = 31.5px = 1.21em
+       ink ......... #000000, per the inspector
+
+   THE SIZE IS THE WHOLE CHANGE. This was a 42px display line at weight 600
+   broken over a 18ch measure — a headline. The reference is a 26px sentence at
+   weight 500 over a ~54ch measure — a paragraph you read. Matching the weight
+   without matching the size would just have made the big line look underset.
+
+   The measure is 52ch to sit where the reference's own lines break, so the copy
+   wraps the way his does. At 45 characters the current sentence lands on ONE
+   line; the reference's two-line block is a 108-character sentence. Lengthen
+   the copy and this wraps into the same shape on its own — nothing here needs
+   to change for that. */
 .canvas__headline {
-  font-size: clamp(1.75rem, 1.05rem + 2.4vw, 2.625rem);
-  line-height: 1.3;
+  /* 34px, not the reference's 26. Everything else on this rule is still his —
+     the weight, the tracking, the 1.21 leading, the ink — but the size is a
+     deliberate departure: at 26px a 45-character sentence is a small single
+     line in a very large empty corner, and this line is the first claim the
+     page makes. 34px keeps his density and his proportions while giving the
+     sentence enough presence to carry that corner on its own.
+
+     The floor rises with it, 20px -> 24px, so the phone does not drop to a
+     third of the desktop size. */
+  font-size: clamp(1.5rem, 1.15rem + 1.2vw, 2.125rem);
+  line-height: 1.21;
   letter-spacing: -0.023em;
-  font-weight: 600;
+  font-weight: 500;
+  color: #000;
   text-wrap: balance;
-  max-width: min(100%, 18ch);
+  max-width: min(100%, 52ch);
 }
 .canvas__head { width: fit-content; max-width: 100%; }
 
+/* 11px, measured: the reference's headline box ends at y=89 (top 26 + two
+   31.5px lines) and its pill row starts at y=100. This was 17.6px. */
 .canvas__pills {
   position: relative;
-  margin-top: 1.1rem;
+  margin-top: 0.6875rem;
   min-height: 2.25rem;   /* JS sets the real height once widths are measured */
 }
 
@@ -5097,17 +5237,48 @@ body.past-hero .sel { opacity: 0; }
 
 /* --- pills -------------------------------------------------------------- */
 
+/* MEASURED OFF THE REFERENCE, off the 2x full-page capture (so every number
+   below is halved from raw pixels and exact — the pill edges land on whole
+   device pixels, no antialiasing to guess through):
+
+       height ....... 31px   (rows 200-261)
+       padding ...... 11px   (ink starts 11.5 in on the left, ends 10.5 from
+                             the right, less the B's side bearing)
+       radius ....... 6px
+       fill ......... a flat #F4F4F4 with NO stroke — sampled straight across
+                     both edges, the fill goes from bg to full in one pixel
+       label ........ 15px. "Based in Toronto" measures 118px wide with 11.5px
+                     of ink height there; the same string rendered at 15px is
+                     116.5 / 11.5. At 14 or 16 nothing lines up.
+       weight ....... 530. Width by weight at 15px runs 114.5 / 115.5 / 116.5 /
+                     118.5 / 118.5 for 400/450/500/550/600, and the reference
+                     is 118.0 — just past 500.
+       label ink .... #918D8D, sampled (see the note on `color` below)
+       icon gap ..... 6.5px, the clear run between "Toronto" and its glyph
+       pill gap ..... 10px (was 8, in Rack's layout() in site.js)
+
+   THE FILL IS NOT #F4F4F4 HERE, AND THAT IS DELIBERATE. The reference's page
+   is #FDFCFC, so its pill sits 9 points below the paper and slightly cool.
+   This site's paper is #f7f6f3 — warmer and already darker than that. Dropping
+   the literal #F4F4F4 onto it would leave a 3-point step, near-invisible, with
+   a neutral chip sitting on warm paper. So the RELATIONSHIP is copied instead:
+   9 points down, warmth preserved. */
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  height: 1.75rem;                   /* measured ~28px */
-  padding: 0 0.6rem;
-  border-radius: 7px;
-  background: #f1efee;
-  box-shadow: inset 0 0 0 1px rgba(20, 16, 12, 0.05);
-  font-size: 0.8125rem;
-  color: var(--ink-2);
+  gap: 0.40625rem;                   /* 6.5px */
+  height: 1.9375rem;                 /* 31px */
+  padding: 0 0.6875rem;              /* 11px */
+  border-radius: 6px;
+  background: #eeedea;
+  font-size: 0.9375rem;              /* 15px */
+  font-weight: 530;
+  /* SAMPLED FROM THE REFERENCE, AND IT FAILS WCAG AA. #918D8D on its #F4F4F4
+     gives 2.99:1, where 15px text at this weight needs 4.5:1. This is the
+     reference's own problem, inherited on purpose because matching it is the
+     brief — but it is a real one, and #6f6b6b is the same grey at 4.79:1 if
+     legibility should win. */
+  color: #918d8d;
   white-space: nowrap;
   transition:
     background 260ms var(--ease),
@@ -5120,7 +5291,8 @@ body.past-hero .sel { opacity: 0; }
 .pill__icon {
   display: inline-grid;
   place-items: center;
-  width: 14px; height: 14px;
+  /* 15px: the reference's glyph measures 15 x 16 of ink */
+  width: 15px; height: 15px;
   flex: none;
   color: var(--ink-dim);
 }
@@ -5192,7 +5364,7 @@ body.past-hero .sel { opacity: 0; }
 
 /* No hover *lift* — that was the twitchy part. Hover only warms the background
    and opens the detail. */
-:root:not(.hover-cold) .drg:not(.is-drag):not(.is-sel):hover .pill { background: #eae8e6; }
+:root:not(.hover-cold) .drg:not(.is-drag):not(.is-sel):hover .pill { background: #e7e6e2; }
 
 /* --- sticky notes ------------------------------------------------------- */
 
@@ -5628,14 +5800,22 @@ body.past-hero .sel { opacity: 0; }
 }
 
 /* --- the italic in the headline --------------------------------------------
-   `*engineers*` becomes italic and nothing else changes. Inter is loaded with
+   DORMANT. The headline is one uniform weight now — see the note over
+   `headline` in content.js. This rule is left intact rather than deleted
+   because the `*word*` syntax that produces it still works: wrap a word in
+   asterisks there and the italic comes straight back, correctly balanced.
+
+   `*word*` becomes italic and nothing else changes. Geist is loaded with
    its italic axis, so this is a real italic rather than a synthesised slant.
 
    `hdl-` prefixed, never `hl-`: `.hl` is the Shiny Highlights slide. */
 .hdl-em {
   font-style: italic;
-  /* an italic reads a shade lighter at the same weight, so it is nudged back */
-  font-weight: 620;
+  /* An italic reads a shade lighter than a roman at the same weight, so it is
+     nudged back — by the same +20 it always was, now measured from the 500 the
+     roman dropped to rather than from the 600 it used to be. The reference has
+     no italic anywhere; this word is the one thing here that is not his. */
+  font-weight: 520;
 }
 
 /* --- exit: once the hero scrolls away, the tools and ink go with it ------ */
@@ -7312,7 +7492,9 @@ body.past-hero .sel { opacity: 0; }
 .paper__veil {
   position: absolute;
   inset: 0;
-  background: rgba(20, 16, 12, 0.62);
+  background: rgba(20, 16, 12, 0.34);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   opacity: 0;
   transition: opacity 320ms var(--ease);
 }
@@ -7331,8 +7513,9 @@ body.past-hero .sel { opacity: 0; }
   max-height: 100%;
   min-height: 0;
   border-radius: clamp(12px, 2vw, 18px);
-  background: var(--ink);
-  box-shadow: 0 32px 80px -24px rgba(20, 16, 12, 0.55);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  box-shadow: 0 32px 80px -28px rgba(20, 16, 12, 0.32);
   overflow: hidden;
   opacity: 0;
   transform: translate3d(0, 18px, 0) scale(0.985);
@@ -7349,7 +7532,7 @@ body.past-hero .sel { opacity: 0; }
   gap: 1rem;
   flex: 0 0 auto;
   padding: 0.6875rem 0.6875rem 0.6875rem 1.125rem;
-  border-bottom: 1px solid rgba(247, 246, 243, 0.1);
+  border-bottom: 1px solid var(--line);
 }
 .paper__title {
   margin: 0;
@@ -7357,7 +7540,7 @@ body.past-hero .sel { opacity: 0; }
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(247, 246, 243, 0.52);
+  color: rgba(58, 53, 47, 0.58);
 }
 .paper__acts { display: flex; align-items: center; gap: 0.5rem; }
 
@@ -7366,16 +7549,17 @@ body.past-hero .sel { opacity: 0; }
   align-items: center;
   min-height: 36px;
   padding: 0 0.875rem;
-  border: 1px solid rgba(247, 246, 243, 0.18);
+  border: 1px solid var(--line);
   border-radius: 999px;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgba(247, 246, 243, 0.82);
+  color: var(--ink);
   text-decoration: none;
   transition: background-color 200ms var(--ease), color 200ms var(--ease);
 }
 :root:not(.hover-cold) .paper__get:hover {
-  background: rgba(247, 246, 243, 0.1);
+  background: var(--ink);
+  border-color: var(--ink);
   color: var(--paper);
 }
 
@@ -7388,14 +7572,14 @@ body.past-hero .sel { opacity: 0; }
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: rgba(247, 246, 243, 0.7);
+  color: rgba(58, 53, 47, 0.7);
   cursor: pointer;
   transition: background-color 200ms var(--ease), color 200ms var(--ease);
 }
 .paper__x svg { width: 16px; height: 16px; }
 :root:not(.hover-cold) .paper__x:hover {
-  background: rgba(247, 246, 243, 0.1);
-  color: var(--paper);
+  background: rgba(20, 16, 12, 0.07);
+  color: var(--ink);
 }
 
 /* The pages themselves. `overscroll-behavior: contain` is what stops a flick
@@ -7409,21 +7593,48 @@ body.past-hero .sel { opacity: 0; }
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   display: grid;
+  /* EVERY PAGE AT ITS FULL HEIGHT. The rows were implicit `auto` in a grid
+     whose own height is capped by the window, and an item that takes its
+     height from an aspect-ratio contributes nothing to that sizing — so the
+     tracks collapsed and each page was clipped partway down. `max-content`
+     sizes every row to the whole picture and lets the scroller scroll. */
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: clamp(0.75rem, 2vw, 1.25rem);
   padding: clamp(0.75rem, 2vw, 1.25rem);
-  background: #0d0a08;
+  background: var(--paper);
 }
 
 /* 100% of the width it is given, which is the whole point — a resume shown at
    a third of the screen in a grey plugin box is the thing this replaces. */
 .paper__pg {
+  position: relative;
   width: 100%;
+  height: auto;
   border-radius: 6px;
-  background: var(--paper);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
   overflow: hidden;
-  box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 6px 18px -12px rgba(20, 16, 12, 0.45);
 }
 .paper__pg img { display: block; width: 100%; height: auto; }
+
+/* The link hotspots. Transparent, because the blue and the underline are
+   already printed in the picture underneath — all this adds is the part a
+   picture cannot have, which is somewhere to go. The radius and the tint on
+   hover are the only marks it makes, and they are there so a link that is
+   slightly off its word still reads as deliberate. */
+.paper__lnk {
+  position: absolute;
+  display: block;
+  border-radius: 3px;
+  transition: background-color 160ms var(--ease);
+}
+:root:not(.hover-cold) .paper__lnk:hover { background: rgba(37, 99, 235, 0.14); }
+.paper__lnk:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
 
 /* The body was pinned here once, because a document scroller on iOS forgets
    where it was under `overflow: hidden`. `.app` is an element, it does not, and
@@ -7552,10 +7763,23 @@ body.deck-open {
    and not the document */
 body.is-locked .app { overflow: hidden; }
 
-.hud {
+/* THE LAYER THAT STAYS PUT AND STILL PAINTS ON TOP. Only the two weather pods
+   are in here. They cannot be in `.hud`, because that rides the shell and would
+   carry them off the screen with it; they cannot be in `.deck`, because the
+   deck is behind the page and the page was swallowing their clicks. Above the
+   canvas, below the furniture, and never transformed. */
+.free {
   position: fixed;
   inset: 0;
   z-index: 3;
+  pointer-events: none;
+}
+:where(.free) > * { pointer-events: auto; }
+
+.hud {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
   /* the layer itself is a hole; its children keep whatever they declared, and
      `:where` keeps this from outranking a `.drawer` that means to be inert */
   pointer-events: none;
@@ -7627,31 +7851,46 @@ body.deck-open .deck__close,
 body.deck-shut .deck__inner,
 body.deck-shut .deck__close { visibility: visible; }
 
-/* Top-left of the deck, on the same gutter as everything else in the column. */
+/* THE WAY OUT, IN THE DECK'S OWN VOICE.
+
+   It has been two wrong things already: a bare 17px ✕ that assumed you knew the
+   convention, then a filled pill with a key cap in it, which was a control
+   borrowed from another interface and set down on a sunset. This is the third
+   answer and the quiet one — the mark and the word, set in the same ink the
+   links below it use, at the size the readout under them uses.
+
+   No surface, and it does not need one: `--outro-ink-strong` is already chosen
+   against the sky hour by hour, and the six links a few hundred pixels below
+   are legible at every hour on exactly the same terms. The word is what makes
+   it a target; it does not also need a box drawn round it. */
 .deck__close {
   position: absolute;
   top: clamp(1.25rem, 3.5vh, 2rem);
   left: clamp(1.75rem, 3.2vw, 3.25rem);
   z-index: 2;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  margin-left: -9px;                 /* optical: the glyph on the gutter, not the box */
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  /* the padding is the target, not a visible box */
+  margin: -0.5rem 0 0 -0.5rem;
+  padding: 0.5rem;
   border: 0;
-  border-radius: 50%;
   background: none;
-  color: var(--outro-ink, #33302c);
+  color: var(--outro-ink-strong, #1c1a17);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  line-height: 1;
   opacity: 0.62;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: opacity 220ms var(--ease), transform 320ms var(--spring);
+  /* the same two things the links do, so it belongs to them */
+  transition: opacity 260ms var(--ease), transform 420ms var(--spring);
 }
-.deck__close svg { width: 17px; height: 17px; }
+.deck__close svg { width: 13px; height: 13px; }
 .deck__close:hover,
-.deck__close:focus-visible { opacity: 1; }
-.deck__close:active { transform: scale(0.9); }
+.deck__close:focus-visible { opacity: 1; transform: translateX(3px); }
+.deck__close:active { transform: translateX(3px) scale(0.97); }
 
 .deck__inner {
   position: relative;
@@ -7764,17 +8003,8 @@ body.deck-shut .deck__close { visibility: visible; }
 }
 .deck__link { transform-origin: 0 50%; }
 
-.deck__meta {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  font-size: 0.8125rem;
-  letter-spacing: 0.01em;
-  color: var(--outro-ink, #33302c);
-  opacity: 0.55;
-  font-variant-numeric: tabular-nums;
-}
-.deck__dot { opacity: 0.5; }
+/* the printed clock and condition line used to sit here; the slider below
+   says the hour and the sky says the weather, so it was saying it twice */
 
 /* THE TWO PODS DO NOT CHANGE LAYOUT, THEY TRANSLATE.
 

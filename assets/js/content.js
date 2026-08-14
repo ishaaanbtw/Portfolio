@@ -43,6 +43,46 @@ window.SITE = {
       /* the aspect of one page, so the viewer can hold its shape before the
          image has loaded and nothing jumps when it does */
       ratio: 1200 / 1553,
+
+      /* THE LINKS, BECAUSE A PICTURE OF A LINK IS NOT A LINK.
+         The pages are images, which is what makes the viewer feel like part of
+         the site — but it also throws away every anchor the PDF had. So the
+         link rectangles are lifted out of the file and laid back over the
+         picture as real <a> elements. One row per link:
+
+           [ href, left%, top%, width%, height% ]
+
+         All four numbers are percentages of the PAGE, not of the image, so
+         they hold at any size and on any screen. To regenerate after a
+         re-export, read the /Annots of each page and convert — PDF space has
+         its origin at the BOTTOM left, so with a page W x H points and a
+         rect [x0 y0 x1 y1]:
+
+           left = x0/W        top    = (H - y1)/H
+           width = (x1-x0)/W  height = (y1-y0)/H
+
+         The LinkedIn one is written out in full here on purpose. In the PDF it
+         is not a URI at all — the address was typed without a scheme, so the
+         exporter turned it into a "go to a remote FILE named
+         www.linkedin.com/in/ishaangupta24.pdf" link, which is dead in every
+         reader. Putting https:// in front of it in the source fixes it at the
+         root; this row is what makes it work in the meantime. */
+      links: [
+        /* page 1 */
+        [
+          ['mailto:ishaangupta.888@gmail.com', 6.72, 8.096, 21.063, 1.447],
+          ['tel:+919717085986', 29.665, 8.133, 12.995, 1.203],
+          ['https://ishaan-gupta.in/', 54.024, 8.096, 11.322, 1.447],
+          ['https://www.linkedin.com/in/ishaangupta24', 67.227, 8.096, 26.958, 1.447],
+          ['https://www.cypherock.com', 18.396, 30.641, 7.842, 1.461],
+          ['https://onefinnet.com/talent', 17.219, 60.617, 7.366, 1.447],
+        ],
+        /* page 2 */
+        [
+          ['https://www.upes.ac.in/blog/design/this-upesite-is-making-renting-items-the-new-cool',
+            14.998, 8.439, 8.753, 1.461],
+        ],
+      ],
     },
     location: 'Bengaluru, IN',
     // Used for the browser tab and social previews
@@ -126,7 +166,9 @@ window.SITE = {
        still be read and rewritten as a sentence, spaces and punctuation included.
        Anything unmarked is ordinary text. Note the full stop sits OUTSIDE the
        asterisks — inside, the punctuation slants with the word. */
-    headline: 'I’m Ishaan, a product designer who *engineers*.',
+    /* One weight, no emphasis. The `*word*` syntax still works — the parser and
+       `.hdl-em` are both still there — so wrapping a word puts the italic back. */
+    headline: 'I’m Ishaan, a product designer who engineers.',
     /* Three tags. `detail` appears on hover (and stays while selected).
        `icon` is a built-in glyph — currently 'pin'. `logo` is any SVG path,
        so swapping in a real company mark is a one-line change. */
