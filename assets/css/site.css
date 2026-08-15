@@ -8779,3 +8779,106 @@ body[data-page] .nav { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .row__now i { animation: none; }
 }
+
+/* ==========================================================================
+   41. THE 404 ROOM
+   The same canvas as the hero, with a sign standing in the middle of it.
+
+   Everything structural here is one rule: the column is CENTRED BY LAYOUT and
+   not by a transform. `Bricks.zone()` derives the protected region from
+   `offsetLeft/offsetTop`, deliberately, because a transform is exactly what it
+   cannot see — the reveal is still carrying the type when the region is
+   measured. Centring this with `translate(-50%, -50%)` would leave the engine
+   protecting a rectangle half a column to the right of the words, and the
+   bricks would settle over the headline while every measurement said they had
+   not. `inset: 0; margin: auto` is the same centring expressed as layout, so
+   the offsets tell the truth.
+   ========================================================================== */
+
+.canvas--room .canvas__intro {
+  position: absolute;
+  /* all four, and nothing may reset one of them afterwards — `inset: 0` plus
+     `margin: auto` IS the centring, and cancelling top and left leaves the
+     block hanging off the bottom-right corner instead */
+  inset: 0;
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
+  max-width: min(34rem, 82vw);
+  z-index: 3;
+  pointer-events: none;             /* only the links inside are interactive */
+
+  /* THE PADDING AND THE HALO LIVE ON THE MEASURED BOX.
+
+     They were on the block inside, pulled outward with negative margins so the
+     glow sat behind the type without widening the column. It looked right and
+     it lied to the engine: `Bricks.zone()` protects this element's
+     `offsetWidth/offsetHeight`, and a child that reaches 24px past them on
+     every side is 24px of painted block the region does not know exists. That
+     is where the last overlaps were — always on the bottom two lines, always
+     small, because the only part of the sign sticking out of its own box was
+     the edge. Whatever the reader sees has to be inside what the physics
+     measures, so the box grew instead of the child. */
+  padding: 1.5rem 1.75rem;
+  border-radius: 18px;
+  /* the paper's own colour, fading out rather than ending — a border here
+     would turn the sign into a card and the room into two rooms */
+  background: radial-gradient(120% 120% at 50% 50%,
+    rgba(251, 250, 250, 0.97) 55%,
+    rgba(251, 250, 250, 0.86) 78%,
+    rgba(251, 250, 250, 0) 100%);
+}
+
+.nf__in { text-align: left; }
+
+.nf__code {
+  margin: 0 0 1.1rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #b9b4ad);
+}
+
+/* NOT HUGE, on purpose. This is a sign in a room, not the room — the LEGO is
+   the loud thing on this page and the type is what stays quiet enough to read
+   once there is a pile of it behind the words. */
+.nf__head {
+  margin: 0 0 0.7rem;
+  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.375rem);
+  line-height: 1.14;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--ink, #14100c);
+}
+
+.nf__body {
+  margin: 0 0 1.75rem;
+  max-width: 30rem;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ink-2, #3a352f);
+}
+
+.nf__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  pointer-events: auto;             /* the one interactive part of the sign */
+}
+
+/* The invitation. Deliberately the quietest thing on the page: the interaction
+   teaches itself the moment a brick moves under the cursor, so this only has
+   to hint that moving one is allowed. It arrives last, after the room has
+   filled, because before that there is nothing to build with. */
+.nf__aside {
+  margin: 1.6rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--ink-dim, #b9b4ad);
+}
+
+@media (max-width: 48rem) {
+  .canvas--room .canvas__intro { max-width: min(24rem, 86vw); padding: 1.25rem 1.35rem; }
+  .nf__body { margin-bottom: 1.4rem; font-size: 1rem; }
+}

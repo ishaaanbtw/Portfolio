@@ -5839,6 +5839,37 @@
 
       const z = Object.assign({}, this.ZONE);
       const k = this.keep;
+
+      /* AROUND, NOT UNDER OR OVER — the 404 room.
+
+         The hero's column sits at one end of the canvas, so the bricks get the
+         other end and the two never meet. The 404's sits in the MIDDLE, with
+         open paper on all four sides, and neither of the hero's two answers
+         fits: giving the bricks everything above it empties the bottom of the
+         page, and treating it as a shelf floats a row of bricks on the
+         headline and leaves the floor beneath it bare.
+
+         So the column is an ISLAND. The room is the whole canvas, and the only
+         thing the region says is how HIGH a piece may come to rest at a given
+         x: up near the top out at the edges, and no higher than the column's
+         own bottom edge in the band the column occupies. Pieces still fall
+         through that band — they are falling — they just cannot stop in it.
+         The pile builds along the floor across the full width, climbs the left
+         and right margins, and the sign in the middle of the room stays
+         legible without anything being fenced off. */
+      if (k && Shell.page === 'notfound') {
+        z.x0 = 0.03; z.x1 = 0.97;
+        z.y1 = 0.94;
+        /* The clearance below the sign is headroom for the PILE, not for one
+           brick. A piece stopped at its own floor clears the type by this much;
+           a piece that comes to rest on top of two others does not, and the
+           strip under the column is where the stacks happen. Measured up until
+           a run of loads came back with nothing touching the words. */
+        z.island = { x0: k.x0, x1: k.x1, y1: Math.min(0.92, k.y1 + 0.075) };
+        z.edgeTop = 0.08;
+        return z;
+      }
+
       /* UNDER, NOT BESIDE. The column has moved to the foot of the canvas, so
          the bricks take the whole width above it and the region's floor is the
          column's own top edge. There is no ramp: nothing is in their way up
@@ -5953,6 +5984,13 @@
       const list = $$('.drg', intro).filter((n) => !n.classList.contains('brk'));
       const cta = $('.canvas__cta', intro);
       if (cta) list.push(cta);
+      /* AN OBSTACLE DOES NOT HAVE TO BE DRAGGABLE. Every wall here is something
+         you can pick up, because on the hero every one of them is — and that
+         coupling was accidental. The 404's sign is fixed type: it must stop a
+         brick exactly the way the headline does, and it must not become a
+         thing you can drag off the page. `data-wall` says "solid" without
+         saying "yours". */
+      $$('[data-wall]', intro).forEach((n) => { if (list.indexOf(n) < 0) list.push(n); });
       /* Anything that IS a wall gets flagged on its drag item, and Drag.apply
          bumps a counter for flagged items only. That counter is the whole
          invalidation strategy: one integer compare per pointer event while
@@ -6357,8 +6395,27 @@
 
     /* The highest a piece may come to rest at a given horizontal position,
        as a fraction of the canvas. */
+    /* THE HIGHEST A PIECE MAY COME TO REST AT THIS x, as a fraction of the
+       canvas. Smaller is higher up the page. */
     ceil(fx) {
       const z = this.Z || this.ZONE;
+      /* The island's shadow: inside the column's own width a piece may not
+         stop above the column's bottom edge, and the limit eases back to the
+         open-paper ceiling over a tenth of the canvas either side rather than
+         stepping — a hard edge builds a visible wall of bricks along an
+         invisible line, which is the one thing this must not look like. */
+      const i = z.island;
+      if (i) {
+        const pad = 0.1;
+        let t;
+        if (fx >= i.x0 && fx <= i.x1) t = 1;
+        else if (fx <= i.x0 - pad || fx >= i.x1 + pad) t = 0;
+        else t = fx < i.x0 ? (fx - (i.x0 - pad)) / pad : ((i.x1 + pad) - fx) / pad;
+        /* smoothed, so the pile's silhouette curves down toward the column
+           instead of arriving on a straight diagonal */
+        t = t * t * (3 - 2 * t);
+        return z.edgeTop + (i.y1 - z.edgeTop) * t;
+      }
       const t = clamp((fx - z.ramp[0]) / (z.ramp[1] - z.ramp[0]), 0, 1);
       return z.lo + (z.hi - z.lo) * t;
     },
@@ -6550,8 +6607,38 @@
     },
 
     /* --- build ------------------------------------------------------------ */
+    /* A ROOMFUL, ROLLED FRESH. The hero's eighteen are a composition — stated
+       as percentages in content.js, authored, and the same every load. The 404
+       wants the opposite: a lot of bricks, no arrangement, and a different one
+       every visit.
+
+       So its pieces are generated rather than written down, and the only thing
+       generated is WHAT and ROUGHLY WHERE THEY ENTER. The x is spread across
+       the room and the y is a percentage the region remaps exactly as it
+       remaps the hero's — which means the fall is handed the same shape of
+       input it already takes, and not one line of the physics knows the
+       difference between this page and the other one. Where they end up is
+       still entirely the dump's business. */
+    scatter(n) {
+      const kinds = ['conn', 'small', 'sq2', 'br24', 'long', 'ell', 'corner', 'tee', 'p13', 'p14'];
+      /* the big flat slabs read as clutter in quantity, so the small pieces
+         come up more often — a real box of LEGO is mostly little ones */
+      const bag = ['conn', 'conn', 'small', 'small', 'small', 'sq2', 'sq2', 'corner',
+        'corner', 'tee', 'ell', 'p13', 'p13', 'p14', 'br24', 'long'];
+      const out = [];
+      for (let i = 0; i < n; i += 1) {
+        out.push({
+          kind: bag[(Math.random() * bag.length) | 0] || kinds[0],
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          tone: (Math.random() * TONE.length) | 0,
+        });
+      }
+      return out;
+    },
+
     init(host) {
-      const defs = (S.canvas && S.canvas.bricks) || [];
+      const defs = this.defs || (S.canvas && S.canvas.bricks) || [];
       if (!defs.length) return;
       this.host = host;
 
@@ -6841,9 +6928,18 @@
        --x, --y and --r, all composited. No layout is read inside the loop and
        nothing else on the page re-renders while it runs.
        ===================================================================== */
-    rain() {
-      const bodies = this.recs.map((r) => ({ r }));
+    /* `only` — the recs to ANIMATE. Everything else in the room stays exactly
+       where it is and takes part as an immovable obstacle, which is what makes
+       the trickle after the load the same fall as the load rather than a
+       second one: a late brick bounces off the pile that is already there,
+       settles into it, and is subject to the same region, the same floor, the
+       same island and the same contact torque. Called with nothing, it is the
+       original whole-room dump. */
+    rain(only) {
+      const bodies = this.recs.map((r) => ({ r, fixed: !!(only && only.indexOf(r) < 0) }));
       if (!bodies.length) return;
+      const moving = bodies.filter((b2) => !b2.fixed);
+      if (!moving.length) return;
 
       /* EVERY LOAD, DELIBERATELY. The fall is not a curtain in front of the
          page, it IS the page arriving. Reduced motion skips it — that is an
@@ -6929,6 +7025,29 @@
         if (K && K.shelf && b2.x + b2.w > K.L && b2.x < K.R) {
           floor = Math.min(floor, K.T - cy - hh);
         }
+        /* THE ISLAND, AGAINST THE PIECE'S ACTUAL EXTENT.
+
+           `ceil` is sampled at both ends of the box the piece occupies AT ITS
+           CURRENT ANGLE, and the stricter of the two wins. Sampling the
+           unrotated left edge — which is what every other limit here used to
+           be happy with — misses exactly the case that shows: a bar lying at
+           40° whose corner reaches a hundred pixels past the rectangle being
+           tested, resting just outside the column's band and overhanging the
+           sentence. Small overlaps, a couple per load, and invisible to any
+           check that asks where the piece's origin is.
+
+           The push-down lands at the column's shadow plus a per-piece
+           fraction of what is left below it, rolled once at setup. Without
+           that jitter every piece that needed correcting would come to rest on
+           the same line and draw a hard horizontal edge under the type — the
+           one thing an invisible boundary must never do. */
+        if (Z.island) {
+          const c = Math.max(this.ceil((b2.x + cx - hw) / h.width),
+                             this.ceil((b2.x + cx + hw) / h.width));
+          const shadow = c * h.height + hh - cy;
+          const span = Math.max(0, Z.y1 * h.height - cy - hh - shadow);
+          floor = Math.max(floor, shadow + span * (b2.isle || 0));
+        }
         const l = Z.x0 * h.width - cx + hw;
         const r2 = Math.min(Z.x1 * h.width, h.width - 72) - cx - hw;
         return { floor, l, r: Math.max(l, r2) };
@@ -6939,15 +7058,51 @@
         let W = 0, H = 0;
         cells.forEach(([c, w]) => { W = Math.max(W, c + 1); H = Math.max(H, w + 1); });
         b2.w = W * this.U; b2.h = H * this.U;
+        /* Already in the room: its size is needed for contacts, nothing else
+           about it is rolled, and it is live from the first frame so the
+           newcomer can hit it immediately. */
+        if (b2.fixed) {
+          b2.x = b2.r.it.x + b2.r.bx; b2.y = b2.r.it.y + b2.r.by;
+          b2.m = cells.length * 4; b2.e = 0.2; b2.fr = 0.9;
+          b2.a = b2.r.it.rest || 0; b2.va = 0; b2.vx = 0; b2.vy = 0;
+          b2.base = b2.y; b2.floor = b2.y; b2.wait = 0;
+          b2.hits = 0; b2.live = true; b2.still = 0;
+          return;
+        }
         b2.m = cells.length * rnd(0.82, 1.25);      /* mass varies per load too */
         b2.e = rnd(0.14, 0.42);                     /* and so does the bounce   */
         b2.fr = rnd(0.86, 0.95);                    /* and the friction         */
         b2.wait = 110 + (i / bodies.length) * 430 + rnd(-110, 110);
+        if (only) b2.wait = rnd(0, 260);   /* a late piece is thrown, not poured */
         /* IT FALLS INTO THE REGION, not onto the page. Entry points are spread
            across the region's width rather than the canvas's, so nothing has
            to travel sideways to get where it belongs and the left margin is
            never crossed on the way down. */
-        b2.x = rnd(Z.x0, Z.x1) * h.width - b2.w / 2;
+        /* WHERE IT COMES IN.
+
+           Uniform across the room is right when the room is empty, and wrong
+           here: the column takes the middle third, the pieces that land there
+           may only rest in the strip below it, and sixty of them funnelled
+           into that strip do not stay in it — they stack, and the stack grows
+           back up into the sentence. The floor was holding; the pile on top of
+           it was not.
+
+           So the middle is thinned rather than fenced. Most pieces enter over
+           the open paper either side, a few still come down through the middle,
+           and the result is the composition the reference asks for anyway —
+           heavy at the edges and along the bottom, sparse around the sign. */
+        if (Z.island) {
+          const i = Z.island;
+          if (Math.random() < 0.9) {
+            const leftRoom = Math.max(0, i.x0 - Z.x0), rightRoom = Math.max(0, Z.x1 - i.x1);
+            const goLeft = Math.random() < leftRoom / Math.max(0.0001, leftRoom + rightRoom);
+            b2.x = (goLeft ? rnd(Z.x0, i.x0) : rnd(i.x1, Z.x1)) * h.width - b2.w / 2;
+          } else {
+            b2.x = rnd(i.x0, i.x1) * h.width - b2.w / 2;
+          }
+        } else {
+          b2.x = rnd(Z.x0, Z.x1) * h.width - b2.w / 2;
+        }
         b2.y = -rnd(150, 760) - b2.h;
         b2.vx = rnd(-90, 90);
         b2.vy = rnd(0, 190);
@@ -6960,6 +7115,7 @@
            paper above, and well clear of the headline on the left. */
         b2.base = h.height * rnd(this.ceil(b2.x / h.width), Z.y1) - b2.h;
         b2.floor = b2.base;
+        b2.isle = rnd(0.02, 0.34);   /* where below the column it settles */
         b2.hits = 0; b2.live = false; b2.still = 0;
       });
 
@@ -6968,7 +7124,7 @@
       const t0 = performance.now();
       let ticks = 0;
 
-      bodies.forEach((b2) => { b2.r.auto = true; b2.r.it.node.classList.add('is-auto', 'is-settle'); });
+      moving.forEach((b2) => { b2.r.auto = true; b2.r.it.node.classList.add('is-auto', 'is-settle'); });
 
       const step = (now) => {
         const el = now - t0;
@@ -6976,6 +7132,7 @@
         this.last = now;
 
         bodies.forEach((b2) => {
+          if (b2.fixed) return;
           if (!b2.live) { if (el >= b2.wait) b2.live = true; else return; }
           b2.vy += G * dt;
           b2.x += b2.vx * dt;
@@ -7031,7 +7188,13 @@
             const ox = Math.min(A.x + A.w, C.x + C.w) - Math.max(A.x, C.x);
             const oy = Math.min(A.y + A.h, C.y + C.h) - Math.max(A.y, C.y);
             if (ox <= 0 || oy <= 0) continue;
-            const tot = A.m + C.m, sa = C.m / tot, sc = A.m / tot;
+            if (A.fixed && C.fixed) continue;
+            /* share of the correction each side takes. A fixed body takes
+               none of it and gives all of it to the other, which is what
+               "immovable" means in a positional solver. */
+            const tot = A.m + C.m;
+            const sa = A.fixed ? 0 : (C.fixed ? 1 : C.m / tot);
+            const sc = C.fixed ? 0 : (A.fixed ? 1 : A.m / tot);
             /* THE TORQUE A CONTACT ADDS, AND WHY IT USED TO NEVER STOP.
 
                Both branches took a LENGTH IN PIXELS and used it directly as an
@@ -7084,13 +7247,14 @@
            ended with a piece slightly over the type ended that way here, not
            in the floor calculation. */
         bodies.forEach((b2) => {
-          if (!b2.live) return;
+          if (!b2.live || b2.fixed) return;
           const L = lim(b2);
           if (b2.y > L.floor) { b2.y = L.floor; if (b2.vy > 0) b2.vy = 0; }
           b2.x = Math.min(Math.max(b2.x, L.l), L.r);
         });
 
         bodies.forEach((b2) => {
+          if (b2.fixed) return;
           if (!b2.live) { this.moveTo(b2.r, b2.x, -900); return; }
           this.moveTo(b2.r, b2.x, b2.y);
           const st = Math.min(0.06, Math.abs(b2.vy) / 22000);
@@ -7101,7 +7265,7 @@
           b2.r.it.node.style.setProperty('--sy', (1 + st).toFixed(4));
         });
 
-        const resting = bodies.every((b3) => b3.live && b3.y >= b3.floor - 1.5
+        const resting = moving.every((b3) => b3.live && b3.y >= b3.floor - 1.5
           && Math.abs(b3.vy) < 18 && Math.abs(b3.vx) < 18 && Math.abs(b3.va) < 26);
         if (!resting && el < CAP) { requestAnimationFrame(step); return; }
 
@@ -7110,19 +7274,91 @@
            writes here undo the speed-stretch — which is a motion cue, not a
            position — and hand the pieces back to the drag system, which picks
            them up exactly where they are. */
-        bodies.forEach((b2) => {
+        /* AND ONE LAST TIME, THE ISLAND.
+
+           Everything above is a resting rule, and a resting rule only binds a
+           piece that got to rest. `CAP` is a backstop, not the plan, but when
+           it fires it fires on a room still settling — and a piece caught
+           mid-squeeze between two others is wherever the last contact left it,
+           which is occasionally a few pixels over the sign. It is not a
+           composition to fix, it is a constraint that had not finished being
+           applied, so it is applied here rather than the arrangement being
+           tidied: the piece drops to the line it was already falling toward,
+           and nothing else about it is touched. */
+        if (Z.island) {
+          moving.forEach((b2) => {
+            const rad = b2.a * Math.PI / 180;
+            const ca = Math.abs(Math.cos(rad)), sn = Math.abs(Math.sin(rad));
+            const hw = (b2.w * ca + b2.h * sn) / 2, hh = (b2.w * sn + b2.h * ca) / 2;
+            const cx = b2.w / 2, cy = b2.h / 2;
+            const c = Math.max(this.ceil((b2.x + cx - hw) / h.width),
+                               this.ceil((b2.x + cx + hw) / h.width));
+            const minY = c * h.height + hh - cy;
+            if (b2.y < minY) { b2.y = Math.min(minY, h.height - cy - hh); this.moveTo(b2.r, b2.x, b2.y); }
+          });
+        }
+
+        moving.forEach((b2) => {
           b2.r.it.sx = 1; b2.r.it.sy = 1;
           b2.r.it.rest = b2.a;
           b2.r.auto = false;
           b2.r.it.node.classList.remove('is-auto', 'is-settle');
           Drag.apply(b2.r.it);
         });
-        delete document.body.dataset.arriving;
+        if (!only) delete document.body.dataset.arriving;
       };
 
-      document.body.dataset.arriving = 'dump';
-      bodies.forEach((b2) => this.moveTo(b2.r, b2.x, -900));
+      if (!only) document.body.dataset.arriving = 'dump';
+      moving.forEach((b2) => this.moveTo(b2.r, b2.x, -900));
       requestAnimationFrame(step);
+    },
+
+    /* --- SOMEONE IS STILL THROWING BRICKS IN ------------------------------
+
+       One or two pieces every few seconds, through `rain` with the rest of the
+       room held fixed — so a late arrival bounces off the pile that is already
+       there and settles into it, rather than appearing.
+
+       Three things keep it from becoming an animation you have to sit through:
+       it stops while the tab is hidden, because a room that filled up in the
+       background is a room you did not watch fill up; it stops while you are
+       holding something, because a brick landing on the piece in your hand is
+       the page arguing with you; and it stops at a ceiling, because a page
+       left open all afternoon should not end up with four thousand bricks and
+       no frame budget. */
+    drip(cfg) {
+      if (REDUCED || !cfg) return;
+      const every = cfg.every || [5200, 9000];
+      const count = cfg.count || [1, 2];
+      const max = cfg.max || 120;
+      const rnd = (a, b) => a + Math.random() * (b - a);
+
+      const tick = () => {
+        this._drip = setTimeout(tick, rnd(every[0], every[1]));
+        if (document.hidden) return;
+        /* `dragging` is a per-item flag, not a module one — a brick landing on
+           the piece in your hand is the page arguing with you */
+        if (Drag.items.some((it) => it.dragging)) return;
+        if (this.recs.length >= max) return;
+        if (document.body.dataset.arriving) return;
+
+        const r = this.host && this.host.getBoundingClientRect();
+        if (!r || !r.width) return;
+        const z = this.Z || this.ZONE;
+        const n = Math.round(rnd(count[0], count[1] + 0.49));
+        const fresh = [];
+        for (let i = 0; i < n; i += 1) {
+          const d = this.scatter(1)[0];
+          const fx = z.x0 + Math.random() * (z.x1 - z.x0);
+          const top = this.ceil(fx);
+          const bx = Math.round(r.width * fx);
+          const by = Math.round(r.height * (top + Math.random() * (z.y1 - top)));
+          const rec = this.mk(d.kind, TONE[d.tone % TONE.length], bx, by);
+          if (rec) fresh.push(rec);
+        }
+        if (fresh.length) this.rain(fresh);
+      };
+      this._drip = setTimeout(tick, rnd(every[0], every[1]));
     },
 
     /* --- the snap plan ----------------------------------------------------
@@ -10062,6 +10298,77 @@
          footer now carries the closing weight itself, and a decorative drawing
          between the work and the contact details was the only thing on the page
          that belonged to no system. */
+    },
+
+    /* --- THE 404 IS A ROOM, NOT A MESSAGE ---------------------------------
+
+       Everything on this page already exists. The canvas, the dot grid, the
+       lattice, the fall, the snapping, the sounds, the toolbar, the drawing,
+       the notes — all of it is the hero's, reached by building the same two
+       elements the hero builds and then handing over. What is different is the
+       content of the column and the number of bricks, and that is the whole
+       difference in the code as well.
+
+       The column is deliberately NOT draggable. On the hero the headline is an
+       object you can pick up because the hero is a file you are looking into;
+       here it is a sign on the wall of a room you are standing in, and a sign
+       you can accidentally drag into the pile is a sign that stops being able
+       to tell you the page is missing. It is still a wall — see `data-wall` —
+       so bricks seat against it exactly as they seat against the headline. */
+    notfound() {
+      const c = S.notFound;
+      const host = $('#hero');
+      if (!c || !host) return;
+
+      host.classList.add('canvas', 'canvas--room');
+      host.appendChild(el('div', { class: 'canvas__dots', 'aria-hidden': 'true' }));
+
+      /* `.canvas__intro` is not a style choice — it is the name the brick
+         engine looks for when it works out which part of the canvas is
+         spoken for. Calling it anything else would leave the room with no
+         protected region at all. */
+      const intro = el('div', { class: 'canvas__intro nf' });
+      const card = el('div', { class: 'nf__in', 'data-wall': '' });
+
+      card.appendChild(el('p', { class: 'nf__code rv' }, esc(c.code)));
+      const h1 = el('h1', { class: 'nf__head rv' }, esc(c.headline));
+      h1.style.setProperty('--rv-delay', '90ms');
+      card.appendChild(h1);
+      const body = el('p', { class: 'nf__body rv' }, esc(c.body));
+      body.style.setProperty('--rv-delay', '190ms');
+      card.appendChild(body);
+
+      const links = el('div', { class: 'nf__links rv' });
+      links.style.setProperty('--rv-delay', '700ms');
+      (c.links || []).forEach((l) => {
+        /* the site's own two buttons, not a third pair invented here */
+        links.appendChild(el('a', {
+          class: `btn${l.primary ? '' : ' btn--ghost'}`,
+          href: l.href,
+        }, `<span class="btn__label">${esc(l.label)}</span>`));
+      });
+      card.appendChild(links);
+
+      if (c.aside) {
+        const a = el('p', { class: 'nf__aside rv' }, esc(c.aside));
+        a.style.setProperty('--rv-delay', '1500ms');
+        card.appendChild(a);
+      }
+
+      intro.appendChild(card);
+      host.appendChild(intro);
+
+      /* HOW MANY. A phone has roughly a quarter of the floor and the same
+         frame budget, so it gets a room with fewer things in it rather than
+         the same room scaled down. */
+      const narrow = innerWidth <= 768;
+      const n = narrow ? (c.mobilePieces || 26) : (c.pieces || 64);
+      Bricks.defs = Bricks.scatter(n);
+
+      Bricks.init(host);
+      Canvas.setSurface(host);
+      Canvas.placement();
+      Bricks.drip(c.drip);
     },
 
     work() {

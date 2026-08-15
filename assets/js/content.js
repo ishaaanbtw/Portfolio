@@ -139,6 +139,38 @@ window.SITE = {
     secondary: { label: 'Resume', action: 'resume' },
   },
 
+  /* ------------------------------------------------------------ the 404 room
+     A dead end that is not empty. The copy stays small and editorial — it is a
+     sign in the room, not the room — and everything else on that page is the
+     brick engine the hero already runs.
+
+     `pieces` is how many bricks the room is filled with, and it is the only
+     number here worth touching. It is deliberately several times the hero's
+     eighteen: the point of the page is abundance. `mobile` is the same room
+     with fewer objects in it, because a phone has a quarter of the floor and
+     the same frame budget.
+
+     `drip` is the trickle after the load — someone outside the room is still
+     throwing bricks in. Long enough apart to read as occasional rather than as
+     an animation that never finishes.                                        */
+  notFound: {
+    code: 'Error 404',
+    headline: 'This page wandered off.',
+    body: 'The link is either old or slightly mistyped. Nothing behind it any more.',
+    /* the same nav as everywhere else, as ordinary links */
+    links: [
+      { label: 'Home', href: 'index.html', primary: true },
+      { label: 'Work', href: 'work.html' },
+      { label: 'People', href: 'people.html' },
+      { label: 'Writing', href: 'writing.html' },
+    ],
+    /* the quiet invitation. One line, no tutorial. */
+    aside: 'Since you are here — build something.',
+    pieces: 64,
+    mobilePieces: 26,
+    drip: { every: [5200, 9000], count: [1, 2], max: 120 },
+  },
+
   /* ------------------------------------------------------------- tool dock
      'contextual' is the state machine from the brief: open on the hero,
      collapsed to an edge tab while reading, open again inside a project.
