@@ -10483,9 +10483,12 @@
           `</span>`;
         a.appendChild(capn);
 
-        /* the affordance, and only where there is something behind it */
+        /* THE AFFORDANCE GOES ON THE ARTWORK, so it is a child of the media
+           and not of the tile. It was on the tile, which is also positioned —
+           so `bottom: 0.9rem` measured from the bottom of the whole anchor,
+           caption included, and the pill hovered on top of the title. */
         if (item.href && item.href !== '#') {
-          a.appendChild(el('span', { class: 'wkt__go', 'aria-hidden': 'true' }, 'Case study'));
+          media.appendChild(el('span', { class: 'wkt__go', 'aria-hidden': 'true' }, 'Case study'));
         } else {
           a.classList.add('is-quiet');
         }
