@@ -10495,35 +10495,26 @@
       });
       sec.appendChild(cols);
 
-      main.appendChild(sec);
-
       /* --- the record ----------------------------------------------------
          THE HOME PAGE'S TABLE, NOT A SECOND ONE. This was a hand-rolled list
-         with its own heading, its own row grid and its own type — five lines
-         that said the same kind of thing as the home page's index and looked
-         nothing like it. It is the `Tabs` component now: same markup, same
-         hairlines, same hover, same Now chip, same tab bar. The only thing
-         this page adds is the first tab.
+         of the five credits with its own heading, its own row grid and its
+         own type — five lines that said the same kind of thing as the home
+         page's index and looked nothing like it. It is the `Tabs` component
+         now, with the home page's own two tabs: same markup, same hairlines,
+         same hover, same Now chip, same tab bar.
 
-         Projects leads because this is the work page and those five are its
-         subject; Teams and Awards follow so the record is complete in one
-         place. `meta` is the role — the same column the home page fills with
-         a title, which is why the three tabs line up.
+         The credits are not here. They were a third tab for one revision and
+         came off: this page is already an archive of the work, so listing
+         five more places under it said the same thing twice. They still live
+         in content.js under `work.projects`.
 
-         It is appended to #main rather than into the archive section on
-         purpose: the table is paper furniture, and on the dot grid it read as
-         another thing floating on the canvas. */
-      const also = (S.work.projects || []);
-      const tabs = [];
-      if (also.length) {
-        tabs.push({
-          id: 'projects',
-          label: 'Projects',
-          rows: also.map((p) => ({ year: p.year, name: p.title, meta: p.role })),
-        });
-      }
-      ((S.index && S.index.tabs) || []).forEach((t) => tabs.push(t));
-      if (tabs.length) Tabs.init(main, tabs).classList.add('index--work');
+         It goes INSIDE the archive section, not after it. Appended to #main
+         it landed on the sheet's paper, and the dot grid stopping in a hard
+         line straight across the page above it was the loudest edge on the
+         page. Inside, the canvas simply continues behind it. */
+      Tabs.init(sec).classList.add('index--work');
+
+      main.appendChild(sec);
 
       /* THE HOME PAGE'S DRAWER, ON THIS PAGE'S TILES. `drawer()` binds its
          clicks to `Showcase.cards`, so the tiles are registered there and the

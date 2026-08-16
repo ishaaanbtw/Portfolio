@@ -9084,15 +9084,23 @@ body[data-page] .nav { display: none; }
    description of what a record row looks like on this site instead of two
    that drift apart. Nothing to style; deleting the rules was the change.
 
-   The one line that is left is where it sits. On the home page the table
-   shares a left edge with the prose above it, which is why it is centred
-   there; this page has no prose column — its measure is the archive's, and a
-   table indented 350px from everything else on the screen reads as a
-   different document. So the component is untouched and the block is pulled
-   to the archive's own gutter, the same clamp `.wk` uses. Same table, this
-   page's margin. */
-.index--work { padding-inline: clamp(1.25rem, 4vw, 3.5rem); }
-.index--work .col { margin-inline: 0; }
+   Two lines are left, both about where it sits rather than what it is.
+
+   It lives inside the canvas here, so it needs a layer: `.canvas__dots` is
+   z-index 0 and the bricks sit above that, and without a stacking position
+   the table would be painted under both.
+
+   And it is centred. The home page pays 4.75rem off the right so the table
+   lines up with the prose column above it; this page has no prose column, so
+   that offset would just be 38px of drift with nothing to align to. */
+.index--work {
+  position: relative;
+  z-index: 3;
+  padding-inline: 0;
+  /* the second column hangs lower than the first, so the archive's last
+     caption ends much closer to this than the grid's own bottom suggests */
+  padding-top: clamp(5rem, 13vh, 9rem);
+}
 
 /* --- the phone -----------------------------------------------------------
    One column, and the drift comes off with it: on a narrow screen the second
