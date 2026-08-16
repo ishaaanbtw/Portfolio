@@ -8923,28 +8923,12 @@ body[data-page] .nav { display: none; }
 }
 
 /* --- the filter ----------------------------------------------------------
-   The site's own pill, quieter. Nothing here rebuilds on click. */
-.wk__filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1.9rem; }
-
-.wk__filter {
-  padding: 0.42rem 0.85rem;
-  border: 1px solid var(--line, #e7e4de);
-  border-radius: 999px;
-  background: var(--paper-2, #fffefc);
-  color: var(--ink-2, #3a352f);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: border-color 180ms var(--ease), color 180ms var(--ease),
-              background 180ms var(--ease), transform 140ms var(--ease);
-}
-:root:not(.hover-cold) .wk__filter:hover { border-color: var(--ink, #14100c); }
-.wk__filter:active { transform: scale(0.97); }
-.wk__filter.is-on {
-  background: var(--ink, #14100c);
-  border-color: var(--ink, #14100c);
-  color: var(--paper, #f7f6f3);
-}
+   Removed. There was a row of pills under the headline — All, and one per
+   discipline — that dimmed the tiles outside the set. With four pieces on the
+   page there is nothing to find: every one of them is already visible, so the
+   control could only take things away, and it was the first thing the eye hit
+   under the sentence. The disciplines still read on each tile's metadata
+   line. */
 
 /* --- the columns ---------------------------------------------------------
    Two, because there are four pieces and each is meant to be read. The second
@@ -9069,17 +9053,6 @@ body[data-page] .nav { display: none; }
 :root:not(.hover-cold) .wkt:hover .wkt__go { opacity: 1; transform: none; }
 /* a piece with nothing behind it does not pretend otherwise */
 .wkt.is-quiet { cursor: default; }
-
-/* --- filtering -----------------------------------------------------------
-   Opacity and a hair of scale on the pieces that are not in the set. They keep
-   their place in the column, so nothing reflows and the ones you are looking
-   at do not move at all — the page settles rather than rearranges. */
-.wk[data-filter] .wkt { transition: opacity 300ms var(--ease), transform 320ms var(--ease); }
-.wk[data-filter]:not([data-filter='']) .wkt { opacity: 0.22; }
-.wk[data-filter]:not([data-filter='']) .wkt:not([data-cat]) { opacity: 0.22; }
-.wk[data-filter='Product identity'] .wkt[data-cat='Product identity'],
-.wk[data-filter='B2B SaaS'] .wkt[data-cat='B2B SaaS'],
-.wk[data-filter='Design'] .wkt[data-cat='Design'] { opacity: 1; }
 
 /* --- the credits ---------------------------------------------------------
    There is deliberately no CSS here. The five credits used to be a `.wk__also`

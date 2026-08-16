@@ -10419,34 +10419,12 @@
          the filter is derived from the data rather than being a second list
          that has to be kept in step with it. A category with one project in it
          is still a category; a filter that hides everything is not offered. */
-      const cat = (it) => String(it.meta || '').split(',')[0].trim() || 'Work';
-      const cats = [];
-      items.forEach((it) => { if (cats.indexOf(cat(it)) < 0) cats.push(cat(it)); });
-
-      const filters = el('div', { class: 'wk__filters rv', role: 'group', 'aria-label': 'Filter by discipline' });
-      filters.style.setProperty('--rv-delay', '220ms');
-      const chips = [];
-      ['All'].concat(cats).forEach((label, i) => {
-        const b2 = el('button', {
-          class: `wk__filter${i === 0 ? ' is-on' : ''}`, type: 'button',
-          'aria-pressed': i === 0 ? 'true' : 'false',
-        }, esc(label));
-        b2.addEventListener('click', () => {
-          chips.forEach((c) => {
-            const on = c === b2;
-            c.classList.toggle('is-on', on);
-            c.setAttribute('aria-pressed', on ? 'true' : 'false');
-          });
-          /* A CLASS, NOT A REBUILD. The tiles stay in the DOM and in their
-             columns; only their own opacity and scale change. Nothing is
-             removed, so nothing reflows, the images are never re-decoded, and
-             the pieces that stay put do not move at all. */
-          sec.dataset.filter = i === 0 ? '' : label;
-        });
-        chips.push(b2);
-        filters.appendChild(b2);
-      });
-      if (cats.length > 1) head.appendChild(filters);
+      /* NO FILTER CHIPS. There were four — All, and one per discipline — and
+         they dimmed the tiles that did not match. Four pieces do not need
+         filtering: every one of them is already on the screen, so the control
+         could only ever take things away, and the row of chips was the first
+         thing under the headline. The disciplines are still on each tile, in
+         the metadata line. */
       sec.appendChild(head);
 
       /* --- the archive ---------------------------------------------------
@@ -10465,7 +10443,6 @@
       items.forEach((item, i) => {
         const a = el('a', {
           class: 'wkt', href: item.href || '#',
-          'data-cat': cat(item),
           'aria-label': `${item.title} — ${item.meta || ''}`,
         });
         const media = el('div', { class: 'wkt__media' },
