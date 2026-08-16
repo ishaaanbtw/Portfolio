@@ -8882,3 +8882,231 @@ body[data-page] .nav { display: none; }
   .canvas--room .canvas__intro { max-width: min(24rem, 86vw); padding: 1.25rem 1.35rem; }
   .nf__body { margin-bottom: 1.4rem; font-size: 1rem; }
 }
+
+/* ==========================================================================
+   42. WORK — THE ARCHIVE
+   The same canvas as the home page and the 404: dotted paper, the same type,
+   the same radius, the same restraint. What is different is the rhythm — four
+   pieces of work at a size where you can actually read them, in two columns
+   that do not travel at quite the same rate.
+   ========================================================================== */
+
+.wk {
+  position: relative;
+  min-height: 100svh;
+  padding: clamp(5rem, 12vh, 8.5rem) clamp(1.25rem, 4vw, 3.5rem) clamp(4rem, 9vh, 7rem);
+  overflow: clip;                       /* the drift must not open a scrollbar */
+}
+
+/* --- the opening ---------------------------------------------------------
+   An editorial line, not a hero. The page says what it is and gets out of the
+   way; the work is the thing that is supposed to be large here. */
+.wk__head { max-width: 46rem; margin: 0 0 clamp(3rem, 7vh, 5rem); }
+
+.wk__eyebrow {
+  margin: 0 0 0.9rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #b9b4ad);
+}
+
+.wk__lede {
+  margin: 0;
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.125rem);
+  line-height: 1.22;
+  font-weight: 620;
+  letter-spacing: -0.018em;
+  color: var(--ink, #14100c);
+  max-width: 30ch;
+}
+
+/* --- the filter ----------------------------------------------------------
+   The site's own pill, quieter. Nothing here rebuilds on click. */
+.wk__filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1.9rem; }
+
+.wk__filter {
+  padding: 0.42rem 0.85rem;
+  border: 1px solid var(--line, #e7e4de);
+  border-radius: 999px;
+  background: var(--paper-2, #fffefc);
+  color: var(--ink-2, #3a352f);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 180ms var(--ease), color 180ms var(--ease),
+              background 180ms var(--ease), transform 140ms var(--ease);
+}
+:root:not(.hover-cold) .wk__filter:hover { border-color: var(--ink, #14100c); }
+.wk__filter:active { transform: scale(0.97); }
+.wk__filter.is-on {
+  background: var(--ink, #14100c);
+  border-color: var(--ink, #14100c);
+  color: var(--paper, #f7f6f3);
+}
+
+/* --- the columns ---------------------------------------------------------
+   Two, because there are four pieces and each is meant to be read. The second
+   one carries the drift; the first does not, so the offset between them is the
+   thing you feel rather than the movement itself. */
+.wk__cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 2.75rem);
+  align-items: start;
+}
+.wk__col { display: flex; flex-direction: column; gap: clamp(2.5rem, 6vh, 4.5rem); }
+.wk__col[data-col='1'] {
+  transform: translate3d(0, var(--wk-drift, 0px), 0);
+  will-change: transform;
+}
+/* the second column starts lower, so the two read as a mosaic rather than a
+   pair of stacks that happen to be side by side */
+@media (min-width: 48.0625rem) {
+  .wk__col[data-col='1'] { margin-top: clamp(3rem, 8vh, 6rem); }
+}
+
+/* --- a piece of work -----------------------------------------------------
+   No card. The visual sits on the paper and the caption sits under it, which
+   is the whole difference between an archive and a grid of tiles. */
+.wkt {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  transition: transform 320ms var(--spring-soft, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.wkt__media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--paper-2, #fffefc);
+  box-shadow:
+    0 0 0 1px rgba(20, 16, 12, 0.055),
+    0 10px 30px -18px rgba(20, 16, 12, 0.28);
+  transition: box-shadow 320ms var(--ease), transform 420ms var(--spring-soft, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.wkt__media > * { width: 100%; height: 100%; }
+
+/* THE HOVER IS THE DOCK'S HOVER, NOT A CARD'S. Two or three pixels of lift, a
+   shadow that deepens rather than spreads, and the artwork easing a fraction
+   further than the frame it sits in — the parallax you get from picking a
+   photograph up off a table. No scaling of the whole tile: at this size a 1.03
+   makes the type under it visibly resample. */
+:root:not(.hover-cold) .wkt:hover { transform: translateY(-3px); }
+:root:not(.hover-cold) .wkt:hover .wkt__media {
+  box-shadow:
+    0 0 0 1px rgba(20, 16, 12, 0.08),
+    0 18px 44px -22px rgba(20, 16, 12, 0.36);
+}
+:root:not(.hover-cold) .wkt:hover .wkt__media > * { transform: scale(1.018); }
+.wkt__media > * { transition: transform 620ms var(--spring-soft, cubic-bezier(0.16, 1, 0.3, 1)); }
+.wkt:active { transform: translateY(-1px) scale(0.996); }
+
+/* --- the caption ---------------------------------------------------------
+   Number, title, and the metadata line the home page already writes — set in
+   the mono face and uppercased, which is the one borrowing from the reference
+   that belongs here: it separates the fact from the name without a rule. */
+.wkt__cap {
+  display: flex;
+  gap: 0.85rem;
+  margin-top: 1.05rem;
+  align-items: baseline;
+}
+.wkt__no {
+  flex: none;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  color: var(--ink-dim, #b9b4ad);
+  padding-top: 0.12rem;
+}
+.wkt__lines { display: flex; flex-direction: column; gap: 0.22rem; min-width: 0; }
+.wkt__title {
+  font-size: clamp(1.0625rem, 0.95rem + 0.4vw, 1.25rem);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  line-height: 1.28;
+  color: var(--ink, #14100c);
+  transition: opacity 200ms var(--ease);
+}
+.wkt__meta {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #b9b4ad);
+  transition: color 220ms var(--ease);
+}
+:root:not(.hover-cold) .wkt:hover .wkt__meta { color: var(--ink-2, #3a352f); }
+
+/* the affordance, on the artwork, only where a case study exists */
+.wkt__go {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.9rem;
+  padding: 0.34rem 0.7rem;
+  border-radius: 999px;
+  background: var(--ink, #14100c);
+  color: var(--paper, #f7f6f3);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 220ms var(--ease), transform 360ms var(--spring-soft, cubic-bezier(0.16, 1, 0.3, 1));
+}
+:root:not(.hover-cold) .wkt:hover .wkt__go { opacity: 1; transform: none; }
+/* a piece with nothing behind it does not pretend otherwise */
+.wkt.is-quiet { cursor: default; }
+
+/* --- filtering -----------------------------------------------------------
+   Opacity and a hair of scale on the pieces that are not in the set. They keep
+   their place in the column, so nothing reflows and the ones you are looking
+   at do not move at all — the page settles rather than rearranges. */
+.wk[data-filter] .wkt { transition: opacity 300ms var(--ease), transform 320ms var(--ease); }
+.wk[data-filter]:not([data-filter='']) .wkt { opacity: 0.22; }
+.wk[data-filter]:not([data-filter='']) .wkt:not([data-cat]) { opacity: 0.22; }
+.wk[data-filter='Product identity'] .wkt[data-cat='Product identity'],
+.wk[data-filter='B2B SaaS'] .wkt[data-cat='B2B SaaS'],
+.wk[data-filter='Design'] .wkt[data-cat='Design'] { opacity: 1; }
+
+/* --- the credits ---------------------------------------------------------
+   There is deliberately no CSS here. The five credits used to be a `.wk__also`
+   list with its own heading, row grid, mono year column and right-aligned
+   role — thirty lines that reproduced the home page's index table badly. They
+   are the index table now (section 9, `.index / .tabs / .rows / .row`), built
+   by the same `Tabs` module with Projects as the first tab, so there is one
+   description of what a record row looks like on this site instead of two
+   that drift apart. Nothing to style; deleting the rules was the change.
+
+   The one line that is left is where it sits. On the home page the table
+   shares a left edge with the prose above it, which is why it is centred
+   there; this page has no prose column — its measure is the archive's, and a
+   table indented 350px from everything else on the screen reads as a
+   different document. So the component is untouched and the block is pulled
+   to the archive's own gutter, the same clamp `.wk` uses. Same table, this
+   page's margin. */
+.index--work { padding-inline: clamp(1.25rem, 4vw, 3.5rem); }
+.index--work .col { margin-inline: 0; }
+
+/* --- the phone -----------------------------------------------------------
+   One column, and the drift comes off with it: on a narrow screen the second
+   column is underneath the first, so offsetting it is offsetting the whole
+   page. The work stays the same size relative to the screen. */
+@media (max-width: 48rem) {
+  .wk { padding-top: clamp(4rem, 10vh, 5.5rem); }
+  .wk__cols { grid-template-columns: minmax(0, 1fr); gap: clamp(2.5rem, 7vh, 3.5rem); }
+  .wk__col[data-col='1'] { transform: none; margin-top: 0; }
+  .wkt__media { aspect-ratio: 5 / 4; border-radius: 14px; }
+  .wkt__go { opacity: 1; transform: none; }   /* no hover on a phone */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wkt, .wkt__media, .wkt__media > *, .wkt__go { transition-duration: 1ms; }
+  .wk__col[data-col='1'] { transform: none; }
+}

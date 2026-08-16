@@ -9522,13 +9522,20 @@
   /* ======================================================== 6. tabs ===== */
 
   const Tabs = {
-    init(mount) {
+    /* ONE TABLE, TWO PAGES. `tabs` defaults to the index in content.js, which
+       is what the home page wants; the work page passes its own set so the
+       credits render as this component rather than as a second list that
+       looks almost like it. Everything below reads `this.tabs`, so the two
+       pages differ only in the data handed in. Only one instance is ever
+       alive at a time — each page builds its own. */
+    init(mount, tabs) {
+      this.tabs = tabs || S.index.tabs;
       const wrap = el('div', { class: 'index' });
       const col = el('div', { class: 'col' });
       const bar = el('div', { class: 'tabs', role: 'tablist' });
       const rows = el('div', { class: 'rows' });
 
-      S.index.tabs.forEach((tab, i) => {
+      this.tabs.forEach((tab, i) => {
         if (i) bar.appendChild(el('span', { class: 'tabs__dot' }, '·'));
         const b = el('button', {
           class: 'tab', role: 'tab', id: `tab-${tab.id}`,
@@ -9545,12 +9552,13 @@
 
       this.bar = bar;
       this.rows = rows;
-      this.show(S.index.tabs[0].id);
+      this.show(this.tabs[0].id);
+      return wrap;
     },
 
     show(id) {
       $$('.tab', this.bar).forEach((b) => b.setAttribute('aria-selected', String(b.id === `tab-${id}`)));
-      const tab = S.index.tabs.find((t) => t.id === id);
+      const tab = this.tabs.find((t) => t.id === id);
       this.rows.innerHTML = '';
       tab.rows.forEach((r, i) => {
         /* A row with an `href` becomes an anchor; the rest stay divs. Two
@@ -10371,61 +10379,186 @@
       Bricks.drip(c.drip);
     },
 
+    /* --- WORK: AN ARCHIVE ON THE SAME CANVAS -----------------------------
+
+       The old Work page was a list of five text cards — title, role, year,
+       summary, tags — describing five projects that appear NOWHERE on the home
+       page, all linking to `#`. The home page meanwhile carries four real
+       pieces of work with real artwork and two full case studies behind them.
+       Two project lists, no overlap, and the one with the work in it was not
+       the one on the Work page.
+
+       So the archive is built from `S.showcase.items` — the same four, the same
+       titles, the same metadata, the same preview panels, the same artwork, the
+       same case-study drawer. Nothing is restated in a second voice and nothing
+       is invented. The five text-only entries are real credits with no work to
+       show, so they keep their place as an index at the foot rather than being
+       dressed up as pieces they are not.
+
+       WHY THE TILES GO INTO `Showcase.cards`. That array is what `drawer()`
+       binds its clicks to. Pushing the archive's tiles into it and then calling
+       `drawer()` gives this page the identical case study, opening the identical
+       way, with no second implementation and no route of its own — which is
+       also why clicking a project here does not feel like leaving the page. */
     work() {
-      this.head(S.work.intro, 'Work');
-      const wrap = el('div', { class: 'col--wide' });
-      const list = el('div', { class: 'projects' });
-      S.work.projects.forEach((p) => {
+      const items = (S.showcase && S.showcase.items) || [];
+      const main = $('#main');
+
+      const sec = el('section', { class: 'wk canvas canvas--archive' });
+      sec.appendChild(el('div', { class: 'canvas__dots', 'aria-hidden': 'true' }));
+
+      /* --- the opening. Editorial, not a hero. --------------------------- */
+      const head = el('div', { class: 'wk__head' });
+      head.appendChild(el('p', { class: 'wk__eyebrow rv' }, 'Selected work'));
+      const lede = el('h1', { class: 'wk__lede rv' }, esc(S.work.intro));
+      lede.style.setProperty('--rv-delay', '90ms');
+      head.appendChild(lede);
+
+      /* CATEGORIES ARE READ, NOT AUTHORED. Every item's `meta` already starts
+         with what the piece is — "Product identity", "B2B SaaS", "Design" — so
+         the filter is derived from the data rather than being a second list
+         that has to be kept in step with it. A category with one project in it
+         is still a category; a filter that hides everything is not offered. */
+      const cat = (it) => String(it.meta || '').split(',')[0].trim() || 'Work';
+      const cats = [];
+      items.forEach((it) => { if (cats.indexOf(cat(it)) < 0) cats.push(cat(it)); });
+
+      const filters = el('div', { class: 'wk__filters rv', role: 'group', 'aria-label': 'Filter by discipline' });
+      filters.style.setProperty('--rv-delay', '220ms');
+      const chips = [];
+      ['All'].concat(cats).forEach((label, i) => {
+        const b2 = el('button', {
+          class: `wk__filter${i === 0 ? ' is-on' : ''}`, type: 'button',
+          'aria-pressed': i === 0 ? 'true' : 'false',
+        }, esc(label));
+        b2.addEventListener('click', () => {
+          chips.forEach((c) => {
+            const on = c === b2;
+            c.classList.toggle('is-on', on);
+            c.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+          /* A CLASS, NOT A REBUILD. The tiles stay in the DOM and in their
+             columns; only their own opacity and scale change. Nothing is
+             removed, so nothing reflows, the images are never re-decoded, and
+             the pieces that stay put do not move at all. */
+          sec.dataset.filter = i === 0 ? '' : label;
+        });
+        chips.push(b2);
+        filters.appendChild(b2);
+      });
+      if (cats.length > 1) head.appendChild(filters);
+      sec.appendChild(head);
+
+      /* --- the archive ---------------------------------------------------
+         Two columns, because there are four pieces and each one is meant to be
+         large. The reference's four-column mosaic is right for forty small
+         experiments and wrong for four case studies. */
+      const cols = el('div', { class: 'wk__cols' });
+      const COLN = 2;
+      const colEls = [];
+      for (let i = 0; i < COLN; i += 1) {
+        const c = el('div', { class: 'wk__col', 'data-col': String(i) });
+        colEls.push(c); cols.appendChild(c);
+      }
+
+      const made = [];
+      items.forEach((item, i) => {
         const a = el('a', {
-          class: 'project reveal', href: p.href,
-          style: `--accent:${p.accent || 'var(--ink)'}`,
+          class: 'wkt', href: item.href || '#',
+          'data-cat': cat(item),
+          'aria-label': `${item.title} — ${item.meta || ''}`,
         });
-        a.innerHTML =
-          `<div class="project__top">` +
-            `<h2 class="project__title">${esc(p.title)}</h2>` +
-            `<span class="project__year">${esc(p.year)}</span>` +
-          `</div>` +
-          `<span class="project__role">${esc(p.role)}</span>` +
-          `<p class="project__summary">${esc(p.summary)}</p>` +
-          `<div class="tags">${(p.tags || []).map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div>`;
-        list.appendChild(a);
+        const media = el('div', { class: 'wkt__media' },
+          (PREVIEW[item.preview] || PREVIEW.bloom)(item));
+        /* the same artwork the home page paints over the same panel */
+        mountThumb(item, media);
+        a.appendChild(media);
+
+        const capn = el('div', { class: 'wkt__cap' });
+        capn.innerHTML =
+          `<span class="wkt__no">${String(i + 1).padStart(2, '0')}</span>` +
+          `<span class="wkt__lines">` +
+            `<span class="wkt__title">${esc(item.title)}</span>` +
+            `<span class="wkt__meta">${esc(item.meta || '')}</span>` +
+          `</span>`;
+        a.appendChild(capn);
+
+        /* the affordance, and only where there is something behind it */
+        if (item.href && item.href !== '#') {
+          a.appendChild(el('span', { class: 'wkt__go', 'aria-hidden': 'true' }, 'Case study'));
+        } else {
+          a.classList.add('is-quiet');
+        }
+
+        colEls[i % COLN].appendChild(a);
+        made.push({ el: a, sp: null, last: -1 });
       });
-      wrap.appendChild(list);
-      $('#main').appendChild(wrap);
+      sec.appendChild(cols);
+
+      main.appendChild(sec);
+
+      /* --- the record ----------------------------------------------------
+         THE HOME PAGE'S TABLE, NOT A SECOND ONE. This was a hand-rolled list
+         with its own heading, its own row grid and its own type — five lines
+         that said the same kind of thing as the home page's index and looked
+         nothing like it. It is the `Tabs` component now: same markup, same
+         hairlines, same hover, same Now chip, same tab bar. The only thing
+         this page adds is the first tab.
+
+         Projects leads because this is the work page and those five are its
+         subject; Teams and Awards follow so the record is complete in one
+         place. `meta` is the role — the same column the home page fills with
+         a title, which is why the three tabs line up.
+
+         It is appended to #main rather than into the archive section on
+         purpose: the table is paper furniture, and on the dot grid it read as
+         another thing floating on the canvas. */
+      const also = (S.work.projects || []);
+      const tabs = [];
+      if (also.length) {
+        tabs.push({
+          id: 'projects',
+          label: 'Projects',
+          rows: also.map((p) => ({ year: p.year, name: p.title, meta: p.role })),
+        });
+      }
+      ((S.index && S.index.tabs) || []).forEach((t) => tabs.push(t));
+      if (tabs.length) Tabs.init(main, tabs).classList.add('index--work');
+
+      /* THE HOME PAGE'S DRAWER, ON THIS PAGE'S TILES. `drawer()` binds its
+         clicks to `Showcase.cards`, so the tiles are registered there and the
+         case study that opens is the one already written — same panel, same
+         pager, same close. `Showcase.tick` also animates whatever is in that
+         array, which is how these inherit the home grid's entrance without a
+         second scroll animation being written for them. */
+      Showcase.cards = made;
+      Showcase.drawer(items);
+
+      /* --- the column drift ----------------------------------------------
+         The reference's columns travel at slightly different rates, which is
+         what stops a two-column archive reading as a table. Six pixels of
+         offset per hundred scrolled, on the second column only, written as one
+         custom property and applied with a transform — no layout, no reflow,
+         one write per frame and only while the section is on screen. */
+      let raf = 0;
+      const drift = () => {
+        raf = 0;
+        const r = sec.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > innerHeight) return;
+        sec.style.setProperty('--wk-drift', `${(-r.top * 0.055).toFixed(1)}px`);
+      };
+      if (!REDUCED) {
+        App.onScroll(() => { if (!raf) raf = requestAnimationFrame(drift); });
+        requestAnimationFrame(drift);
+      }
     },
 
-    people() {
-      this.head(S.people.intro, 'People');
-      const wrap = el('div', { class: 'col--wide' });
-      S.people.groups.forEach((g) => {
-        const sec = el('section', { class: 'group reveal' });
-        sec.appendChild(el('h2', { class: 'group__label' }, esc(g.label)));
-        g.entries.forEach((p) => {
-          sec.appendChild(
-            el('a', { class: 'person', href: p.href },
-              `<span class="person__name">${esc(p.name)}</span><span class="person__note">${esc(p.note)}</span>`)
-          );
-        });
-        wrap.appendChild(sec);
-      });
-      $('#main').appendChild(wrap);
-    },
-
-    writing() {
-      this.head(S.writing.intro, 'Writing');
-      const wrap = el('div', { class: 'col--wide' });
-      const list = el('div', { class: 'posts' });
-      S.writing.posts.forEach((p) => {
-        list.appendChild(
-          el('a', { class: 'post reveal', href: p.href },
-            `<div class="post__meta"><span>${esc(p.date)}</span><span>·</span><span>${esc(p.readingTime)}</span></div>` +
-            `<h2 class="post__title">${esc(p.title)}</h2>` +
-            `<p class="post__excerpt">${esc(p.excerpt)}</p>`)
-        );
-      });
-      wrap.appendChild(list);
-      $('#main').appendChild(wrap);
-    },
+    /* THE PEOPLE AND WRITING PAGES ARE GONE, and their routes with them.
+       Nothing routes to them any more — `nav` and `deck.links` in content.js no
+       longer list them, so the header, the footer's Pages column and both menus
+       stop offering them without any of those three being edited: each is
+       generated from that one list. A stray bookmark now lands on the 404,
+       which is the right answer for a page that no longer exists. */
 
     project() {
       Project.init();

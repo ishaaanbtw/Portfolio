@@ -111,8 +111,6 @@ window.SITE = {
     links: [
       { label: 'Home', href: 'index.html' },
       { label: 'Work', href: 'work.html' },
-      { label: 'People', href: 'people.html' },
-      { label: 'Writing', href: 'writing.html' },
       { label: 'Resume', kind: 'resume' },
       { label: 'Email', kind: 'email' },
     ],
@@ -129,8 +127,6 @@ window.SITE = {
   nav: [
     { label: 'Home', href: 'index.html' },
     { label: 'Work', href: 'work.html' },
-    { label: 'People', href: 'people.html' },
-    { label: 'Writing', href: 'writing.html' },
   ],
 
   /* ------------------------------------------------------- hero call to action */
@@ -161,8 +157,6 @@ window.SITE = {
     links: [
       { label: 'Home', href: 'index.html', primary: true },
       { label: 'Work', href: 'work.html' },
-      { label: 'People', href: 'people.html' },
-      { label: 'Writing', href: 'writing.html' },
     ],
     /* the quiet invitation. One line, no tutorial. */
     aside: 'Since you are here — build something.',
@@ -1747,10 +1741,13 @@ window.SITE = {
     ],
   },
 
-  /* -------------------------------------------------------------- people page */
+  /* ----------------------------------------------------- the scattered sketches
+     NOT A PAGE ANY MORE. The People page is gone, and what is left here is the
+     one thing that never belonged to it: the cards that scatter across the
+     screen when you click the word "people" in the closing block on the home
+     page. `Shell.field()` reads this. The page's own intro and its lists of
+     names went with the page.                                                */
   people: {
-    /* The cards that scatter across the screen when "people" is clicked in the
-       story. Swap these for your own images — any aspect ratio works. */
     field: [
       { src: 'assets/img/people/sketch-01.svg', ratio: '11/13', w: 9 },
       { src: 'assets/img/people/sketch-02.svg', ratio: '5/6', w: 7 },
@@ -1761,67 +1758,8 @@ window.SITE = {
       { src: 'assets/img/people/sketch-07.svg', ratio: '1/1', w: 7.5 },
       { src: 'assets/img/people/sketch-08.svg', ratio: '32/17', w: 11 },
     ],
-
-    intro:
-      'The work is mostly people. These are the ones who shaped how I think — some I’ve built with, some I’ve only read.',
-    groups: [
-      {
-        label: 'Built with',
-        entries: [
-          { name: 'A. Founder', note: 'Taught me that taste is a decision you make daily.', href: '#' },
-          { name: 'B. Engineer', note: 'Shipped faster than I could spec. Kept me honest.', href: '#' },
-          { name: 'C. Designer', note: 'Where my sense of typography actually came from.', href: '#' },
-        ],
-      },
-      {
-        label: 'Learned from, at a distance',
-        entries: [
-          { name: 'Rasmus Andersson', note: 'Systems as craft. Inter, Kod, everything after.', href: '#' },
-          { name: 'Jenny Odell', note: 'Attention is the resource. The rest is downstream.', href: '#' },
-          { name: 'Bret Victor', note: 'Interfaces should let you see the consequence.', href: '#' },
-        ],
-      },
-    ],
   },
 
-  /* ------------------------------------------------------------- writing page */
-  writing: {
-    intro: 'Notes on interfaces, incentives, and the internet’s stranger habits.',
-    posts: [
-      {
-        title: 'Consequence as a design material',
-        date: '2026 · 04',
-        readingTime: '7 min',
-        excerpt:
-          'Most interface advice assumes mistakes are cheap. Onchain they are not. What changes when undo does not exist?',
-        href: '#',
-      },
-      {
-        title: 'Dense is not complicated',
-        date: '2026 · 01',
-        readingTime: '5 min',
-        excerpt:
-          'A defence of information density, and why the instinct to simplify usually removes the wrong thing.',
-        href: '#',
-      },
-      {
-        title: 'Vibecoding is a research method',
-        date: '2025 · 11',
-        readingTime: '9 min',
-        excerpt:
-          'Twelve prototypes in a month taught me more than a quarter of documents. On building to think.',
-        href: '#',
-      },
-      {
-        title: 'The poker table as a product review',
-        date: '2025 · 08',
-        readingTime: '4 min',
-        excerpt:
-          'Betting forces you to price your own conviction. Roadmaps rarely do. They should.',
-        href: '#',
-      },
-    ],
-  },
 
   /* ------------------------------------------------------------------- footer */
   /* --------------------------------------------------------------- the footer
