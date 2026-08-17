@@ -8884,6 +8884,513 @@ body[data-page] .nav { display: none; }
 }
 
 /* ==========================================================================
+   41b. THE 404 CHALLENGE
+   A game mode laid over the room, and the whole brief for it is that you
+   should not be able to tell from a screenshot that it is one. Everything
+   below is the page's own vocabulary: the paper, the dot grid, the hairline,
+   the 999px pill, the mono numerals, the ink and the two greys. No accent
+   colour is introduced, nothing glows, nothing is centred in a modal and the
+   only saturated things on screen are still the bricks.
+   ========================================================================== */
+
+/* --- the sign steps aside ---------------------------------------------------
+   It keeps its BOX. Opacity, ten pixels of lift and a hair of scale — the
+   layout is untouched, so `Bricks.zone()` goes on protecting the middle of the
+   room and the pile goes on banking away from where the stencil stands. A
+   `display: none` here would drop the island and let the fall bury the target
+   within a second of the game starting. */
+.canvas--room .canvas__intro.is-gone {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.985);
+  pointer-events: none;
+  transition:
+    opacity 420ms var(--ease),
+    transform 520ms var(--spring-soft, var(--ease));
+}
+.canvas--room .canvas__intro.is-gone .nf__links { pointer-events: none; }
+.canvas--room .canvas__intro {
+  transition:
+    opacity 420ms var(--ease) 60ms,
+    transform 520ms var(--spring-soft, var(--ease)) 60ms;
+}
+
+/* --- PRESETS ----------------------------------------------------------------
+   Not a card and not a menu. A label and a row of four pieces of artwork
+   sitting on the paper in the top right — the shelf from the toolbar, with the
+   panel taken away, because in this room the builds are not a tool you reach
+   for, they are the thing to do. The hover is the shelf's hover exactly: the
+   ARTWORK lifts, not the row. */
+/* BOTH CONTROLS SIT ON PAPER, NOT ON THE ROOM.
+
+   The first pass put bare type straight onto the canvas, which is fine on the
+   empty half of an empty page and illegible the moment sixty-four saturated
+   bricks are behind it — the word "Presets" over a red 2x4 is not a label, it
+   is texture. So each control carries its own small sheet: the same white, the
+   same 12px radius, the same 1px inside stroke and the same soft shadow the
+   dock and the builds shelf use. Nothing new is invented, the two read as a
+   pair, and the type has something to be dark against. */
+.nfp {
+  position: absolute;
+  top: clamp(1rem, 3.5vh, 2rem);
+  right: clamp(1rem, 3vw, 2.5rem);
+  /* THE CHROME BAND, not a number picked to be bigger than the bricks.
+     `Drag.raise` hands the most recently touched object an ever-climbing
+     z-index, so any control that lives on the canvas and expects to stay
+     clickable after forty drags cannot sit at 4 — it has to be in the same
+     band the dock is in. The stencil is the opposite case and stays at 1:
+     it is a drawing the bricks must cover. */
+  z-index: 42;
+  display: grid;
+  gap: 0.4rem;
+  justify-items: stretch;
+  padding: 0.5rem 0.5rem 0.4rem;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 1px var(--line, #e7e4de),
+    0 2px 5px -2px rgba(20, 16, 12, 0.08),
+    0 14px 30px -18px rgba(20, 16, 12, 0.3);
+  transition: opacity 300ms var(--ease), transform 380ms var(--ease);
+}
+
+.nfp__lb {
+  margin: 0 0 0 0.25rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-2, #3a352f);
+  opacity: 0.62;
+}
+
+.nfp__row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nfp__it {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 180ms var(--ease);
+}
+:root:not(.hover-cold) .nfp__it:hover { background: rgba(20, 16, 12, 0.05); }
+
+.nfp__art {
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 1px 1.5px rgba(20, 16, 12, 0.16));
+  transition:
+    transform 240ms var(--spring-soft, var(--ease)),
+    filter 240ms var(--ease);
+}
+.nfp__art svg { display: block; max-width: 32px; max-height: 28px; }
+:root:not(.hover-cold) .nfp__it:hover .nfp__art {
+  transform: translateY(-2px) scale(1.08);
+  filter: drop-shadow(0 4px 6px rgba(20, 16, 12, 0.22));
+}
+.nfp__it.is-press .nfp__art { transform: scale(0.93); transition-duration: 90ms; }
+
+/* the name, under the row rather than over the canvas — a tooltip that covers
+   the bricks would be the one piece of chrome here that hides the toy */
+.nfp__tip {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--ink, #14100c);
+  color: #fbfaf8;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-3px);
+  pointer-events: none;
+  transition: opacity 160ms var(--ease), transform 220ms var(--ease);
+}
+:root:not(.hover-cold) .nfp__it:hover .nfp__tip,
+.nfp__it:focus-visible .nfp__tip { opacity: 1; transform: none; }
+
+/* --- START GAME -------------------------------------------------------------
+   Quieter than the sign by every measure: a ghost pill and one line of the
+   dimmest grey on the page. It is an aside, not the reason the page exists. */
+.nfs {
+  position: absolute;
+  top: 50%;
+  /* clear of the nav's own edge tab, which lives at the left margin at exactly
+     this height — the two are the only things on that side of the room */
+  left: clamp(3.25rem, 7vw, 6rem);
+  translate: 0 -50%;
+  z-index: 42;
+  display: grid;
+  gap: 0.45rem;
+  justify-items: start;
+  max-width: 12.5rem;
+  padding: 0.6rem 0.7rem 0.65rem;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 1px var(--line, #e7e4de),
+    0 2px 5px -2px rgba(20, 16, 12, 0.08),
+    0 14px 30px -18px rgba(20, 16, 12, 0.3);
+  transition: opacity 300ms var(--ease), transform 380ms var(--ease);
+}
+
+/* THE ONE CONTROL THAT HAS TO BE FOUND.
+
+   It was `.btn--ghost`, whose label is `--ink-dim` on a 3.5% wash — about 1.6:1
+   against paper. That token is correct for a button sitting beside a primary
+   one, where the pair is the affordance; here it is the ONLY thing inviting
+   you into the game and it was effectively invisible.
+
+   So the label is full ink at the site's own button size, on white with the
+   same hairline the panel uses. Still not the black pill — Home is the primary
+   action on this page and stays the loudest thing on it — but now legible on
+   any background, which is the floor, not a style choice. */
+.nfs__go {
+  --btn-bg: #fff;
+  --btn-fg: var(--ink, #14100c);
+  font-weight: 550;
+  box-shadow:
+    inset 0 0 0 1px var(--line, #e7e4de),
+    0 1px 2px rgba(20, 16, 12, 0.08);
+}
+.nfs__go:hover {
+  --btn-bg: #fff;
+  --btn-fg: var(--ink, #14100c);
+  box-shadow:
+    inset 0 0 0 1px #d9d5ce,
+    0 2px 4px rgba(20, 16, 12, 0.1),
+    0 10px 20px -10px rgba(20, 16, 12, 0.28);
+}
+.nfs__go .btn__label { display: inline-flex; align-items: center; gap: 0.45rem; }
+
+/* drawn, not typed — a glyph triangle picks up the text baseline and the font's
+   own idea of how big it should be, and is a different size in every fallback */
+.nfs__pl {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 4px 0 4px 6.5px;
+  border-color: transparent transparent transparent currentColor;
+  transition: transform 320ms var(--spring, var(--ease));
+}
+.nfs__go:hover .nfs__pl { transform: translateX(1.5px); }
+
+.nfs__note {
+  margin: 0 0 0 0.15rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ink-2, #3a352f);
+  opacity: 0.72;
+}
+
+/* both controls step out of the way for the duration */
+body[data-game] .nfp,
+body[data-game] .nfs {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+/* and so does the dock's own drawer, so there is one objective on screen */
+body[data-game] .tool--preset { opacity: 0.35; pointer-events: none; }
+body[data-game] .shelf { display: none; }
+
+/* --- THE STENCIL ------------------------------------------------------------
+   A TECHNICAL DRAWING, NOT A TARGET ZONE. There is no hit region in here: it
+   is `pointer-events: none`, it sits under the bricks, and the only thing that
+   decides where a piece may land is the solver — the same solver that has been
+   deciding it since the page loaded. What you see is the answer drawn in the
+   language the rest of the site draws construction in; what you feel is the
+   magnet you have been feeling all along.
+
+   Each piece carries its own dashed silhouette because that is what states the
+   ORIENTATION. One outline around the whole build would say where the object
+   goes and nothing at all about which brick, which way round. */
+.stn {
+  position: absolute;
+  z-index: 1;                       /* over the dots, under every .drg */
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.985);
+  transition: opacity 420ms var(--ease), transform 520ms var(--spring-soft, var(--ease));
+}
+/* THE SAME HALO THE SIGN USES, for the same reason. The drawing is 6 studs
+   wide on a canvas covered in bricks, and at that size a dashed outline is
+   just more texture. Fading the dot grid out behind it is what makes it read
+   as the thing you are meant to be looking at — without a border, a panel or
+   a shadow, none of which this room has. */
+.stn::before {
+  content: '';
+  position: absolute;
+  inset: -46px;
+  border-radius: 999px;
+  background: radial-gradient(50% 50% at 50% 50%,
+    rgba(251, 250, 250, 0.92) 40%,
+    rgba(251, 250, 250, 0) 100%);
+  z-index: -1;
+}
+.stn.is-on { opacity: 1; transform: none; }
+.stn svg { display: block; overflow: visible; }
+
+.stn__f { fill: rgba(20, 16, 12, 0.045); }
+.stn__s { fill: rgba(20, 16, 12, 0.1); }
+.stn__e {
+  stroke: rgba(20, 16, 12, 0.38);
+  stroke-width: 1;
+  stroke-dasharray: 3 3.5;
+  stroke-linecap: round;
+}
+
+/* SOLVED. The drawing gets out of the way of the brick standing on it — it has
+   said what it had to say, and a dashed outline left under a seated piece is a
+   drawing arguing with the object it asked for. */
+.stn__p {
+  transition: opacity 320ms var(--ease);
+}
+.stn__p.is-set { opacity: 0; }
+
+.stn.is-done { opacity: 0; transition-duration: 500ms; }
+
+/* --- THE CLOCK --------------------------------------------------------------
+   Two lines and a hairline. The brief on the left, the count on the right, and
+   a rule under both that drains — which is the part you read without looking,
+   so the numerals never have to get big. */
+.nfh {
+  --t: 1;
+  position: absolute;
+  top: clamp(1rem, 3.5vh, 2rem);
+  left: 50%;
+  translate: -50% 0;
+  z-index: 42;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: end;
+  column-gap: clamp(1.25rem, 4vw, 2.75rem);
+  padding-bottom: 0.5rem;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 420ms var(--ease), transform 520ms var(--spring-soft, var(--ease));
+}
+.nfh.is-on { opacity: 1; transform: none; }
+.nfh.is-out { opacity: 0.5; }
+/* IT HAS SAID ITS PIECE. The result panel carries the time, so a frozen clock
+   left over the finished object is the same number twice. */
+.nfh.is-done { opacity: 0; transform: translateY(-8px); }
+
+.nfh__eb {
+  margin: 0 0 0.15rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #b9b4ad);
+}
+.nfh__nm {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  color: var(--ink, #14100c);
+}
+
+.nfh__t {
+  margin: 0;
+  justify-self: end;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 1.5rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--ink, #14100c);
+  transition: color 300ms var(--ease);
+}
+/* the last five seconds, and this is the whole of the alarm — no flashing, no
+   red, no shake. The number goes the colour of the ink it was already nearly */
+.nfh__t.is-low { color: #b0342f; }
+
+.nfh__bar {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin-top: 0.6rem;
+  background: var(--line, #e7e4de);
+  overflow: hidden;
+}
+.nfh__bar i {
+  display: block;
+  height: 100%;
+  background: var(--ink-dim, #b9b4ad);
+  transform-origin: 0 50%;
+  transform: scaleX(var(--t));
+}
+
+/* --- THE RESULT -------------------------------------------------------------
+   At the FOOT of the room, never over it. Whatever was managed stays visible
+   behind the words, which is the only reason to show a result at all rather
+   than silently resetting — "you were close" means nothing if the thing you
+   were close to has been cleared away. */
+/* A PANEL, IN THE DOCK'S OWN LANGUAGE. The first version was a soft halo on
+   the paper, which works over an empty floor and fails over the one place this
+   thing actually lands — the pile. So it is the shelf: white, 16px, one 1px
+   inside stroke, one soft shadow. Nothing invented, and it reads cleanly with
+   forty bricks behind it. */
+.nfr {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.5rem, 6vh, 3.5rem);
+  translate: -50% 0;
+  z-index: 44;
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  min-width: 15rem;
+  padding: 1.15rem 1.75rem 1.25rem;
+  border-radius: 16px;
+  text-align: center;
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 1px var(--line, #e7e4de),
+    0 2px 6px -2px rgba(20, 16, 12, 0.1),
+    0 22px 48px -22px rgba(20, 16, 12, 0.34);
+  opacity: 0;
+  transform: translateY(14px) scale(0.96);
+  transition: opacity 320ms var(--ease), transform 560ms var(--spring-snap, var(--ease));
+}
+.nfr.is-on { opacity: 1; transform: none; }
+
+.nfr__eb {
+  margin: 0 0 0.3rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #b9b4ad);
+}
+.nfr__h {
+  margin: 0;
+  font-size: 1.4375rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--ink, #14100c);
+}
+
+/* the clock, stopped. Same face, same tabular figures, same size it was
+   counting at — so the result is the number you were already watching */
+.nfr__t {
+  margin: 0.35rem 0 0.1rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 1.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--ink, #14100c);
+}
+
+.nfr__s {
+  margin: 0.3rem 0 0.85rem;
+  font-size: 0.9375rem;
+  color: var(--ink-2, #3a352f);
+}
+.nfr__a { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+
+/* --- THE POP ----------------------------------------------------------------
+   One canvas, added at the win and gone three seconds later. Under the panel
+   so the words are never behind chips, over everything else so the burst is
+   the thing that happened. It never takes a pointer event and it never touches
+   layout — see `Game.pop()` for why it is drawn rather than composed. */
+.nfc {
+  position: absolute;
+  inset: 0;
+  z-index: 43;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 400ms var(--ease);
+}
+.nfc.is-out { opacity: 0; }
+
+/* --- NOT THAT ONE -----------------------------------------------------------
+   The entire punishment. Four pixels of shake over a fifth of a second, on the
+   piece and on nothing else — no outline, no colour, no counter, and the brick
+   stays exactly where it was put down and stays draggable. */
+@keyframes brkNope {
+  0%, 100% { translate: 0 0; }
+  20%      { translate: -3px 0; }
+  45%      { translate: 3px 0; }
+  70%      { translate: -1.5px 0; }
+  88%      { translate: 1px 0; }
+}
+.drg.brk.is-nope { animation: brkNope 380ms var(--ease-io, ease-in-out); }
+
+/* --- PHONES -----------------------------------------------------------------
+   The same game, re-laid rather than shrunk. The room is taller than it is
+   wide and the sign sits in the middle of it, so the two controls cannot stay
+   on the left and right flanks — they go to the corners the thumb reaches,
+   above the dock, and the clock keeps the top edge to itself. */
+@media (max-width: 48rem) {
+  /* THE EMPTY BAND, NOT THE BOTTOM CORNERS. On a phone the room is taller than
+     it is wide: the sign sits in the middle, the pile builds along the floor,
+     and the dock owns the bottom right — which leaves the strip under the nav
+     as the only part of the canvas with nothing in it. Both controls go there,
+     the start on the left and the builds on the right, keeping the relationship
+     they have on a desktop without either of them landing on the bricks. */
+  .nfp {
+    top: calc(3.25rem + var(--sa-top, 0px));
+    right: clamp(0.75rem, 4vw, 1.25rem);
+    gap: 0.4rem;
+  }
+  .nfp { padding: 0.4rem 0.4rem 0.35rem; }
+  .nfp__it { width: 38px; height: 34px; }
+  .nfp__art svg { max-width: 26px; max-height: 23px; }
+  .nfp__tip { top: calc(100% + 7px); right: 0; left: auto; }
+
+  .nfs {
+    top: calc(3.25rem + var(--sa-top, 0px));
+    left: clamp(0.75rem, 4vw, 1.25rem);
+    translate: none;
+    max-width: 9.5rem;
+    padding: 0.5rem 0.55rem 0.55rem;
+  }
+  .nfs__note { font-size: 0.75rem; line-height: 1.4; }
+
+  /* clear of the nav, which is a full-width bar here rather than an edge tab */
+  .nfh {
+    top: calc(3.25rem + var(--sa-top, 0px));
+    column-gap: 1.25rem;
+  }
+  .nfh__t { font-size: 1.375rem; }
+
+  .nfr {
+    bottom: calc(5.5rem + var(--sa-bottom, 0px));
+    width: min(20rem, calc(100vw - 2rem));
+    min-width: 0;
+    padding: 1rem 1.1rem 1.1rem;
+  }
+  .nfr__h { font-size: 1.25rem; }
+  .nfr__t { font-size: 1.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas--room .canvas__intro,
+  .canvas--room .canvas__intro.is-gone,
+  .nfp, .nfs, .stn, .stn__p, .nfh, .nfr { transition-duration: 1ms; }
+  .nfc { display: none; }
+  .drg.brk.is-nope { animation: none; }
+  .nfs__pl { transition: none; }
+}
+
+/* ==========================================================================
    42. WORK — THE ARCHIVE
    The same canvas as the home page and the 404: dotted paper, the same type,
    the same radius, the same restraint. What is different is the rhythm — four

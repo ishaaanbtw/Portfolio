@@ -163,6 +163,16 @@ window.SITE = {
     pieces: 64,
     mobilePieces: 26,
     drip: { every: [5200, 9000], count: [1, 2], max: 120 },
+    /* The hidden game. Every string the challenge shows lives here with the
+       rest of the page's words; the builds themselves are lattice geometry and
+       stay in site.js beside the presets they are drawn with. */
+    game: {
+      presets: 'Presets',
+      cta: 'Start game',
+      note: 'Think you can build it in 30 seconds?',
+      eyebrow: 'Build this',
+      seconds: 30,
+    },
   },
 
   /* ------------------------------------------------------------- tool dock

@@ -7587,6 +7587,24 @@
          needs: blocked first, edges second, free drag last. `wallOut` returns
          null when the piece is not inside anything, so "when it applies" is the
          function's own answer rather than a condition written out here twice. */
+      /* THE CHALLENGE GETS THE LAST WORD ON A FREE PIECE, and only that.
+
+         While the timed build is running, a single piece within the ordinary
+         detect radius of the slot it belongs in lands THERE rather than
+         wherever the sweep above liked best. It is one override of one
+         variable: the object handed back is the same shape as any other
+         landing, so the ghost that previews it, the magnet that pulls it, the
+         release that commits it, the settle and the click are all the ones
+         that were already here. The game owns none of them.
+
+         Above the blocked-interior answer, because that one is not a
+         preference — a piece standing on hero content cannot stay there
+         whatever the game would prefer. `Game.solve` returns null when there
+         is no game, which is every other page and the 404's own playground, so
+         this line costs one call and changes nothing there. */
+      const tgt = Game.solve(set);
+      if (tgt) best = tgt;
+
       if (this.debug) this._ej = [];
       const out = this.wallOut(set);
       if (out) { out.blocked = this.inWall(set); best = out; }
@@ -8261,6 +8279,11 @@
       }
 
       this.endHold(rec);
+
+      /* AND THE CHALLENGE IS TOLD A GESTURE ENDED — not what happened in it.
+         It re-reads the board off the canvas and works the rest out itself. */
+      Game.after(rec, g.set, plan);
+
       /* THE AUDIT. Only ever on with `?brkdebug`, and it watches the one
          invariant that is invisible when it breaks: nothing this GESTURE placed
          may be left on hero content. Deliberately scoped to the group that was
@@ -8994,6 +9017,957 @@
         if (!dx && !dy) return;
         g.members.forEach((r) => { r.it.x += dx; r.it.y += dy; Drag.apply(r.it); });
       });
+    },
+  };
+
+  /* ============================================== 5c2d. the challenge =====
+
+     THE 404 HAS A GAME IN IT, AND THE GAME HAS NO ENGINE.
+
+     Nothing in this module simulates, moves, snaps, welds, rotates, sounds or
+     draws a brick. It cannot: there is one brick engine on this site and it is
+     the one above. What this adds is a set of RULES laid over that engine for
+     thirty seconds — a target lattice, a clock, and an opinion about which of
+     the landings the solver already finds is the one that was asked for — and
+     then it gets out of the way.
+
+     There are exactly three seams into the engine, and they are all one line
+     long:
+
+       Bricks.plan()   is asked, last, whether the piece in the hand is near a
+                       slot it belongs in. If it is, that landing wins the
+                       sweep. From there the EXISTING ghost previews it, the
+                       EXISTING magnet pulls it in and the EXISTING release
+                       welds it. This module never positions a brick.
+       Bricks.drop()   says a gesture ended. This re-reads the board from the
+                       pieces' actual coordinates and decides nothing else.
+       Pages.notfound  hangs the two controls on the wall.
+
+     Everything else below is chrome — a stencil, a clock and two panels — and
+     none of it is allowed to know anything the canvas does not already know.
+
+     -------------------------------------------------------------------------
+     WHY THE BOARD IS READ RATHER THAN REMEMBERED
+
+     The first version kept a list: this slot holds that piece. It is wrong
+     within one gesture. A brick pulled out of the middle of the build splits
+     the group it was in, so the identity of "the build" changes underneath the
+     list; a piece can be dropped into a correct slot by an ordinary weld to
+     its neighbour without this module being told; and a structure carried by
+     one brick moves five of them at once.
+
+     So nothing is remembered. `audit()` asks the only question that is
+     actually true — is there, right now, a piece standing on that slot's
+     square wearing that slot's footprint — against the same anchors the snap
+     engine measures. It cannot disagree with the canvas because it has no
+     state of its own to disagree with. */
+
+  /* --- THE TARGETS -------------------------------------------------------
+     Small, on purpose. Thirty seconds is four or five confident drags and one
+     mistake, and the point of the challenge is that it is finishable — a
+     twelve-piece Ferrari inside half a minute is not a game, it is a loss
+     screen with extra steps.
+
+     Every slot is one of the silhouettes the room already contains, on the
+     same unit grid, obeying the same law the manual snap obeys: no two cells
+     overlap and the whole set is edge-connected. Which means the target is
+     something you could have built by hand out of the pieces lying around —
+     and, more to the point, that the stencil is a drawing of a lawful
+     structure rather than a picture someone hopes the bricks will approximate.
+
+     `rot` is a quarter turn, so at least one piece in each build has to be
+     turned with R before it will seat. One is deliberate: it teaches the key
+     without making the clock a rotation puzzle. */
+  const CHALLENGE = [
+    /* WIDE. Six studs across and four tall, and the first one on purpose:
+       nothing needs turning except the tail light, so the R key is taught by a
+       single piece rather than by four. */
+    {
+      key: 'car',
+      label: 'Little car',
+      slots: [
+        { kind: 'p13',   gx: 2, gy: 0, rot: 0 },   /* cabin        */
+        { kind: 'p14',   gx: 1, gy: 1, rot: 0 },   /* body         */
+        { kind: 'small', gx: 5, gy: 1, rot: 1 },   /* tail, turned */
+        { kind: 'long',  gx: 0, gy: 2, rot: 0 },   /* chassis      */
+        { kind: 'small', gx: 0, gy: 3, rot: 0 },   /* front wheel  */
+        { kind: 'small', gx: 3, gy: 3, rot: 0 },   /* rear wheel   */
+      ],
+    },
+
+    /* TALL, WITH FINS. A stack of three-wide bars is a chimney; the two turned
+       1x2s hanging off the sides at the bottom are the whole difference
+       between that and a rocket. */
+    {
+      key: 'rocket',
+      label: 'Little rocket',
+      slots: [
+        { kind: 'conn',  gx: 2, gy: 0, rot: 0 },   /* nose         */
+        { kind: 'p13',   gx: 1, gy: 1, rot: 0 },   /* shoulder     */
+        { kind: 'p13',   gx: 1, gy: 2, rot: 0 },   /* hull         */
+        { kind: 'p13',   gx: 1, gy: 3, rot: 0 },   /* hull         */
+        { kind: 'small', gx: 0, gy: 3, rot: 1 },   /* fin, turned  */
+        { kind: 'small', gx: 4, gy: 3, rot: 1 },   /* fin, turned  */
+        { kind: 'p13',   gx: 1, gy: 4, rot: 0 },   /* flame        */
+      ],
+    },
+
+    /* SQUARE, AND THE ONLY ONE BUILT AROUND A 4x2 SLAB. Two 1x1 ears on top of
+       a big head is the entire trick — read it at any size and it is a cat. */
+    {
+      key: 'cat',
+      label: 'Sleepy cat',
+      slots: [
+        { kind: 'conn',  gx: 0, gy: 0, rot: 0 },   /* ear          */
+        { kind: 'conn',  gx: 3, gy: 0, rot: 0 },   /* ear          */
+        { kind: 'br24',  gx: 0, gy: 1, rot: 0 },   /* head         */
+        { kind: 'p14',   gx: 0, gy: 3, rot: 0 },   /* body         */
+        { kind: 'small', gx: 4, gy: 2, rot: 1 },   /* tail, turned */
+        { kind: 'small', gx: 0, gy: 4, rot: 0 },   /* paws         */
+        { kind: 'small', gx: 2, gy: 4, rot: 0 },   /* paws         */
+      ],
+    },
+
+    /* THE ONE EVERYBODY ALREADY KNOWS. Antennae, a wide body, a notched jaw
+       and two legs standing clear of it — built entirely out of the small
+       pieces, so it feels nothing like the car in the hand either. */
+    {
+      key: 'invader',
+      label: 'Space invader',
+      slots: [
+        { kind: 'conn',  gx: 1, gy: 0, rot: 0 },   /* antenna      */
+        { kind: 'conn',  gx: 3, gy: 0, rot: 0 },   /* antenna      */
+        { kind: 'long',  gx: 0, gy: 1, rot: 0 },   /* body         */
+        { kind: 'small', gx: 0, gy: 2, rot: 0 },   /* jaw          */
+        { kind: 'small', gx: 3, gy: 2, rot: 0 },   /* jaw          */
+        { kind: 'small', gx: 0, gy: 3, rot: 1 },   /* leg, turned  */
+        { kind: 'small', gx: 4, gy: 3, rot: 1 },   /* leg, turned  */
+      ],
+    },
+
+    /* FIVE PIECES, THE SHORTEST BUILD IN THE SET — a wide brim over a fat 2x2
+       stem. It is the one you can finish with twenty seconds left, which is
+       worth having in the rotation. */
+    {
+      key: 'shroom',
+      label: 'Toadstool',
+      slots: [
+        { kind: 'p13',   gx: 1, gy: 0, rot: 0 },   /* crown        */
+        { kind: 'long',  gx: 0, gy: 1, rot: 0 },   /* brim         */
+        { kind: 'sq2',   gx: 1, gy: 2, rot: 0 },   /* stem         */
+        { kind: 'small', gx: 3, gy: 2, rot: 1 },   /* spot, turned */
+        { kind: 'p14',   gx: 0, gy: 4, rot: 0 },   /* ground       */
+      ],
+    },
+
+    /* NOTHING TURNS. A dome, a body and a scalloped hem — the round the timer
+       is generous on, and the only one you can build without touching R. */
+    {
+      key: 'ghost',
+      label: 'Little ghost',
+      slots: [
+        { kind: 'p14',   gx: 0, gy: 0, rot: 0 },   /* dome         */
+        { kind: 'br24',  gx: 0, gy: 1, rot: 0 },   /* body         */
+        { kind: 'small', gx: 0, gy: 3, rot: 0 },   /* hem          */
+        { kind: 'small', gx: 2, gy: 3, rot: 0 },   /* hem          */
+        { kind: 'conn',  gx: 0, gy: 4, rot: 0 },   /* tail         */
+        { kind: 'conn',  gx: 2, gy: 4, rot: 0 },   /* tail         */
+      ],
+    },
+  ];
+
+  const Game = {
+    st: null,
+    turn: 0,
+
+    /* --- geometry, borrowed ------------------------------------------------
+       `Bricks.cells` takes a record and reads two fields off it. A slot is not
+       a record and never will be, so it is handed the two fields rather than
+       being made into one — the rotation maths stays in the one place that
+       already has it and this has no copy of it to get out of step. */
+    cells(kind, rot) { return Bricks.cells({ def: PIECE[kind], rot: rot || 0 }); },
+
+    /* WHAT MAKES A PIECE THE RIGHT PIECE. Not its name and not its colour —
+       its FOOTPRINT at the turn it is currently wearing. Which is the honest
+       test: a 1x2 bar at 0° and the same bar at 180° are the same object in
+       the same orientation, and asking for `rot === 1` when `rot === 3` sits
+       identically on the grid would fail a placement that is visibly correct.
+       Comparing normalised cell sets makes every symmetry fall out for free
+       and needs no table. */
+    sig(kind, rot) {
+      return this.cells(kind, rot).map((c) => c.join(',')).sort().join(' ');
+    },
+
+    live() { return !!(this.st && this.st.phase === 'play'); },
+
+    /* =====================================================================
+       MOUNTING — the two controls, and nothing else changes about the room
+       ===================================================================== */
+    mount(host, c) {
+      if (!host) return;
+      const g = (c && c.game) || {};
+      this.host = host;
+      this.copy = g;
+
+      /* THE PRESETS, IN THE ROOM RATHER THAN IN THE DRAWER. Identical builds,
+         identical thumbnails, identical `run()` — this is the toolbar's own
+         shelf hung on the wall of the 404 instead of off the side of the dock,
+         because in here they are not a tool you reach for, they are the thing
+         to do. The dock's button still opens the drawer everywhere else. */
+      const pre = el('div', { class: 'nfp' });
+      pre.appendChild(el('p', { class: 'nfp__lb' }, esc(g.presets || 'Presets')));
+      const row = el('div', { class: 'nfp__row', role: 'group', 'aria-label': 'LEGO builds' });
+      Object.keys(PLAN).forEach((k) => {
+        const bp = PLAN[k];
+        const b = el('button', {
+          class: 'nfp__it', type: 'button', 'aria-label': `Build ${bp.label}`,
+        }, `<span class="nfp__art">${Bricks.thumb(bp)}</span>`
+          + `<span class="nfp__tip" aria-hidden="true">${esc(bp.label)}</span>`);
+        b.addEventListener('click', () => {
+          if (Bricks.busy || this.live()) return;
+          b.classList.add('is-press');
+          setTimeout(() => b.classList.remove('is-press'), 190);
+          Sound.voice({ freq: 900, gain: 0.022, dur: 0.03, bright: 4200, drop: 1.1, noise: 0.4 });
+          Bricks.run(k);
+        });
+        row.appendChild(b);
+      });
+      pre.appendChild(row);
+      host.appendChild(pre);
+      this.pre = pre;
+
+      /* THE INVITATION. Secondary to the sign by every measure — ghost button,
+         one line of dim type, off to the side — because it is an aside and not
+         the reason the page exists. */
+      const st = el('div', { class: 'nfs' });
+      const go = el('button', { class: 'btn btn--ghost nfs__go', type: 'button' },
+        '<span class="btn__label"><i class="nfs__pl" aria-hidden="true"></i>'
+        + `${esc(g.cta || 'Start game')}</span>`);
+      go.addEventListener('click', () => this.start());
+      st.appendChild(go);
+      st.appendChild(el('p', { class: 'nfs__note' },
+        esc(g.note || 'Think you can build it in 30 seconds?')));
+      host.appendChild(st);
+      this.go = st;
+
+      addEventListener('resize', () => this.reflow(), { passive: true });
+    },
+
+    /* =====================================================================
+       STATE 2 — the room becomes a challenge
+       ===================================================================== */
+    start() {
+      if (this.st || !this.host || Bricks.busy) return;
+      const B = Bricks;
+      /* RANDOM, BUT NEVER THE SAME ONE TWICE RUNNING. A fixed cycle makes the
+         second round predictable, which is the one round where surprise is
+         worth most — you have just learnt the rules and want a different
+         object to try them on. */
+      const pool = CHALLENGE.filter((c) => c.key !== this.last);
+      const spec = pool[(Math.random() * pool.length) | 0] || CHALLENGE[0];
+      this.last = spec.key;
+      this.turn += 1;
+
+      const slots = spec.slots.map((s) => Object.assign({}, s, {
+        cs: this.cells(s.kind, s.rot),
+        sig: this.sig(s.kind, s.rot),
+        done: false,
+      }));
+      let W = 0, H = 0;
+      slots.forEach((s) => s.cs.forEach(([c, w]) => {
+        W = Math.max(W, s.gx + c + 1); H = Math.max(H, s.gy + w + 1);
+      }));
+
+      this.st = {
+        phase: 'intro', spec, slots, W, H, ox: 0, oy: 0,
+        secs: spec.secs || (this.copy && this.copy.seconds) || 30,
+      };
+
+      /* THE SIGN LEAVES, THE ROOM DOES NOT. One class on the column: opacity,
+         a few pixels of lift, a hair of scale. It keeps its BOX — the layout
+         is untouched, so `Bricks.zone()` goes on protecting the middle of the
+         room and the pile goes on banking away from where the stencil is about
+         to stand. Nothing is removed and nothing reflows. */
+      const intro = $('.canvas__intro', this.host);
+      if (intro) intro.classList.add('is-gone');
+
+      /* AND IT STOPS BEING SOLID. The sign is a wall — bricks seat against it
+         exactly as they seat against the hero's headline — and a wall standing
+         where the stencil is going would make every correct landing unlawful.
+         `data-wall` is the whole of what says "solid", so taking it off and
+         dropping the two caches is the whole of what un-says it. */
+      const card = $('[data-wall]', this.host);
+      if (card) { card.removeAttribute('data-wall'); this.card = card; }
+      B._wh = null; B.wallStamp = -1; B.walls = [];
+
+      document.body.dataset.game = 'on';
+      B.unshelf();
+
+      /* PIECES FIRST, THEN THE CLOCK. A room that happens not to contain a
+         5-stud bar cannot be asked to build something with a 5-stud bar in it,
+         and "the scatter is random" is not an excuse the player can see. What
+         is missing is summoned — through `mk()` and the ordinary fall, from
+         above, like everything else that arrives here. */
+      this.stock();
+
+      this.paint();
+      requestAnimationFrame(() => {
+        if (!this.st) return;
+        this.st.phase = 'play';
+        this.st.t0 = performance.now();
+        this.st.end = this.st.t0 + this.st.secs * 1000;
+        this.tick();
+      });
+    },
+
+    /* --- the inventory ---------------------------------------------------
+       Counted against LOOSE pieces only. A bar welded into somebody's tower is
+       reachable — you can pull it out, that is the whole interaction — but it
+       is not something the challenge should quietly assume you will, so the
+       shortfall is made up from off-canvas instead. */
+    stock() {
+      const B = Bricks, need = new Map();
+      this.st.slots.forEach((s) => need.set(s.kind, (need.get(s.kind) || 0) + 1));
+      const fresh = [];
+      const h = B.host.getBoundingClientRect();
+      const z = B.Z || B.ZONE;
+      need.forEach((n, kind) => {
+        let have = 0;
+        B.recs.forEach((r) => { if (r.kind === kind && r.g && r.g.members.length === 1) have += 1; });
+        for (let i = have; i < n; i += 1) {
+          const fx = z.x0 + Math.random() * (z.x1 - z.x0);
+          const top = B.ceil(fx);
+          const bx = Math.round(h.width * fx);
+          const by = Math.round(h.height * (top + Math.random() * Math.max(0.02, z.y1 - top)));
+          const rec = B.mk(kind, TONE[(Math.random() * TONE.length) | 0], bx, by);
+          if (rec) fresh.push(rec);
+        }
+      });
+      if (fresh.length) B.rain(fresh);
+    },
+
+    /* =====================================================================
+       THE STENCIL
+
+       A DRAWING, NOT A TARGET ZONE. There is no hit region here, no collision
+       shape, no snap box — it is an SVG with `pointer-events: none` sitting
+       under the bricks, and the only thing that decides where a piece may land
+       is the solver, same as everywhere else. Which is the point of the whole
+       arrangement: what you see is a technical drawing of the answer, and what
+       you feel is the magnet you have been feeling since you arrived.
+
+       Each piece is drawn SEPARATELY — its own dashed silhouette, its own
+       studs — because that is what tells you the orientation. One outline
+       around the whole build would say where the object goes and nothing about
+       which brick, which way round.
+       ===================================================================== */
+    paint() {
+      const B = Bricks, U = B.U, st = this.st;
+      if (!st || !this.host) return;
+      const h = this.host.getBoundingClientRect();
+      st.ox = Math.round((h.width - st.W * U) / 2);
+      st.oy = Math.round((h.height - st.H * U) / 2);
+
+      if (!this.sv) {
+        this.sv = el('div', { class: 'stn', 'aria-hidden': 'true' });
+        this.host.appendChild(this.sv);
+      }
+      const body = st.slots.map((s, i) => {
+        const has = new Set(s.cs.map((c) => c.join(',')));
+        let d = '';
+        s.cs.forEach(([c, w]) => {
+          const x = (s.gx + c) * U, y = (s.gy + w) * U;
+          d += `<rect class="stn__f" x="${x}" y="${y}" width="${U}" height="${U}"/>`
+            + `<circle class="stn__s" cx="${(x + U / 2).toFixed(1)}" `
+            + `cy="${(y + U / 2).toFixed(1)}" r="${(U * 0.19).toFixed(2)}"/>`;
+          const edge = (dx, dy, a, b2, c2, d2) => {
+            if (has.has(`${c + dx},${w + dy}`)) return;
+            d += `<line class="stn__e" x1="${a}" y1="${b2}" x2="${c2}" y2="${d2}"/>`;
+          };
+          edge(0, -1, x, y, x + U, y);
+          edge(0, 1, x, y + U, x + U, y + U);
+          edge(-1, 0, x, y, x, y + U);
+          edge(1, 0, x + U, y, x + U, y + U);
+        });
+        return `<g class="stn__p${s.done ? ' is-set' : ''}" data-s="${i}">${d}</g>`;
+      }).join('');
+
+      this.sv.style.left = `${st.ox}px`;
+      this.sv.style.top = `${st.oy}px`;
+      this.sv.innerHTML = `<svg viewBox="0 0 ${st.W * U} ${st.H * U}" `
+        + `width="${st.W * U}" height="${st.H * U}">${body}</svg>`;
+      requestAnimationFrame(() => { if (this.sv) this.sv.classList.add('is-on'); });
+
+      this.hud();
+    },
+
+    /* the clock and the brief. Two lines and a hairline — the aesthetic of the
+       page does not get an arcade HUD hung over it */
+    hud() {
+      const st = this.st;
+      if (!this.hd) {
+        this.hd = el('div', { class: 'nfh' },
+          '<div class="nfh__l">'
+          + `<p class="nfh__eb">${esc((this.copy && this.copy.eyebrow) || 'Build this')}</p>`
+          + '<p class="nfh__nm"></p></div>'
+          + '<p class="nfh__t" role="timer" aria-live="off">00:30</p>');
+        this.hd.appendChild(el('div', { class: 'nfh__bar' }, '<i></i>'));
+        this.host.appendChild(this.hd);
+      }
+      $('.nfh__nm', this.hd).textContent = st.spec.label;
+      this.clock(st.secs);
+      requestAnimationFrame(() => { if (this.hd) this.hd.classList.add('is-on'); });
+    },
+
+    clock(left) {
+      if (!this.hd) return;
+      const s = Math.max(0, Math.ceil(left - 0.0001));
+      const txt = `00:${String(s).padStart(2, '0')}`;
+      const n = $('.nfh__t', this.hd);
+      if (n.textContent !== txt) {
+        n.textContent = txt;
+        n.classList.toggle('is-low', s <= 5);
+        /* the last five seconds get a tick each. Nothing before that — a clock
+           that talks the whole way through is a clock you stop hearing. */
+        if (s <= 5 && s > 0) {
+          Sound.voice({ freq: 640, gain: 0.016, dur: 0.03, bright: 2600, drop: 1.4, noise: 0.25 });
+        }
+      }
+    },
+
+    tick() {
+      if (!this.live()) return;
+      const st = this.st;
+      const now = performance.now();
+      const left = (st.end - now) / 1000;
+      this.clock(left);
+      const t = Math.max(0, Math.min(1, left / st.secs));
+      if (this.hd) this.hd.style.setProperty('--t', t.toFixed(4));
+      if (left <= 0) { this.lose(); return; }
+      st.raf = requestAnimationFrame(() => this.tick());
+    },
+
+    /* =====================================================================
+       THE ONE THING THE SOLVER IS ASKED
+
+       Returns a landing in exactly the shape `plan()` returns, or null, and it
+       is null for every reason it should be: no game, a structure rather than
+       a single piece in the hand, no empty slot of that footprint, or one that
+       is simply too far away. `detect()` is the same radius the rest of the
+       canvas uses, so "near enough to be offered" means here what it means
+       everywhere else — the game is not more forgiving than the room, it just
+       has an opinion about which offer is the right one.
+
+       `tx`/`ty` are corrected by the anchor offset because that is what the
+       magnet subtracts a piece's ORIGIN from. For an unturned piece the two
+       are the same number; for a turned one they are half a stud apart, and
+       half a stud of drift on the one interaction the game is made of is the
+       difference between a magnet and a shove.
+       ===================================================================== */
+    solve(set) {
+      if (!this.live() || !set || set.length !== 1) return null;
+      const B = Bricks, U = B.U, st = this.st, a = set[0];
+      const sig = this.sig(a.kind, a.rot);
+      const ax = B.ax(a), ay = B.ay(a);
+      const REACH = B.detect();
+      let best = null;
+      st.slots.forEach((s) => {
+        if (s.done || s.sig !== sig) return;
+        const tx = st.ox + s.gx * U, ty = st.oy + s.gy * U;
+        const d = Math.hypot(tx - ax, ty - ay);
+        if (d > REACH) return;
+        if (!best || d < best.d) best = { d, s, tx, ty };
+      });
+      if (!best) return null;
+      const o = B.off(a);
+      return {
+        d: best.d, k: best.d, slack: U * 2,
+        tx: best.tx - o.x, ty: best.ty - o.y,
+        g: st.grp || (st.grp = this.grp()), cx: best.s.gx, cy: best.s.gy,
+        ox: st.ox, oy: st.oy, touch: 1, buried: 0, slot: best.s, game: true,
+      };
+    },
+
+    /* The build's group is an ORDINARY group that happens to start empty and
+       to be born on the stencil's lattice. `weld()` merges into it, `plan()`
+       finds joins to it afterwards and a piece pulled out of it splits it like
+       any other — none of which this module has to arrange, because there is
+       nothing special about it to arrange. */
+    grp() {
+      const g = { members: [] };
+      Bricks.groups.push(g);
+      return g;
+    },
+
+    /* =====================================================================
+       AFTER A GESTURE — read the board, say what is true
+       ===================================================================== */
+    after(rec, set, plan) {
+      if (!this.live()) return;
+      const seated = !!(plan && plan.game && plan.slot);
+      if (seated) {
+        /* the click is already the canvas's; this is the half-tone above it
+           that says the click was the RIGHT one */
+        Sound.voice({ freq: 1180, gain: 0.02, dur: 0.045, bright: 5200, drop: 1.6, noise: 0.2 });
+      } else if (rec && set && set.length === 1 && this.near(rec)) {
+        this.eject(rec);
+      }
+      this.audit(true);
+    },
+
+    /* STANDING ON THE DRAWING — the only thing that earns a piece a push back
+       out. Measured as real overlap between the piece's footprint and the
+       stencil's box rather than as "the anchor is somewhere near", because the
+       case that matters is a wide brick laid across the top of the target with
+       its origin outside it: that is squarely on the drawing and the anchor
+       test called it a miss.
+
+       Four tenths of a stud in both axes, so a piece put down alongside the
+       target is a piece put down and not a wrong answer. */
+    near(rec) {
+      const B = Bricks, U = B.U, st = this.st;
+      const x = B.ax(rec), y = B.ay(rec);
+      let w = 0, h = 0;
+      B.cells(rec).forEach(([c, r]) => { w = Math.max(w, c + 1); h = Math.max(h, r + 1); });
+      const eps = U * 0.4;
+      return x + w * U - eps > st.ox && x + eps < st.ox + st.W * U
+        && y + h * U - eps > st.oy && y + eps < st.oy + st.H * U;
+    },
+
+    /* --- WRONG PIECE: IT DOES NOT GET TO STAY ------------------------------
+
+       The first version shook the brick and left it lying on the drawing, and
+       watching somebody play it that is plainly the wrong answer: the piece
+       sits there covering the slot it does not fit, the outline it is hiding
+       is the outline that would have told them which piece to fetch, and the
+       shake reads as the page being fussy rather than as an answer.
+
+       So the drawing pushes it back out. The piece leaves along the shortest
+       line out of the stencil, clears it by a couple of studs, and lands in
+       the room — visibly rejected, still yours, still draggable, nothing
+       deleted and nothing scored. The statement is unmissable and needs no
+       copy: THAT ONE DOES NOT GO THERE, and the slot is legible again the
+       instant it is gone.
+
+       NOT A PENALTY, and worth saying twice. It is a shove, not a buzzer:
+       one soft low tone, a short arc, and a wobble on landing. */
+    eject(rec) {
+      const B = Bricks, U = B.U, st = this.st;
+      if (!rec || rec.auto) return;
+
+      /* it comes loose first if the release welded it to something — a wrong
+         piece cannot be pushed out while it is still part of the build */
+      if (rec.g && rec.g.members.length > 1) B.pop(rec, true);
+
+      const h = this.host.getBoundingClientRect();
+      const L = st.ox, T = st.oy, R = st.ox + st.W * U, Bm = st.oy + st.H * U;
+      const x = B.ax(rec), y = B.ay(rec);
+      let w = 0, hh = 0;
+      B.cells(rec).forEach(([c, r]) => { w = Math.max(w, c + 1); hh = Math.max(hh, r + 1); });
+      w *= U; hh *= U;
+
+      /* THE SHORTEST WAY OUT, which is the same rule `wallOut` uses to get a
+         brick off the hero — four candidate slides, nearest wins. A piece
+         nudged out of the left edge of the drawing should not fly over the
+         top of it. */
+      const clear = U * 2.4;
+      const out = [
+        { d: y + hh - T, x, y: T - hh - clear },
+        { d: Bm - y, x, y: Bm + clear },
+        { d: x + w - L, x: L - w - clear, y },
+        { d: R - x, x: R + clear, y },
+      ].sort((a, b) => a.d - b.d)[0];
+
+      /* and a little sideways scatter, so two rejected pieces do not stack up
+         in the same spot */
+      const jit = (Math.random() - 0.5) * U * 3;
+      const tx = clamp(Math.round(out.x + (out.d === y + hh - T || out.d === Bm - y ? jit : 0)),
+        10, Math.max(10, h.width - w - 10));
+      const ty = clamp(Math.round(out.y + (out.d === x + w - L || out.d === R - x ? jit : 0)),
+        10, Math.max(10, h.height - hh - 10));
+
+      const o = B.off(rec);
+      const sx = B.px(rec), sy = B.py(rec);
+      const ex = tx - o.x, ey = ty - o.y;
+
+      Sound.voice({ freq: 156, gain: 0.022, dur: 0.1, bright: 720, drop: 0.7, noise: 0.6 });
+
+      if (REDUCED) { B.moveTo(rec, ex, ey); B.dirty(); return; }
+
+      /* A SHOVE, NOT A FLIGHT. Fast out, overshooting a touch, then a damped
+         settle — the same curve shape `flyTo` lands a preset piece on, run
+         backwards in intent and in a third of the time. */
+      rec.auto = true;
+      rec.it.node.classList.add('is-auto', 'is-nope');
+      const t0 = performance.now(), DUR = 330;
+      const step = (now) => {
+        const t = Math.min(1, (now - t0) / DUR);
+        const e = 1 - Math.pow(1 - t, 3);
+        const over = Math.sin(Math.PI * Math.min(1, t * 1.15)) * 0.09;
+        B.moveTo(rec, sx + (ex - sx) * (e + over), sy + (ey - sy) * (e + over));
+        if (t < 1) { requestAnimationFrame(step); return; }
+        B.moveTo(rec, ex, ey);
+        rec.auto = false;
+        rec.it.node.classList.remove('is-auto');
+        setTimeout(() => rec.it.node.classList.remove('is-nope'), 260);
+        B.dirty();
+      };
+      requestAnimationFrame(step);
+    },
+
+    /* THE BOARD, READ OFF THE CANVAS. See the note at the top of the module:
+       there is no bookkeeping to be wrong, only anchors compared against slot
+       origins with a fifth of a stud of slop, which is float error and not
+       tolerance — a welded piece is exactly on the lattice or it is not on it
+       at all. */
+    audit(canWin) {
+      const B = Bricks, U = B.U, st = this.st;
+      if (!st) return;
+      const tol = U * 0.2;
+      let done = 0;
+      st.slots.forEach((s, i) => {
+        const tx = st.ox + s.gx * U, ty = st.oy + s.gy * U;
+        let ok = false;
+        for (let k = 0; k < B.recs.length; k += 1) {
+          const r = B.recs[k];
+          if (Math.abs(B.ax(r) - tx) > tol || Math.abs(B.ay(r) - ty) > tol) continue;
+          if (this.sig(r.kind, r.rot) !== s.sig) continue;
+          ok = true; break;
+        }
+        if (ok) done += 1;
+        if (ok === s.done) return;
+        s.done = ok;
+        const g = this.sv && $(`.stn__p[data-s="${i}"]`, this.sv);
+        if (g) g.classList.toggle('is-set', ok);
+      });
+      st.done = done;
+      if (canWin && done === st.slots.length) this.win();
+    },
+
+    /* =====================================================================
+       STATE 4A — it stands up
+       ===================================================================== */
+    win() {
+      const st = this.st;
+      if (!st || st.phase !== 'play') return;
+      st.phase = 'won';
+      if (st.raf) cancelAnimationFrame(st.raf);
+      const took = Math.max(1, Math.round((performance.now() - st.t0) / 1000));
+
+      if (this.sv) this.sv.classList.add('is-done');
+      if (this.hd) this.hd.classList.add('is-done');
+
+      this.cheer();
+      this.pop();
+      Sound.voice({ freq: 660, gain: 0.03, dur: 0.06, bright: 3400, drop: 1.4, noise: 0.25 });
+      setTimeout(() => Sound.voice({ freq: 880, gain: 0.028, dur: 0.06, bright: 4000, drop: 1.4, noise: 0.2 }), 90);
+      setTimeout(() => Sound.voice({ freq: 1320, gain: 0.024, dur: 0.09, bright: 5200, drop: 1.2, noise: 0.15 }), 190);
+      /* the low thud of the launch, under the three-note run */
+      setTimeout(() => Sound.voice({ freq: 120, gain: 0.03, dur: 0.14, bright: 900, drop: 0.35, noise: 0.55 }), 40);
+
+      /* THE POP LANDS FIRST. Putting the words up on the same frame as the
+         burst makes the burst the background of a panel; a third of a second
+         later it is a thing that happened and then was named. */
+      setTimeout(() => {
+        if (!this.st || this.st.phase !== 'won') return;
+        this.panel({
+          kind: 'win',
+          eyebrow: 'Challenge complete',
+          head: 'Build complete!',
+          time: `00:${String(Math.min(99, took)).padStart(2, '0')}`,
+          sub: 'You did it.',
+          again: 'Play again',
+        });
+      }, 420);
+    },
+
+    /* =====================================================================
+       THE POP
+
+       Confetti, in the only vocabulary this page has: the chips that come out
+       of the floor are LEGO — a rounded body, one stud, and the same eight
+       saturated tones the bricks are moulded in. Paper rectangles would be a
+       celebration borrowed from somewhere else and would be the first thing on
+       this canvas that is not made of the toy.
+
+       ONE CANVAS, NOT NINETY ELEMENTS. It is drawn rather than composed: the
+       burst is over in two and a half seconds, it must not touch layout, it
+       must not enter the drag engine's world, and ninety absolutely positioned
+       nodes appearing next to sixty-four live bricks is a frame budget spent
+       on something that is about to be thrown away. The canvas is added,
+       painted, faded and removed, and nothing else on the page notices.
+
+       Three nozzles along the bottom edge rather than one, because a single
+       fountain in the middle reads as a graphic and three reads as the room
+       going off. Gravity, drag and spin are the same shapes the fall uses —
+       there is no second physics here either, just a much shorter one.
+       ===================================================================== */
+    pop() {
+      if (REDUCED || !this.host) return;
+      const h = this.host.getBoundingClientRect();
+      if (!h.width || !h.height) return;
+
+      const cv = el('canvas', { class: 'nfc', 'aria-hidden': 'true' });
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(h.width * dpr);
+      cv.height = Math.round(h.height * dpr);
+      cv.style.width = `${h.width}px`;
+      cv.style.height = `${h.height}px`;
+      this.host.appendChild(cv);
+      const g = cv.getContext('2d');
+      g.scale(dpr, dpr);
+
+      const narrow = h.width <= 768;
+      const N = narrow ? 70 : 132;
+      const rnd = (a, b) => a + Math.random() * (b - a);
+      /* left, centre, right. The middle one is the strongest and the outer two
+         lean inward, so the whole burst is an ARCH — one fountain in the
+         middle reads as a graphic and a straight row reads as a hedge. */
+      const nozzle = [
+        { x: h.width * 0.16, v: 0.9, lean: 0.16 },
+        { x: h.width * 0.5, v: 1.06, lean: 0 },
+        { x: h.width * 0.84, v: 0.9, lean: -0.16 },
+      ];
+      /* IT HAS TO CLEAR THE PANEL AND MOST OF THE ROOM. The apex of a launch is
+         v²/2g, so the speed is derived from how high it should actually go —
+         two thirds of the canvas — rather than picked and then tuned. */
+      const G = 1780;                 // px/s²
+      const apex = Math.max(360, h.height * 0.66);
+      const V = Math.min(1850, Math.sqrt(2 * G * apex));
+      const bits = [];
+      for (let i = 0; i < N; i += 1) {
+        const n = nozzle[i % 3];
+        const power = rnd(0.74, 1.1) * n.v;
+        const spread = rnd(-0.5, 0.5) + n.lean;
+        const speed = V * power;
+        bits.push({
+          x: n.x + rnd(-30, 30),
+          y: h.height + rnd(6, 46),
+          vx: Math.sin(spread) * speed * rnd(0.55, 0.95),
+          vy: -Math.cos(spread) * speed,
+          a: rnd(0, Math.PI * 2),
+          va: rnd(-10, 10),
+          w: rnd(11, 19),
+          hh: rnd(6.5, 10),
+          c: TONE[(Math.random() * TONE.length) | 0],
+          /* the stagger is what stops it reading as one sheet of paper */
+          wait: rnd(0, 260),
+        });
+      }
+
+      const DRAG = 0.9;               // per second
+      const LIFE = 3000;
+      const FADE = 700;               // the tail, so nothing blinks out
+      const t0 = performance.now();
+      let prev = t0;
+
+      const step = (now) => {
+        if (!cv.parentNode) return;
+        const dt = Math.min(0.034, (now - prev) / 1000);
+        prev = now;
+        const age = now - t0;
+        g.clearRect(0, 0, h.width, h.height);
+        g.globalAlpha = age > LIFE - FADE ? Math.max(0, (LIFE - age) / FADE) : 1;
+
+        let alive = 0;
+        for (let i = 0; i < bits.length; i += 1) {
+          const b = bits[i];
+          if (age < b.wait) { alive += 1; continue; }
+          b.vy += G * dt;
+          const k = Math.pow(DRAG, dt);
+          b.vx *= k; b.vy *= k;
+          b.x += b.vx * dt; b.y += b.vy * dt;
+          b.a += b.va * dt;
+          if (b.y - 40 > h.height) continue;      // fallen out of the room
+          alive += 1;
+
+          g.save();
+          g.translate(b.x, b.y);
+          g.rotate(b.a);
+          /* the chip: a rounded body, a lighter top face and one stud — the
+             same three marks `art()` draws a brick with, at 1/3 the size */
+          const w = b.w, hgt = b.hh, r = Math.min(2.2, hgt / 2);
+          g.fillStyle = b.c;
+          g.beginPath();
+          if (g.roundRect) g.roundRect(-w / 2, -hgt / 2, w, hgt, r);
+          else g.rect(-w / 2, -hgt / 2, w, hgt);
+          g.fill();
+          g.fillStyle = 'rgba(255,255,255,0.34)';
+          g.fillRect(-w / 2 + 0.8, -hgt / 2 + 0.8, w - 1.6, Math.max(1, hgt * 0.26));
+          g.fillStyle = 'rgba(0,0,0,0.18)';
+          g.beginPath();
+          g.arc(0, 0, Math.max(1, hgt * 0.24), 0, Math.PI * 2);
+          g.fill();
+          g.restore();
+        }
+
+        if (age < LIFE && alive) { requestAnimationFrame(step); return; }
+        cv.classList.add('is-out');
+        setTimeout(() => cv.remove(), 420);
+      };
+      requestAnimationFrame(step);
+    },
+
+    /* THE OBJECT GIVES, ONCE, TOGETHER. The same damped move `run()` ends a
+       preset with — an assembly settling on its own weight — rather than a
+       celebration bolted on top of it. */
+    cheer() {
+      const B = Bricks, U = B.U, st = this.st;
+      const parts = [];
+      st.slots.forEach((s) => {
+        const tx = st.ox + s.gx * U, ty = st.oy + s.gy * U;
+        B.recs.forEach((r) => {
+          if (Math.abs(B.ax(r) - tx) > U * 0.2 || Math.abs(B.ay(r) - ty) > U * 0.2) return;
+          parts.push({ r, x: B.px(r), y: B.py(r) });
+        });
+      });
+      if (!parts.length || REDUCED) return;
+      parts.forEach((p) => p.r.it.node.classList.add('is-settle'));
+      const t0 = performance.now();
+      const step = (now) => {
+        const t = Math.min(1, (now - t0) / 460);
+        const k = Math.exp(-6 * t) * Math.sin(11 * t) * -5.5;
+        parts.forEach((p) => B.moveTo(p.r, p.x, p.y + k));
+        if (t < 1) { requestAnimationFrame(step); return; }
+        parts.forEach((p) => {
+          B.moveTo(p.r, p.x, p.y);
+          p.r.it.node.classList.remove('is-settle');
+        });
+      };
+      requestAnimationFrame(step);
+    },
+
+    /* =====================================================================
+       STATE 4B — the clock runs out, and nothing is destroyed
+       ===================================================================== */
+    lose() {
+      const st = this.st;
+      if (!st || st.phase !== 'play') return;
+      st.phase = 'lost';
+      if (st.raf) cancelAnimationFrame(st.raf);
+      this.clock(0);
+      if (this.hd) this.hd.classList.add('is-out');
+      Sound.voice({ freq: 172, gain: 0.026, dur: 0.16, bright: 780, drop: 0.4, noise: 0.5 });
+      const n = st.done || 0;
+      this.panel({
+        kind: 'lose',
+        eyebrow: 'Out of time',
+        head: "Time's up",
+        sub: n
+          ? `You were close — ${n} of ${st.slots.length} in place.`
+          : 'You were close.',
+        again: 'Try again',
+      });
+    },
+
+    /* Bottom of the room, not the middle of it: whatever was managed stays
+       visible behind the words, which is the only reason to show a result at
+       all rather than just resetting. */
+    panel(o) {
+      if (this.pn) this.pn.remove();
+      const p = el('div', { class: `nfr nfr--${o.kind}`, role: 'status' });
+      p.appendChild(el('p', { class: 'nfr__eb' }, esc(o.eyebrow)));
+      p.appendChild(el('p', { class: 'nfr__h' }, esc(o.head)));
+      /* THE TIME IS THE RESULT, so it is set in the clock's own face rather
+         than folded into a sentence — the same mono, the same tabular figures,
+         the same size the count was at. It is the number you were watching,
+         stopped. */
+      if (o.time) p.appendChild(el('p', { class: 'nfr__t' }, esc(o.time)));
+      p.appendChild(el('p', { class: 'nfr__s' }, esc(o.sub)));
+      const again = o.again;
+      const acts = el('div', { class: 'nfr__a' });
+      const a = el('button', { class: 'btn', type: 'button' },
+        `<span class="btn__label">${esc(again)}</span>`);
+      a.addEventListener('click', () => this.again());
+      const b = el('button', { class: 'btn btn--ghost', type: 'button' },
+        '<span class="btn__label">Back to 404</span>');
+      b.addEventListener('click', () => this.exit());
+      acts.append(a, b);
+      p.appendChild(acts);
+      this.host.appendChild(p);
+      this.pn = p;
+      requestAnimationFrame(() => p.classList.add('is-on'));
+    },
+
+    /* =====================================================================
+       RESTART — through the physics, not around it
+       ===================================================================== */
+    again() {
+      if (!this.st) return;
+      const B = Bricks;
+      this.close();
+
+      /* EVERY STRUCTURE COMES APART FIRST. Not because the last build is in
+         the way — the new stencil could be drawn straight over it — but
+         because a fall that leaves a finished car sitting in the corner reads
+         as the game having ignored it. The room is tipped out and refilled.
+
+         `rain()` is the load's own dump, unchanged: no targets, no
+         interpolation, every piece rolled fresh. So "play again" produces an
+         arrangement nobody has seen, out of the same eleven lines of physics
+         that produced the first one. */
+      B.groups.length = 0;
+      B.recs.forEach((r) => {
+        const g = { members: [r] };
+        r.g = g; r.gx = 0; r.gy = 0;
+        B.groups.push(g);
+      });
+      B.dirty();
+      if (REDUCED) B.relax(); else B.rain();
+
+      setTimeout(() => this.start(), REDUCED ? 60 : 900);
+    },
+
+    /* =====================================================================
+       BACK TO THE ROOM
+       ===================================================================== */
+    exit() {
+      this.close();
+      const intro = $('.canvas__intro', this.host);
+      if (intro) intro.classList.remove('is-gone');
+      if (this.card) { this.card.setAttribute('data-wall', ''); this.card = null; }
+      Bricks._wh = null; Bricks.wallStamp = -1;
+      delete document.body.dataset.game;
+    },
+
+    /* Teardown shared by both exits — the clock stopped, the empty build group
+       withdrawn, the three panels faded and removed. It does NOT touch a
+       single brick: whatever was built stands, which is what makes "back to
+       404" a door rather than a reset. */
+    close() {
+      const st = this.st;
+      if (st && st.raf) cancelAnimationFrame(st.raf);
+      if (st && st.grp) {
+        const i = Bricks.groups.indexOf(st.grp);
+        if (i >= 0 && !st.grp.members.length) Bricks.groups.splice(i, 1);
+      }
+      this.st = null;
+      const fade = (n) => {
+        if (!n) return;
+        n.classList.remove('is-on');
+        setTimeout(() => n.remove(), 340);
+      };
+      fade(this.pn); this.pn = null;
+      fade(this.hd); this.hd = null;
+      fade(this.sv); this.sv = null;
+      /* a burst still in the air when the round ends goes with it — its loop
+         stops the moment the node leaves the document */
+      $$('.nfc', this.host || document).forEach((n) => n.remove());
+    },
+
+    /* The stencil is drawn at a pixel origin, so a window that changes size
+       moves it. Redrawn rather than re-laid: same slots, same state, new
+       centre — and `audit()` immediately afterwards re-reads which of them are
+       still standing on it, because the bricks did not move and the drawing
+       did. */
+    reflow() {
+      if (!this.st || !this.sv) return;
+      clearTimeout(this._rt);
+      this._rt = setTimeout(() => {
+        if (!this.st || !this.sv) return;
+        this.paint();
+        this.audit(false);
+      }, 120);
     },
   };
 
@@ -10377,6 +11351,13 @@
       Canvas.setSurface(host);
       Canvas.placement();
       Bricks.drip(c.drip);
+
+      /* AND THE ROOM GETS TWO CONTROLS. The presets are the toolbar's own
+         shelf, moved onto the wall because in here they are the thing to do
+         rather than a tool to reach for; the other is a door to the game. Both
+         are hung on the canvas after the bricks exist, so nothing they do can
+         run before there is anything to do it to. */
+      Game.mount(host, c);
     },
 
     /* --- WORK: AN ARCHIVE ON THE SAME CANVAS -----------------------------
@@ -11256,6 +12237,22 @@
       return { me: rec.kind, reach: +REACH.toFixed(1),
         plan: (() => { const q = Bricks.plan(set, rec.g); return q ? { d: +q.d.toFixed(1), cx: q.cx, cy: q.cy } : null; })(),
         groups: out.filter((o) => o.nearest < 400) };
+    };
+    /* THE CHALLENGE, FROM THE OUTSIDE, and for the same reason as `__bricks`:
+       the board is a lattice and a clock, and neither of those is in the DOM.
+       A harness reading the stencil off the SVG would be testing the drawing
+       rather than the rules. */
+    window.__game = () => {
+      const st = Game.st;
+      if (!st) return null;
+      return {
+        phase: st.phase, target: st.spec.key, done: st.done || 0,
+        ox: st.ox, oy: st.oy, U: Bricks.U,
+        slots: st.slots.map((s) => ({
+          kind: s.kind, rot: s.rot, done: !!s.done,
+          x: st.ox + s.gx * Bricks.U, y: st.oy + s.gy * Bricks.U,
+        })),
+      };
     };
     window.__brickDebug = (on) => Bricks.debugOn(on !== false);
     /* Place a piece by its ANCHOR, in canvas pixels. The fall is random by
