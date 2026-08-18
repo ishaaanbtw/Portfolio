@@ -552,7 +552,7 @@ window.SITE = {
          goes missing the card drops back to the `search` panel, same as any
          card with still artwork.                                             */
       { title: 'Designing the Digital Identity of Cypherock X0',
-        meta: 'Product identity, 2026, Bengaluru', href: '#x0-identity',
+        meta: 'Product identity, 2026, Singapore', href: '#x0-identity',
         thumb: 'assets/media/x0/companion-thumb.mp4',
         thumbPoster: 'assets/media/x0/companion-thumb.webp',
         preview: 'search', line: 'A new product, unmistakably Cypherock',
