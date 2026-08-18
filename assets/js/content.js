@@ -202,9 +202,12 @@ window.SITE = {
        still be read and rewritten as a sentence, spaces and punctuation included.
        Anything unmarked is ordinary text. Note the full stop sits OUTSIDE the
        asterisks — inside, the punctuation slants with the word. */
-    /* One weight, no emphasis. The `*word*` syntax still works — the parser and
-       `.hdl-em` are both still there — so wrapping a word puts the italic back. */
-    headline: 'I’m Ishaan, a product designer who engineers.',
+    /* THE ITALIC IS BACK, ON THE ONE WORD THAT EARNS IT. The parser and
+       `.hdl-em` were left standing for exactly this: the sentence claims two
+       jobs and the second one is the surprise, so it is the word that leans.
+       Note the full stop sits OUTSIDE the asterisks — inside, the punctuation
+       slants with the word and the line ends on a wobble. */
+    headline: 'I’m Ishaan, a product designer who *engineers*.',
     /* The tags. `detail` appears on hover (and stays while selected).
 
        `icon` is a built-in glyph — 'pin' or 'cypherock', both drawn inline in
@@ -223,14 +226,25 @@ window.SITE = {
 
     /* Load reveal, in ms. Measured off the reference; lower every number by the
        same factor if you want the page to arrive sooner. */
+    /* THE COMPOSITION ARRIVES IN ORDER, AND IT ARRIVES SOON.
+
+       The old numbers put the tags at 1.05s and the buttons at 1.5s, which is
+       most of a second of an empty corner with bricks already falling past it —
+       the LEGO was introducing the page and the page was still loading its own
+       sentence. Read top to bottom now: line, tags, buttons, all inside two
+       thirds of a second, and the fall carries on around them.
+
+       The handle is deliberately absent from this list. It is not revealed at
+       all — it is on screen from the first frame, because a visitor who does
+       not know there is a menu has no reason to wait for one. */
     reveal: {
       blur: 14,          // starting blur in px
-      headline: 1100,    // how long the headline takes to resolve
+      headline: 900,     // how long the headline takes to resolve
       wordStagger: 9,    // per-word lag, which makes later lines trail
-      pillsAt: 1050,     // when the tags start
-      pills: 850,
-      pillStagger: 55,
-      ctaAt: 1500,
+      pillsAt: 330,      // when the tags start
+      pills: 720,
+      pillStagger: 45,
+      ctaAt: 560,
       navAt: 2300,
       navStagger: 70,
       hintAt: 2600,

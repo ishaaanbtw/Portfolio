@@ -513,13 +513,82 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
    row and the scroll hint that sit on top of it.
    ========================================================================== */
 
+/* --- THE CTA ROW -------------------------------------------------------------
+   Three steps down from the headline and one step below the tags, which is the
+   hierarchy: the sentence, then the facts, then the thing to do. The gap
+   between the two buttons is wider than the gap between two tags on purpose —
+   these are decisions, and decisions get room. */
 .canvas__cta {
+  position: relative;
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.625rem;
   flex-wrap: wrap;
-  margin-top: 1.9rem;
+  margin-top: clamp(1.35rem, 2.4vh, 1.9rem);
   pointer-events: auto;
 }
+
+/* THE DOMINANT ONE. Bigger than a button in a paragraph because it is the only
+   thing on this page asking to be pressed — same black pill, same spring, same
+   ripple, just sized to the composition it now sits in. */
+.canvas__cta .btn {
+  padding: 0.6rem 1.15rem;
+  font-size: var(--step-0);
+}
+
+/* AND THE SECONDARY ONE IS STILL LEGIBLE. `--btn-fg: var(--ink-dim)` is right
+   for a ghost button in a dense row where the pair reads as one control; out
+   here on open paper, over a dot grid, with bricks passing behind it, it was a
+   label you had to look for. Same ghost treatment, one step of ink darker. */
+.canvas__cta .btn--ghost {
+  --btn-fg: var(--ink-2);
+  --btn-bg: rgba(20, 16, 12, 0.028);
+}
+.canvas__cta .btn--ghost:hover { --btn-fg: var(--ink); }
+
+/* --- THE MARGIN NOTE ---------------------------------------------------------
+   Absolutely positioned out of flow, deliberately: `Bricks.zone()` measures
+   `.canvas__intro`'s `offsetHeight` to work out which part of the canvas is
+   spoken for, and a decoration that is only on screen while the pointer is on
+   the button must not claim seventy pixels of the room for the whole session.
+
+   It is never the thing under the cursor. See the note in `Pages.home()`. */
+.nb {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0.4rem;
+  width: 206px;
+  height: 78px;
+  color: #7c3aed;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 220ms var(--ease), transform 420ms var(--spring-soft, var(--ease));
+}
+.nb svg { display: block; width: 100%; height: 100%; overflow: visible; }
+
+/* THE HAND. 260 is comfortably past the longest path here, so one number
+   covers every stroke and no glyph is left half-drawn. The arrow goes first
+   and the words trail it, which is the order somebody actually writes in. */
+.nb path {
+  stroke-dasharray: 260;
+  stroke-dashoffset: 260;
+}
+.canvas__cta:hover .nb,
+.canvas__cta:focus-within .nb { opacity: 1; transform: none; }
+
+.canvas__cta:hover .nb path,
+.canvas__cta:focus-within .nb path {
+  animation: nbDraw 520ms var(--ease-io, ease-in-out) forwards;
+}
+.canvas__cta:hover .nb .nb__w,
+.canvas__cta:focus-within .nb .nb__w { animation-delay: 190ms; animation-duration: 420ms; }
+
+@keyframes nbDraw { to { stroke-dashoffset: 0; } }
+
+/* the second arrow path is the head, and it is short — it should snap on at
+   the end of the shaft rather than crawl */
+.nb__a + .nb__a { animation-delay: 260ms; animation-duration: 200ms; }
 
 .hero__hint {
   position: absolute;
@@ -5149,18 +5218,45 @@ body.past-hero .sel { opacity: 0; }
    Kept as clamps so the corner does not go slack on a huge monitor or crush on
    a small one, but both land on the measured value at desktop. The 48rem query
    below overrides all of this for phones, where the intro moves to the bottom. */
+/* --- THE COLUMN IS PLACED, NOT PARKED ---------------------------------------
+
+   It used to sit 20px from the top-left corner of the viewport, which is where
+   you put a thing when you have not decided where it goes: the sentence ran
+   along the very top edge with no air above it, the whole middle of the canvas
+   was empty, and the only thing giving the page a composition was wherever the
+   bricks happened to land.
+
+   Now it is set in from the left on a real gutter and dropped into the upper
+   third — high enough to be the first thing read, low enough that there is
+   paper above it and room for the fall below. The block is a reading column
+   rather than a banner: capped at 60–72% of the canvas so the sentence breaks
+   into two lines of its own accord and the right-hand third stays open for the
+   LEGO and the dock.
+
+   `top` is a percentage of the CANVAS, not of the viewport, and that is
+   deliberate — `Bricks.zone()` derives the protected region from this
+   element's `offsetTop/offsetHeight`, so the composition and the physics are
+   reading one number. */
 .canvas__intro {
   position: absolute;
-  top: clamp(1.25rem, 3.2vh, 1.625rem);
-  left: clamp(1.25rem, 1.6vw, 1.4375rem);
+  top: clamp(4.5rem, 17vh, 9.5rem);
+  left: clamp(1.5rem, 5.5vw, 5.5rem);
   z-index: 2;
-  width: fit-content;
+  /* A MEASURE, NOT A SHRINK-WRAP. `fit-content` sizes the column to whichever
+     child happens to be widest, and with a balanced two-line headline that is
+     not the same number as the widest painted line — the box came out 119px
+     narrower than the sentence it contains, and `Bricks.zone()` derives the
+     protected region from exactly this box. Stating the measure means the
+     column always contains its own type, the physics is told the truth, and
+     the sentence breaks where the column says rather than where the longest
+     word lands. */
+  width: min(42rem, 62vw);
   /* 48rem, up from 44. At 34px the sentence measures ~693px and the old 704px
      cap left 11px of slack — one metric change away from breaking "engineers."
      onto a line by itself. `.canvas__head` is `width: fit-content`, so the box
      still hugs the words and this cannot push anything into the objects on the
      right; it only decides where the line is allowed to break. */
-  max-width: min(48rem, 62vw);
+  max-width: min(44rem, 68vw);
   padding: 0;
   pointer-events: none;              /* only the pills inside are interactive */
 }
@@ -5223,21 +5319,41 @@ body.past-hero .sel { opacity: 0; }
 
      The floor rises with it, 20px -> 24px, so the phone does not drop to a
      third of the desktop size. */
-  font-size: clamp(1.5rem, 1.15rem + 1.2vw, 2.125rem);
-  line-height: 1.21;
-  letter-spacing: -0.023em;
+  /* --- SIZE, AND WHY IT MOVED AGAIN ------------------------------------
+
+     34px over a 52ch measure put this 45-character sentence on ONE line, and a
+     single short line is a caption however well it is set. The claim the page
+     opens with should be a BLOCK: two lines, stacked, with enough weight to
+     hold the corner of the canvas on its own against eighteen saturated
+     bricks.
+
+     So the measure comes in to 24ch, which is where "…a product / designer
+     who engineers." breaks, and `text-wrap: balance` keeps the two lines
+     within a word of each other rather than leaving an orphan. The size rises
+     with it — 32px on a phone to 52px at 1440 — and the leading tightens to
+     1.1, because a two-line block set at 1.21 reads as two sentences rather
+     than as one.
+
+     Everything else on this rule is unchanged and still measured: the 500
+     weight, the -0.023em tracking, the pure black ink. */
+  font-size: clamp(2rem, 1.35rem + 2.35vw, 3.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.028em;
   font-weight: 500;
   color: #000;
   text-wrap: balance;
-  max-width: min(100%, 52ch);
+  max-width: min(100%, 24ch);
 }
 .canvas__head { width: fit-content; max-width: 100%; }
 
 /* 11px, measured: the reference's headline box ends at y=89 (top 26 + two
    31.5px lines) and its pill row starts at y=100. This was 17.6px. */
+/* The gap under the headline grows with it. At 34px on one line 11px was the
+   measured relationship; under a two-line 52px block the same 11px reads as
+   the tags being stuck to the last word. */
 .canvas__pills {
   position: relative;
-  margin-top: 0.6875rem;
+  margin-top: clamp(1rem, 1.6vh, 1.35rem);
   min-height: 2.25rem;   /* JS sets the real height once widths are measured */
 }
 
@@ -5744,17 +5860,25 @@ body.past-hero .sel { opacity: 0; }
   gap: 0.40625rem;                   /* 6.5px */
   height: 1.9375rem;                 /* 31px */
   padding: 0 0.6875rem;              /* 11px */
-  border-radius: 6px;
-  background: #eeedea;
+  border-radius: 7px;
+  background: #f0efec;
   font-size: 0.9375rem;              /* 15px */
   font-weight: 530;
-  /* SAMPLED FROM THE REFERENCE, AND IT FAILS WCAG AA. #918D8D on its #F4F4F4
-     gives 2.99:1, where 15px text at this weight needs 4.5:1. This is the
-     reference's own problem, inherited on purpose because matching it is the
-     brief — but it is a real one, and #6f6b6b is the same grey at 4.79:1 if
-     legibility should win. */
-  color: #918d8d;
+  /* THE NOTE THIS RULE USED TO CARRY said the sampled #918D8D gives 2.99:1 on
+     its background — where 15px at this weight needs 4.5:1 — and offered
+     #6f6b6b as the same grey at 4.79:1 "if legibility should win". It should.
+     These three tags are two of the five facts the hero is there to state, and
+     a fact you have to lean in to read is not stated. Same grey, same
+     restraint, one step of ink darker. */
+  color: #6f6b6b;
   white-space: nowrap;
+  /* AND A LITTLE DEPTH. A hairline inside stroke and one soft shadow, at the
+     strength the rest of the interface uses — enough that the tag reads as a
+     small object lying on the paper rather than as a lighter rectangle printed
+     on it, and nowhere near enough to compete with the sentence above it. */
+  box-shadow:
+    inset 0 0 0 1px rgba(20, 16, 12, 0.055),
+    0 1px 2px -1px rgba(20, 16, 12, 0.09);
   transition:
     background 260ms var(--ease),
     box-shadow 320ms var(--ease);
@@ -5876,7 +6000,12 @@ body.past-hero .sel { opacity: 0; }
 
 /* No hover *lift* — that was the twitchy part. Hover only warms the background
    and opens the detail. */
-:root:not(.hover-cold) .drg:not(.is-drag):not(.is-sel):hover .pill { background: #e7e6e2; }
+:root:not(.hover-cold) .drg:not(.is-drag):not(.is-sel):hover .pill {
+  background: #eae9e5;
+  box-shadow:
+    inset 0 0 0 1px rgba(20, 16, 12, 0.08),
+    0 2px 5px -2px rgba(20, 16, 12, 0.14);
+}
 
 /* --- sticky notes ------------------------------------------------------- */
 
@@ -8297,13 +8426,25 @@ body.deck-shut .mute {
   transform: translateY(-50%);
   display: grid;
   place-items: center;
-  padding: 1.15rem 0.5rem;
+  /* IT HAS TO LOOK LIKE A CONTROL FROM THE FIRST FRAME.
+
+     It was paper-on-paper with a hairline of shadow — welded to the canvas,
+     which was the point, and near enough invisible against it, which was not.
+     A visitor who never notices the handle has no navigation at all.
+
+     Nothing about it is redesigned: same place, same shape, same vertical
+     word, same push interaction. It is simply given the panel language the
+     dock and the builds shelf already use — white, a 1px inside stroke, a soft
+     shadow — and a little more room to stand in. That is the difference
+     between a fold in the paper and a thing you press. */
+  padding: 1.35rem 0.6rem;
   border: 0;
-  border-radius: 0 10px 10px 0;
-  background: var(--paper);
+  border-radius: 0 12px 12px 0;
+  background: #fff;
   box-shadow:
-    1px 0 0 rgba(20, 16, 12, 0.05),
-    6px 0 22px -12px rgba(20, 16, 12, 0.22);
+    inset 0 0 0 1px var(--line, #e7e4de),
+    2px 0 4px -2px rgba(20, 16, 12, 0.1),
+    10px 0 28px -14px rgba(20, 16, 12, 0.32);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: padding-left 260ms var(--ease), background-color 260ms var(--ease);
@@ -8311,12 +8452,14 @@ body.deck-shut .mute {
 .tab-menu span {
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--ink, #14100c);
 }
+.tab-menu:hover { background: #fff; }
+.tab-menu:hover span { color: var(--ink); }
 .tab-menu:hover { padding-left: 0.75rem; }
 .tab-menu:active { transform: translateY(-50%) scale(0.97); }
 
@@ -8778,6 +8921,25 @@ body[data-page] .nav { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .row__now i { animation: none; }
+}
+
+/* --- the hero column on a phone ---------------------------------------------
+   Below the breakpoint the column is not beside the scatter, it is under it —
+   the existing rules move it to the foot of the canvas and the brick region
+   follows. All that changes here is the measure: a stated width that is right
+   at 1440 is not right at 390, and the headline needs the full column rather
+   than 62% of a screen that is already narrow. */
+@media (max-width: 48rem) {
+  .canvas:not(.canvas--room) .canvas__intro {
+    left: clamp(1rem, 5vw, 1.5rem);
+    width: min(24rem, calc(100vw - 2.5rem));
+    max-width: calc(100vw - 2.5rem);
+  }
+  .canvas__headline { max-width: 100%; letter-spacing: -0.024em; }
+  .canvas__cta .btn { padding: 0.55rem 1.05rem; }
+  /* the note is a pointer affordance; a phone has no pointer to hover with,
+     and 78px of drawing under the buttons on a 390px screen is clutter */
+  .nb { display: none; }
 }
 
 /* ==========================================================================

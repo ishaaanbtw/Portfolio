@@ -5870,6 +5870,38 @@
         return z;
       }
 
+      /* AROUND THE COMPOSITION — the home hero, once it became one.
+
+         The old numbers said "the column is the top-left corner": bricks from
+         21% of the width across, with a ceiling that rose as you crossed to the
+         right. That is the correct region for a sentence parked 20px from the
+         corner, and it is the wrong one for a two-line editorial block set in
+         on a gutter and dropped into the upper third — the column now reaches
+         further down and further right than the ramp ever knew about, and the
+         first thing a load did was rest a 2x4 on the word "who".
+
+         So the hero column gets the same treatment the 404's sign has: it is an
+         ISLAND. Bricks fall THROUGH it — nothing is fenced, and a piece you
+         drag onto the headline stays on the headline — they simply may not come
+         to REST inside it or in the strip below it. The pile builds along the
+         floor, up the right-hand margin and into the corner under the type,
+         which is the art direction the brief asks for, expressed as the one
+         rule the physics already knows how to obey.
+
+         Derived from the measured column rather than written down, so moving
+         the composition in the stylesheet moves the region with it. */
+      if (k && Shell.page === 'home' && k.y0 <= 0.5) {
+        z.x0 = 0.04; z.x1 = 0.96;
+        z.y1 = 0.9;
+        /* the clearance under the block is headroom for the PILE, not for one
+           brick — a piece resting on top of two others is what reaches the
+           buttons, so the shadow runs a little past the column's own foot */
+        z.island = { x0: Math.max(0, k.x0 - 0.012), x1: k.x1 + 0.012,
+          y1: Math.min(0.9, k.y1 + 0.06) };
+        z.edgeTop = 0.07;
+        return z;
+      }
+
       /* UNDER, NOT BESIDE. The column has moved to the foot of the canvas, so
          the bricks take the whole width above it and the region's floor is the
          column's own top edge. There is no ramp: nothing is in their way up
@@ -11257,6 +11289,45 @@
         `<span class="btn__label">${esc(S.hero.primary.label)}</span>`));
       cta.appendChild(el('a', { class: 'btn btn--ghost', href: S.person.resumeUrl, 'data-action': 'resume' },
         `<span class="btn__label">＋ ${esc(S.hero.secondary.label)}</span>`));
+
+      /* --- THE MARGIN NOTE --------------------------------------------------
+
+         A hand-drawn arrow and two written words that appear under the primary
+         button when you reach for it, as though somebody had pencilled them on
+         the page.
+
+         IT IS DRAWN, NOT TYPESET, and that is the whole point of doing it this
+         way. There is no handwriting face on this site — Geist is the only
+         family, self-hosted, and pulling a script font off a CDN for six
+         letters would be the first dependency the project has. So the letters
+         ARE paths: one open stroke each, round-capped, in the same purple the
+         marker in the dock draws with. Which is the honest connection as well
+         as the cheap one — the note is written with the pen the visitor is
+         about to be handed.
+
+         The stroke draws itself with `stroke-dasharray`/`-dashoffset`, arrow
+         first and words trailing it, so it reads as a hand moving rather than
+         as a graphic fading up. `pointer-events: none` throughout: it is a
+         drawing on the paper, not a control, and it must never be the thing
+         under the cursor when somebody is aiming at the button. */
+      cta.appendChild(el('div', { class: 'nb', 'aria-hidden': 'true' },
+        '<svg viewBox="0 0 206 78" fill="none" stroke="currentColor"'
+        + ' stroke-linecap="round" stroke-linejoin="round">'
+        /* the arrow: a curve out of the words, up to the button's underside */
+        + '<path class="nb__a" d="M106 51C81 58 51 47 47 17" stroke-width="2.1"/>'
+        + '<path class="nb__a" d="M37 29 47 13 58 26" stroke-width="2.1"/>'
+        /* S a y   h i */
+        + '<path class="nb__w" d="M126 37c-2-5-12-6-13 0s12 7 12 13-10 7-13 1" stroke-width="2"/>'
+        + '<path class="nb__w" d="M143 43c-4-4-12-3-12 4s8 9 12 4" stroke-width="2"/>'
+        + '<path class="nb__w" d="M143 41v14" stroke-width="2"/>'
+        + '<path class="nb__w" d="M147 42l5 11" stroke-width="2"/>'
+        + '<path class="nb__w" d="M160 42l-6 16c-2 5-6 5-8 2" stroke-width="2"/>'
+        + '<path class="nb__w" d="M168 32v23" stroke-width="2"/>'
+        + '<path class="nb__w" d="M168 46c2-5 12-5 12 1v8" stroke-width="2"/>'
+        + '<path class="nb__w" d="M185 43v12" stroke-width="2"/>'
+        + '<path class="nb__w" d="M185.4 33.2 185 36" stroke-width="2.5"/>'
+        + '</svg>'));
+
       $('.canvas__intro', hero).appendChild(cta);
 
       /* story → showcase → closing → index */
