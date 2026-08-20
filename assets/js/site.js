@@ -11383,22 +11383,34 @@
       const intro = el('div', { class: 'canvas__intro nf' });
       const card = el('div', { class: 'nf__in', 'data-wall': '' });
 
-      card.appendChild(el('p', { class: 'nf__code rv' }, esc(c.code)));
-      const h1 = el('h1', { class: 'nf__head rv' }, esc(c.headline));
-      h1.style.setProperty('--rv-delay', '90ms');
-      card.appendChild(h1);
-      const body = el('p', { class: 'nf__body rv' }, esc(c.body));
-      body.style.setProperty('--rv-delay', '190ms');
-      card.appendChild(body);
+      /* THE NUMERAL IS THE HEADLINE, and it is an `h1` because it is the
+         page's actual heading — the thing that says what happened. The
+         sentence under it is a caption on that, not a title of its own. */
+      const big = el('h1', { class: 'nf__big rv' }, esc(c.code));
+      card.appendChild(big);
+      const line = el('p', { class: 'nf__line rv' }, esc(c.headline));
+      line.style.setProperty('--rv-delay', '120ms');
+      card.appendChild(line);
+      if (c.body) {
+        const body = el('p', { class: 'nf__body rv' }, esc(c.body));
+        body.style.setProperty('--rv-delay', '190ms');
+        card.appendChild(body);
+      }
 
       const links = el('div', { class: 'nf__links rv' });
-      links.style.setProperty('--rv-delay', '700ms');
+      links.style.setProperty('--rv-delay', '320ms');
       (c.links || []).forEach((l) => {
-        /* the site's own two buttons, not a third pair invented here */
-        links.appendChild(el('a', {
+        /* THE RESUME OPENS IN THE PAGE, the same way it does from the hero and
+           from the menu: `kind: 'resume'` is the flag the document-level
+           [data-action] delegate already watches for, so this is the third
+           caller of one viewer rather than a third link to a PDF. */
+        const isRes = l.kind === 'resume';
+        const a = el('a', {
           class: `btn${l.primary ? '' : ' btn--ghost'}`,
-          href: l.href,
-        }, `<span class="btn__label">${esc(l.label)}</span>`));
+          href: isRes ? (S.person.resumeUrl || '#') : l.href,
+        }, `<span class="btn__label">${esc(l.label)}</span>`);
+        if (isRes) a.dataset.action = 'resume';
+        links.appendChild(a);
       });
       card.appendChild(links);
 

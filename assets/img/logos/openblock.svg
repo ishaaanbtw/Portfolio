@@ -1,4 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+<!-- viewBox tightened to the ink — see the note in safe.svg. This mark is much
+     wider than it is tall, so it is the one that suffered most from a square
+     box: letterboxed inside a square inset it was drawn at a third of the
+     height of its neighbours. It carries a mark scale in content.js to buy back
+     the width its proportions cost it.
+
+     NOTE FOR WHOEVER EDITS THIS COMMENT: an XML comment may not contain two
+     hyphens in a row. Writing the custom property's name here in full made the
+     whole file unparseable, Chrome reported the image as 0x0, and the badge
+     fell back to a default replaced-element box 52px wide inside an 18px
+     circle. It failed silently — the image "loaded". -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="3.2 8.4 17.6 7.2">
   <rect x="3.2" y="8.4" width="7.4" height="7.2" rx="3.6" fill="#fff"/>
   <rect x="13.4" y="8.4" width="7.4" height="7.2" rx="3.6" fill="#fff"/>
   <circle cx="6.9" cy="12" r="1.5" fill="#111"/>

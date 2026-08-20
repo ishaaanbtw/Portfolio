@@ -150,13 +150,20 @@ window.SITE = {
      throwing bricks in. Long enough apart to read as occasional rather than as
      an animation that never finishes.                                        */
   notFound: {
-    code: 'Error 404',
-    headline: 'This page wandered off.',
-    body: 'The link is either old or slightly mistyped. Nothing behind it any more.',
-    /* the same nav as everywhere else, as ordinary links */
+    /* THE NUMBER IS THE PAGE. It was an eyebrow over a sentence — "ERROR 404"
+       set at 13px above a 38px headline — which puts the smallest type on the
+       page on the only piece of information a visitor actually needs. Turned
+       round: the numeral is the whole statement, one quiet line explains it,
+       and the three ways out are directly under it. */
+    code: '404',
+    headline: 'Looks like you’ve wandered off.',
+    /* the long explanation is gone. "The link is either old or slightly
+       mistyped" is a sentence about the site's internals; nobody who has just
+       hit a dead end needs the taxonomy of how. */
     links: [
       { label: 'Home', href: 'index.html', primary: true },
       { label: 'Work', href: 'work.html' },
+      { label: 'Resume', kind: 'resume' },
     ],
     /* the quiet invitation. One line, no tutorial. */
     aside: 'Since you are here — build something.',
@@ -498,7 +505,7 @@ window.SITE = {
     ['Before that, I worked with teams like <span class="badges t-avatar-group">' +
        '<i class="chip-badge t-avatar" data-tip="Safe" style="--chip:#12ff80">' +
          '<img src="assets/img/logos/safe.svg" alt="Safe"></i>' +
-       '<i class="chip-badge t-avatar" data-tip="OpenBlock Labs" style="--chip:#111111">' +
+       '<i class="chip-badge t-avatar" data-tip="OpenBlock Labs" style="--chip:#111111;--mark:1.18">' +
          '<img src="assets/img/logos/openblock.svg" alt="OpenBlock Labs"></i>' +
        '<i class="chip-badge t-avatar" data-tip="Cruize Finance" style="--chip:#1c2b6b">' +
          '<img src="assets/img/logos/cruize.svg" alt="Cruize Finance"></i>' +

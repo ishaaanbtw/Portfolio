@@ -1,5 +1,11 @@
-<!-- Placeholder mark. Drop the real logo in at this path and it just works. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+<!-- Placeholder mark. Drop the real logo in at this path and it just works.
+     THE viewBox IS THE MARK'S OWN INK BOX, not a 24-square with the glyph
+     floating in it. Three logos drawn inside three 24-squares with three
+     different amounts of padding render at three different optical sizes
+     however carefully the CSS is written — there is no rule that can trim
+     whitespace out of an SVG. Tightened here, one inset in the stylesheet
+     gives every mark the same weight. Stroke width is included in the box. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4.2 2.4 15.6 19.2">
   <path d="M12 3.4 5.2 6.1v5.3c0 4 2.8 7.6 6.8 9.2 4-1.6 6.8-5.2 6.8-9.2V6.1z"
         fill="none" stroke="#08120c" stroke-width="2" stroke-linejoin="round"/>
   <path d="M8.8 12.2l2.4 2.4 4-4.6" fill="none" stroke="#08120c"

@@ -1966,17 +1966,35 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 
 /* --- the badges themselves: round, overlapping, brand-coloured ----------- */
 
+/* --- WHERE THE STACK SITS ON THE LINE ----------------------------------------
+
+   It was `-0.22em`, and measured against the rendered page that put the discs'
+   centres 1px BELOW the text baseline — the whole group hanging off the bottom
+   of the line with its lower third in the descender space, which is what read
+   as "not aligned". A round mark in running text wants its centre on the CAP
+   midpoint, half a cap-height above the baseline; anything lower and it looks
+   like it fell off the words.
+
+   Stated in em so it tracks the type size rather than being right at one
+   breakpoint. Measured, not guessed: at 29px the cap is 21.2px, so the target
+   centre is 10.6px above the baseline and this is the offset that puts it
+   there. */
 .badges {
-  vertical-align: -0.22em;
-  margin-left: 0.26em;
+  vertical-align: 0.17em;
+  margin-left: 0.3em;
 }
 
 .chip-badge {
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 1.28em;
-  height: 1.28em;
+  /* JUST UNDER CAP HEIGHT. It was 1.28em, which at the story's 29px came out
+     at 20.8 against a 21.2px cap — a disc the full height of a capital, ringed
+     in paper and dropped in shadow, which is more weight than three of them in
+     a row can carry without becoming the sentence. Sat a step down, the group
+     reads as an aside inside the line, which is what it is. */
+  width: 1.1em;
+  height: 1.1em;
   border-radius: 50%;
   background: var(--chip, #cfcac2);
   color: #fff;
@@ -1984,20 +2002,42 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   font-weight: 700;
   font-style: normal;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(20, 16, 12, 0.24), 0 0 0 2px var(--paper);
+  /* the ring came down with the disc — 2px on an 18px circle is a bezel */
+  box-shadow: 0 1px 2.5px rgba(20, 16, 12, 0.22), 0 0 0 1.5px var(--paper);
 }
 
-.badges .chip-badge + .chip-badge { margin-left: -0.3em; }
+.badges .chip-badge + .chip-badge { margin-left: -0.28em; }
 
 /* the hovered one has to come forward or the overlap clips its lift */
 .chip-badge:hover { z-index: 3; }
 
+/* THE INSET IS ONE NUMBER FOR EVERY MARK, and it can be because the marks
+   themselves are now cropped to their own ink — see the note at the top of
+   safe.svg. 64% of the disc is the usual seat for a logo in a lockup: enough
+   air that the glyph is not pressed against the rim, tight enough that it is
+   the thing you see rather than the circle. It came down from 64 once the
+   viewBoxes were cropped: the same number against uncropped art and against
+   cropped art are two different amounts of ink, and at 64 the shield and the
+   boat were touching the rim.
+
+   `--mark` is the one concession to reality. Optical sizing of logos in a
+   lockup is per-logo work in every design system that has ever shipped one: a
+   wide, short mark and a tall, narrow one do not read at the same weight at
+   the same box size however square you make their boxes. The default is 1 and
+   only a mark that genuinely needs it sets otherwise. */
 .chip-badge img,
 .chip-badge svg {
-  width: 74%;
-  height: 74%;
+  width: 56%;
+  height: 56%;
   display: block;
   pointer-events: none;
+  /* A SCALE, NOT A calc ON THE PERCENTAGE. `calc(64% * var(--mark))` parses,
+     and then an <img> of an SVG that carries a viewBox but no intrinsic width
+     resolves it to something else entirely — measured, the marked-up badge came
+     back 68px wide inside an 18px disc. A transform sidesteps replaced-element
+     sizing completely: it is applied after layout, it cannot be renegotiated by
+     the image, and it costs nothing. */
+  transform: scale(var(--mark, 1));
 }
 
 /* ==========================================================================
@@ -8993,25 +9033,33 @@ body[data-page] .nav { display: none; }
 
 .nf__in { text-align: left; }
 
-.nf__code {
-  margin: 0 0 1.1rem;
-  font-family: var(--mono, ui-monospace, monospace);
-  font-size: 0.8125rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-dim, #b9b4ad);
+/* --- THE NUMBER -------------------------------------------------------------
+   The one thing on the page a visitor needs, set at the size that says so. It
+   was a 13px mono eyebrow over a 38px sentence, which is the hierarchy exactly
+   inverted: the smallest type on the page carrying the only fact on it.
+
+   Tight tracking and a cut-in line-height because three digits set this large
+   are a shape rather than a word — left at default they drift apart and the
+   block stops reading as one mark. Still the site's own face and the site's own
+   ink; nothing here is a display font borrowed for the occasion. */
+.nf__big {
+  margin: 0 0 0.55rem;
+  font-size: clamp(4.5rem, 3rem + 7vw, 8.5rem);
+  line-height: 0.86;
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  color: var(--ink, #14100c);
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
-/* NOT HUGE, on purpose. This is a sign in a room, not the room — the LEGO is
-   the loud thing on this page and the type is what stays quiet enough to read
-   once there is a pile of it behind the words. */
-.nf__head {
-  margin: 0 0 0.7rem;
-  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.375rem);
-  line-height: 1.14;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  color: var(--ink, #14100c);
+/* And the sentence under it is a caption, not a title. Quiet enough that the
+   numeral keeps the page, big enough to read over a pile of bricks. */
+.nf__line {
+  margin: 0 0 1.5rem;
+  max-width: 26rem;
+  font-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  line-height: 1.5;
+  color: var(--ink-2, #3a352f);
 }
 
 .nf__body {
@@ -9029,6 +9077,16 @@ body[data-page] .nav { display: none; }
   pointer-events: auto;             /* the one interactive part of the sign */
 }
 
+/* Same correction the hero's CTA row carries, and for the same reason: the
+   ghost button's `--ink-dim` label is right in a dense row where the pair reads
+   as one control, and unreadable out on open paper with bricks passing behind
+   it. These two are half the ways off this page. */
+.nf__links .btn--ghost {
+  --btn-fg: var(--ink-2);
+  --btn-bg: rgba(20, 16, 12, 0.028);
+}
+.nf__links .btn--ghost:hover { --btn-fg: var(--ink); }
+
 /* The invitation. Deliberately the quietest thing on the page: the interaction
    teaches itself the moment a brick moves under the cursor, so this only has
    to hint that moving one is allowed. It arrives last, after the room has
@@ -9043,6 +9101,10 @@ body[data-page] .nav { display: none; }
 @media (max-width: 48rem) {
   .canvas--room .canvas__intro { max-width: min(24rem, 86vw); padding: 1.25rem 1.35rem; }
   .nf__body { margin-bottom: 1.4rem; font-size: 1rem; }
+  .nf__line { margin-bottom: 1.25rem; }
+  /* three buttons will not sit on one line at 390px, and a row that wraps to
+     two-and-one reads as a mistake — let it wrap evenly instead */
+  .nf__links { gap: 0.45rem; }
 }
 
 /* ==========================================================================
