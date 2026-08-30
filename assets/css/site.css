@@ -9828,3 +9828,47 @@ body[data-game] .shelf { display: none; }
   .wkt, .wkt__media, .wkt__media > *, .wkt__go { transition-duration: 1ms; }
   .wk__col[data-col='1'] { transform: none; }
 }
+
+/* ==========================================================================
+   43. THE CANVAS IS NOT A DOCUMENT
+   Dragging across the hero used to select it. Every word the drag crossed —
+   the headline, the tags, the buttons, the hint at the foot, the key legend —
+   came back in a black highlight box, and on a surface whose whole gesture is
+   press-and-drag that is not a cosmetic problem: the browser's own text
+   selection was competing with the one interaction the page is built around.
+
+   WHY NOT `pointer-events` OR A HANDLER. Selection is not a click; it is the
+   browser's default action for a drag, and cancelling it per gesture means
+   guessing which drags to cancel and getting the touch ones wrong. Saying
+   "this is furniture, not prose" once, in CSS, is the whole fix.
+
+   WHAT IS EXCLUDED, and why each one:
+     .canvas--archive   the work page's grid is a canvas by class only —
+                        nothing on it is dragged, and the project titles are
+                        real words somebody might want.
+     .drawer            the case studies live in the HUD, and they are the one
+                        thing in there made of sentences.
+     the editables      the note tool is a `contenteditable`, and a note you
+                        cannot select inside is a note you cannot edit.
+   ========================================================================== */
+
+.canvas:not(.canvas--archive),
+.hud,
+.free {
+  user-select: none;
+  -webkit-user-select: none;
+  /* and the iOS long-press callout, which is the same problem wearing a
+     different hat: a press-and-hold on a brick should pick the brick up, not
+     offer to look it up in a dictionary */
+  -webkit-touch-callout: none;
+}
+
+.drawer,
+.note__text,
+input,
+textarea,
+[contenteditable='true'] {
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+}
