@@ -6574,8 +6574,8 @@
        and not as three squares pushed together — and it needs no outline path,
        which is what would otherwise have to be computed and would stroke those
        internal seams back in. */
-    art(kind, tone, uid) {
-      const U = this.U;
+    art(kind, tone, uid, u) {
+      const U = u || this.U;
       const cells = PIECE[kind].cells;
       const has = new Set(cells.map(([c, w]) => `${c},${w}`));
       const W = (Math.max(...cells.map((c) => c[0])) + 1) * U;
@@ -6715,11 +6715,7 @@
 
       const r = host.getBoundingClientRect();
       const narrow = r.width <= 768;
-      /* One stud, sized off the same reference the peel objects use. Fixed at
-         build time: a lattice that changed under a structure on a window
-         resize would tear the structure apart. */
-      this.U = Math.round(narrow ? clamp(r.width / 430 * 19, 13, 20)
-        : clamp(r.width / 1440 * 23, 16, 25));
+      this.U = this.unit(r.width);
       this.touch = matchMedia('(hover: none)').matches;
 
       /* Before a single piece is laid: everything below reads this. */
@@ -6807,13 +6803,32 @@
       /* THE ARRIVAL. relax() has just decided where every piece belongs; rain()
          takes those positions as the destination and throws the pieces in from
          above to reach them. Order matters — the physics needs somewhere to
-         land before it can start. */
-      this.rain();
+         land before it can start.
+
+         UNLESS SOMETHING IS STILL BEING BUILT AT THE DOOR. On a first visit a
+         small construction is assembling on this canvas and the fall is what
+         happens after the page has slid up past it. `Boot.hold` takes the
+         fall and gives it back when it is done; it returns false on every
+         other load, which is the single line this has always been. */
+      if (!Boot.hold(() => this.rain())) this.rain();
 
       /* A window that got smaller must not leave a structure stranded off the
          edge — but nothing is re-laid and nothing is re-scaled, so a build
          survives a resize exactly as it was made. */
       addEventListener('resize', () => this.reclaim(), { passive: true });
+    },
+
+    /* ONE STUD, sized off the same reference the peel objects use. Fixed at
+       build time: a lattice that changed under a structure on a window resize
+       would tear the structure apart.
+
+       Lifted out of init() so the entrance can ask the same question before
+       init has run. There is one answer to "how big is a brick on this
+       screen", and the pieces at the door have to give the same one as the
+       page behind them. */
+    unit(w) {
+      return Math.round(w <= 768 ? clamp(w / 430 * 19, 13, 20)
+        : clamp(w / 1440 * 23, 16, 25));
     },
 
     /* ONE PLACE A BRICK IS BORN. init() calls it for the scattered eight-
@@ -10003,6 +10018,374 @@
     },
   };
 
+  /* ============================================== 5c2c. the entrance =====
+
+     A SMALL THING BEING BUILT, AND THEN THE PAGE SLIDING UP PAST IT.
+
+     On a first visit the middle of the screen holds an empty LEGO stencil —
+     eight sockets, recessed, with their studs marked, sitting where eight
+     bricks are about to go. The bricks arrive one at a time from wherever
+     they happen to start, run at their socket, are pulled the last few pixels
+     into it and seat with a click. When the last one is in, the whole page
+     travels upward and the hero comes up from below with it, and the fall
+     starts as it lands.
+
+     THERE IS NO LOADING SCREEN. There is one canvas, one dot grid and one
+     page. The grid is painted on `body` from the first frame (see the CSS),
+     so it is on screen before any script runs and never goes away; the hero
+     is built underneath from the start and is simply held one slide below
+     where it belongs; and the construction is a transparent fixed layer over
+     the top, which travels up in lockstep with the page rather than being
+     dismissed.
+
+     WHAT IS BUILT is deliberately not a picture of anything. Six studs wide
+     and six tall, out of real footprints — a 2x4, three 2x2s, three 1x2s and
+     a pair of single studs — assembled bottom-heavy: a plinth, a neck, a
+     block and a cap. It is a shape, not a mascot, because the interesting
+     part is the assembling and an object with a punchline would take the
+     attention away from it.
+
+     ROLLED START, FIXED DESTINATION. Where a piece comes from, when it is
+     thrown, the arc it takes, how far it overshoots and the angle it arrives
+     at are all rolled fresh every load. The socket it belongs to never is. So
+     no two visits watch the same build and every one of them ends in exactly
+     the same object.
+
+     THE PIECES ARE NOT LATTICE BRICKS, deliberately. They are drawn by
+     `Bricks.art` — same plastic, same studs, same shadow, same colours — but
+     they are not in `recs`, not `Drag` items and not on the snap lattice.
+     Which means the hero keeps exactly the eighteen pieces it started with,
+     the construction can be drawn at its own stud size so it still fits
+     across a phone, and when the page has slid past it the whole layer can
+     simply be taken off without anything being deleted out from under the
+     rest of the page.
+
+     WHEN. Home only, and only on an entrance: a cold visit yes, a refresh
+     yes, Work -> Home no (same-origin referrer), back/forward no. Reduced
+     motion never.                                                           */
+
+  /* --- what gets built ---------------------------------------------------
+     `c`/`r` are the column and row of the piece's top-left cell in a 6x6 box.
+     Every footprint is one the canvas already has: `br24` is the 2x4, `sq2`
+     the 2x2, `small` the 1x2, `conn` the single stud. Nothing overlaps and
+     every piece touches another, so the finished thing is something you could
+     have built by hand out of the same box. */
+  const BUILD = [
+    { k: 'small', c: 2, r: 0 },                    /* the cap               */
+    { k: 'br24',  c: 1, r: 1 },                    /* the block, 2 x 4      */
+    { k: 'small', c: 2, r: 3 },                    /* the neck              */
+    { k: 'conn',  c: 0, r: 3 },                    /* and two studs beside  */
+    { k: 'conn',  c: 5, r: 3 },                    /* it, on the plinth     */
+    { k: 'sq2',   c: 0, r: 4 },                    /* the plinth, three 2x2 */
+    { k: 'sq2',   c: 2, r: 4 },
+    { k: 'sq2',   c: 4, r: 4 },
+  ];
+
+  const Boot = {
+    on: false,
+    fall: null,
+    freed: false,
+    COLS: 6,
+    ROWS: 6,
+
+    /* --- the clock, in ms from the stencil appearing -------------------- */
+    T: {
+      first: 190,       /* the stencil is alone until here          */
+      step: 95,         /* roughly, between one throw and the next  */
+      hold: 210,        /* the finished object sits still this long */
+      wake: 140,        /* then the page starts moving              */
+      slide: 460,       /* and takes this long to get there         */
+      fall: 90,         /* the fall is let go this far into it      */
+    },
+
+    rnd(a, c) { return a + Math.random() * (c - a); },
+
+    arm(page) {
+      if (page !== 'home' || REDUCED) return;
+      let nav = '';
+      try { nav = (performance.getEntriesByType('navigation')[0] || {}).type || ''; } catch (_) { nav = ''; }
+      if (nav !== 'reload') {
+        if (nav === 'back_forward') return;
+        let inside = false;
+        try {
+          inside = !!document.referrer
+            && new URL(document.referrer).origin === location.origin;
+        } catch (_) { inside = false; }
+        if (inside) return;             /* arriving from Work is not arriving */
+      }
+      this.on = true;
+      /* HOW FAR THE PAGE TRAVELS, and why it is a whole number of cells. The
+         dot grid moves with the page during the slide, and it is a repeating
+         24px field — land on a multiple of that and the grid finishes in the
+         phase it started in, so the two ends of the journey are identical and
+         only the movement between them is visible. Anything else leaves the
+         whole field a few pixels out for the rest of the session. */
+      const step = 24;
+      this.SLIDE = Math.round(innerHeight * 0.55 / step) * step;
+      document.body.style.setProperty('--slide', `${this.SLIDE}px`);
+      document.body.style.setProperty('--slide-ms', `${this.T.slide}ms`);
+      /* the distance before the class that uses it, so the first computed
+         style is the real one rather than the stylesheet's fallback */
+      document.body.classList.add('waking');
+    },
+
+    hold(fn) {
+      if (!this.on) return false;
+      /* AND PARK THEM. `Bricks.init` has just laid all eighteen out at their
+         composed positions, and `rain()` — which is what normally throws them
+         above the fold before anyone sees them there — is the thing being
+         held. Without this they stand about in a neat scatter for the whole
+         introduction, one slide below, and come into view as the page rises.
+         `rain()` re-parks them at its own entry points when it runs, so this
+         costs nothing and is never seen. `is-settle` because `.drg` eases
+         every transform over 150ms and the park must be instant. */
+      Bricks.recs.forEach((r) => {
+        r.it.node.classList.add('is-settle');
+        Bricks.moveTo(r, Bricks.px(r), -1400);
+      });
+      if (this.freed) { fn(); return true; }
+      this.fall = fn;
+      return true;
+    },
+
+    release() {
+      this.freed = true;
+      const f = this.fall;
+      this.fall = null;
+      if (f) f();
+    },
+
+    /* ------------------------------------------------------------------ */
+    /* WHERE EVERY PIECE BELONGS. Worked out once, from the viewport, and
+       never rolled — this is the half of the animation that must come out the
+       same on every load. */
+    layout() {
+      const W = innerWidth, H = innerHeight;
+      /* the hero's own stud, unless the object would crowd a narrow screen */
+      const u = Math.max(10, Math.min(Bricks.unit(W),
+        Math.floor(Math.min(W * 0.42, H * 0.30) / this.COLS)));
+      const bw = this.COLS * u, bh = this.ROWS * u;
+      const ox = Math.round((W - bw) / 2);
+      /* a little above the middle of the band the page is about to vacate, so
+         it is comfortably in frame and has somewhere to go */
+      const oy = Math.round(H * 0.44 - bh / 2);
+
+      return BUILD.map((pt) => {
+        const cells = PIECE[pt.k].cells;
+        const cw = Math.max.apply(null, cells.map((c) => c[0])) + 1;
+        const ch = Math.max.apply(null, cells.map((c) => c[1])) + 1;
+        return {
+          kind: pt.k, u, cw, ch,
+          w: cw * u, h: ch * u,
+          x: ox + pt.c * u, y: oy + pt.r * u,
+        };
+      });
+    },
+
+    /* WHERE A PIECE COMES FROM, AND ONLY THAT. Start, trajectory, timing and
+       the angle it arrives at are rolled; the socket is not. Four ways in,
+       dealt round so no two neighbours use the same one, each then varied.
+       `over` is how far past its socket it runs before it is pulled back —
+       the few pixels that make a placement feel magnetic rather than merely
+       finished. */
+    entry(p, i, W, H) {
+      const m = (i + (Math.random() < 0.3 ? 1 : 0)) % 4;
+      const r = this.rnd.bind(this);
+      const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+      const base = { over: r(4, 10), spin: r(0.8, 1.25), bow: r(-1, 1) };
+      if (m === 0) {
+        return Object.assign(base, { x: cx + r(-120, 120), y: -r(80, 260), r: r(-40, 40) });
+      }
+      if (m === 2) {
+        return Object.assign(base, {
+          x: cx + r(-200, 200), y: H + r(80, 240),
+          r: r(150, 210) * (Math.random() < 0.5 ? -1 : 1),
+        });
+      }
+      const side = m === 1 ? -1 : 1;
+      return Object.assign(base, {
+        x: side < 0 ? -r(120, 300) : W + r(120, 300),
+        y: cy + r(-140, 140),
+        r: side * r(25, 70),
+      });
+    },
+
+    /* --- one empty socket -------------------------------------------------
+       Not an outline of a box: a recess. A hairline lip, a shadow cast down
+       the inside of it, a fill a shade darker than the paper, and its studs
+       drawn as dimples — a dark ring with a light crescent above it, which is
+       what a stud looks like when it is a hole rather than a bump. Tiled at
+       the stud pitch, so a 2x4 socket has eight of them in the right places
+       without anything being positioned by hand. */
+    socket(p) {
+      const g = el('div', { class: 'sig__g' });
+      g.style.cssText =
+        `left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;`
+        + `border-radius:${Math.max(2, p.u * 0.13).toFixed(1)}px;`
+        + `background-size:${p.u}px ${p.u}px;`
+        + `--dot:${(p.u * 0.17).toFixed(2)}px;`
+        + `--dot2:${(p.u * 0.2).toFixed(2)}px;`;
+      return g;
+    },
+
+    /* ------------------------------------------------------------------ */
+    begin(host) {
+      if (!this.on || this.el) return;
+      const list = this.layout();
+      if (!list.length) return;
+
+      const W = innerWidth, H = innerHeight;
+      /* Fixed to the window rather than parented into the canvas: it has to
+         travel up past the page at the end, and the canvas is the thing it is
+         travelling past. Transparent, so the one dot grid shows through. */
+      const layer = el('div', { class: 'sig', 'aria-hidden': 'true' });
+      document.body.appendChild(layer);
+      this.el = layer;
+      App.lock(true);
+
+      const T = this.T;
+      const r = this.rnd.bind(this);
+
+      const pieces = list.map((p, i) => {
+        const g = this.socket(p);
+        layer.appendChild(g);
+        const n = el('div', { class: 'drg brk sig__b' });
+        n.innerHTML = Bricks.art(p.kind, TONE[(i * 3) % TONE.length], `sg${i}`, p.u);
+        n.style.cssText =
+          `left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;opacity:0`;
+        layer.appendChild(n);
+        return { p, g, n, from: this.entry(p, i, W, H) };
+      });
+
+      /* THE ORDER, AND THE RHYTHM. Bottom up — a thing is built from its base
+         — but each piece's turn is nudged either way, so it is not a tidy row
+         and the odd one turns up before its neighbour. The gap between throws
+         is rolled rather than counted out; a fixed step reads as a machine
+         dealing cards however small it is. */
+      const order = pieces.slice().sort((a, c) =>
+        (c.p.y + r(-1.2, 1.2) * a.p.u * 2) - (a.p.y + r(-1.2, 1.2) * a.p.u * 2));
+      let at = T.first;
+      order.forEach((q, k) => {
+        q.at = at;
+        at += r(T.step * 0.5, T.step * 1.6);
+        q.dur = r(240, 350);
+        q.set = r(130, 200);
+        q.last = k === order.length - 1;
+      });
+
+      let end = 0;
+      pieces.forEach((q) => { end = Math.max(end, q.at + q.dur + q.set); });
+
+      const t0 = performance.now();
+      const out3 = (u) => 1 - Math.pow(1 - u, 3);
+      const ring = (u) => (u >= 1 ? 1 : 1 - Math.exp(-8.6 * u) * Math.cos(7.6 * u));
+
+      const step = (now) => {
+        if (this.gone) return;
+        const t = now - t0;
+
+        pieces.forEach((q) => {
+          if (t < q.at) return;
+          /* HERE, NOT INSIDE THE TRAVEL BRANCH. A frame long enough to skip a
+             whole flight lands straight in the settle below, and a piece made
+             visible only on its way in would then stay invisible for good — a
+             dropped frame turning into a hole in the object. */
+          q.n.style.opacity = '1';
+
+          const p = q.p, f = q.from;
+          const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+          const dx = cx - f.x, dy = cy - f.y;
+          const d = Math.hypot(dx, dy) || 1;
+          /* the point it runs to: a few pixels past the socket, on the line
+             it came in on */
+          const ox = cx + (dx / d) * f.over, oy = cy + (dy / d) * f.over;
+
+          let x, y, rot;
+          const u = Math.min(1, (t - q.at) / q.dur);
+          if (u < 1) {
+            const e = out3(u);
+            x = f.x + (ox - f.x) * e;
+            y = f.y + (oy - f.y) * e + Math.sin(u * Math.PI) * f.bow * 24;
+            rot = f.r * (1 - out3(Math.min(1, u * f.spin)));
+            q.n.style.setProperty('--sx', '1');
+            q.n.style.setProperty('--sy', '1');
+          } else {
+            /* AND THEN THE SNAP. It is past its socket by a few pixels and
+               gets pulled back onto it, ringing once — the damped curve the
+               canvas settles a snapped brick with — and giving a little as it
+               seats, which is what a brick pressed onto another brick does.
+               It ends on the socket exactly: no drift, no gap. */
+            const v = Math.min(1, (t - q.at - q.dur) / q.set);
+            const e = ring(v);
+            x = ox + (cx - ox) * e;
+            y = oy + (cy - oy) * e;
+            rot = 0;
+            const sq = Math.max(0, 1 - v * 3.2) * 0.05;
+            q.n.style.setProperty('--sx', (1 + sq).toFixed(4));
+            q.n.style.setProperty('--sy', (1 - sq).toFixed(4));
+            if (!q.done) {
+              q.done = true;
+              q.g.classList.add('is-set');
+              if (q.last) {
+                Sound.voice({ freq: 430, gain: 0.042, dur: 0.08, bright: 2700, drop: 1.2, noise: 0.4 });
+                Sound.voice({ freq: 160, gain: 0.032, dur: 0.13, bright: 900, drop: 0.4, noise: 0.5 });
+              } else {
+                Sound.voice({ freq: 520, gain: 0.022, dur: 0.042, bright: 3000, drop: 1.5, noise: 0.35 });
+              }
+            }
+          }
+
+          q.n.style.setProperty('--x', `${(x - cx).toFixed(2)}px`);
+          q.n.style.setProperty('--y', `${(y - cy).toFixed(2)}px`);
+          q.n.style.setProperty('--r', `${rot.toFixed(2)}deg`);
+        });
+
+        if (t < end) { requestAnimationFrame(step); return; }
+        this.finish();
+      };
+      requestAnimationFrame(step);
+
+      /* IT CANNOT HOLD THE PAGE. If anything above throws, stalls or is cut
+         short, this slides the page up and lets the fall go anyway. */
+      this.guard = setTimeout(() => this.finish(true), 5200);
+    },
+
+    /* --- and then the page moves ---------------------------------------- */
+    finish(forced) {
+      if (this.ending) return;
+      this.ending = true;
+      clearTimeout(this.guard);
+      const T = this.T;
+      const go = () => this.slide(forced);
+      if (forced) go(); else setTimeout(go, T.hold);
+    },
+
+    /* THE SLIDE IS ONE MOVEMENT AND EVERYTHING IS IN IT. The page comes up
+       from one screen-and-a-bit below; the construction, which is fixed to
+       the window, goes up by the same distance at the same moment on the same
+       curve, so it holds still relative to the page and leaves off the top of
+       the screen with it. The dot grid travels with them and lands in the
+       phase it started in. Nothing fades, nothing is replaced, and the hero
+       arrives because it was pushed there rather than because it appeared. */
+    slide(forced) {
+      const T = this.T;
+      document.body.classList.add('sliding');
+      App.lock(false);
+
+      /* the type comes up as the page does, not before it */
+      setTimeout(() => document.body.classList.add('awake'), forced ? 0 : T.wake);
+
+      setTimeout(() => this.release(), forced ? 0 : T.fall);
+
+      setTimeout(() => {
+        this.gone = true;
+        document.body.classList.add('landed');
+        document.body.classList.remove('sliding');
+        if (this.el) { this.el.remove(); this.el = null; }
+      }, forced ? 40 : T.slide + 60);
+    },
+  };
+
   /* ================================================== 5c3. tool ghost === */
 
   /* The cursor-attached preview. One element, retargeted per tool, following
@@ -11280,6 +11663,12 @@
          draggable, and anything you place on it afterwards. */
       const hero = $('#hero');
       Canvas.init(hero);
+      /* AS SOON AS THE CANVAS EXISTS, not once the bricks are laid. The
+         stencil needs a box and nothing else, and `Bricks.init` spends several
+         frames waiting for the hero to reach its final height before it will
+         measure anything — a wait the visitor would otherwise spend looking at
+         nothing. A no-op unless this load is an entrance. */
+      Boot.begin(hero);
 
       const rv = (S.canvas && S.canvas.reveal) || {};
       const cta = el('div', { class: 'canvas__cta rv' });
@@ -12143,6 +12532,11 @@
     Sky.init();
     Shell.init();
     Nav.init();
+
+    /* Before the page builds: the body class this sets is what holds the
+       hero's type back and pushes the page down, and both have to be true
+       before any of it is laid out. */
+    Boot.arm(Shell.page);
 
     const page = Shell.page;
     (Pages[page] || Pages.home).call(Pages);
