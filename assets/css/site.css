@@ -9905,28 +9905,55 @@ textarea,
 
 /* ==========================================================================
    44. THE ENTRANCE
-   A small LEGO construction assembling in an empty stencil, and then the whole
-   page travelling up past it.
+   A construction drawing becoming a real object, and then the page sliding up
+   through it.
 
-   There is no loading screen here to style. The dot grid is on `body` and has
-   been on screen since the first painted frame; the hero is built underneath
-   from the start and is only held one slide below where it belongs; and the
-   construction is a transparent layer fixed to the window. Three rules move
-   the page, four draw the sockets, and the rest is the site's own reveal on a
-   later clock.
+   The sheet is opaque, and that is the whole reason this section is short. The
+   entrance it replaces was a transparent layer over a live page, so the page's
+   paper, its dot field and the sky pane behind it all had to be stood down and
+   kept in phase across an edge that was moving — a dozen rules whose only job
+   was to stop two identical backgrounds from disagreeing. This one covers the
+   screen. Nothing underneath it is touched, because nothing underneath it can
+   be seen.
    ========================================================================== */
 
-/* --- THE PAGE, HELD ONE SLIDE LOW ---------------------------------------
+/* --- THE FIRST PAINTED FRAME IS ALREADY DARK -----------------------------
+   `body` is paper with a dot field on it, from the stylesheet, before any
+   script has run — which for this entrance is the wrong colour, and a wrong
+   colour for one frame is a flash. Six lines inline in the head of index.html
+   apply the entrance's own test (home, an actual arrival, motion allowed) and
+   put this class on the root before the first paint, so the charcoal is what
+   the page opens on rather than something it changes to. They also take it off
+   again after four seconds, so a stylesheet that loads without its script
+   cannot leave the page dark. */
+html.wake-armed,
+html.wake-armed body {
+  background-color: #30363d;
+  background-image: none;
+}
+/* AND NOTHING ON IT UNTIL THE ENTRANCE HAS TAKEN CHARGE. The flag is set in
+   the head; the page is not pushed down out of the way until `Boot.arm` runs,
+   at the very end of the document. In between there is a window in which the
+   hero is sitting on the charcoal, which is a frame of a screen that does not
+   exist. `waking` and this class only ever overlap for that window — if the
+   entrance is not going to run, `Boot.arm` takes the flag off and everything
+   is visible again in the same tick. */
+html.wake-armed body:not(.waking) > * { visibility: hidden; }
+
+/* --- THE PAGE, HELD ONE SCREEN LOW ---------------------------------------
    `.app` is the whole document. It starts pushed down by `--slide` and is put
-   back on the same curve the construction leaves on, which is what makes the
-   two one movement instead of two. `.sky-root` would otherwise show in the
-   strip above it, so it stands down for the duration — the grid on `body` is
-   what fills that strip, and it is the same grid the canvas has. */
-body.waking { --wake-y: var(--slide, 55vh); }
+   back on the same curve, at the same moment, as the sheet leaves — which is
+   what makes the two one movement instead of two.
+
+   `--slide` is a whole viewport plus a cell or two (see `Boot.arm`), so the
+   sheet's lower edge is at or below the bottom of the screen and the page's
+   upper edge is at or below that, for every frame of the journey. They cannot
+   come apart: the gap between them is `--slide` minus the viewport, which is
+   never negative. Nothing has to be hidden behind them. */
+body.waking { --wake-y: var(--slide, 100vh); }
 /* AND IT IS NOT EASED INTO. `.app` transitions its transform for the deck's
-   sake, which would turn "the page starts a slide low" into "the page slides
-   down and then back up again" — half a second of the hero drifting away
-   before it has ever been seen. Off until the journey it is there for. */
+   sake, which would turn "the page starts a screen low" into "the page slides
+   down and then back up again". Off until the journey it is there for. */
 body.waking:not(.sliding):not(.landed) .app,
 body.waking:not(.sliding):not(.landed) .sig { transition: none; }
 body.waking.sliding,
@@ -9934,120 +9961,122 @@ body.landed { --wake-y: 0px; }
 /* both of them on the same curve, because they are one movement */
 body.waking.sliding .app,
 body.waking.sliding .sig {
-  transition: transform var(--slide-ms, 460ms) cubic-bezier(0.62, 0.02, 0.2, 1);
+  transition: transform var(--slide-ms, 480ms) cubic-bezier(0.62, 0.02, 0.2, 1);
 }
 
-/* AND NOTHING BEHIND IT, AND NO FRAME AROUND IT.
-
-   `.pane` is the sky layer. It is fixed at the very back and normally never
-   seen up here because the page covers it — but the page has just been pushed
-   down, and it picks up an opaque `#f1efec` from the image-pane rule it shares
-   a class name with. That colour, not the grid, was what filled the strip.
-
-   `.app` is also the window: a rounded box with a shadow cast off its leading
-   edge, which is right when it fills the viewport and wrong when it is sitting
-   two thirds of the way down one. A hard edge across the screen is the exact
-   thing this whole change exists to remove, so the frame is off until the page
-   has landed and is filling the frame again. */
-body.waking:not(.landed) .pane { visibility: hidden; }
+/* AND NO FRAME AROUND IT. `.app` is also the window: a rounded box with a
+   shadow cast off its leading edge, which is right when it fills the viewport
+   and wrong when it is arriving into one. Off until it has landed. */
 body.waking:not(.landed) .app { border-radius: 0; box-shadow: none; }
-/* AND THE GRID GOES WITH IT. `body`'s field is painted, not transformed, so
-   it is moved by its own background-position — over the same time and the
-   same curve, ending on a whole number of cells so the phase it finishes in
-   is the phase it started in. Without this the page would slide over a grid
-   that stood still, which reads as the content moving across the desk rather
-   than the desk moving. */
-body.waking.sliding,
-body.landed { --grid-y: calc(-1 * var(--slide, 55vh)); }
-body.waking.sliding {
-  transition: background-position var(--slide-ms, 460ms) cubic-bezier(0.62, 0.02, 0.2, 1);
-}
 
-/* ONE FIELD, AND IT IS `body`'S UNTIL THE PAGE HAS LANDED.
-
-   The canvas has a grid of its own, identical and in phase — but two of them
-   either side of a moving edge can only ever be exactly right or visibly
-   wrong, and the canvas is about to travel while the body is not. So for the
-   duration the canvas and the sheet give up their paper entirely and let the
-   one behind them show through: no edge, no second grid, nothing to keep in
-   step. They take it back at `.landed`, by which point both grids are at rest
-   in the same phase and the handover cannot be seen.
-
-   `background: none` rather than `transparent`, so the colour and the image
-   both stand down — a transparent canvas with its dots still on would be two
-   grids again, one of them moving. */
-body.waking:not(.landed) .canvas,
-body.waking:not(.landed) .sheet { background: none; }
-body.waking:not(.landed) .canvas__dots { opacity: 0; }
+/* AND NOTHING PALE BEHIND THE JOIN. The two edges are welded by arithmetic —
+   the travel is exactly one viewport, so the sheet's lower edge and the page's
+   upper edge resolve to the same number on every frame — but they are two
+   composited layers and two layers can round a fractional viewport apart by a
+   pixel. Whatever is behind them at that hairline is `.pane`, the sky layer,
+   which is fixed at the very back and picks up an opaque `#f1efec` from the
+   image-pane rule it shares a class name with. Stand it down and the only
+   thing that can show through a rounding error is `body`, which for the length
+   of the entrance is the same charcoal as the sheet. A seam you cannot see is
+   cheaper than a seam you have to prevent. */
+body.waking:not(.landed) .pane { visibility: hidden; }
 
 /* THE PAGE DOES NOT FADE UP UNDER ITS OWN ARRIVAL. `.sheet` carries a 700ms
    `sheetIn` — opacity from zero, ten pixels of travel — which is the right
-   entrance when the page appears all at once and the wrong one here: it would
-   fade the grid in over the identical grid behind it, and slide it while it
-   did. The travel below has that job now. */
+   entrance when the page appears all at once and a redundant one here. The
+   travel above has that job now. */
 body.waking .sheet { animation: none; }
 
-/* --- THE LAYER ------------------------------------------------------------
-   Fixed to the window, transparent, and over everything — it has to travel up
-   past the page at the end, and the page is the thing it travels past. It
-   never takes a pointer: while this is on screen the toolbar and the Menu are
-   the live things, and they are the page's own. */
+/* --- THE SHEET ------------------------------------------------------------
+   Fixed to the window, opaque, and over absolutely everything — the Menu and
+   the toolbar included, because the brief is that there is nothing on this
+   screen but the drawing. Above 120, which is the highest z-index the site
+   otherwise uses.
+
+   Charcoal, very slightly lifted in the middle. The reference is near enough
+   flat — three samples off it came back within two values of each other — and
+   the lift here is smaller than that: it is not a vignette, it is the amount
+   of unevenness that stops a large field of one colour from looking like a
+   swatch. */
 .sig {
   position: fixed;
   inset: 0;
-  z-index: 6;
+  z-index: 400;
   pointer-events: none;
+  background-color: #30363d;
+  background-image: radial-gradient(135% 105% at 50% 44%, #343a42 0%, #2d3239 100%);
 }
-/* THE SAME VARIABLE, so the construction and the page cannot come apart: one
-   custom property changes, both transforms resolve from it, and both animate
-   over the same duration on the same curve. At rest that is `slide - slide`,
-   nothing; once the page is back it is `0 - slide`, one screenful up and off.
-   Measured drift between the two across the whole journey is under a pixel. */
-.sig { transform: translate3d(0, calc(var(--wake-y, 0px) - var(--slide, 55vh)), 0); }
-
-/* --- AN EMPTY SOCKET ------------------------------------------------------
-   Not an outline of a box — a recess. A hairline lip, a shadow down the inside
-   of it, a fill a shade under the paper, and its studs as dimples: a dark ring
-   with a light crescent above, which is what a stud looks like when it is a
-   hole rather than a bump. Tiled at the stud pitch, so a 2x4 socket gets its
-   eight in the right places without one of them being positioned by hand.
-
-   Ghostly on purpose. It is only there to say where the brick goes, and the
-   brick is the thing worth looking at. */
-.sig__g {
-  position: absolute;
-  box-sizing: border-box;
-  background-color: rgba(20, 16, 12, 0.028);
-  background-image:
-    radial-gradient(circle at 50% 56%, rgba(255, 255, 255, 0.85) var(--dot2, 4px), transparent calc(var(--dot2, 4px) + 0.8px)),
-    radial-gradient(circle at 50% 47%, rgba(20, 16, 12, 0.065) var(--dot, 3.4px), transparent calc(var(--dot, 3.4px) + 0.8px));
-  box-shadow:
-    inset 0 0 0 1px rgba(20, 16, 12, 0.05),
-    inset 0 1.5px 2.5px -0.5px rgba(20, 16, 12, 0.055);
-  opacity: 0;
-  animation: sigIn 220ms var(--ease) both;
-}
-@keyframes sigIn { to { opacity: 1; } }
-
-/* AND IT IS NOT FADED OUT WHEN ITS PIECE LANDS — IT IS COVERED. The brick is
-   opaque and occupies exactly this box, so the socket stops being visible
-   because something is sitting in it, which is the whole relationship: empty,
-   then filled. Dropping the lip is the only change, and only so a hairline
-   does not show around the edge of the piece now standing on it. */
-.sig__g.is-set { animation: none; opacity: 1; box-shadow: none; }
+/* THE SAME VARIABLE AS THE PAGE, so the two cannot come apart: one custom
+   property changes, both transforms resolve from it, and both animate over the
+   same duration on the same curve. At rest that is `slide - slide`, nothing;
+   once the page is back it is `0 - slide`, one screenful up and gone. */
+.sig { transform: translate3d(0, calc(var(--wake-y, 0px) - var(--slide, 100vh)), 0); }
 
 /* --- A PIECE --------------------------------------------------------------
-   `.drg .brk` for the material: same plastic, same stud, same shadow, same
-   transform pipeline as every brick on the canvas. What is different is only
-   what a piece of scenery needs — no transition, because the frame loop is
-   writing --x/--y/--r every frame and a 150ms ease on top of that is 150ms of
-   lag, and no pointer, because there is nothing here to pick up. */
-.sig__b {
-  transition: none;
-  pointer-events: none;
-  cursor: default;
+   Two drawings of the same brick in the same box, stacked: the solid
+   underneath, the hairline over it. Because they were projected from one set
+   of corners they are registered exactly, which is what lets the fill be a
+   wipe through the outline's own geometry rather than a second picture being
+   faded up over the first. A cross-fade reads as two images being swapped.
+   This has to read as one object gaining a material. */
+.sig__p {
+  position: absolute;
+  opacity: 0;
+  transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0) rotate(var(--rot, 0deg));
   will-change: transform;
+  --ink: rgba(240, 236, 227, 0.88);
 }
+/* the drawing arrives before it moves: everything is on screen, apart, for a
+   fifth of a second, so the assembling is something you watch start rather
+   than something already under way when you look */
+.sig.is-lit .sig__p { opacity: 1; transition: opacity 200ms linear; }
+/* THE TRAVEL. A transition rather than a frame loop — the transform is the
+   only thing changing, the compositor owns it, and it is free on a phone. The
+   curve runs a little past its destination and comes back, which is the few
+   pixels that make an arrival feel magnetic rather than merely finished. Each
+   piece's duration is written inline, from `BUILD`. */
+.sig__p.is-go {
+  transform: none;
+  transition-property: transform, opacity;
+  transition-timing-function: cubic-bezier(0.18, 0.86, 0.24, 1.07);
+}
+
+/* the seat: the piece gives as it lands and comes back, about its own base */
+.sig__q {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 84%;
+}
+.sig__p.is-set .sig__q { animation: sigSeat 250ms cubic-bezier(0.3, 0.9, 0.3, 1) both; }
+@keyframes sigSeat {
+  0%   { transform: scale(1.05, 0.95); }
+  52%  { transform: scale(0.99, 1.011); }
+  100% { transform: scale(1, 1); }
+}
+
+/* THE ONE CREATIVE MOVE. Colour floods down through the shape the hairline was
+   drawn into — top face first, because that is the face nearest the light and
+   the one the studs are on — and the hairline goes from cream to the brick's
+   own edge as it does. Everything before this frame is an honest technical
+   drawing; this is the frame it becomes plastic. */
+.sig__wipe {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 210ms cubic-bezier(0.34, 0.78, 0.28, 1);
+  will-change: clip-path;
+}
+.sig__p.is-set .sig__wipe { clip-path: inset(0 0 0 0); }
+.sig__p.is-set { --ink: var(--edge); }
+
+.sig__ln { position: absolute; inset: 0; }
+.sig__ln g {
+  stroke: var(--ink);
+  stroke-width: var(--sw, 1.4px);
+  transition: stroke 210ms cubic-bezier(0.34, 0.78, 0.28, 1);
+}
+.sig__wipe svg,
+.sig__ln svg { display: block; overflow: visible; shape-rendering: geometricPrecision; }
 
 /* --- THE TYPE WAITS FOR THE BUILD ----------------------------------------
    `reveal` is the site's own entrance — opacity, a 14px blur, five pixels of
@@ -10074,18 +10103,12 @@ body.waking .rv {
 }
 body.waking.awake .rv { opacity: 1; filter: blur(0); transform: none; }
 
-/* The Menu and the toolbar are not part of any of this. They are furniture,
-   they are fixed to the window, and they are on screen from the first frame —
-   the entrance is the page's content arriving, not its controls being
-   withheld. A deliberate absence of a rule, not an oversight. */
-
 @media (prefers-reduced-motion: reduce) {
-  /* never armed in this mode — see Boot.arm — but if it somehow were, the page
-     is where it belongs and there is no stencil to watch */
+  /* never armed in this mode — the inline script tests for it too — but if it
+     somehow were, the page is where it belongs and there is nothing to watch */
+  html.wake-armed, html.wake-armed body { background-color: revert-layer; background-image: revert-layer; }
   body.waking { --wake-y: 0px; }
   body.waking .rv { opacity: 1; filter: none; transform: none; transition: none; }
-  body.waking .canvas__dots { opacity: 1; }
-  body.waking .canvas, body.waking .sheet { background: revert-layer; }
   body.waking .pane { visibility: visible; }
   .sig { display: none; }
 }

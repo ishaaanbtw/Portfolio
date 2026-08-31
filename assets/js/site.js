@@ -10020,108 +10020,128 @@
 
   /* ============================================== 5c2c. the entrance =====
 
-     A SMALL THING BEING BUILT, AND THEN THE PAGE SLIDING UP PAST IT.
+     A CONSTRUCTION DRAWING BECOMING A REAL OBJECT, AND THEN THE PAGE
+     SLIDING UP THROUGH IT.
 
-     On a first visit the middle of the screen holds an empty LEGO stencil —
-     eight sockets, recessed, with their studs marked, sitting where eight
-     bricks are about to go. The bricks arrive one at a time from wherever
-     they happen to start, run at their socket, are pulled the last few pixels
-     into it and seat with a click. When the last one is in, the whole page
-     travels upward and the hero comes up from below with it, and the fall
-     starts as it lands.
+     On a first visit the screen is a single sheet of dark charcoal — no dots,
+     no paper, no type, no spinner. Four LEGO bricks are drawn on it the way a
+     part would be drawn in an assembly diagram: isometric, hairline, off
+     white, hollow. They are apart. Over the next second they move together,
+     each on its own clock and its own line, and as each one arrives it stops
+     being a drawing: colour floods down through the geometry it was drawn
+     into, the hairline goes from cream to the brick's own edge, and it seats
+     with a click. When the last one lands the whole sheet travels upward and
+     the page comes up from below with it.
 
-     THERE IS NO LOADING SCREEN. There is one canvas, one dot grid and one
-     page. The grid is painted on `body` from the first frame (see the CSS),
-     so it is on screen before any script runs and never goes away; the hero
-     is built underneath from the start and is simply held one slide below
-     where it belongs; and the construction is a transparent fixed layer over
-     the top, which travels up in lockstep with the page rather than being
-     dismissed.
+     ONE CREATIVE MOVE, AND ONLY ONE. Everything up to the snap is a technical
+     drawing rendered honestly; the snap is where the drawing becomes plastic.
+     The fill is a wipe through the outline's own shape, not a cross-fade of a
+     coloured picture over a grey one — a cross-fade reads as two images being
+     swapped, and this has to read as one object gaining a material.
 
-     WHAT IS BUILT is deliberately not a picture of anything. Six studs wide
-     and six tall, out of real footprints — a 2x4, three 2x2s, three 1x2s and
-     a pair of single studs — assembled bottom-heavy: a plinth, a neck, a
-     block and a cap. It is a shape, not a mascot, because the interesting
-     part is the assembling and an object with a punchline would take the
-     attention away from it.
+     THE SHEET IS OPAQUE, AND THAT SIMPLIFIES EVERYTHING. The old entrance was
+     transparent, so the page's paper, its dot field and the sky pane behind it
+     all had to be suppressed and kept in phase across a moving edge. This one
+     covers the screen, so nothing underneath it needs touching: the travel is
+     a whole viewport plus a cell, the sheet's lower edge and the page's upper
+     edge start coincident and stay coincident, and no band is ever exposed.
 
-     ROLLED START, FIXED DESTINATION. Where a piece comes from, when it is
-     thrown, the arc it takes, how far it overshoots and the angle it arrives
-     at are all rolled fresh every load. The socket it belongs to never is. So
-     no two visits watch the same build and every one of them ends in exactly
-     the same object.
-
-     THE PIECES ARE NOT LATTICE BRICKS, deliberately. They are drawn by
-     `Bricks.art` — same plastic, same studs, same shadow, same colours — but
-     they are not in `recs`, not `Drag` items and not on the snap lattice.
-     Which means the hero keeps exactly the eighteen pieces it started with,
-     the construction can be drawn at its own stud size so it still fits
-     across a phone, and when the page has slid past it the whole layer can
-     simply be taken off without anything being deleted out from under the
-     rest of the page.
+     THE PIECES ARE DRAWN HERE, not by `Bricks.art`. The canvas draws bricks
+     flat and face on, which is right for a desk you can put things on and
+     wrong for an assembly drawing. These are the same footprints and the same
+     eight colours, projected. Nothing is added to `recs`, nothing is a `Drag`
+     item and nothing is on the snap lattice, so the hero keeps exactly the
+     eighteen pieces it started with and the whole layer can be taken off at
+     the end without anything being deleted out from under the page.
 
      WHEN. Home only, and only on an entrance: a cold visit yes, a refresh
      yes, Work -> Home no (same-origin referrer), back/forward no. Reduced
-     motion never.                                                           */
+     motion never. The decision is actually made by six lines inline in the
+     head of index.html, so the charcoal is the first painted frame rather
+     than a paper flash and then the charcoal; this reads the flag they set.  */
 
-  /* --- what gets built ---------------------------------------------------
-     `c`/`r` are the column and row of the piece's top-left cell in a 6x6 box.
-     Every footprint is one the canvas already has: `br24` is the 2x4, `sq2`
-     the 2x2, `small` the 1x2, `conn` the single stud. Nothing overlaps and
-     every piece touches another, so the finished thing is something you could
-     have built by hand out of the same box. */
+  /* --- THE ISOMETRIC ------------------------------------------------------
+     A true 30 degree isometric. One stud step along the x axis is
+     (cos30, sin30) * S on screen and one along y is (-cos30, sin30) * S, so
+     the top of a brick is a rhombus and the two visible walls are the same
+     shape leaning opposite ways. A brick is 1.2 studs tall — LEGO's own ratio
+     is 1.2 plate-widths, near enough that the eye reads it as correct.
+
+     A stud is a circle on the top plane, and a circle on that plane projects
+     to an axis-aligned ellipse with rx/ry = cot(30) = 1.732 — which is why
+     the numbers below are 1.2247 and 0.7071 rather than one number twice. */
+  const ISO = {
+    cx: 0.8660254,          /* cos 30 — half-width of one stud step        */
+    cy: 0.5,                /* sin 30 — half-height of one stud step       */
+    bh: 1.2,                /* brick height, in studs                      */
+    srx: 0.3674,            /* stud ellipse, x radius, in studs            */
+    sry: 0.2121,            /* stud ellipse, y radius                      */
+    sh: 0.21,               /* how far a stud stands off the top face      */
+  };
+
+  /* --- WHAT IS BUILT ------------------------------------------------------
+     Four pieces, which is what the drawing this is modelled on has: one large
+     2x4, two mediums, and one small. `x`/`y` are the near corner's cell, `z`
+     the layer, `w`/`d` the footprint. They interlock — the 2x3 and the 1x2
+     together cover the 2x4 exactly, and the 2x2 caps the middle of that — so
+     the finished thing is something that could be built by hand.
+
+     `at` is when the piece is thrown, `dur` how long it takes, and `from` is
+     where it comes in from in stud units, so the whole entrance scales with
+     the drawing rather than with the screen. Each piece gets its own line and
+     its own clock; nothing arrives on the beat after its neighbour. */
   const BUILD = [
-    { k: 'small', c: 2, r: 0 },                    /* the cap               */
-    { k: 'br24',  c: 1, r: 1 },                    /* the block, 2 x 4      */
-    { k: 'small', c: 2, r: 3 },                    /* the neck              */
-    { k: 'conn',  c: 0, r: 3 },                    /* and two studs beside  */
-    { k: 'conn',  c: 5, r: 3 },                    /* it, on the plinth     */
-    { k: 'sq2',   c: 0, r: 4 },                    /* the plinth, three 2x2 */
-    { k: 'sq2',   c: 2, r: 4 },
-    { k: 'sq2',   c: 4, r: 4 },
+    { w: 4, d: 2, x: 0, y: 0, z: 0, tone: 1,      /* the 2x4 base, blue     */
+      at: 200, dur: 380, from: { x: 0, y: 7.4, r: 0 } },
+    { w: 3, d: 2, x: 0, y: 0, z: 1, tone: 0,      /* the 2x3, red           */
+      at: 360, dur: 360, from: { x: -10.5, y: 1.6, r: -8 } },
+    { w: 2, d: 2, x: 1, y: 0, z: 2, tone: 3,      /* the 2x2 cap, green     */
+      at: 620, dur: 380, from: { x: 0.6, y: -8.6, r: 3 } },
+    { w: 1, d: 2, x: 3, y: 0, z: 1, tone: 2,      /* the 1x2, yellow        */
+      at: 500, dur: 330, from: { x: 9.2, y: -5.2, r: 10 } },
   ];
 
   const Boot = {
     on: false,
     fall: null,
     freed: false,
-    COLS: 6,
-    ROWS: 6,
 
-    /* --- the clock, in ms from the stencil appearing -------------------- */
+    /* --- the clock, in ms from the drawing appearing -------------------- */
     T: {
-      first: 190,       /* the stencil is alone until here          */
-      step: 95,         /* roughly, between one throw and the next  */
-      hold: 210,        /* the finished object sits still this long */
-      wake: 140,        /* then the page starts moving              */
-      slide: 460,       /* and takes this long to get there         */
-      fall: 90,         /* the fall is let go this far into it      */
+      draw: 190,        /* the outlines fade up over this            */
+      seat: 250,        /* a piece takes this long to settle in      */
+      hold: 160,        /* the finished object sits still this long  */
+      wake: 150,        /* then the type starts arriving             */
+      slide: 480,       /* and the sheet takes this long to leave    */
+      fall: 110,        /* the hero's fall is let go this far in     */
     },
 
-    rnd(a, c) { return a + Math.random() * (c - a); },
-
+    /* THE FLAG IS SET IN THE HEAD, not decided here. index.html runs six
+       lines before the first paint that apply the same test and put
+       `wake-armed` on the root, because the background this entrance needs is
+       the opposite of the page's and a decision made this late would be one
+       painted frame of paper first. This only has to agree with it. */
     arm(page) {
-      if (page !== 'home' || REDUCED) return;
-      let nav = '';
-      try { nav = (performance.getEntriesByType('navigation')[0] || {}).type || ''; } catch (_) { nav = ''; }
-      if (nav !== 'reload') {
-        if (nav === 'back_forward') return;
-        let inside = false;
-        try {
-          inside = !!document.referrer
-            && new URL(document.referrer).origin === location.origin;
-        } catch (_) { inside = false; }
-        if (inside) return;             /* arriving from Work is not arriving */
+      const root = document.documentElement;
+      if (page !== 'home' || REDUCED || !root.classList.contains('wake-armed')) {
+        root.classList.remove('wake-armed');
+        return;
       }
       this.on = true;
-      /* HOW FAR THE PAGE TRAVELS, and why it is a whole number of cells. The
-         dot grid moves with the page during the slide, and it is a repeating
-         24px field — land on a multiple of that and the grid finishes in the
-         phase it started in, so the two ends of the journey are identical and
-         only the movement between them is visible. Anything else leaves the
-         whole field a few pixels out for the rest of the session. */
-      const step = 24;
-      this.SLIDE = Math.round(innerHeight * 0.55 / step) * step;
+      /* HOW FAR THE PAGE TRAVELS: EXACTLY ONE VIEWPORT, AND EXACTLY IS THE
+         POINT. The sheet is fixed and a viewport tall, so its lower edge sits
+         at `travel - slide + viewport` and the page's upper edge at `travel`.
+         Those are the same number only when `slide` equals the viewport — any
+         other distance leaves a band of the difference between them, which is
+         off screen at both ends of the journey and drifts across the middle of
+         it. One viewport, and the two edges are welded for every frame.
+
+         The old entrance rounded this to a whole 24px cell because it moved
+         the dot field with the page and the field had to land in the phase it
+         started in. Nothing is repainted here — the page's own dots are inside
+         `.app` and simply travel with it, back to the zero they started at —
+         so there is no phase to keep and no reason to round. */
+      this.SLIDE = innerHeight;
       document.body.style.setProperty('--slide', `${this.SLIDE}px`);
       document.body.style.setProperty('--slide-ms', `${this.T.slide}ms`);
       /* the distance before the class that uses it, so the first computed
@@ -10134,11 +10154,12 @@
       /* AND PARK THEM. `Bricks.init` has just laid all eighteen out at their
          composed positions, and `rain()` — which is what normally throws them
          above the fold before anyone sees them there — is the thing being
-         held. Without this they stand about in a neat scatter for the whole
-         introduction, one slide below, and come into view as the page rises.
-         `rain()` re-parks them at its own entry points when it runs, so this
-         costs nothing and is never seen. `is-settle` because `.drg` eases
-         every transform over 150ms and the park must be instant. */
+         held. The sheet is opaque so none of this is visible either way, but
+         a piece left standing at its composed spot would be on screen the
+         instant the page arrives and would then fall from there, which is not
+         the entrance the hero has. `rain()` re-parks them at its own entry
+         points when it runs, so this costs nothing. `is-settle` because `.drg`
+         eases every transform over 150ms and the park must be instant. */
       Bricks.recs.forEach((r) => {
         r.it.node.classList.add('is-settle');
         Bricks.moveTo(r, Bricks.px(r), -1400);
@@ -10155,199 +10176,226 @@
       if (f) f();
     },
 
-    /* ------------------------------------------------------------------ */
-    /* WHERE EVERY PIECE BELONGS. Worked out once, from the viewport, and
-       never rolled — this is the half of the animation that must come out the
-       same on every load. */
+    /* --- COLOUR -------------------------------------------------------------
+       Two faces of a brick are the same plastic under different light, so they
+       are the same hex moved toward white or black rather than three colours
+       picked by hand — which is the difference between an object and a flat
+       illustration of one. */
+    tint(hex, k) {
+      const n = parseInt(hex.slice(1), 16);
+      const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+        const t = k >= 0 ? v + (255 - v) * k : v * (1 + k);
+        return Math.max(0, Math.min(255, Math.round(t)));
+      });
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    },
+
+    /* --- ONE PIECE, DRAWN TWICE ---------------------------------------------
+       Once as an outline and once as a solid, in the same coordinates, in the
+       same box, stacked. That is what lets the fill be a wipe: the coloured
+       drawing is already registered exactly over the hairline one, so
+       uncovering it top to bottom looks like material arriving inside the
+       geometry rather than a second picture being brought up over the first.
+
+       Both are built from one set of projected corners, so they cannot drift
+       apart at any size. */
+    piece(b, S) {
+      const I = ISO;
+      const H = I.bh * S;
+      const P = (a, c, up) => [
+        I.cx * S * (a - c),
+        I.cy * S * (a + c) - H * up,
+      ];
+      const zt = b.z + 1;
+      /* the top face, clockwise from the far corner */
+      const T = [
+        P(b.x, b.y, zt),
+        P(b.x + b.w, b.y, zt),
+        P(b.x + b.w, b.y + b.d, zt),
+        P(b.x, b.y + b.d, zt),
+      ];
+      const B = T.map((p) => [p[0], p[1] + H]);
+
+      const studs = [];
+      for (let i = 0; i < b.w; i++) {
+        for (let j = 0; j < b.d; j++) {
+          studs.push(P(b.x + i + 0.5, b.y + j + 0.5, zt));
+        }
+      }
+      const rx = I.srx * S, ry = I.sry * S, sh = I.sh * S;
+
+      /* the box this all fits in, with room for the stroke */
+      const pad = Math.max(2, S * 0.14);
+      const xs = T.concat(B).map((p) => p[0]).concat(studs.map((p) => p[0] - rx));
+      const ys = T.concat(B).map((p) => p[1]).concat(studs.map((p) => p[1] - sh - ry));
+      const x0 = Math.min.apply(null, xs.concat(studs.map((p) => p[0] + rx))) - pad;
+      const y0 = Math.min.apply(null, ys) - pad;
+      const x1 = Math.max.apply(null, xs.concat(studs.map((p) => p[0] + rx))) + pad;
+      const y1 = Math.max.apply(null, ys.concat(T.concat(B).map((p) => p[1]))) + pad;
+      const w = x1 - x0, h = y1 - y0;
+
+      const f = (n) => n.toFixed(2);
+      const pts = (arr) => arr.map((p) => `${f(p[0])},${f(p[1])}`).join(' ');
+      /* a stud's wall: down the left side, round the underside, up the right */
+      const wall = (p) =>
+        `M${f(p[0] - rx)},${f(p[1] - sh)}L${f(p[0] - rx)},${f(p[1])}`
+        + `A${f(rx)},${f(ry)} 0 0 0 ${f(p[0] + rx)},${f(p[1])}`
+        + `L${f(p[0] + rx)},${f(p[1] - sh)}`;
+      const cap = (p) => `${f(p[0])},${f(p[1] - sh)}`;
+
+      const base = TONE[b.tone];
+      const cTop = this.tint(base, 0.10);
+      const cRight = this.tint(base, -0.10);
+      const cLeft = this.tint(base, -0.30);
+      const cStud = this.tint(base, 0.20);
+      const cStudW = this.tint(base, 0.0);
+      const edge = this.tint(base, -0.46);
+
+      const open = `<svg viewBox="${f(x0)} ${f(y0)} ${f(w)} ${f(h)}"`
+        + ` width="${f(w)}" height="${f(h)}" aria-hidden="true">`;
+
+      /* --- the solid. Painted far to near: the two walls, then the top, then
+         the studs, so nothing needs a z index and nothing shows through. */
+      let solid = open + '<g>'
+        + `<polygon points="${pts([T[1], T[2], B[2], B[1]])}" fill="${cRight}"/>`
+        + `<polygon points="${pts([T[2], T[3], B[3], B[2]])}" fill="${cLeft}"/>`
+        + `<polygon points="${pts(T)}" fill="${cTop}"/>`;
+      studs.forEach((p) => {
+        solid += `<path d="${wall(p)}Z" fill="${cStudW}"/>`
+          + `<ellipse cx="${f(p[0])}" cy="${f(p[1] - sh)}" rx="${f(rx)}" ry="${f(ry)}" fill="${cStud}"/>`;
+      });
+      solid += '</g></svg>';
+
+      /* --- the drawing. Silhouette, then the three edges inside it, then the
+         studs — which is the order a person would draw it in, and it is also
+         the order that keeps the stud outlines on top of the top face's own
+         line where they cross it. */
+      const sil = `M${pts([T[0], T[1], B[1], B[2], B[3], T[3]])
+        .split(' ').join('L')}Z`;
+      let line = open + `<g fill="none" stroke-linejoin="round" stroke-linecap="round">`
+        + `<path d="${sil}"/>`
+        + `<path d="M${pts([T[1], T[2], T[3]]).split(' ').join('L')}"/>`
+        + `<path d="M${pts([T[2], B[2]]).split(' ').join('L')}"/>`;
+      studs.forEach((p) => {
+        line += `<path d="${wall(p)}"/>`
+          + `<ellipse cx="${f(p[0])}" cy="${f(p[1] - sh)}" rx="${f(rx)}" ry="${f(ry)}"/>`;
+      });
+      line += '</g></svg>';
+
+      return { x0, y0, w, h, solid, line, edge };
+    },
+
+    /* --- WHERE THE DRAWING SITS --------------------------------------------
+       One stud size for the whole assembly, from whichever of the two axes
+       runs out first, so the object is the same object on a phone as on a
+       desk — smaller, not recomposed. It is placed a little above the middle
+       of the screen because the eye reads the centre of a stack of bricks as
+       lower than its geometric centre. */
     layout() {
       const W = innerWidth, H = innerHeight;
-      /* the hero's own stud, unless the object would crowd a narrow screen */
-      const u = Math.max(10, Math.min(Bricks.unit(W),
-        Math.floor(Math.min(W * 0.42, H * 0.30) / this.COLS)));
-      const bw = this.COLS * u, bh = this.ROWS * u;
-      const ox = Math.round((W - bw) / 2);
-      /* a little above the middle of the band the page is about to vacate, so
-         it is comfortably in frame and has somewhere to go */
-      const oy = Math.round(H * 0.44 - bh / 2);
+      const I = ISO;
+      /* the assembly is 4 studs by 2 and three layers tall */
+      const spanX = (4 + 2) * I.cx;
+      const spanY = (4 + 2) * I.cy + 3 * I.bh + I.sh;
+      const S = Math.max(9, Math.min(
+        Math.floor(Math.min(W * 0.58, 620) / spanX),
+        Math.floor(H * 0.48 / spanY),
+      ));
 
-      return BUILD.map((pt) => {
-        const cells = PIECE[pt.k].cells;
-        const cw = Math.max.apply(null, cells.map((c) => c[0])) + 1;
-        const ch = Math.max.apply(null, cells.map((c) => c[1])) + 1;
-        return {
-          kind: pt.k, u, cw, ch,
-          w: cw * u, h: ch * u,
-          x: ox + pt.c * u, y: oy + pt.r * u,
-        };
-      });
-    },
+      const parts = BUILD.map((b) => Object.assign({ b }, this.piece(b, S)));
+      /* the assembly's own box, so it can be centred as one thing */
+      const bx0 = Math.min.apply(null, parts.map((p) => p.x0));
+      const by0 = Math.min.apply(null, parts.map((p) => p.y0));
+      const bx1 = Math.max.apply(null, parts.map((p) => p.x0 + p.w));
+      const by1 = Math.max.apply(null, parts.map((p) => p.y0 + p.h));
+      const ox = W / 2 - (bx0 + bx1) / 2;
+      const oy = H * 0.47 - (by0 + by1) / 2;
 
-    /* WHERE A PIECE COMES FROM, AND ONLY THAT. Start, trajectory, timing and
-       the angle it arrives at are rolled; the socket is not. Four ways in,
-       dealt round so no two neighbours use the same one, each then varied.
-       `over` is how far past its socket it runs before it is pulled back —
-       the few pixels that make a placement feel magnetic rather than merely
-       finished. */
-    entry(p, i, W, H) {
-      const m = (i + (Math.random() < 0.3 ? 1 : 0)) % 4;
-      const r = this.rnd.bind(this);
-      const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
-      const base = { over: r(4, 10), spin: r(0.8, 1.25), bow: r(-1, 1) };
-      if (m === 0) {
-        return Object.assign(base, { x: cx + r(-120, 120), y: -r(80, 260), r: r(-40, 40) });
-      }
-      if (m === 2) {
-        return Object.assign(base, {
-          x: cx + r(-200, 200), y: H + r(80, 240),
-          r: r(150, 210) * (Math.random() < 0.5 ? -1 : 1),
-        });
-      }
-      const side = m === 1 ? -1 : 1;
-      return Object.assign(base, {
-        x: side < 0 ? -r(120, 300) : W + r(120, 300),
-        y: cy + r(-140, 140),
-        r: side * r(25, 70),
-      });
-    },
-
-    /* --- one empty socket -------------------------------------------------
-       Not an outline of a box: a recess. A hairline lip, a shadow cast down
-       the inside of it, a fill a shade darker than the paper, and its studs
-       drawn as dimples — a dark ring with a light crescent above it, which is
-       what a stud looks like when it is a hole rather than a bump. Tiled at
-       the stud pitch, so a 2x4 socket has eight of them in the right places
-       without anything being positioned by hand. */
-    socket(p) {
-      const g = el('div', { class: 'sig__g' });
-      g.style.cssText =
-        `left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;`
-        + `border-radius:${Math.max(2, p.u * 0.13).toFixed(1)}px;`
-        + `background-size:${p.u}px ${p.u}px;`
-        + `--dot:${(p.u * 0.17).toFixed(2)}px;`
-        + `--dot2:${(p.u * 0.2).toFixed(2)}px;`;
-      return g;
+      parts.forEach((p) => { p.left = p.x0 + ox; p.top = p.y0 + oy; p.S = S; });
+      return parts;
     },
 
     /* ------------------------------------------------------------------ */
-    begin(host) {
+    begin() {
       if (!this.on || this.el) return;
-      const list = this.layout();
-      if (!list.length) return;
+      const parts = this.layout();
+      if (!parts.length) return;
 
-      const W = innerWidth, H = innerHeight;
-      /* Fixed to the window rather than parented into the canvas: it has to
-         travel up past the page at the end, and the canvas is the thing it is
-         travelling past. Transparent, so the one dot grid shows through. */
       const layer = el('div', { class: 'sig', 'aria-hidden': 'true' });
       document.body.appendChild(layer);
       this.el = layer;
       App.lock(true);
 
       const T = this.T;
-      const r = this.rnd.bind(this);
+      /* PAINTED FAR TO NEAR, ANIMATED BOTTOM UP. The two orders are not the
+         same — the cap is the last piece to arrive but it is not the nearest
+         thing to the eye — so the DOM is sorted by depth along the view axis
+         and the clock is left to `BUILD`. */
+      const draw = parts.slice().sort((a, c) =>
+        (a.b.x + a.b.y + a.b.z) - (c.b.x + c.b.y + c.b.z));
 
-      const pieces = list.map((p, i) => {
-        const g = this.socket(p);
-        layer.appendChild(g);
-        const n = el('div', { class: 'drg brk sig__b' });
-        n.innerHTML = Bricks.art(p.kind, TONE[(i * 3) % TONE.length], `sg${i}`, p.u);
+      draw.forEach((p) => {
+        const n = el('div', { class: 'sig__p' });
         n.style.cssText =
-          `left:${p.x}px;top:${p.y}px;width:${p.w}px;height:${p.h}px;opacity:0`;
+          `left:${p.left.toFixed(1)}px;top:${p.top.toFixed(1)}px;`
+          + `width:${p.w.toFixed(1)}px;height:${p.h.toFixed(1)}px;`
+          + `--edge:${p.edge};`
+          /* THE LINE IS A HAIRLINE AND STAYS ONE. It scales with the drawing,
+             because a stroke that does not is a stroke that reads as heavy on
+             a phone, but it is held between one physical pixel and two and a
+             half — past that it stops being a drawn line and starts being a
+             painted border. */
+          + `--sw:${Math.max(1.05, Math.min(2.4, p.S * 0.036)).toFixed(2)}px;`
+          + `--dx:${(p.b.from.x * p.S).toFixed(1)}px;`
+          + `--dy:${(p.b.from.y * p.S).toFixed(1)}px;`
+          + `--rot:${p.b.from.r}deg;`;
+        const q = el('div', { class: 'sig__q' });
+        q.innerHTML = `<div class="sig__wipe">${p.solid}</div>`
+          + `<div class="sig__ln">${p.line}</div>`;
+        n.appendChild(q);
         layer.appendChild(n);
-        return { p, g, n, from: this.entry(p, i, W, H) };
+        p.n = n; p.q = q;
       });
 
-      /* THE ORDER, AND THE RHYTHM. Bottom up — a thing is built from its base
-         — but each piece's turn is nudged either way, so it is not a tidy row
-         and the odd one turns up before its neighbour. The gap between throws
-         is rolled rather than counted out; a fixed step reads as a machine
-         dealing cards however small it is. */
-      const order = pieces.slice().sort((a, c) =>
-        (c.p.y + r(-1.2, 1.2) * a.p.u * 2) - (a.p.y + r(-1.2, 1.2) * a.p.u * 2));
-      let at = T.first;
-      order.forEach((q, k) => {
-        q.at = at;
-        at += r(T.step * 0.5, T.step * 1.6);
-        q.dur = r(240, 350);
-        q.set = r(130, 200);
-        q.last = k === order.length - 1;
+      /* one frame at the start position with the transition off, so the
+         travel is a transition and not a jump */
+      requestAnimationFrame(() => {
+        if (this.gone) return;
+        layer.classList.add('is-lit');
       });
 
       let end = 0;
-      pieces.forEach((q) => { end = Math.max(end, q.at + q.dur + q.set); });
-
-      const t0 = performance.now();
-      const out3 = (u) => 1 - Math.pow(1 - u, 3);
-      const ring = (u) => (u >= 1 ? 1 : 1 - Math.exp(-8.6 * u) * Math.cos(7.6 * u));
-
-      const step = (now) => {
-        if (this.gone) return;
-        const t = now - t0;
-
-        pieces.forEach((q) => {
-          if (t < q.at) return;
-          /* HERE, NOT INSIDE THE TRAVEL BRANCH. A frame long enough to skip a
-             whole flight lands straight in the settle below, and a piece made
-             visible only on its way in would then stay invisible for good — a
-             dropped frame turning into a hole in the object. */
-          q.n.style.opacity = '1';
-
-          const p = q.p, f = q.from;
-          const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
-          const dx = cx - f.x, dy = cy - f.y;
-          const d = Math.hypot(dx, dy) || 1;
-          /* the point it runs to: a few pixels past the socket, on the line
-             it came in on */
-          const ox = cx + (dx / d) * f.over, oy = cy + (dy / d) * f.over;
-
-          let x, y, rot;
-          const u = Math.min(1, (t - q.at) / q.dur);
-          if (u < 1) {
-            const e = out3(u);
-            x = f.x + (ox - f.x) * e;
-            y = f.y + (oy - f.y) * e + Math.sin(u * Math.PI) * f.bow * 24;
-            rot = f.r * (1 - out3(Math.min(1, u * f.spin)));
-            q.n.style.setProperty('--sx', '1');
-            q.n.style.setProperty('--sy', '1');
+      const last = parts.reduce((a, c) => (c.b.at + c.b.dur > a.b.at + a.b.dur ? c : a), parts[0]);
+      parts.forEach((p) => {
+        const t = T.draw + p.b.at;
+        end = Math.max(end, t + p.b.dur + T.seat);
+        /* THE TRAVEL. A transition, not a frame loop: the transform is the
+           only thing changing, the compositor owns it, and it costs nothing
+           on a phone. The curve overshoots a little past 1 and comes back,
+           which is the few pixels that make an arrival feel magnetic rather
+           than merely finished. */
+        p.t1 = setTimeout(() => {
+          p.n.style.transitionDuration = `${p.b.dur}ms`;
+          p.n.classList.add('is-go');
+        }, t);
+        /* AND THE SNAP, which is the one moment in this that is not a
+           drawing. The wipe runs, the hairline turns into the brick's own
+           edge, the piece gives as it seats, and it clicks. */
+        p.t2 = setTimeout(() => {
+          p.n.classList.add('is-set');
+          if (p === last) {
+            Sound.voice({ freq: 430, gain: 0.042, dur: 0.08, bright: 2700, drop: 1.2, noise: 0.4 });
+            Sound.voice({ freq: 160, gain: 0.032, dur: 0.13, bright: 900, drop: 0.4, noise: 0.5 });
           } else {
-            /* AND THEN THE SNAP. It is past its socket by a few pixels and
-               gets pulled back onto it, ringing once — the damped curve the
-               canvas settles a snapped brick with — and giving a little as it
-               seats, which is what a brick pressed onto another brick does.
-               It ends on the socket exactly: no drift, no gap. */
-            const v = Math.min(1, (t - q.at - q.dur) / q.set);
-            const e = ring(v);
-            x = ox + (cx - ox) * e;
-            y = oy + (cy - oy) * e;
-            rot = 0;
-            const sq = Math.max(0, 1 - v * 3.2) * 0.05;
-            q.n.style.setProperty('--sx', (1 + sq).toFixed(4));
-            q.n.style.setProperty('--sy', (1 - sq).toFixed(4));
-            if (!q.done) {
-              q.done = true;
-              q.g.classList.add('is-set');
-              if (q.last) {
-                Sound.voice({ freq: 430, gain: 0.042, dur: 0.08, bright: 2700, drop: 1.2, noise: 0.4 });
-                Sound.voice({ freq: 160, gain: 0.032, dur: 0.13, bright: 900, drop: 0.4, noise: 0.5 });
-              } else {
-                Sound.voice({ freq: 520, gain: 0.022, dur: 0.042, bright: 3000, drop: 1.5, noise: 0.35 });
-              }
-            }
+            Sound.voice({ freq: 520, gain: 0.022, dur: 0.042, bright: 3000, drop: 1.5, noise: 0.35 });
           }
+        }, t + p.b.dur);
+      });
 
-          q.n.style.setProperty('--x', `${(x - cx).toFixed(2)}px`);
-          q.n.style.setProperty('--y', `${(y - cy).toFixed(2)}px`);
-          q.n.style.setProperty('--r', `${rot.toFixed(2)}deg`);
-        });
-
-        if (t < end) { requestAnimationFrame(step); return; }
-        this.finish();
-      };
-      requestAnimationFrame(step);
-
+      this.timer = setTimeout(() => this.finish(), end);
       /* IT CANNOT HOLD THE PAGE. If anything above throws, stalls or is cut
-         short, this slides the page up and lets the fall go anyway. */
-      this.guard = setTimeout(() => this.finish(true), 5200);
+         short, this slides the sheet off and lets the fall go anyway. */
+      this.guard = setTimeout(() => this.finish(true), 4200);
     },
 
     /* --- and then the page moves ---------------------------------------- */
@@ -10355,18 +10403,17 @@
       if (this.ending) return;
       this.ending = true;
       clearTimeout(this.guard);
-      const T = this.T;
+      clearTimeout(this.timer);
       const go = () => this.slide(forced);
-      if (forced) go(); else setTimeout(go, T.hold);
+      if (forced) go(); else setTimeout(go, this.T.hold);
     },
 
     /* THE SLIDE IS ONE MOVEMENT AND EVERYTHING IS IN IT. The page comes up
-       from one screen-and-a-bit below; the construction, which is fixed to
-       the window, goes up by the same distance at the same moment on the same
-       curve, so it holds still relative to the page and leaves off the top of
-       the screen with it. The dot grid travels with them and lands in the
-       phase it started in. Nothing fades, nothing is replaced, and the hero
-       arrives because it was pushed there rather than because it appeared. */
+       from a whole screen below; the sheet, which is fixed to the window,
+       goes up by the same distance at the same moment on the same curve, so
+       it holds still relative to the page and carries the construction off
+       the top of the screen with it. Nothing fades and nothing is replaced —
+       the hero arrives because it was pushed there. */
     slide(forced) {
       const T = this.T;
       document.body.classList.add('sliding');
@@ -10374,13 +10421,13 @@
 
       /* the type comes up as the page does, not before it */
       setTimeout(() => document.body.classList.add('awake'), forced ? 0 : T.wake);
-
       setTimeout(() => this.release(), forced ? 0 : T.fall);
 
       setTimeout(() => {
         this.gone = true;
         document.body.classList.add('landed');
         document.body.classList.remove('sliding');
+        document.documentElement.classList.remove('wake-armed');
         if (this.el) { this.el.remove(); this.el = null; }
       }, forced ? 40 : T.slide + 60);
     },
