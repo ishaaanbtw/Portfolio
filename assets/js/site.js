@@ -10122,19 +10122,19 @@
     { w: 4, d: 2, x: 0, y: 0, z: 0, tone: 1,
       at: 60, dur: 316, mag: 126, fill: 96, seat: 190,
       from: { x: -6.4, y: 6.2, r: -5 },
-      bow: 0.10, accel: 0.30, grab: 0.13, over: 0.10, resid: -0.8 },
+      bow: 0.10, accel: 0.30, grab: 0.13, over: 0.145, resid: -0.8 },
     /* 2. IN FROM THE LEFT AND TURNING. The longest rotation of the four and
           the widest bow, so it arcs in rather than sliding in. */
     { w: 3, d: 2, x: 0, y: 0, z: 1, tone: 0,
       at: 250, dur: 292, mag: 112, fill: 88, seat: 176,
       from: { x: -10.8, y: -2.3, r: -13 },
-      bow: -0.14, accel: 0.35, grab: 0.12, over: 0.085, resid: -1.5 },
+      bow: -0.14, accel: 0.35, grab: 0.12, over: 0.125, resid: -1.5 },
     /* 3. STRAIGHT ACROSS. The smallest piece, thrown almost horizontally,
           and the one allowed the most visible overshoot. */
     { w: 1, d: 2, x: 3, y: 0, z: 1, tone: 2,
       at: 452, dur: 278, mag: 118, fill: 80, seat: 168,
       from: { x: 11.6, y: -0.5, r: 8 },
-      bow: 0.06, accel: 0.40, grab: 0.15, over: 0.155, resid: 1.0 },
+      bow: 0.06, accel: 0.40, grab: 0.15, over: 0.205, resid: 1.0 },
     /* 4. THE CAP, AND THE BEST SNAP. Dropped almost straight down onto the
           finished thing: the slowest pull, the longest settle, the fullest
           click. It is the piece that completes the object and it is allowed
@@ -10142,7 +10142,7 @@
     { w: 2, d: 2, x: 1, y: 0, z: 2, tone: 3,
       at: 622, dur: 306, mag: 144, fill: 104, seat: 204,
       from: { x: 0.5, y: -9.4, r: 2.5 },
-      bow: 0.05, accel: 0.26, grab: 0.13, over: 0.095, resid: 0.5 },
+      bow: 0.05, accel: 0.26, grab: 0.13, over: 0.135, resid: 0.5 },
   ];
 
   const Boot = {
@@ -10418,10 +10418,20 @@
       /* the assembly is 4 studs by 2 and three layers tall */
       const spanX = (4 + 2) * I.cx;
       const spanY = (4 + 2) * I.cy + 3 * I.bh + I.sh;
-      const S = Math.max(9, Math.min(
-        Math.floor(Math.min(W * 0.58, 620) / spanX),
-        Math.floor(H * 0.48 / spanY),
-      ));
+      /* AND IT IS SMALL, AND THE CAP IS THE POINT OF IT.
+
+         A stud of about a fifth of the viewport's height puts the finished
+         object at roughly a hundred and twenty pixels across on a laptop and
+         ninety on a phone — an object sitting in a lot of space rather than a
+         graphic filling a screen, which is both what makes it read as a small
+         real thing and what lets one size work on both. The width term only
+         ever binds on a very narrow screen; the ceiling is what stops a large
+         monitor from turning it back into a poster, and the floor is what
+         keeps the studs from closing up on a short one. */
+      const S = clamp(Math.round(Math.min(
+        W * 0.40 / spanX,
+        H * 0.171 / spanY,
+      )), 13, 27);
 
       const parts = BUILD.map((b, i) => Object.assign({ b }, this.piece(b, S, i)));
       /* the assembly's own box, so it can be centred as one thing */
@@ -10430,7 +10440,7 @@
       const bx1 = Math.max.apply(null, parts.map((p) => p.x0 + p.w));
       const by1 = Math.max.apply(null, parts.map((p) => p.y0 + p.h));
       const ox = W / 2 - (bx0 + bx1) / 2;
-      const oy = H * 0.47 - (by0 + by1) / 2;
+      const oy = H * 0.48 - (by0 + by1) / 2;
 
       parts.forEach((p) => { p.left = p.x0 + ox; p.top = p.y0 + oy; p.S = S; });
       return parts;
@@ -10461,9 +10471,12 @@
         accel: Math.min(0.48, Math.max(0.24, b.accel * j(0.16))),
         grab: Math.min(0.20, Math.max(0.08, b.grab * j(0.15))),
         /* IN PIXELS, AND CAPPED. A fraction of a long throw is a piece that
-           visibly misses; a fixed few pixels at the size the drawing happens
-           to be is a piece that is pressed in slightly too far. */
-        over: Math.min(b.over * S * j(0.20), S * 0.13),
+           visibly misses; a few pixels measured against the size the drawing
+           happens to be is a piece pressed in slightly too far. The object is
+           only about a hundred and twenty pixels across, so this is two to four
+           of them — enough to see at a glance and not enough to look like the
+           piece went to the wrong place. */
+        over: Math.min(b.over * S * j(0.18), S * 0.18),
         resid: b.resid * j(0.35),
         fill: b.fill, seat: b.seat,
       };
@@ -10499,7 +10512,7 @@
         const g = el('div', { class: 'sig__gh' });
         g.style.cssText = `left:${p.left.toFixed(1)}px;top:${p.top.toFixed(1)}px;`
           + `width:${p.w.toFixed(1)}px;height:${p.h.toFixed(1)}px;`
-          + `z-index:${i + 1};--sw:${Math.max(0.9, Math.min(1.9, p.S * 0.029)).toFixed(2)}px;`
+          + `z-index:${i + 1};--sw:${clamp(p.S * 0.04, 0.85, 1.35).toFixed(2)}px;`
           /* THE STENCIL DRAWS ITSELF, BOTTOM UP, RATHER THAN SWITCHING ON.
              There is a real gap between the sheet going up and the first piece
              being thrown — the page is still being built underneath and the
@@ -10524,11 +10537,12 @@
           + `width:${p.w.toFixed(1)}px;height:${p.h.toFixed(1)}px;`
           + `z-index:20;--edge:${p.edge};`
           /* THE LINE IS A HAIRLINE AND STAYS ONE. It scales with the drawing,
-             because a stroke that does not is a stroke that reads as heavy on
-             a phone, but it is held between one physical pixel and two and a
-             half — past that it stops being a drawn line and starts being a
-             painted border. */
-          + `--sw:${Math.max(1.05, Math.min(2.4, p.S * 0.036)).toFixed(2)}px;`
+             because a stroke that does not is a stroke that reads as heavy at
+             the small end, but it is held between one physical pixel and one
+             and three quarters — past that it stops being a drawn line and
+             starts being a painted border, and at this size the object is not
+             much more than a hundred pixels across. */
+          + `--sw:${clamp(p.S * 0.05, 1.1, 1.75).toFixed(2)}px;`
           + `--fill:${Math.round(p.fill)}ms;`
           + `--drop:0 ${(p.S * 0.055).toFixed(1)}px ${(p.S * 0.115).toFixed(1)}px rgba(6,9,12,0.5);`
           + `--in:${170 + p.rank * 38}ms;`;
@@ -10582,6 +10596,13 @@
         end = Math.max(end, p.snapAt + p.seat);
         lastSnap = Math.max(lastSnap, p.snapAt);
       });
+      /* WHAT THE CLOCK ACTUALLY DECIDED, for the harness. The rhythm is the
+         one thing here that a recording cannot check honestly: at sixty frames
+         a second two intervals forty milliseconds apart can land in the same
+         bucket, and a single dropped frame moves an observed snap by more than
+         the margin the schedule guarantees. So the schedule is published and
+         asserted on directly. Four numbers, written once. */
+      this.sched = parts.map((p) => Math.round(p.snapAt));
       /* WHEN THE HOLD BEGINS, WHICH IS NOT WHEN THE LOOP ENDS. The settle is a
          damped oscillation and its tail is arithmetic, not motion: by half way
          through it the amplitude is four percent of a percent and a half, which
@@ -13065,6 +13086,12 @@
       ax: +Bricks.ax(r).toFixed(1), ay: +Bricks.ay(r).toFixed(1),
     }));
     window.__brickU = () => Bricks.U;
+    /* THE ENTRANCE'S SCHEDULE. When each piece is due to snap, in milliseconds
+       from the first throw, as the loop worked it out — the rolls, the floor
+       that keeps two placements from crowding, and the margin that keeps the
+       last run-up the longest. A recording cannot check that honestly at
+       sixty frames a second, so the numbers themselves are readable. */
+    window.__wake = () => (Boot.sched ? Boot.sched.slice() : null);
     window.__brkEj = () => Bricks._ej || null;
     /* WHAT THE GESTURE CURRENTLY INTENDS, as data.
 
