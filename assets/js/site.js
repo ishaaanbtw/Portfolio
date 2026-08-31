@@ -10024,14 +10024,18 @@
      SLIDING UP THROUGH IT.
 
      On a first visit the screen is a single sheet of dark charcoal — no dots,
-     no paper, no type, no spinner. Four LEGO bricks are drawn on it the way a
-     part would be drawn in an assembly diagram: isometric, hairline, off
-     white, hollow. They are apart. Over the next second they move together,
-     each on its own clock and its own line, and as each one arrives it stops
-     being a drawing: colour floods down through the geometry it was drawn
-     into, the hairline goes from cream to the brick's own edge, and it seats
-     with a click. When the last one lands the whole sheet travels upward and
-     the page comes up from below with it.
+     no paper, no type, no spinner. A stencil is drawn on it first: the whole
+     finished assembly, in hairline, at a fifth of the ink. Then four bricks
+     appear away from it, drawn in the same hand but brighter, and one at a
+     time they are thrown at their slots. Each one accelerates away from where
+     it started, coasts, decelerates almost to a stop a few pixels short — and
+     is then snatched the rest of the way, past its slot by a whisker, back
+     onto it, and it seats with a click. At that moment, and only that moment,
+     it stops being a drawing: colour floods down through the geometry it was
+     drawn into, the hairline turns from cream into the brick's own edge, a
+     contact shadow appears underneath it, and the piece compresses and comes
+     back the way plastic does. When the last one lands the whole sheet
+     travels upward and the page comes up from below with it.
 
      ONE CREATIVE MOVE, AND ONLY ONE. Everything up to the snap is a technical
      drawing rendered honestly; the snap is where the drawing becomes plastic.
@@ -10039,20 +10043,27 @@
      coloured picture over a grey one — a cross-fade reads as two images being
      swapped, and this has to read as one object gaining a material.
 
+     THE STENCIL IS WHY THE MOTION READS. Without it a brick flying across the
+     screen is a brick flying across the screen; with it, the brick is flying
+     at something, and the empty drawing underneath is the sentence the motion
+     finishes. Each slot brightens as its own piece closes on it and is simply
+     covered when the piece lands on it — the piece is opaque and occupies
+     exactly that box. Empty slot, brick approaches, snap, slot filled.
+
      THE SHEET IS OPAQUE, AND THAT SIMPLIFIES EVERYTHING. The old entrance was
      transparent, so the page's paper, its dot field and the sky pane behind it
      all had to be suppressed and kept in phase across a moving edge. This one
      covers the screen, so nothing underneath it needs touching: the travel is
-     a whole viewport plus a cell, the sheet's lower edge and the page's upper
-     edge start coincident and stay coincident, and no band is ever exposed.
+     exactly one viewport, the sheet's lower edge and the page's upper edge
+     start coincident and stay coincident, and no band is ever exposed.
 
      THE PIECES ARE DRAWN HERE, not by `Bricks.art`. The canvas draws bricks
      flat and face on, which is right for a desk you can put things on and
      wrong for an assembly drawing. These are the same footprints and the same
      eight colours, projected. Nothing is added to `recs`, nothing is a `Drag`
      item and nothing is on the snap lattice, so the hero keeps exactly the
-     eighteen pieces it started with and the whole layer can be taken off at
-     the end without anything being deleted out from under the page.
+     pieces it started with and the whole layer can be taken off at the end
+     without anything being deleted out from under the page.
 
      WHEN. Home only, and only on an entrance: a cold visit yes, a refresh
      yes, Work -> Home no (same-origin referrer), back/forward no. Reduced
@@ -10079,26 +10090,59 @@
     sh: 0.21,               /* how far a stud stands off the top face      */
   };
 
-  /* --- WHAT IS BUILT ------------------------------------------------------
-     Four pieces, which is what the drawing this is modelled on has: one large
-     2x4, two mediums, and one small. `x`/`y` are the near corner's cell, `z`
-     the layer, `w`/`d` the footprint. They interlock — the 2x3 and the 1x2
-     together cover the 2x4 exactly, and the 2x2 caps the middle of that — so
-     the finished thing is something that could be built by hand.
+  /* --- WHAT IS BUILT, AND HOW EACH PIECE BEHAVES --------------------------
+     Four pieces: one large 2x4, two mediums, one small. `x`/`y` are the near
+     corner's cell, `z` the layer, `w`/`d` the footprint. They interlock — the
+     2x3 and the 1x2 together cover the 2x4 exactly, and the 2x2 caps the
+     middle of that — so the finished thing is something that could be built
+     by hand. None of those numbers is ever rolled: every load ends in exactly
+     the same object.
 
-     `at` is when the piece is thrown, `dur` how long it takes, and `from` is
-     where it comes in from in stud units, so the whole entrance scales with
-     the drawing rather than with the screen. Each piece gets its own line and
-     its own clock; nothing arrives on the beat after its neighbour. */
+     Everything after `tone` is character, and no two pieces share it.
+
+       at      when it is thrown
+       dur     how long the flight takes
+       mag     how long the magnetic part takes — the last few pixels
+       fill    how long the colour takes to flood the geometry
+       seat    how long it settles for afterwards
+       from    where it starts, in studs, so the entrance scales with the
+               drawing rather than with the screen
+       bow     how much its path bends — a straight line between two points
+               is the one thing a thrown object never travels along
+       accel   the fraction of the flight spent getting up to speed; small is
+               a flick, large is a shove
+       grab    how far short of the slot the flight ends and the magnet takes
+               over, as a fraction of the whole distance
+       over    how far past the slot it goes before it is corrected, in studs
+       resid   the degree or so of rotation deliberately left uncorrected by
+               the flight, so the magnet has an alignment to make            */
   const BUILD = [
-    { w: 4, d: 2, x: 0, y: 0, z: 0, tone: 1,      /* the 2x4 base, blue     */
-      at: 200, dur: 380, from: { x: 0, y: 7.4, r: 0 } },
-    { w: 3, d: 2, x: 0, y: 0, z: 1, tone: 0,      /* the 2x3, red           */
-      at: 360, dur: 360, from: { x: -10.5, y: 1.6, r: -8 } },
-    { w: 2, d: 2, x: 1, y: 0, z: 2, tone: 3,      /* the 2x2 cap, green     */
-      at: 620, dur: 380, from: { x: 0.6, y: -8.6, r: 3 } },
-    { w: 1, d: 2, x: 3, y: 0, z: 1, tone: 2,      /* the 1x2, yellow        */
-      at: 500, dur: 330, from: { x: 9.2, y: -5.2, r: 10 } },
+    /* 1. THE BASE. A diagonal from below left, the heaviest thing here, so it
+          is shoved rather than flicked and it barely overshoots. */
+    { w: 4, d: 2, x: 0, y: 0, z: 0, tone: 1,
+      at: 60, dur: 316, mag: 126, fill: 96, seat: 190,
+      from: { x: -6.4, y: 6.2, r: -5 },
+      bow: 0.10, accel: 0.30, grab: 0.13, over: 0.10, resid: -0.8 },
+    /* 2. IN FROM THE LEFT AND TURNING. The longest rotation of the four and
+          the widest bow, so it arcs in rather than sliding in. */
+    { w: 3, d: 2, x: 0, y: 0, z: 1, tone: 0,
+      at: 250, dur: 292, mag: 112, fill: 88, seat: 176,
+      from: { x: -10.8, y: -2.3, r: -13 },
+      bow: -0.14, accel: 0.35, grab: 0.12, over: 0.085, resid: -1.5 },
+    /* 3. STRAIGHT ACROSS. The smallest piece, thrown almost horizontally,
+          and the one allowed the most visible overshoot. */
+    { w: 1, d: 2, x: 3, y: 0, z: 1, tone: 2,
+      at: 452, dur: 278, mag: 118, fill: 80, seat: 168,
+      from: { x: 11.6, y: -0.5, r: 8 },
+      bow: 0.06, accel: 0.40, grab: 0.15, over: 0.155, resid: 1.0 },
+    /* 4. THE CAP, AND THE BEST SNAP. Dropped almost straight down onto the
+          finished thing: the slowest pull, the longest settle, the fullest
+          click. It is the piece that completes the object and it is allowed
+          to be the one you remember. */
+    { w: 2, d: 2, x: 1, y: 0, z: 2, tone: 3,
+      at: 622, dur: 306, mag: 144, fill: 104, seat: 204,
+      from: { x: 0.5, y: -9.4, r: 2.5 },
+      bow: 0.05, accel: 0.26, grab: 0.13, over: 0.095, resid: 0.5 },
   ];
 
   const Boot = {
@@ -10106,14 +10150,67 @@
     fall: null,
     freed: false,
 
-    /* --- the clock, in ms from the drawing appearing -------------------- */
+    /* --- the clock, in ms from the sheet appearing ---------------------- */
     T: {
-      draw: 190,        /* the outlines fade up over this            */
-      seat: 250,        /* a piece takes this long to settle in      */
-      hold: 160,        /* the finished object sits still this long  */
-      wake: 150,        /* then the type starts arriving             */
-      slide: 480,       /* and the sheet takes this long to leave    */
-      fall: 110,        /* the hero's fall is let go this far in     */
+      hold: 145,        /* the finished object sits still this long  */
+      wake: 215,        /* then the type starts arriving             */
+      slide: 470,       /* and the sheet takes this long to leave    */
+      fall: 1.02,       /* the hero's fall is let go this far into it */
+    },
+
+    /* --- THE CURVES ---------------------------------------------------------
+
+       A FLIGHT, INTEGRATED RATHER THAN DRAWN. Every stock easing curve is a
+       position curve, which is why so much UI motion reads as a shape sliding
+       and not as an object moving: you pick how it looks at the ends and the
+       middle is whatever falls out. This is the other way round. The velocity
+       is the thing described — it ramps from nothing over the first `a` of the
+       journey, then decays as a square to nothing at the end — and the
+       position is its integral, normalised. That is what acceleration,
+       momentum and deceleration actually are, and the two halves join with the
+       same slope, so there is no kink where a bezier's handles would meet.
+
+       `a` is the only knob and it is per piece: small is a flick that is up to
+       speed immediately, large is a shove that takes its time. */
+    flight(u, a) {
+      const A = a / 2, B = (1 - a) / 3, tot = A + B;
+      if (u <= a) return (u * u) / (2 * a) / tot;
+      const v = (u - a) / (1 - a);
+      return (A + B * (1 - Math.pow(1 - v, 3))) / tot;
+    },
+
+    /* AND THEN THE MAGNET, which is a different kind of movement and has to
+       look like one. The flight has all but stopped a few pixels out; this
+       accelerates from there — the pull — carries the piece a whisker past its
+       slot, and takes it back. It ends at exactly 1 with exactly no
+       overshoot left, because the destination is not a matter of taste.
+
+       Returns the fraction of the remaining distance covered. The overshoot is
+       returned separately, in pixels, so it can be capped: a proportional
+       overshoot on a long throw is a piece visibly missing its slot. */
+    pull(v) { return Math.min(1, Math.pow(v / 0.45, 1.7)); },
+    past(v) {
+      if (v <= 0.38 || v >= 1) return 0;
+      return Math.sin((v - 0.38) / 0.62 * Math.PI);
+    },
+
+    /* THE SETTLE, AND THE HELD FRAME AT THE FRONT OF IT.
+
+       A brick pressed onto studs compresses, is held there for an instant by
+       the friction of the studs it has just been forced over, and then
+       relaxes. So this is not a bare damped oscillation: it is flat at full
+       compression for the first sixth of the settle and damped after that.
+
+       The flat part is about two frames, and it is the entire reason the
+       compression is visible at all. A decay that starts at the moment of
+       contact is already half gone by the next frame a display can show, which
+       is how a settle that is right on paper turns into a settle nobody can
+       see. `amp` is about 1.5% at its deepest — the difference between "it
+       seated" and "it bounced". */
+    damp(w) {
+      if (w < 0.16) return 1;
+      const v = w - 0.16;
+      return Math.exp(-6.0 * v) * Math.cos(v * 7.2);
     },
 
     /* THE FLAG IS SET IN THE HEAD, not decided here. index.html runs six
@@ -10136,26 +10233,33 @@
          off screen at both ends of the journey and drifts across the middle of
          it. One viewport, and the two edges are welded for every frame.
 
-         The old entrance rounded this to a whole 24px cell because it moved
-         the dot field with the page and the field had to land in the phase it
-         started in. Nothing is repainted here — the page's own dots are inside
-         `.app` and simply travel with it, back to the zero they started at —
-         so there is no phase to keep and no reason to round. */
+         Nothing is repainted during the journey — the page's own dots are
+         inside `.app` and travel with it, back to the zero they started at —
+         so there is no grid phase to preserve and no reason to round. */
       this.SLIDE = innerHeight;
       document.body.style.setProperty('--slide', `${this.SLIDE}px`);
       document.body.style.setProperty('--slide-ms', `${this.T.slide}ms`);
       /* the distance before the class that uses it, so the first computed
          style is the real one rather than the stylesheet's fallback */
       document.body.classList.add('waking');
+      /* AND THE DRAWING GOES UP NOW, BEFORE THE PAGE IS BUILT. It used to be
+         mounted from the middle of `Pages.home`, which put it on screen a
+         quarter of a second later than it needed to be — a quarter of a second
+         of flat charcoal with nothing on it. Nothing in `layout` depends on the
+         page; it needs the viewport and that is all. So the stencil and the
+         four pieces are drawn immediately and simply wait, which turns the
+         time the browser spends building the page underneath into the beat
+         before the first throw instead of into dead air. */
+      this.begin();
     },
 
     hold(fn) {
       if (!this.on) return false;
-      /* AND PARK THEM. `Bricks.init` has just laid all eighteen out at their
+      /* AND PARK THEM. `Bricks.init` has just laid all of them out at their
          composed positions, and `rain()` — which is what normally throws them
          above the fold before anyone sees them there — is the thing being
-         held. The sheet is opaque so none of this is visible either way, but
-         a piece left standing at its composed spot would be on screen the
+         held. The sheet is opaque so none of this is visible either way, but a
+         piece left standing at its composed spot would be on screen the
          instant the page arrives and would then fall from there, which is not
          the entrance the hero has. `rain()` re-parks them at its own entry
          points when it runs, so this costs nothing. `is-settle` because `.drg`
@@ -10192,14 +10296,19 @@
 
     /* --- ONE PIECE, DRAWN TWICE ---------------------------------------------
        Once as an outline and once as a solid, in the same coordinates, in the
-       same box, stacked. That is what lets the fill be a wipe: the coloured
-       drawing is already registered exactly over the hairline one, so
-       uncovering it top to bottom looks like material arriving inside the
-       geometry rather than a second picture being brought up over the first.
+       same box, stacked. Because they were projected from one set of corners
+       they are registered exactly, which is what lets the fill be a wipe
+       through the outline's own geometry rather than a second picture being
+       faded up over the first. A cross-fade reads as two images being swapped.
+       This has to read as one object gaining a material.
 
-       Both are built from one set of projected corners, so they cannot drift
-       apart at any size. */
-    piece(b, S) {
+       THE MATERIAL IS THREE THINGS AND NO MORE. A gradient down the top face,
+       because a flat top face is a swatch and a graded one is a surface under
+       a light. A darker band along the foot of each wall, which is the shadow
+       a brick sits in where it meets the one below it. And the outline itself,
+       which after the snap is the brick's own dark edge and is therefore also
+       what defines every stud. No glow, no bloom, no specular blob. */
+    piece(b, S, uid) {
       const I = ISO;
       const H = I.bh * S;
       const P = (a, c, up) => [
@@ -10226,11 +10335,13 @@
 
       /* the box this all fits in, with room for the stroke */
       const pad = Math.max(2, S * 0.14);
-      const xs = T.concat(B).map((p) => p[0]).concat(studs.map((p) => p[0] - rx));
+      const cxs = studs.map((p) => p[0]);
+      const xs = T.concat(B).map((p) => p[0])
+        .concat(cxs.map((v) => v - rx), cxs.map((v) => v + rx));
       const ys = T.concat(B).map((p) => p[1]).concat(studs.map((p) => p[1] - sh - ry));
-      const x0 = Math.min.apply(null, xs.concat(studs.map((p) => p[0] + rx))) - pad;
+      const x0 = Math.min.apply(null, xs) - pad;
       const y0 = Math.min.apply(null, ys) - pad;
-      const x1 = Math.max.apply(null, xs.concat(studs.map((p) => p[0] + rx))) + pad;
+      const x1 = Math.max.apply(null, xs) + pad;
       const y1 = Math.max.apply(null, ys.concat(T.concat(B).map((p) => p[1]))) + pad;
       const w = x1 - x0, h = y1 - y0;
 
@@ -10241,25 +10352,36 @@
         `M${f(p[0] - rx)},${f(p[1] - sh)}L${f(p[0] - rx)},${f(p[1])}`
         + `A${f(rx)},${f(ry)} 0 0 0 ${f(p[0] + rx)},${f(p[1])}`
         + `L${f(p[0] + rx)},${f(p[1] - sh)}`;
-      const cap = (p) => `${f(p[0])},${f(p[1] - sh)}`;
+      /* the foot of a wall — the bottom fifth of it, darkened */
+      const foot = (p1, p2) => {
+        const k = 0.78;
+        return pts([[p1[0], p1[1] + H * k], [p2[0], p2[1] + H * k],
+          [p2[0], p2[1] + H], [p1[0], p1[1] + H]]);
+      };
 
       const base = TONE[b.tone];
-      const cTop = this.tint(base, 0.10);
       const cRight = this.tint(base, -0.10);
       const cLeft = this.tint(base, -0.30);
       const cStud = this.tint(base, 0.20);
       const cStudW = this.tint(base, 0.0);
       const edge = this.tint(base, -0.46);
+      const gid = `sgg${uid}`;
 
       const open = `<svg viewBox="${f(x0)} ${f(y0)} ${f(w)} ${f(h)}"`
         + ` width="${f(w)}" height="${f(h)}" aria-hidden="true">`;
 
-      /* --- the solid. Painted far to near: the two walls, then the top, then
-         the studs, so nothing needs a z index and nothing shows through. */
-      let solid = open + '<g>'
+      /* --- the solid. Painted far to near: the two walls and their feet, then
+         the top face under its gradient, then the studs. Nothing needs a z
+         index and nothing shows through. */
+      let solid = open
+        + `<defs><linearGradient id="${gid}" x1="0.12" y1="0" x2="0.72" y2="1">`
+        + `<stop offset="0" stop-color="${this.tint(base, 0.21)}"/>`
+        + `<stop offset="1" stop-color="${this.tint(base, 0.02)}"/></linearGradient></defs><g>`
         + `<polygon points="${pts([T[1], T[2], B[2], B[1]])}" fill="${cRight}"/>`
         + `<polygon points="${pts([T[2], T[3], B[3], B[2]])}" fill="${cLeft}"/>`
-        + `<polygon points="${pts(T)}" fill="${cTop}"/>`;
+        + `<polygon points="${foot(T[1], T[2])}" fill="rgba(0,0,0,0.17)"/>`
+        + `<polygon points="${foot(T[2], T[3])}" fill="rgba(0,0,0,0.17)"/>`
+        + `<polygon points="${pts(T)}" fill="url(#${gid})"/>`;
       studs.forEach((p) => {
         solid += `<path d="${wall(p)}Z" fill="${cStudW}"/>`
           + `<ellipse cx="${f(p[0])}" cy="${f(p[1] - sh)}" rx="${f(rx)}" ry="${f(ry)}" fill="${cStud}"/>`;
@@ -10270,9 +10392,8 @@
          studs — which is the order a person would draw it in, and it is also
          the order that keeps the stud outlines on top of the top face's own
          line where they cross it. */
-      const sil = `M${pts([T[0], T[1], B[1], B[2], B[3], T[3]])
-        .split(' ').join('L')}Z`;
-      let line = open + `<g fill="none" stroke-linejoin="round" stroke-linecap="round">`
+      const sil = `M${pts([T[0], T[1], B[1], B[2], B[3], T[3]]).split(' ').join('L')}Z`;
+      let line = open + '<g fill="none" stroke-linejoin="round" stroke-linecap="round">'
         + `<path d="${sil}"/>`
         + `<path d="M${pts([T[1], T[2], T[3]]).split(' ').join('L')}"/>`
         + `<path d="M${pts([T[2], B[2]]).split(' ').join('L')}"/>`;
@@ -10302,7 +10423,7 @@
         Math.floor(H * 0.48 / spanY),
       ));
 
-      const parts = BUILD.map((b) => Object.assign({ b }, this.piece(b, S)));
+      const parts = BUILD.map((b, i) => Object.assign({ b }, this.piece(b, S, i)));
       /* the assembly's own box, so it can be centred as one thing */
       const bx0 = Math.min.apply(null, parts.map((p) => p.x0));
       const by0 = Math.min.apply(null, parts.map((p) => p.y0));
@@ -10313,6 +10434,39 @@
 
       parts.forEach((p) => { p.left = p.x0 + ox; p.top = p.y0 + oy; p.S = S; });
       return parts;
+    },
+
+    /* --- WHAT VARIES BETWEEN LOADS ------------------------------------------
+       Where a piece comes from, how hard it is thrown, how its path bends,
+       when its turn is and how far past its slot it runs — all rolled fresh.
+       Where it ends up, which way up it ends up, what the stencil says and
+       what the finished object is — never. Two visits watch different
+       throws and get the same object. */
+    vary(b, S) {
+      const j = (m) => 1 + (Math.random() * 2 - 1) * m;
+      const sx = b.from.x * S * j(0.14);
+      const sy = b.from.y * S * j(0.14);
+      const len = Math.hypot(sx, sy) || 1;
+      return {
+        sx, sy, len,
+        sr: b.from.r * j(0.30),
+        at: Math.max(30, b.at + (Math.random() * 2 - 1) * 26),
+        dur: b.dur * j(0.05),
+        mag: b.mag * j(0.05),
+        bow: b.bow * S * 3.2 * j(0.35),
+        /* AND THE WINDUP IS NEVER SHORTER THAN FOUR FRAMES. Below about
+           seventy milliseconds the acceleration is real but it is not
+           legible: the piece is at full speed by the second frame anyone
+           sees, which is indistinguishable from it starting there. */
+        accel: Math.min(0.48, Math.max(0.24, b.accel * j(0.16))),
+        grab: Math.min(0.20, Math.max(0.08, b.grab * j(0.15))),
+        /* IN PIXELS, AND CAPPED. A fraction of a long throw is a piece that
+           visibly misses; a fixed few pixels at the size the drawing happens
+           to be is a piece that is pressed in slightly too far. */
+        over: Math.min(b.over * S * j(0.20), S * 0.13),
+        resid: b.resid * j(0.35),
+        fill: b.fill, seat: b.seat,
+      };
     },
 
     /* ------------------------------------------------------------------ */
@@ -10329,73 +10483,284 @@
       const T = this.T;
       /* PAINTED FAR TO NEAR, ANIMATED BOTTOM UP. The two orders are not the
          same — the cap is the last piece to arrive but it is not the nearest
-         thing to the eye — so the DOM is sorted by depth along the view axis
-         and the clock is left to `BUILD`. */
-      const draw = parts.slice().sort((a, c) =>
+         thing to the eye — so the resting depth is sorted along the view axis
+         and the clock is left to `BUILD`. A piece in flight is lifted above
+         all of them and dropped back into its own depth when it lands, because
+         a piece being carried into place comes from in front of the object,
+         not through it. */
+      const depth = parts.slice().sort((a, c) =>
         (a.b.x + a.b.y + a.b.z) - (c.b.x + c.b.y + c.b.z));
 
-      draw.forEach((p) => {
-        const n = el('div', { class: 'sig__p' });
-        n.style.cssText =
-          `left:${p.left.toFixed(1)}px;top:${p.top.toFixed(1)}px;`
+      /* --- the stencil. The whole finished assembly, hairline, at a fifth of
+         the ink, in the exact boxes the pieces are about to fill. It is drawn
+         first and underneath so that everything after it is a piece flying at
+         a slot rather than a piece flying. */
+      depth.forEach((p, i) => {
+        const g = el('div', { class: 'sig__gh' });
+        g.style.cssText = `left:${p.left.toFixed(1)}px;top:${p.top.toFixed(1)}px;`
           + `width:${p.w.toFixed(1)}px;height:${p.h.toFixed(1)}px;`
-          + `--edge:${p.edge};`
+          + `z-index:${i + 1};--sw:${Math.max(0.9, Math.min(1.9, p.S * 0.029)).toFixed(2)}px;`
+          /* THE STENCIL DRAWS ITSELF, BOTTOM UP, RATHER THAN SWITCHING ON.
+             There is a real gap between the sheet going up and the first piece
+             being thrown — the page is still being built underneath and the
+             throw deliberately waits for that to be over (see `go`) — and the
+             difference between that gap being dead air and being the beat
+             before the music is entirely whether something is happening in it.
+             So the four slots are drawn in the order they will be filled, over
+             about a third of a second, and by the time the last one is down
+             the first piece is on its way. */
+          + `--in:${60 + i * 78}ms;`;
+        g.innerHTML = p.line;
+        layer.appendChild(g);
+        p.gh = g;
+        p.rank = i + 1;
+      });
+
+      depth.forEach((p) => {
+        const v = this.vary(p.b, p.S);
+        Object.assign(p, v);
+        const n = el('div', { class: 'sig__p' });
+        n.style.cssText = `left:${p.left.toFixed(1)}px;top:${p.top.toFixed(1)}px;`
+          + `width:${p.w.toFixed(1)}px;height:${p.h.toFixed(1)}px;`
+          + `z-index:20;--edge:${p.edge};`
           /* THE LINE IS A HAIRLINE AND STAYS ONE. It scales with the drawing,
              because a stroke that does not is a stroke that reads as heavy on
              a phone, but it is held between one physical pixel and two and a
              half — past that it stops being a drawn line and starts being a
              painted border. */
           + `--sw:${Math.max(1.05, Math.min(2.4, p.S * 0.036)).toFixed(2)}px;`
-          + `--dx:${(p.b.from.x * p.S).toFixed(1)}px;`
-          + `--dy:${(p.b.from.y * p.S).toFixed(1)}px;`
-          + `--rot:${p.b.from.r}deg;`;
+          + `--fill:${Math.round(p.fill)}ms;`
+          + `--drop:0 ${(p.S * 0.055).toFixed(1)}px ${(p.S * 0.115).toFixed(1)}px rgba(6,9,12,0.5);`
+          + `--in:${170 + p.rank * 38}ms;`;
         const q = el('div', { class: 'sig__q' });
         q.innerHTML = `<div class="sig__wipe">${p.solid}</div>`
           + `<div class="sig__ln">${p.line}</div>`;
         n.appendChild(q);
         layer.appendChild(n);
-        p.n = n; p.q = q;
+        p.n = n; p.q = q; p.ln = q.lastChild;
+        /* the first pose, written before the element has ever been painted */
+        p.n.style.transform =
+          `translate3d(${p.sx.toFixed(2)}px,${p.sy.toFixed(2)}px,0) rotate(${p.sr.toFixed(2)}deg)`;
       });
 
-      /* one frame at the start position with the transition off, so the
-         travel is a transition and not a jump */
-      requestAnimationFrame(() => {
-        if (this.gone) return;
-        layer.classList.add('is-lit');
-      });
+      /* the order the ear hears, so the last click can be the last click */
+      const last = parts.reduce((a, c) =>
+        (c.at + c.dur + c.mag > a.at + a.dur + a.mag ? c : a), parts[0]);
 
-      let end = 0;
-      const last = parts.reduce((a, c) => (c.b.at + c.b.dur > a.b.at + a.b.dur ? c : a), parts[0]);
+      /* AND THEN THE RHYTHM IS PROTECTED FROM THE RANDOMNESS. Every one of
+         `at`, `dur` and `mag` is rolled, and three rolls landing the wrong way
+         can close a hundred and fifty millisecond gap between two placements
+         to twenty — which does not read as a variation, it reads as two pieces
+         arriving at once and a mistake. So the intended order is walked in
+         order and any piece that has crowded the one before it is pushed back
+         until it is not. The variation survives; the beat does not depend on
+         it going well. */
+      let floor = 0;
       parts.forEach((p) => {
-        const t = T.draw + p.b.at;
-        end = Math.max(end, t + p.b.dur + T.seat);
-        /* THE TRAVEL. A transition, not a frame loop: the transform is the
-           only thing changing, the compositor owns it, and it costs nothing
-           on a phone. The curve overshoots a little past 1 and comes back,
-           which is the few pixels that make an arrival feel magnetic rather
-           than merely finished. */
-        p.t1 = setTimeout(() => {
-          p.n.style.transitionDuration = `${p.b.dur}ms`;
-          p.n.classList.add('is-go');
-        }, t);
-        /* AND THE SNAP, which is the one moment in this that is not a
-           drawing. The wipe runs, the hairline turns into the brick's own
-           edge, the piece gives as it seats, and it clicks. */
-        p.t2 = setTimeout(() => {
-          p.n.classList.add('is-set');
-          if (p === last) {
-            Sound.voice({ freq: 430, gain: 0.042, dur: 0.08, bright: 2700, drop: 1.2, noise: 0.4 });
-            Sound.voice({ freq: 160, gain: 0.032, dur: 0.13, bright: 900, drop: 0.4, noise: 0.5 });
-          } else {
-            Sound.voice({ freq: 520, gain: 0.022, dur: 0.042, bright: 3000, drop: 1.5, noise: 0.35 });
-          }
-        }, t + p.b.dur);
+        p.snapAt = p.at + p.dur + p.mag;
+        if (p.snapAt < floor) { p.at += floor - p.snapAt; p.snapAt = floor; }
+        floor = p.snapAt + 108;
       });
+      /* AND THE LAST GAP IS ALWAYS THE LONGEST, BY A CLEAR MARGIN. The three
+         intervals are meant to open out — a hundred and fifty, two hundred,
+         two hundred and forty — because four placements at one interval is a
+         metronome and the ear hears a metronome as a machine. Three rolls
+         landing the wrong way can flatten that to within twenty milliseconds,
+         which is a perfectly good animation and the wrong one. So the cap, the
+         piece that finishes the object and has the best snap, is given a
+         run-up that is always at least this much longer than any other. */
+      const gaps = [1, 2, 3].map((i) => parts[i].snapAt - parts[i - 1].snapAt);
+      const want = Math.max(gaps[0], gaps[1]) + 52;
+      if (gaps[2] < want) {
+        const add = want - gaps[2];
+        parts[3].at += add;
+        parts[3].snapAt += add;
+      }
 
-      this.timer = setTimeout(() => this.finish(), end);
+      let end = 0, lastSnap = 0;
+      parts.forEach((p) => {
+        end = Math.max(end, p.snapAt + p.seat);
+        lastSnap = Math.max(lastSnap, p.snapAt);
+      });
+      /* WHEN THE HOLD BEGINS, WHICH IS NOT WHEN THE LOOP ENDS. The settle is a
+         damped oscillation and its tail is arithmetic, not motion: by half way
+         through it the amplitude is four percent of a percent and a half, which
+         is nothing anyone can see. Waiting for the loop to finish before
+         starting to count the hold would therefore spend an extra tenth of a
+         second of apparent stillness on top of the hold itself, and the whole
+         thing would feel like it was waiting for permission. So the hold is
+         counted from the point the last piece has visibly stopped, and the
+         arithmetic is left to run underneath the start of the slide. */
+      this.rest = lastSnap + Math.round(last.seat * 0.5);
+
+      /* --- ONE LOOP, FOUR PIECES, TWO TRANSFORMS EACH -------------------------
+         No transitions on the travel. A transition can only describe a
+         position curve between two values, and the whole point of this pass is
+         that the interesting part — the flight easing into the magnet easing
+         into the settle — is three different kinds of movement in a row that
+         have to join without a seam. So it is written per frame — and what is
+         written is a transform and, at most, two opacities, none of which
+         affects layout. Nothing in here reads geometry either, so there is
+         nothing for a style recalculation to be forced by: no `offsetWidth`,
+         no `getBoundingClientRect`, no computed style. Four elements, one
+         string each, sixty times a second. */
+      /* AND THE CLOCK DOES NOT START HERE. This runs before the page has been
+         built — the canvas, the showcase, the ink layer, the rack, the drawer
+         and the deck are all still to come, and so are the fonts and the first
+         paint of any of it. Several hundred milliseconds of main thread, in
+         other words, landing squarely on the first throw and showing up as a
+         stutter in the one part of the page whose entire job is to look
+         smooth. So this mounts the sheet, writes every piece's opening pose,
+         and stops there. `boot()` calls `go()` when the page is finished, and
+         `go()` waits for the main thread to actually go quiet before starting
+         the clock. The drawing is on screen for all of it — what is deferred is
+         only the movement, and the stencil drawing itself in fills the wait. */
+      this.play = (t0) => {
+      const step = (now) => {
+        if (this.gone) return;
+        const t = now - t0;
+
+        parts.forEach((p) => {
+          if (!p.set) {
+            /* THE SLOT BRIGHTENS AS ITS OWN PIECE CLOSES ON IT. Its arrival is
+               a CSS animation on the element — it is on screen long before
+               this loop starts and must not depend on it — and what is written
+               here is only the lift, as a second opacity multiplied over the
+               first by the stylesheet. */
+            const near = Math.round((0.34 + 0.30 * (p.prox || 0)) * 100);
+            /* WRITTEN ONLY WHEN IT CHANGES. At four pieces and sixty frames a
+               second, blindly restating two custom properties and an opacity
+               is nearly a thousand string allocations and style invalidations
+               a second for values that are usually identical to the last ones.
+               Rounded to a hundredth — finer than anything an eye resolves in
+               a stroke this thin — and skipped when unchanged. */
+            if (near !== p.nearAt) { p.nearAt = near; p.gh.style.setProperty('--near', near / 100); }
+          }
+          if (p.done) return;
+
+          let x, y, rot, sx = 1, sy = 1;
+
+          if (t < p.at) {
+            x = p.sx; y = p.sy; rot = p.sr;
+          } else if (t < p.at + p.dur) {
+            /* THE FLIGHT. Away from where it started, up to speed, and then a
+               long deceleration onto a point a few pixels short of the slot —
+               `grab` of the way out along the line it came in on. It arrives
+               there with almost no speed left, which is what makes the magnet
+               that follows feel like a separate, deliberate thing. */
+            const u = (t - p.at) / p.dur;
+            const e = this.flight(u, p.accel);
+            const k = 1 - e * (1 - p.grab);
+            x = p.sx * k; y = p.sy * k;
+            /* and it bends. A thrown object does not travel the straight line
+               between two points; the bow is perpendicular to that line and
+               peaks halfway along it. */
+            const bw = Math.sin(e * Math.PI) * p.bow;
+            x += (-p.sy / p.len) * bw;
+            y += (p.sx / p.len) * bw;
+            rot = p.sr + (p.resid - p.sr) * (1 - Math.pow(1 - e, 2.4));
+            p.prox = clamp((e - 0.42) / 0.58, 0, 1);
+          } else if (t < p.snapAt) {
+            /* THE MAGNET. It accelerates out of the near-stop, carries the
+               piece a few pixels past its slot, and takes it back. At v = 1
+               both terms are exactly zero: the destination is arithmetic, not
+               an easing curve's opinion. */
+            const v = (t - p.at - p.dur) / p.mag;
+            const m = this.pull(v);
+            const os = this.past(v) * p.over;
+            const k = p.grab * (1 - m);
+            x = p.sx * k - (p.sx / p.len) * os;
+            y = p.sy * k - (p.sy / p.len) * os;
+            rot = p.resid * (1 - m);
+            p.prox = 1;
+          } else {
+            /* THE SEAT. Exactly on the slot from this frame on — the settle is
+               a scale, not a position, so nothing can leave the piece a
+               fraction of a pixel out. One compression of about a percent and
+               a half, one recovery, done. Plastic, not rubber. */
+            const w = (t - p.snapAt) / p.seat;
+            x = 0; y = 0; rot = 0;
+            if (!p.set) {
+              p.set = true;
+              p.n.classList.add('is-set');
+              p.n.style.zIndex = String(p.rank);
+              p.gh.style.setProperty('--near', '0');
+              p.gh.classList.add('is-filled');
+              /* THE CLICK IS ON THE FRAME THE PIECE ARRIVES, not on the frame
+                 it was thrown and not at the end of the settle. */
+              if (p === last) {
+                Sound.voice({ freq: 396, gain: 0.05, dur: 0.085, bright: 2600, drop: 1.15, noise: 0.42 });
+                Sound.voice({ freq: 152, gain: 0.038, dur: 0.14, bright: 860, drop: 0.4, noise: 0.5 });
+              } else {
+                Sound.voice({ freq: 500 + p.rank * 26, gain: 0.023, dur: 0.04, bright: 3000, drop: 1.5, noise: 0.34 });
+              }
+            }
+            if (w >= 1) {
+              p.done = true;
+              p.q.style.transform = '';
+              p.n.style.transform = 'translate3d(0,0,0)';
+              return;
+            }
+            const d = this.damp(w);
+            const amp = p === last ? 0.019 : 0.0145;
+            sy = 1 - amp * d;
+            sx = 1 + amp * 0.6 * d;
+          }
+
+          p.n.style.transform =
+            `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) rotate(${rot.toFixed(2)}deg)`;
+          if (sx !== 1 || sy !== 1) p.q.style.transform = `scale(${sx.toFixed(4)},${sy.toFixed(4)})`;
+          /* AND THE DRAWING FIRMS UP AS IT CLOSES. A piece still crossing the
+             screen is a shade lighter than one about to land — the outline is
+             emphasised into the snap rather than simply replaced at it. */
+          const lit = p.set ? 100 : Math.round((0.70 + 0.30 * (p.prox || 0)) * 100);
+          if (lit !== p.litAt) { p.litAt = lit; p.ln.style.opacity = lit / 100; }
+        });
+
+        if (t < end) this.raf = requestAnimationFrame(step);
+        else this.raf = null;
+      };
+      this.raf = requestAnimationFrame(step);
+      /* and the slide is on its own clock, so the settle's inaudible tail can
+         carry on underneath it rather than holding it up */
+      this.timer = setTimeout(() => this.finish(), this.rest + this.T.hold);
+      };
+
       /* IT CANNOT HOLD THE PAGE. If anything above throws, stalls or is cut
-         short, this slides the sheet off and lets the fall go anyway. */
-      this.guard = setTimeout(() => this.finish(true), 4200);
+         short, this slides the sheet off and lets the fall go anyway. The
+         guard is armed here rather than in `go`, so a page that never finishes
+         booting still gets let in. */
+      this.guard = setTimeout(() => this.finish(true), 4600);
+    },
+
+    /* THE STARTING GUN, fired at the end of `boot()`. Two frames, because the
+       first one after a page has been built is the one that pays for building
+       it: style, layout and the first paint of everything `Pages.home` just
+       mounted all land there. Starting on the second means the first throw
+       begins on a frame that has nothing else to do. */
+    go() {
+      if (!this.on || !this.play || this.gone) return;
+      const fn = this.play;
+      this.play = null;
+      /* NOT A FIXED NUMBER OF FRAMES — A QUIET ONE. What follows `boot()` is
+         not idle: the first paint of everything it built, the fonts resolving,
+         the showcase's poster decoding, the reveal observer's first callbacks.
+         Any of those landing on the first throw is a stutter in the one part
+         of the page whose entire job is to look smooth, so this waits until
+         two frames in a row have come in under about twenty milliseconds and
+         only then starts the clock. Capped, because a slow machine is still
+         owed an entrance. */
+      const t0 = performance.now();
+      let prev = null, calm = 0;
+      const wait = (now) => {
+        if (this.gone || this.ending) return;
+        const d = prev === null ? 99 : now - prev;
+        prev = now;
+        calm = d < 21 ? calm + 1 : 0;
+        if (calm >= 3 || now - t0 > 340) { fn(now); return; }
+        requestAnimationFrame(wait);
+      };
+      requestAnimationFrame(wait);
     },
 
     /* --- and then the page moves ---------------------------------------- */
@@ -10404,24 +10769,41 @@
       this.ending = true;
       clearTimeout(this.guard);
       clearTimeout(this.timer);
-      const go = () => this.slide(forced);
-      if (forced) go(); else setTimeout(go, this.T.hold);
+      /* the loop is NOT cancelled here — the last piece may still be finishing
+         a settle nobody can see, and stopping it would freeze that piece a
+         hundredth of a percent off true */
+      this.slide(forced);
     },
 
     /* THE SLIDE IS ONE MOVEMENT AND EVERYTHING IS IN IT. The page comes up
        from a whole screen below; the sheet, which is fixed to the window,
-       goes up by the same distance at the same moment on the same curve, so
-       it holds still relative to the page and carries the construction off
-       the top of the screen with it. Nothing fades and nothing is replaced —
-       the hero arrives because it was pushed there. */
+       goes up by the same distance at the same moment on the same curve, so it
+       holds still relative to the page and carries the construction off the
+       top of the screen with it — the object is not dismissed, it leaves
+       because the view moved past it. Nothing fades and nothing is replaced.
+
+       AND THE HERO'S OWN FALL IS LET GO LATE. Two thirds of the way up, when
+       there is enough of the page on screen for a brick to be falling into
+       something. Earlier than that and the fall has already happened by the
+       time anyone can see where it happened. */
     slide(forced) {
       const T = this.T;
       document.body.classList.add('sliding');
       App.lock(false);
 
-      /* the type comes up as the page does, not before it */
+      /* AND BOTH OF THE PAGE'S OWN ENTRANCES ARE KEPT OUT OF THE TRAVEL.
+
+         The reveal is a transition on every revealed element and the fall is
+         eighteen bricks being thrown; either one landing in the middle of the
+         slide costs the slide frames, and the slide is a whole viewport of
+         movement that has to be clean. So the type starts two thirds of the
+         way up — late enough that most of its work happens after the page has
+         arrived, early enough that the hero is not blank when it does — and
+         the fall is let go a hair after the page has landed, which is also
+         the only order that makes sense to watch: the room arrives, and then
+         things start falling into it. */
       setTimeout(() => document.body.classList.add('awake'), forced ? 0 : T.wake);
-      setTimeout(() => this.release(), forced ? 0 : T.fall);
+      setTimeout(() => this.release(), forced ? 0 : Math.round(T.slide * T.fall));
 
       setTimeout(() => {
         this.gone = true;
@@ -11710,12 +12092,9 @@
          draggable, and anything you place on it afterwards. */
       const hero = $('#hero');
       Canvas.init(hero);
-      /* AS SOON AS THE CANVAS EXISTS, not once the bricks are laid. The
-         stencil needs a box and nothing else, and `Bricks.init` spends several
-         frames waiting for the hero to reach its final height before it will
-         measure anything — a wait the visitor would otherwise spend looking at
-         nothing. A no-op unless this load is an entrance. */
-      Boot.begin(hero);
+      /* THE ENTRANCE USED TO BE MOUNTED HERE, and is not any more: it needs a
+         viewport and nothing else, so it goes up in `Boot.arm` before this page
+         is built at all. See the note there. */
 
       const rv = (S.canvas && S.canvas.reveal) || {};
       const cta = el('div', { class: 'canvas__cta rv' });
@@ -12847,6 +13226,13 @@
     $$('.rv').forEach((n) => n.addEventListener('animationend', () => n.classList.add('rv-done'), { once: true }));
 
     document.body.classList.add('is-ready');
+
+    /* AND ONLY NOW DOES THE ENTRANCE START MOVING. The sheet went up in the
+       middle of `Pages.home`, several hundred milliseconds ago, and it has been
+       on screen ever since — but everything between there and here is main
+       thread, and a stutter in the one part of the page whose entire job is to
+       look smooth is worth more than the time it costs to wait. See Boot.go. */
+    Boot.go();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

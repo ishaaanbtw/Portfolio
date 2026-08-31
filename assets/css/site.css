@@ -9956,12 +9956,20 @@ body.waking { --wake-y: var(--slide, 100vh); }
    down and then back up again". Off until the journey it is there for. */
 body.waking:not(.sliding):not(.landed) .app,
 body.waking:not(.sliding):not(.landed) .sig { transition: none; }
+/* AND BOTH ARE PROMOTED FOR THE WHOLE OF THE ENTRANCE, not from the frame the
+   slide starts. `will-change` announced at the moment a transition begins is
+   announced too late to be useful: the layer is created and the content
+   rasterised on the first frame of the movement, which is the frame that then
+   runs long. Declared here it is paid for while the sheet is standing still
+   and nobody is looking at anything but four bricks. */
+body.waking:not(.landed) .app,
+body.waking:not(.landed) .sig { will-change: transform; }
 body.waking.sliding,
 body.landed { --wake-y: 0px; }
 /* both of them on the same curve, because they are one movement */
 body.waking.sliding .app,
 body.waking.sliding .sig {
-  transition: transform var(--slide-ms, 480ms) cubic-bezier(0.62, 0.02, 0.2, 1);
+  transition: transform var(--slide-ms, 470ms) cubic-bezier(0.58, 0.02, 0.16, 1);
 }
 
 /* AND NO FRAME AROUND IT. `.app` is also the window: a rounded box with a
@@ -10012,71 +10020,125 @@ body.waking .sheet { animation: none; }
    once the page is back it is `0 - slide`, one screenful up and gone. */
 .sig { transform: translate3d(0, calc(var(--wake-y, 0px) - var(--slide, 100vh)), 0); }
 
+/* --- THE STENCIL ----------------------------------------------------------
+   The whole finished assembly, drawn once, hairline, at a fifth of the ink,
+   in the exact boxes the four pieces are about to fill. It is what turns a
+   brick crossing the screen into a brick crossing the screen AT something:
+   without it the motion is four objects moving, with it the motion is a
+   sentence and the slots are what finishes it.
+
+   It is never faded out. Each slot is simply covered — the piece that lands on
+   it is opaque and occupies precisely that box — which is the whole
+   relationship this is meant to state. Empty, approached, filled. Its opacity
+   is written per frame by the loop, so it lifts as its own piece closes in;
+   nothing here needs a transition. */
+.sig__gh {
+  position: absolute;
+  pointer-events: none;
+  /* TWO OPACITIES MULTIPLIED, AND THEY BELONG TO DIFFERENT CLOCKS. The arrival
+     is CSS's, because the stencil is drawn the moment the sheet goes up — well
+     before the page underneath has finished building and well before the loop
+     that moves the pieces has started. The lift is the loop's: `--near` is
+     written per frame as a piece closes on its slot. Keeping them on separate
+     elements means neither has to know about the other. */
+  opacity: 0;
+  animation: sigGhost 210ms var(--in, 60ms) cubic-bezier(0.3, 0.7, 0.3, 1) forwards;
+}
+/* THE STENCIL'S WEIGHT, WHICH IS A THIRD OF THE PIECE'S AND NOT A TENTH.
+   It has one job — to say, before anything moves, that these four shapes have
+   somewhere to be — and a line too faint to read cannot do that job. A third
+   of the ink is enough to be unmistakably a drawing of the finished object and
+   not nearly enough to compete with the piece flying at it. */
+.sig__gh > svg { opacity: var(--near, 0.34); }
+/* AND THE SLOTS OCCLUDE EACH OTHER, which is the difference between a
+   construction drawing and a tangle. Four hollow wireframes stacked in the
+   same place is twelve stud ellipses seen through one another, and the shape
+   the four pieces are going to make is exactly what you cannot read out of it.
+   A dark wash inside each silhouette — the first path in the group, which is
+   the silhouette by construction — puts the near faces in front of the far
+   ones. The lines behind are dimmed rather than removed, so it is still
+   plainly a drawing of a thing rather than a picture of a thing, and the slot
+   still reads as empty: what fills it is darker than the sheet, not lighter. */
+.sig__gh g > path:first-of-type { fill: rgba(19, 23, 28, 0.62); }
+.sig__gh.is-filled { opacity: 0; animation: none; }
+@keyframes sigGhost { to { opacity: 1; } }
+.sig__gh g {
+  fill: none;
+  stroke: rgba(234, 228, 217, 0.86);
+  stroke-width: var(--sw, 1.1px);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
 /* --- A PIECE --------------------------------------------------------------
    Two drawings of the same brick in the same box, stacked: the solid
    underneath, the hairline over it. Because they were projected from one set
    of corners they are registered exactly, which is what lets the fill be a
    wipe through the outline's own geometry rather than a second picture being
    faded up over the first. A cross-fade reads as two images being swapped.
-   This has to read as one object gaining a material. */
+   This has to read as one object gaining a material.
+
+   THERE IS NO TRANSITION ON THE TRAVEL. A transition can only describe a
+   position curve between two values, and the flight, the magnet and the
+   settle are three different kinds of movement in a row that have to join
+   without a seam — so the loop writes the transform itself, every frame, and
+   this rule only has to stay out of its way. What is left here is the state
+   change at the snap, which is genuinely two values and genuinely a
+   transition. */
 .sig__p {
   position: absolute;
+  /* same reasoning as the stencil: the pieces are on screen, at their starting
+     poses, from the moment the sheet is mounted. What the loop owns is where
+     they are, not whether they are there. */
   opacity: 0;
-  transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0) rotate(var(--rot, 0deg));
+  animation: sigGhost 200ms var(--in, 240ms) cubic-bezier(0.3, 0.7, 0.3, 1) forwards;
   will-change: transform;
-  --ink: rgba(240, 236, 227, 0.88);
+  --ink: rgba(240, 236, 227, 0.9);
 }
-/* the drawing arrives before it moves: everything is on screen, apart, for a
-   fifth of a second, so the assembling is something you watch start rather
-   than something already under way when you look */
-.sig.is-lit .sig__p { opacity: 1; transition: opacity 200ms linear; }
-/* THE TRAVEL. A transition rather than a frame loop — the transform is the
-   only thing changing, the compositor owns it, and it is free on a phone. The
-   curve runs a little past its destination and comes back, which is the few
-   pixels that make an arrival feel magnetic rather than merely finished. Each
-   piece's duration is written inline, from `BUILD`. */
-.sig__p.is-go {
-  transform: none;
-  transition-property: transform, opacity;
-  transition-timing-function: cubic-bezier(0.18, 0.86, 0.24, 1.07);
-}
-
-/* the seat: the piece gives as it lands and comes back, about its own base */
 .sig__q {
   position: absolute;
   inset: 0;
+  /* about the foot of the brick, because that is where it meets what it is
+     being pressed onto and a compression is measured from the contact */
   transform-origin: 50% 84%;
-}
-.sig__p.is-set .sig__q { animation: sigSeat 250ms cubic-bezier(0.3, 0.9, 0.3, 1) both; }
-@keyframes sigSeat {
-  0%   { transform: scale(1.05, 0.95); }
-  52%  { transform: scale(0.99, 1.011); }
-  100% { transform: scale(1, 1); }
+  will-change: transform;
 }
 
-/* THE ONE CREATIVE MOVE. Colour floods down through the shape the hairline was
-   drawn into — top face first, because that is the face nearest the light and
-   the one the studs are on — and the hairline goes from cream to the brick's
-   own edge as it does. Everything before this frame is an honest technical
-   drawing; this is the frame it becomes plastic. */
+/* THE ONE CREATIVE MOVE, AND IT HAPPENS ON ONE FRAME. Colour floods down
+   through the shape the hairline was drawn into — top face first, because that
+   is the face nearest the light and the one the studs are on — the hairline
+   turns from cream into the brick's own dark edge, and a contact shadow
+   appears underneath it. Eighty to a hundred milliseconds: this is a click,
+   not a dissolve. Everything before this frame is an honest technical drawing.
+   This is the frame it becomes plastic. */
 .sig__wipe {
   position: absolute;
   inset: 0;
   clip-path: inset(0 0 100% 0);
-  transition: clip-path 210ms cubic-bezier(0.34, 0.78, 0.28, 1);
+  transition: clip-path var(--fill, 95ms) cubic-bezier(0.3, 0.72, 0.36, 1);
   will-change: clip-path;
 }
 .sig__p.is-set .sig__wipe { clip-path: inset(0 0 0 0); }
 .sig__p.is-set { --ink: var(--edge); }
+/* the shadow is on the piece as a whole rather than on the solid, because a
+   filter inside a clip would be clipped with it — a half-brick casting a
+   half-shadow. It arrives a beat behind the colour, which is what stops the
+   two from reading as one switch being thrown. */
+.sig__p.is-set .sig__q {
+  filter: drop-shadow(var(--drop, 0 3px 7px rgba(6, 9, 12, 0.5)));
+  animation: sigDrop calc(var(--fill, 95ms) * 1.9) cubic-bezier(0.3, 0.7, 0.4, 1) both;
+}
+@keyframes sigDrop { from { filter: drop-shadow(0 0 0 rgba(6, 9, 12, 0)); } }
 
 .sig__ln { position: absolute; inset: 0; }
 .sig__ln g {
   stroke: var(--ink);
   stroke-width: var(--sw, 1.4px);
-  transition: stroke 210ms cubic-bezier(0.34, 0.78, 0.28, 1);
+  transition: stroke var(--fill, 95ms) cubic-bezier(0.3, 0.72, 0.36, 1);
 }
 .sig__wipe svg,
-.sig__ln svg { display: block; overflow: visible; shape-rendering: geometricPrecision; }
+.sig__ln svg,
+.sig__gh svg { display: block; overflow: visible; shape-rendering: geometricPrecision; }
 
 /* --- THE TYPE WAITS FOR THE BUILD ----------------------------------------
    `reveal` is the site's own entrance — opacity, a 14px blur, five pixels of
@@ -10090,18 +10152,36 @@ body.waking .sheet { animation: none; }
    somewhere in the middle of themselves. A transition has no clock until
    something changes — the elements sit at the reveal's first frame for as long
    as the build takes, and `.awake` starts them, a beat into the slide. */
+body.waking:not(.landed) .rv {
+  /* PROMOTED WHILE NOTHING IS MOVING. The expensive part of a reveal is not the
+     fade, it is the first rasterisation of the text underneath it, and on any
+     other entrance that is paid for by a page standing still. Here it would be
+     paid in the middle of the slide, by the frames that are moving a whole
+     viewport. There are nineteen of these elements on the home page and they
+     are all within a screen of the top, so hinting them while the sheet is up
+     and static costs a few small layers for about a second and moves that
+     rasterisation to the one moment in this sequence when nothing else is
+     happening. The hint comes off the moment the page has landed. */
+  will-change: opacity, transform;
+}
 body.waking .rv {
   animation: none;
   opacity: 0;
-  filter: blur(var(--rv-blur, 14px));
   transform: translateY(5px);
   transition:
-    opacity 420ms cubic-bezier(0.22, 0.7, 0.2, 1) var(--wake-in),
-    filter 520ms cubic-bezier(0.22, 0.7, 0.2, 1) var(--wake-in),
-    transform 460ms cubic-bezier(0.22, 0.7, 0.2, 1) var(--wake-in);
+    opacity 440ms cubic-bezier(0.22, 0.7, 0.2, 1) var(--wake-in),
+    transform 480ms cubic-bezier(0.22, 0.7, 0.2, 1) var(--wake-in);
   --wake-in: calc(var(--rv-delay, 0ms) * 0.30);
 }
-body.waking.awake .rv { opacity: 1; filter: blur(0); transform: none; }
+body.waking.awake .rv { opacity: 1; transform: none; }
+/* WITH ONE THING LEFT OUT: THE BLUR. `reveal` also eases a fourteen pixel blur
+   away, and a blur is the one property in that list the compositor cannot
+   simply hand to the GPU as a transform — it repaints, every frame, once per
+   revealed element. On any other entrance that cost is paid by a page sitting
+   still. Here it would be paid in the middle of the slide, by the same frames
+   that are moving a whole viewport, and it was worth a third of them. Opacity
+   and travel do the same job at this speed and cost nothing. The keyframes
+   themselves are untouched: every other way into this page still blurs up. */
 
 @media (prefers-reduced-motion: reduce) {
   /* never armed in this mode — the inline script tests for it too — but if it
