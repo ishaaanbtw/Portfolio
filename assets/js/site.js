@@ -10219,13 +10219,12 @@
        paper: a decision made down here, at the end of the body, would be one
        painted frame of the wrong colour first. This only has to agree with it.
 
-       AND IT RUNS ONCE PER VISIT. There was briefly a second, brisker tempo
-       for moving inside the site, on the theory that a repeat viewing wants
-       the same thing faster. It does not: what a repeat viewing wants is the
-       page. An intro is something you sit through on arrival, and the moment
-       it becomes a toll on every click it stops being an intro and starts
-       being a wait. The flag in the head is set once per tab, so this is now
-       the only speed there is. */
+       AND IT ONLY RUNS ON AN ARRIVAL. There was briefly a second, brisker
+       tempo for moving inside the site, on the theory that a repeat viewing
+       wants the same thing faster. It does not: what a repeat viewing wants is
+       the page. So an internal click gets no entrance at all rather than a
+       hurried one, the head decides which is which, and this is the only
+       speed there is. */
     arm(page) {
       const root = document.documentElement;
       if (REDUCED || !root.classList.contains('wake-armed')) {
@@ -12137,44 +12136,6 @@
         `<span class="btn__label">${esc(S.hero.primary.label)}</span>`));
       cta.appendChild(el('a', { class: 'btn btn--ghost', href: S.person.resumeUrl, 'data-action': 'resume' },
         `<span class="btn__label">＋ ${esc(S.hero.secondary.label)}</span>`));
-
-      /* --- THE MARGIN NOTE --------------------------------------------------
-
-         A hand-drawn arrow and two written words that appear under the primary
-         button when you reach for it, as though somebody had pencilled them on
-         the page.
-
-         IT IS DRAWN, NOT TYPESET, and that is the whole point of doing it this
-         way. There is no handwriting face on this site — Geist is the only
-         family, self-hosted, and pulling a script font off a CDN for six
-         letters would be the first dependency the project has. So the letters
-         ARE paths: one open stroke each, round-capped, in the same purple the
-         marker in the dock draws with. Which is the honest connection as well
-         as the cheap one — the note is written with the pen the visitor is
-         about to be handed.
-
-         The stroke draws itself with `stroke-dasharray`/`-dashoffset`, arrow
-         first and words trailing it, so it reads as a hand moving rather than
-         as a graphic fading up. `pointer-events: none` throughout: it is a
-         drawing on the paper, not a control, and it must never be the thing
-         under the cursor when somebody is aiming at the button. */
-      cta.appendChild(el('div', { class: 'nb', 'aria-hidden': 'true' },
-        '<svg viewBox="0 0 206 78" fill="none" stroke="currentColor"'
-        + ' stroke-linecap="round" stroke-linejoin="round">'
-        /* the arrow: a curve out of the words, up to the button's underside */
-        + '<path class="nb__a" d="M106 51C81 58 51 47 47 17" stroke-width="2.1"/>'
-        + '<path class="nb__a" d="M37 29 47 13 58 26" stroke-width="2.1"/>'
-        /* S a y   h i */
-        + '<path class="nb__w" d="M126 37c-2-5-12-6-13 0s12 7 12 13-10 7-13 1" stroke-width="2"/>'
-        + '<path class="nb__w" d="M143 43c-4-4-12-3-12 4s8 9 12 4" stroke-width="2"/>'
-        + '<path class="nb__w" d="M143 41v14" stroke-width="2"/>'
-        + '<path class="nb__w" d="M147 42l5 11" stroke-width="2"/>'
-        + '<path class="nb__w" d="M160 42l-6 16c-2 5-6 5-8 2" stroke-width="2"/>'
-        + '<path class="nb__w" d="M168 32v23" stroke-width="2"/>'
-        + '<path class="nb__w" d="M168 46c2-5 12-5 12 1v8" stroke-width="2"/>'
-        + '<path class="nb__w" d="M185 43v12" stroke-width="2"/>'
-        + '<path class="nb__w" d="M185.4 33.2 185 36" stroke-width="2.5"/>'
-        + '</svg>'));
 
       $('.canvas__intro', hero).appendChild(cta);
 

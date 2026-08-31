@@ -572,50 +572,6 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 }
 .canvas__cta .btn--ghost:hover { --btn-fg: var(--ink); }
 
-/* --- THE MARGIN NOTE ---------------------------------------------------------
-   Absolutely positioned out of flow, deliberately: `Bricks.zone()` measures
-   `.canvas__intro`'s `offsetHeight` to work out which part of the canvas is
-   spoken for, and a decoration that is only on screen while the pointer is on
-   the button must not claim seventy pixels of the room for the whole session.
-
-   It is never the thing under the cursor. See the note in `Pages.home()`. */
-.nb {
-  position: absolute;
-  top: calc(100% + 2px);
-  left: 0.4rem;
-  width: 206px;
-  height: 78px;
-  color: #7c3aed;
-  pointer-events: none;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity 220ms var(--ease), transform 420ms var(--spring-soft, var(--ease));
-}
-.nb svg { display: block; width: 100%; height: 100%; overflow: visible; }
-
-/* THE HAND. 260 is comfortably past the longest path here, so one number
-   covers every stroke and no glyph is left half-drawn. The arrow goes first
-   and the words trail it, which is the order somebody actually writes in. */
-.nb path {
-  stroke-dasharray: 260;
-  stroke-dashoffset: 260;
-}
-.canvas__cta:hover .nb,
-.canvas__cta:focus-within .nb { opacity: 1; transform: none; }
-
-.canvas__cta:hover .nb path,
-.canvas__cta:focus-within .nb path {
-  animation: nbDraw 520ms var(--ease-io, ease-in-out) forwards;
-}
-.canvas__cta:hover .nb .nb__w,
-.canvas__cta:focus-within .nb .nb__w { animation-delay: 190ms; animation-duration: 420ms; }
-
-@keyframes nbDraw { to { stroke-dashoffset: 0; } }
-
-/* the second arrow path is the head, and it is short — it should snap on at
-   the end of the shaft rather than crawl */
-.nb__a + .nb__a { animation-delay: 260ms; animation-duration: 200ms; }
-
 .hero__hint {
   position: absolute;
   z-index: 2;
@@ -9077,9 +9033,6 @@ body[data-page] .nav { display: none; }
   }
   .canvas__headline { max-width: 100%; letter-spacing: -0.024em; }
   .canvas__cta .btn { padding: 0.55rem 1.05rem; }
-  /* the note is a pointer affordance; a phone has no pointer to hover with,
-     and 78px of drawing under the buttons on a 390px screen is clutter */
-  .nb { display: none; }
 }
 
 /* ==========================================================================
