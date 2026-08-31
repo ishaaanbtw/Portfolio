@@ -723,16 +723,35 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 /* One span per character. The boundary is not a hard edge — four characters
    ahead of it carry intermediate ink, which is what makes "co|rners" read as a
    gradient rather than a cut. */
+/* THE RAMP, MEASURED OFF THE REFERENCE RATHER THAN CHOSEN.
+
+   Sampling the recording frame by frame — the darkest pixel of every glyph
+   along a line that straddles the boundary — gives a ladder that was nothing
+   like the one here. Read as ink coverage over the paper, so the recording's
+   own colour profile drops out of it:
+
+     reference   unlit 0.35   ...   0.55   0.80   0.87   lit 0.94
+     was         unlit 0.14   0.17  0.28   0.43   0.60   lit 0.78
+
+   Two things were wrong and both of them mattered. Unlit text was a pale ghost
+   at a seventh of full ink where the reference sets it at a third — the
+   difference between text you can read ahead of the boundary and text you
+   cannot, which is what makes the reveal feel like a light being drawn across
+   a page rather than words appearing out of nothing. And lit text stopped at
+   `--ink-2`, four fifths of the way, where the reference goes to full ink.
+
+   The values below are those coverages blended over this site's own paper, so
+   the ladder is the reference's and the hue is still ours. */
 .c {
-  color: var(--ink-ghost);
+  color: #a8a6a3;
   transition: color 240ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.c.b1 { color: #cdc8c1; }
-.c.b2 { color: #b0aaa2; }
-.c.b3 { color: #8d8780; }
-.c.b4 { color: #625d56; }
-.c.is-lit { color: var(--ink-2); }
+.c.b1 { color: #989592; }
+.c.b2 { color: #76736f; }
+.c.b3 { color: #4d4a46; }
+.c.b4 { color: #312e2a; }
+.c.is-lit { color: var(--ink); }
 
 /* words that carry emphasis sit at full ink the moment they're reached */
 .block b .c.is-lit,
@@ -780,12 +799,23 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 
 /* "blur" — actually blurred. Hovering sharpens it, which is the only way to
    read the word, and is the whole point of the gag. */
+/* AND THE AMOUNT OF BLUR IS MEASURED, NOT PICKED.
+
+   In the reference this word is soft but still black: sampling it gives a
+   darkest pixel of 16, the same ink as the sharp text around it. Ours was
+   reaching 131 — a grey smudge, not a blurred word, because 2.6px of blur on a
+   400-weight stem spreads the ink until there is no core left. The reference's
+   strokes are visibly heavier than their neighbours, and that is what lets a
+   blur stay legible: at 600 and 1.3px the darkest pixel comes back to 26,
+   which is the reference's neighbourhood, and the counters of the b and the u
+   stay open. Blurred enough to be the joke, black enough to still be a word. */
 .block mark.blurred {
+  font-weight: 600;
   filter: blur(0px);
   transition: filter 520ms var(--ease);
   cursor: help;
 }
-.block mark.blurred:has(.is-lit) { filter: blur(2.6px); }
+.block mark.blurred:has(.is-lit) { filter: blur(1.3px); }
 :root:not(.hover-cold) .block mark.blurred:hover { filter: blur(0px); }
 
 /* "consequence" — a hand-drawn highlighter swash: slightly skewed, rough ends,
@@ -800,7 +830,13 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   position: absolute;
   inset: -0.1em -0.24em -0.16em -0.2em;
   z-index: -1;
-  background: rgba(20, 16, 12, 0.19);
+  /* MEASURED, LIKE THE RAMP. Sampling the interior of the swash across three
+     frames of the reference — the soft edges excluded, because they drag the
+     average toward the paper — gives a flat (182,182,182) on a paper of
+     (251,251,251): 27.7% ink coverage. This was at 19%, which read a shade too
+     polite behind a word whose whole job is to look struck through with a
+     marker. */
+  background: rgba(20, 16, 12, 0.277);
   border-radius: 3px 10px 4px 8px;
   transform: skewX(-9deg) scaleX(0);
   transform-origin: left center;
@@ -1427,8 +1463,18 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 .project__role { color: var(--accent); font-size: var(--step--1); font-weight: 500; }
 .project__summary { color: var(--ink-2); max-width: 34rem; line-height: 1.5; }
 
+/* PROJECT-CARD CHIPS, AND THEY ARE SCOPED NOW.
+
+   `.tag` was a bare class here and `.block .tag` is the story's design-tool
+   selection around the word "desirable" — two unrelated things a thousand lines
+   apart sharing one name. Specificity settles the properties both of them
+   declare, and says nothing about the three only this one declared: the story's
+   selection was silently inheriting `text-transform: uppercase`, a 999px radius
+   and a border from here, which is precisely what turned a tight rectangular
+   selection into a rounded uppercase pill. Scoped to its own container, which
+   is the only place it is ever used. */
 .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
-.tag {
+.tags .tag {
   font-size: 0.6875rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2157,7 +2203,9 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  .c { color: var(--ink-2); }
+  /* the reveal never runs here, so every character sits at the ink it would
+     have finished on */
+  .c { color: var(--ink); }
   .chip { opacity: 1; transform: none; }
   .block u { background-size: 100% 1.5px; }
   .block mark { background: rgba(20, 16, 12, 0.09); }
