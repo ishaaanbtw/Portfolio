@@ -20,28 +20,32 @@
      Remove this line if that card stops using a video thumbnail. -->
 <link rel="preload" as="image" href="assets/media/x0/companion-thumb.webp">
 <!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT.
-     The home page opens on a dark sheet with a LEGO assembly drawing on it
-     (site.css section 44), and the stylesheet's own `body` is paper — so a
-     decision made when site.js runs, at the end of the document, is one
-     painted frame of the wrong colour. This applies the same test site.js
-     applies and sets the flag now: only the real thing, only an actual
-     arrival (a cold visit or a refresh, not Work -> Home and not the back
-     button), and never with reduced motion asked for.
-     The timeout is the failsafe: if site.js never arrives the class comes
-     off by itself and the page is simply the page. -->
+     What this is and why it exists: site.js section 5c2c, site.css section 44.
+     Why it cannot live in site.js: the sheet is charcoal and the page is
+     paper, and site.js runs at the end of the body — a decision made there is
+     one painted frame of the wrong colour before the right one. So the test
+     is applied here, in the head, on every page that loads the script, and it
+     is identical in all of them.
+     `quick` marks a move within the site. That gets the same build at a
+     brisker tempo; the full one is for arriving. Back and forward get nothing:
+     returning to a page is not arriving at it.
+     The timeout is the failsafe — if site.js never lands, the class comes off
+     by itself and the page is simply the page. -->
 <script>
 (function () {
   try {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var d = document.documentElement;
     var n = (performance.getEntriesByType('navigation')[0] || {}).type || '';
-    if (n !== 'reload') {
-      if (n === 'back_forward') return;
-      if (document.referrer && new URL(document.referrer).origin === location.origin) return;
-    }
-    document.documentElement.classList.add('wake-armed');
-    setTimeout(function () {
-      document.documentElement.classList.remove('wake-armed');
-    }, 4000);
+    if (n === 'back_forward') return;
+    var inside = false;
+    try {
+      inside = !!document.referrer
+        && new URL(document.referrer).origin === location.origin;
+    } catch (e) { inside = false; }
+    if (inside && n !== 'reload') d.setAttribute('data-wake', 'quick');
+    d.classList.add('wake-armed');
+    setTimeout(function () { d.classList.remove('wake-armed'); }, 4000);
   } catch (e) {}
 })();
 </script>

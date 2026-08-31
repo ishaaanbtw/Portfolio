@@ -10213,17 +10213,32 @@
       return Math.exp(-6.0 * v) * Math.cos(v * 7.2);
     },
 
-    /* THE FLAG IS SET IN THE HEAD, not decided here. index.html runs six
-       lines before the first paint that apply the same test and put
-       `wake-armed` on the root, because the background this entrance needs is
-       the opposite of the page's and a decision made this late would be one
-       painted frame of paper first. This only has to agree with it. */
+    /* THE FLAG IS SET IN THE HEAD, not decided here. Every page that loads
+       this script runs the same dozen lines before its first paint and puts
+       `wake-armed` on the root, because the sheet is charcoal and the page is
+       paper: a decision made down here, at the end of the body, would be one
+       painted frame of the wrong colour first. This only has to agree with it.
+
+       TWO TEMPOS, AND ONLY TWO. Arriving at the site — a cold visit, a link
+       from somewhere else, a reload — gets the whole build. Moving inside it
+       gets the same build, the same four pieces, the same snap, played
+       briskly: nobody wants to watch a two second overture between clicking
+       Work and reading it, and nobody wants the site to change its mind about
+       what it looks like either. So it is a tempo, not a different animation —
+       one number scaling the schedule, with the physics untouched.
+
+       The slide has its own, gentler scale. Everything before it is a beat and
+       can be played fast; the slide is a journey the length of the screen, and
+       a journey taken at half speed reads as a cut. */
     arm(page) {
       const root = document.documentElement;
-      if (page !== 'home' || REDUCED || !root.classList.contains('wake-armed')) {
+      if (REDUCED || !root.classList.contains('wake-armed')) {
         root.classList.remove('wake-armed');
         return;
       }
+      const quick = root.getAttribute('data-wake') === 'quick';
+      this.k = quick ? 0.58 : 1;
+      this.ks = quick ? 0.80 : 1;
       this.on = true;
       /* HOW FAR THE PAGE TRAVELS: EXACTLY ONE VIEWPORT, AND EXACTLY IS THE
          POINT. The sheet is fixed and a viewport tall, so its lower edge sits
@@ -10238,7 +10253,7 @@
          so there is no grid phase to preserve and no reason to round. */
       this.SLIDE = innerHeight;
       document.body.style.setProperty('--slide', `${this.SLIDE}px`);
-      document.body.style.setProperty('--slide-ms', `${this.T.slide}ms`);
+      document.body.style.setProperty('--slide-ms', `${Math.round(this.T.slide * this.ks)}ms`);
       /* the distance before the class that uses it, so the first computed
          style is the real one rather than the stylesheet's fallback */
       document.body.classList.add('waking');
@@ -10264,7 +10279,10 @@
          the entrance the hero has. `rain()` re-parks them at its own entry
          points when it runs, so this costs nothing. `is-settle` because `.drg`
          eases every transform over 150ms and the park must be instant. */
-      Bricks.recs.forEach((r) => {
+      /* AND NOT EVERY PAGE HAS ANY. The home page and the 404 both build a
+         canvas full of them; Work and the case studies do not, and on those
+         this is simply a page being held one screen low. */
+      (Bricks.recs || []).forEach((r) => {
         r.it.node.classList.add('is-settle');
         Bricks.moveTo(r, Bricks.px(r), -1400);
       });
@@ -10454,15 +10472,22 @@
        throws and get the same object. */
     vary(b, S) {
       const j = (m) => 1 + (Math.random() * 2 - 1) * m;
+      /* THE TEMPO SCALES THE CLOCK, NOT THE PHYSICS. Every duration below is
+         multiplied; nothing about the flight curve, the magnet, the overshoot
+         or the settle is. A brisker version of this is the same four pieces
+         being placed by someone who has done it before, which is what a repeat
+         visit is — the floors are there so that "briskly" never becomes a
+         flight too short to read or a snap too short to feel. */
+      const k = this.k || 1;
       const sx = b.from.x * S * j(0.14);
       const sy = b.from.y * S * j(0.14);
       const len = Math.hypot(sx, sy) || 1;
       return {
         sx, sy, len,
         sr: b.from.r * j(0.30),
-        at: Math.max(30, b.at + (Math.random() * 2 - 1) * 26),
-        dur: b.dur * j(0.05),
-        mag: b.mag * j(0.05),
+        at: Math.max(24, (b.at + (Math.random() * 2 - 1) * 26) * k),
+        dur: Math.max(150, b.dur * j(0.05) * k),
+        mag: Math.max(62, b.mag * j(0.05) * k),
         bow: b.bow * S * 3.2 * j(0.35),
         /* AND THE WINDUP IS NEVER SHORTER THAN FOUR FRAMES. Below about
            seventy milliseconds the acceleration is real but it is not
@@ -10478,7 +10503,8 @@
            piece went to the wrong place. */
         over: Math.min(b.over * S * j(0.18), S * 0.18),
         resid: b.resid * j(0.35),
-        fill: b.fill, seat: b.seat,
+        fill: Math.max(48, b.fill * k),
+        seat: Math.max(112, b.seat * k),
       };
     },
 
@@ -10522,7 +10548,7 @@
              So the four slots are drawn in the order they will be filled, over
              about a third of a second, and by the time the last one is down
              the first piece is on its way. */
-          + `--in:${60 + i * 78}ms;`;
+          + `--in:${Math.round((60 + i * 78) * (this.k || 1))}ms;`;
         g.innerHTML = p.line;
         layer.appendChild(g);
         p.gh = g;
@@ -10545,7 +10571,7 @@
           + `--sw:${clamp(p.S * 0.05, 1.1, 1.75).toFixed(2)}px;`
           + `--fill:${Math.round(p.fill)}ms;`
           + `--drop:0 ${(p.S * 0.055).toFixed(1)}px ${(p.S * 0.115).toFixed(1)}px rgba(6,9,12,0.5);`
-          + `--in:${170 + p.rank * 38}ms;`;
+          + `--in:${Math.round((170 + p.rank * 38) * (this.k || 1))}ms;`;
         const q = el('div', { class: 'sig__q' });
         q.innerHTML = `<div class="sig__wipe">${p.solid}</div>`
           + `<div class="sig__ln">${p.line}</div>`;
@@ -10573,7 +10599,7 @@
       parts.forEach((p) => {
         p.snapAt = p.at + p.dur + p.mag;
         if (p.snapAt < floor) { p.at += floor - p.snapAt; p.snapAt = floor; }
-        floor = p.snapAt + 108;
+        floor = p.snapAt + 108 * (this.k || 1);
       });
       /* AND THE LAST GAP IS ALWAYS THE LONGEST, BY A CLEAR MARGIN. The three
          intervals are meant to open out — a hundred and fifty, two hundred,
@@ -10584,7 +10610,7 @@
          piece that finishes the object and has the best snap, is given a
          run-up that is always at least this much longer than any other. */
       const gaps = [1, 2, 3].map((i) => parts[i].snapAt - parts[i - 1].snapAt);
-      const want = Math.max(gaps[0], gaps[1]) + 52;
+      const want = Math.max(gaps[0], gaps[1]) + 52 * (this.k || 1);
       if (gaps[2] < want) {
         const add = want - gaps[2];
         parts[3].at += add;
@@ -10744,7 +10770,7 @@
       this.raf = requestAnimationFrame(step);
       /* and the slide is on its own clock, so the settle's inaudible tail can
          carry on underneath it rather than holding it up */
-      this.timer = setTimeout(() => this.finish(), this.rest + this.T.hold);
+      this.timer = setTimeout(() => this.finish(), this.rest + this.T.hold * (this.k || 1));
       };
 
       /* IT CANNOT HOLD THE PAGE. If anything above throws, stalls or is cut
@@ -10808,7 +10834,7 @@
        something. Earlier than that and the fall has already happened by the
        time anyone can see where it happened. */
     slide(forced) {
-      const T = this.T;
+      const T = this.T, ks = this.ks || 1;
       document.body.classList.add('sliding');
       App.lock(false);
 
@@ -10823,8 +10849,8 @@
          the fall is let go a hair after the page has landed, which is also
          the only order that makes sense to watch: the room arrives, and then
          things start falling into it. */
-      setTimeout(() => document.body.classList.add('awake'), forced ? 0 : T.wake);
-      setTimeout(() => this.release(), forced ? 0 : Math.round(T.slide * T.fall));
+      setTimeout(() => document.body.classList.add('awake'), forced ? 0 : T.wake * ks);
+      setTimeout(() => this.release(), forced ? 0 : Math.round(T.slide * ks * T.fall));
 
       setTimeout(() => {
         this.gone = true;
@@ -10832,7 +10858,7 @@
         document.body.classList.remove('sliding');
         document.documentElement.classList.remove('wake-armed');
         if (this.el) { this.el.remove(); this.el = null; }
-      }, forced ? 40 : T.slide + 60);
+      }, forced ? 40 : T.slide * ks + 60);
     },
   };
 

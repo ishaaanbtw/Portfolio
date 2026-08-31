@@ -9995,6 +9995,45 @@ body.waking:not(.landed) .pane { visibility: hidden; }
    travel above has that job now. */
 body.waking .sheet { animation: none; }
 
+/* --- LEAVING, AND ARRIVING SOMEWHERE THAT IS THE SAME COLOUR ---------------
+   The site already had an exit: an internal link is intercepted, `is-leaving`
+   goes on the body, the sheet lifts eight pixels and fades, and two hundred and
+   forty milliseconds later the browser navigates. What was behind the sheet as
+   it lifted was `.pane`, the sky — so a click on Work used to fade a paper page
+   up into pale blue and then, a moment later, open on charcoal. Two
+   transitions, in opposite directions, back to back.
+
+   So the exit now hands off to the colour the next page opens on. The sky
+   stands down for the length of it and a charcoal veil comes up over the
+   lifting sheet, faster than the navigation, which means the last frame the old
+   page paints and the first frame the new one paints are the same flat
+   charcoal. Nothing between them can be seen, and the LEGO simply starts.
+
+   Only when motion is wanted: with `prefers-reduced-motion` there is no
+   entrance to hand off to, and fading to a dark screen on the way to a light
+   one would be a transition invented for nobody. */
+@media (prefers-reduced-motion: no-preference) {
+  body.is-leaving::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    pointer-events: none;
+    background-color: #30363d;
+    background-image: radial-gradient(135% 105% at 50% 44%, #343a42 0%, #2d3239 100%);
+    /* AND IT IS OPAQUE WELL BEFORE THE NAVIGATION, not exactly at it. The
+       link handler waits two hundred and forty milliseconds before setting
+       `location`, and the browser then takes an unpredictable further moment
+       to unload and commit. A veil that finishes at the same instant would be
+       finishing at a different instant on every machine; one that is solid at
+       a hundred and fifty leaves the rest of that window as flat charcoal,
+       which is exactly the frame the next page opens on. */
+    animation: sigLeave 150ms cubic-bezier(0.32, 0.5, 0.38, 1) both;
+  }
+  body.is-leaving .pane { visibility: hidden; }
+}
+@keyframes sigLeave { from { opacity: 0; } to { opacity: 1; } }
+
 /* --- THE SHEET ------------------------------------------------------------
    Fixed to the window, opaque, and over absolutely everything — the Menu and
    the toolbar included, because the brief is that there is nothing on this
