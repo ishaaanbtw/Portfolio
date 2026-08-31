@@ -19,31 +19,29 @@
      showcase, so it is already in the cache by the time the card mounts.
      Remove this line if that card stops using a video thumbnail. -->
 <link rel="preload" as="image" href="assets/media/x0/companion-thumb.webp">
-<!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT.
-     What this is and why it exists: site.js section 5c2c, site.css section 44.
-     Why it cannot live in site.js: the sheet is charcoal and the page is
-     paper, and site.js runs at the end of the body — a decision made there is
-     one painted frame of the wrong colour before the right one. So the test
-     is applied here, in the head, on every page that loads the script, and it
-     is identical in all of them.
-     `quick` marks a move within the site. That gets the same build at a
-     brisker tempo; the full one is for arriving. Back and forward get nothing:
-     returning to a page is not arriving at it.
-     The timeout is the failsafe — if site.js never lands, the class comes off
+<!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT, AND IT ONLY EVER RUNS ONCE.
+     What this is: site.js section 5c2c, site.css section 44. Why it cannot
+     live in site.js: the sheet is charcoal and the page is paper, and site.js
+     runs at the end of the body — a decision made there is one painted frame
+     of the wrong colour before the right one. So the test is applied here, in
+     the head, and it is identical in every page that loads the script.
+     ONCE PER VISIT. `sessionStorage` is per tab and survives navigation, so
+     the first page someone lands on gets the entrance and nothing after it
+     does — not a click through to Work, not a reload, not the back button. An
+     intro is something you sit through when you arrive, not every time you
+     move. Closing the tab is what resets it.
+     If storage throws — a locked-down browser, some private modes — the
+     entrance simply does not run. Better no intro than one on every page with
+     no way to remember it has been seen.
+     The timeout is the failsafe: if site.js never lands, the class comes off
      by itself and the page is simply the page. -->
 <script>
 (function () {
   try {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (sessionStorage.getItem('wake')) return;
+    sessionStorage.setItem('wake', '1');
     var d = document.documentElement;
-    var n = (performance.getEntriesByType('navigation')[0] || {}).type || '';
-    if (n === 'back_forward') return;
-    var inside = false;
-    try {
-      inside = !!document.referrer
-        && new URL(document.referrer).origin === location.origin;
-    } catch (e) { inside = false; }
-    if (inside && n !== 'reload') d.setAttribute('data-wake', 'quick');
     d.classList.add('wake-armed');
     setTimeout(function () { d.classList.remove('wake-armed'); }, 4000);
   } catch (e) {}
