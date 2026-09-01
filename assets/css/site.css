@@ -10226,3 +10226,32 @@ body.waking.awake .rv { opacity: 1; transform: none; }
   body.waking .pane { visibility: visible; }
   .sig { display: none; }
 }
+
+/* ==========================================================================
+   45. THE PAGE DOES NOT PINCH
+   On a touchscreen the canvas is a play area — pressing bricks, dragging them,
+   drawing on the paper — and a pinch is the same fingers on the same glass. So
+   a gesture meant for the page gets read as a gesture about the page, and the
+   whole document ends up at 1.8 with the composition half off the screen.
+   Nothing here rewards magnification: the bricks are vector, the type is
+   already set at the size it wants to be read at.
+
+   This is the declarative half of it — the page states which gestures it
+   accepts, and pinch is not among them. It is the real fix everywhere except
+   Safari, it costs nothing at runtime, and it does what a non-passive
+   touchmove listener would do without putting one in the scroll path. Safari's
+   own pinch and the recovery from a zoom that got through anyway are in
+   site.js, module `Pinch`.
+
+   ONLY WHERE THERE IS A CANVAS. A case study is a column of text and
+   photographs, and zooming into a photograph is a reasonable thing to want; it
+   keeps the behaviour it always had. And only on a touchscreen: browser zoom,
+   the ctrl-plus kind people actually rely on, is not a viewport gesture and is
+   untouched by any of this on any page.
+   ========================================================================== */
+
+@media (pointer: coarse) {
+  html:has(.canvas),
+  html:has(.canvas) body,
+  html:has(.canvas) .app { touch-action: pan-x pan-y; }
+}

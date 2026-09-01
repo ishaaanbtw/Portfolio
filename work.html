@@ -12,28 +12,42 @@
      are not preloaded on purpose: one word on the home page is italic and only
      case studies set code, so both can arrive late without anything moving. -->
 <link rel="preload" href="assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT, AND IT ONLY EVER RUNS ONCE.
+<!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT.
      What this is: site.js section 5c2c, site.css section 44. Why it cannot
      live in site.js: the sheet is charcoal and the page is paper, and site.js
      runs at the end of the body — a decision made there is one painted frame
      of the wrong colour before the right one. So the test is applied here, in
      the head, and it is identical in every page that loads the script.
-     ONCE PER VISIT. `sessionStorage` is per tab and survives navigation, so
-     the first page someone lands on gets the entrance and nothing after it
-     does — not a click through to Work, not a reload, not the back button. An
-     intro is something you sit through when you arrive, not every time you
-     move. Closing the tab is what resets it.
-     If storage throws — a locked-down browser, some private modes — the
-     entrance simply does not run. Better no intro than one on every page with
-     no way to remember it has been seen.
+
+     ARRIVING, NOT MOVING. An intro is something you sit through when you get
+     somewhere; the moment it becomes a toll on every click it stops being an
+     intro and starts being a wait. So: a cold visit yes, a link from
+     elsewhere yes, a reload yes — a reload is someone deliberately asking for
+     this page again. A click from one page of this site to another, no: the
+     referrer says they were already here. Back and forward, no: returning to
+     a page is not arriving at it.
+
+     This was briefly gated on sessionStorage instead — once per tab, reloads
+     included. That is a tidier sentence and a worse rule: it makes the one
+     thing you do most while building the site the one thing that cannot show
+     you the site.
+
      The timeout is the failsafe: if site.js never lands, the class comes off
      by itself and the page is simply the page. -->
 <script>
 (function () {
   try {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (sessionStorage.getItem('wake')) return;
-    sessionStorage.setItem('wake', '1');
+    var n = (performance.getEntriesByType('navigation')[0] || {}).type || '';
+    if (n === 'back_forward') return;
+    if (n !== 'reload') {
+      var inside = false;
+      try {
+        inside = !!document.referrer
+          && new URL(document.referrer).origin === location.origin;
+      } catch (e) { inside = false; }
+      if (inside) return;
+    }
     var d = document.documentElement;
     d.classList.add('wake-armed');
     setTimeout(function () { d.classList.remove('wake-armed'); }, 4000);
@@ -41,8 +55,18 @@
 })();
 </script>
 <link rel="stylesheet" href="assets/css/site.css">
+<!-- The mark follows the reader's system theme, not the site's. favicon.svg
+     carries the media query inside it, which Chrome and Firefox honour;
+     Safari renders SVG favicons but ignores their CSS, so the dark copy is
+     also linked with a media attribute it does understand. The PNG is for
+     anything that cannot take an SVG at all, and favicon.ico at the root
+     answers the request browsers make whether it is linked or not. The
+     apple-touch icon has to be a PNG — iOS will not take the SVG — and is
+     full-bleed square because iOS rounds the corners itself. -->
+<link rel="icon" href="assets/img/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="assets/img/favicon.svg">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ishaan Gupta">
 <meta property="og:title" content="Work — Ishaan Gupta">

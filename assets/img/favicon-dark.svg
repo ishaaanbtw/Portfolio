@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 164 164" role="img" aria-label="Ishaan Gupta">
+  <!-- Dark-only copy: Safari ignores the media query inside favicon.svg. -->
+  <rect width="164" height="164" rx="39" fill="#1c1c1f"/>
+  <g transform="translate(82,82) scale(1.297) translate(-83,-82)">
+    <path fill="#f7f7f7" d="M47.00 39.00H89.00V43.60C84.40 43.60 77.80 44.80 75.80 50.80C75.25 81.50 75.25 81.50 75.80 112.20C77.80 118.20 84.40 119.40 89.00 119.40V124.00H47.00V119.40C51.60 119.40 58.20 118.20 60.20 112.20C60.75 81.50 60.75 81.50 60.20 50.80C58.20 44.80 51.60 43.60 47.00 43.60Z"/>
+    <rect x="110" y="39" width="9" height="86" rx="4.5" fill="#018AFF"/>
+  </g>
+</svg>

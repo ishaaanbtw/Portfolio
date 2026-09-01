@@ -3471,6 +3471,20 @@
        deselects the old one a moment before that one selects itself. The guard
        is the selected node's own subtree — its handles live inside it, and a
        press on a resize handle must not be read as a press elsewhere. */
+    /* --- THE ONE LIVE GESTURE ------------------------------------------------
+       Exactly one object is being pressed at a time, and while it is, this is
+       it: the item, the pointer that owns it, and the two functions that move
+       and end it. Everything below routes through here rather than through a
+       listener per object, which is the point — a press used to be moved and
+       ended by handlers bound to the node itself, and a node stops hearing
+       about a pointer for half a dozen reasons that have nothing to do with the
+       user letting go.
+
+       `pid` is the pointer that started the gesture. A second finger arriving
+       is not the first one leaving, so the up that ends this has to be the up
+       of the pointer that began it. */
+    active: null,
+
     bind() {
       if (this._bound) return;
       this._bound = true;
@@ -3479,6 +3493,42 @@
         if (hit(e, '.drg') === this.selected.node) return;
         this.deselect();
       }, true);
+
+      /* --- EVERY WAY A PRESS CAN END ----------------------------------------
+         All of these are on the window, in capture, and all of them route to
+         the same idempotent `finish`. That is the whole fix for a drag that
+         gets stuck: there is no longer a path by which the pointer can go away
+         and the object not be told.
+
+         What used to be here was `node.addEventListener('pointerup', release)`
+         plus a pointer capture, which is correct exactly as long as the capture
+         holds. It does not always hold. The node can be re-parented by a weld,
+         the browser can revoke the capture, a pointercancel can arrive with the
+         capture already released — and in every one of those cases the element
+         never sees the up, `armed` stays true, `is-drag` stays on, and the
+         piece is left following a button nobody is holding. That is the ghost
+         drag, and it is not a race or a threshold; it is a listener bound to
+         the wrong object.
+
+         Move is here too, for the same reason. Relying on capture to deliver
+         pointermove outside the element's own box means a failed capture is a
+         drag that only works while the cursor is over the thing being dragged.
+
+         `blur` and a hidden tab end it because a gesture the user has walked
+         away from is over — cmd-tab out mid-drag and come back to a piece that
+         is still in your hand is the same bug wearing a different hat. */
+      const owns = (e) => {
+        const a = this.active;
+        return a && (e.pointerId == null || e.pointerId === a.pid) ? a : null;
+      };
+      addEventListener('pointermove', (e) => { const a = owns(e); if (a) a.move(e); },
+        { capture: true, passive: true });
+      addEventListener('pointerup', (e) => { const a = owns(e); if (a) a.finish(false); }, true);
+      addEventListener('pointercancel', (e) => { const a = owns(e); if (a) a.finish(true); }, true);
+      addEventListener('blur', () => { if (this.active) this.active.finish(true); });
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && this.active) this.active.finish(true);
+      });
       /* Peel.place() re-lays the stickers on a viewport change, which moves the
          box the cached centre was measured against. */
       addEventListener('resize', () => {
@@ -3534,42 +3584,34 @@
          object jump those 4px the instant it starts following you. */
       const SLOP = 4;
 
-      node.addEventListener('pointerdown', (e) => {
-        /* only the select tool moves things; drawing tools must not */
-        if (Rack.tool !== 'select') return;
-        if (hit(e, '[data-nodrag]')) return;   // handles run their own gesture
-        if (e.button !== 0) return;
-        e.preventDefault();
+      /* Capture is still taken, because it is the right thing when it works:
+         it keeps the events coming from one element and it stops the browser
+         starting a text selection or a scroll out of the same press. It is no
+         longer RELIED on — the window listeners in `bind` deliver move and up
+         whether or not this succeeded — and it is released through a guard,
+         because `releasePointerCapture` THROWS when the capture is already
+         gone, and a throw in the middle of teardown is what left the last one
+         half torn down. */
+      const capture = () => {
+        try { if (id != null) node.setPointerCapture(id); } catch (err) { /* fine without it */ }
+      };
+      const uncapture = () => {
+        try {
+          if (id != null && node.hasPointerCapture && node.hasPointerCapture(id)) {
+            node.releasePointerCapture(id);
+          }
+        } catch (err) { /* already released: that is the state we were asking for */ }
+      };
 
-        /* Selecting is what a press does. Moving is what a press that then
-           travels does. One gesture in two stages — not two separate paths, and
-           not a gesture that decides which one it was after you let go. */
-        if (this.selected !== it) this.select(it);
-
-        id = e.pointerId;
-        node.setPointerCapture?.(id);
-        armed = true;
-        it.dragging = false;
-        it.fromX = it.x; it.fromY = it.y;
-        gx = e.clientX; gy = e.clientY;
-        ox = it.x; oy = it.y;
-
-        /* THE SOFT EDGE, MEASURED ONCE PER GESTURE.
-
-           Both boxes are cached at grab rather than read per move: the object's
-           rect already carries the transform it has at x = ox, so a later
-           position's rect is this one plus (x - ox). Reading it every
-           pointermove would be a forced layout inside the event that has to
-           paint this frame. */
-        this.edge(it, ox, oy);
-
-        /* Anything that needs to know a gesture began — see Bricks, which uses
-           it to pop a piece out of its structure when Alt is held. */
-        if (it.onGrab) it.onGrab(it, e);
-      });
-
-      node.addEventListener('pointermove', (e) => {
+      const move = (e) => {
         if (!armed) return;
+        /* THE BUTTON CAME UP AND NOBODY TOLD US. A mouse move carrying no
+           buttons cannot be part of a drag, whatever this object believes, so
+           the belief is what gets corrected. Cheap, and it is the backstop
+           underneath the backstop: even if every listener in `bind` were to
+           miss the release, the object cannot follow the cursor for more than
+           one frame afterwards. */
+        if (e.pointerType === 'mouse' && e.buttons === 0) { finish(false); return; }
         /* THE GRAB POINT IS ALREADY PRESERVED — this is a delta applied to the
            position the object had when it was grabbed, so it cannot jump. What
            it could do was drift: the pointer travels in viewport pixels and
@@ -3601,33 +3643,99 @@
            next frame is what puts an object behind its own cursor. */
         this.apply(it);
         this.syncGuides();
-      });
+      };
 
-      const release = () => {
+      /* THE END OF A GESTURE, IN ONE PLACE, IN AN ORDER THAT CANNOT BE SKIPPED.
+
+         The flags come down first and nothing between them can throw. Only then
+         does anything else get to run, and everything that does is wrapped —
+         a type's own drop handler failing is a bug in that handler, and it must
+         not be able to leave the drag system holding a gesture that ended.
+
+         `onDrop` still runs before `onEnd` and still owns the placement: a
+         brick's release is where the weld happens, and it needs the gesture it
+         is ending. `onEnd` is the sweeper that runs afterwards on EVERY ending
+         including the ones `onDrop` never sees — a press that never travelled,
+         a cancel, a blur — and it is required to be idempotent. Between the two
+         there is no ending left over. */
+      const finish = (cancelled) => {
         if (!armed) return;
         armed = false;
-        node.releasePointerCapture?.(id);
-        if (!it.dragging) return;             // a press that never travelled
+        const travelled = it.dragging;
         it.dragging = false;
         node.classList.remove('is-drag');
+        if (this.active && this.active.it === it) this.active = null;
+        const fx = it.fromX, fy = it.fromY;
+        uncapture();
+        id = null;
+
         /* It stops where you left it. No glide, no settle — a thrown object
            that keeps travelling after release is the opposite of placing one. */
-        const fx = it.fromX, fy = it.fromY;
         /* A type that returns true from onDrop has pushed its own entry. A
            brick's gesture can move six other bricks and change what is welded
            to what, and none of that is expressible as "put this one back". */
-        if (it.onDrop && it.onDrop(it, fx, fy) === true) {
-          Sound.voice({ freq: 300, gain: 0.03, dur: 0.06, bright: 1800, drop: 0.6, noise: 0.4 });
-          return;
+        let handled = false;
+        if (travelled && it.onDrop) {
+          try { handled = it.onDrop(it, fx, fy) === true; } catch (err) { handled = false; }
         }
-        History.push(() => {
-          it.x = fx; it.y = fy;
-          this.apply(it);
-        }, 'move');
+        if (it.onEnd) { try { it.onEnd(it, !!cancelled); } catch (err) { /* swept anyway */ } }
+        if (!travelled) return;              // a press that never travelled
+        if (!handled) {
+          History.push(() => {
+            it.x = fx; it.y = fy;
+            this.apply(it);
+          }, 'move');
+        }
         Sound.voice({ freq: 300, gain: 0.03, dur: 0.06, bright: 1800, drop: 0.6, noise: 0.4 });
       };
-      node.addEventListener('pointerup', release);
-      node.addEventListener('pointercancel', release);
+
+      node.addEventListener('pointerdown', (e) => {
+        /* only the select tool moves things; drawing tools must not */
+        if (Rack.tool !== 'select') return;
+        if (hit(e, '[data-nodrag]')) return;   // handles run their own gesture
+        if (e.button !== 0) return;
+        e.preventDefault();
+
+        /* One gesture at a time. A press arriving while another is live means
+           that one never ended properly; end it now rather than letting two
+           objects share a pointer. */
+        if (this.active && this.active.it !== it) this.active.finish(true);
+
+        /* Selecting is what a press does. Moving is what a press that then
+           travels does. One gesture in two stages — not two separate paths, and
+           not a gesture that decides which one it was after you let go. */
+        if (this.selected !== it) this.select(it);
+
+        id = e.pointerId;
+        armed = true;
+        it.dragging = false;
+        it.fromX = it.x; it.fromY = it.y;
+        gx = e.clientX; gy = e.clientY;
+        ox = it.x; oy = it.y;
+        this.active = { it, pid: id, move, finish };
+        capture();
+
+        /* THE SOFT EDGE, MEASURED ONCE PER GESTURE.
+
+           Both boxes are cached at grab rather than read per move: the object's
+           rect already carries the transform it has at x = ox, so a later
+           position's rect is this one plus (x - ox). Reading it every
+           pointermove would be a forced layout inside the event that has to
+           paint this frame. */
+        this.edge(it, ox, oy);
+
+        /* Anything that needs to know a gesture began — see Bricks, which uses
+           it to pop a piece out of its structure when Alt is held. */
+        if (it.onGrab) it.onGrab(it, e);
+      });
+
+      /* The capture going away mid-press is the one signal the window listeners
+         cannot give us, and it is not always benign: it fires at the tail of
+         every normal gesture (by which time `finish` has already run and this
+         is a no-op) and it fires when the node is re-parented or the browser
+         takes the capture back (by which time this is the only thing that
+         knows). */
+      node.addEventListener('lostpointercapture', () => finish(false));
 
       this.items.push(it);
       return it;
@@ -5910,6 +6018,32 @@
         z.x0 = 0.05; z.x1 = 0.95;
         z.lo = 0.06; z.hi = 0.06; z.ramp = [0, 1];
         z.y1 = k ? Math.max(0.3, k.y0 - 0.04) : 0.7;
+        /* HEAVY JUST ABOVE THE NAME, THIN ABOVE THAT.
+
+           Spreading the resting lines evenly through the region is right when
+           the region is a corner of a wide canvas and wrong when it is a tall
+           empty phone screen: nine pieces spaced evenly down 60% of the
+           viewport is not a scatter, it is a list. Nothing is touching anything
+           and nothing is next to anything either, so the arrangement reads as
+           laid out rather than tipped out — and the headline, which is the
+           thing the screen is actually for, has nothing gathered above it.
+        
+           So the depth is weighted rather than uniform. Most pieces settle in
+           the band just above the type, where they crowd, touch and pile the
+           way a handful of bricks does when it is dropped on a table; the rest
+           are scattered through the open half above, far enough apart to read
+           as strays. Which of the two a piece gets is rolled per piece, so the
+           split moves every load and neither band is ever the same shape twice.
+        
+           It is stated here, with the region, rather than in the fall: this is
+           a fact about where the pieces belong on this layout, and the physics
+           should not have to know which layout it is running on. The wide hero
+           leaves it unset and its uniform spread is unchanged. */
+        z.pack = { share: 0.72, low: 0.84, high: 0.62 };
+        /* and the strays have to clear the row of chrome along the top — the
+           wordmark on one side, the menu on the other. Cheap to state here and
+           the only place the number belongs; `lim` turns it into a limit. */
+        z.edgeTop = 0.055;
       }
       return z;
     },
@@ -6862,6 +6996,11 @@
       it.onGrab = (item, e) => this.grab(rec, item, e);
       it.onMove = () => this.move(rec);
       it.onDrop = () => this.drop(rec);
+      /* THE SWEEPER, ON EVERY ENDING. See `abort`. `onDrop` handles the release
+         that placed something; this one handles every other way a press can
+         stop being a press, and it is the reason there is no longer a gesture
+         this module can be left holding. */
+      it.onEnd = () => this.abort(rec);
       it.onDetach = () => this.forget(rec);
       it.onReattach = () => this.remember(rec);
       return rec;
@@ -7097,8 +7236,96 @@
         }
         const l = Z.x0 * h.width - cx + hw;
         const r2 = Math.min(Z.x1 * h.width, h.width - 72) - cx - hw;
-        return { floor, l, r: Math.max(l, r2) };
+        /* AND A CEILING, WHICH THE REGION NEVER HAD.
+
+           `ceil` says how high a piece's BOTTOM may come to rest; nothing said
+           anything about its top, and the two are a whole brick apart. A tall
+           piece aiming at the top of the region hangs off the top of the canvas
+           — half a 4x2 above the fold, clipped, sitting behind the menu — and a
+           piece shoved upward by a crowded pile does the same. Neither was
+           visible while the resting lines were spread evenly through the
+           region, because nothing aimed that high; weighting the depth made it
+           a load-every-few-loads event, which is how it came to light.
+
+           It is a lower bound on `y`, not a bounce: pieces still FALL through
+           it, they simply may not stop above it. */
+        return { floor, l, r: Math.max(l, r2), top: (Z.edgeTop || 0.02) * h.height - cy + hh };
       };
+
+      /* --- TWO BRICKS, AT THE ANGLES THEY ARE ACTUALLY AT --------------------
+
+         This is the fix for the arrangement that looked accidental in the bad
+         way: pieces landing inside each other, a bar lying through a plate,
+         a stack that reads as a rendering fault rather than as a pile.
+
+         The contact test used to be `min(A.right, C.right) - max(A.left,
+         C.left)` on the pieces' UNROTATED boxes, while every piece in the fall
+         is tumbling. A 5x1 bar at 45 degrees reaches most of two studs past
+         the rectangle that test was comparing, so two bricks could be a long
+         way inside one another and the solver saw no contact at all. `lim` had
+         already been taught this — the region, the floor and the column are all
+         expressed against the rotated extent — and the pair pass was the one
+         place still asking the old question.
+
+         Doing it properly is a separating-axis test between two oriented
+         boxes: four candidate axes, the two box normals of each, and the
+         smallest overlap among them is both the proof they intersect and the
+         shortest way out. It returns that push, or null when they are clear.
+
+         An oriented box is not the piece — an L is not a rectangle — but it is
+         the piece's own box at the piece's own angle, which is close enough to
+         be honest and far cheaper than a polygon test. Erring slightly wide is
+         the right direction to err: it buys the arrangement a little air. */
+      const clear = (A, C, pad) => {
+        const ra = A.a * Math.PI / 180, rc = C.a * Math.PI / 180;
+        const au = Math.cos(ra), av = Math.sin(ra);
+        const cu = Math.cos(rc), cv = Math.sin(rc);
+        const dx = (C.x + C.w / 2) - (A.x + A.w / 2);
+        const dy = (C.y + C.h / 2) - (A.y + A.h / 2);
+        const ahw = A.w / 2, ahh = A.h / 2, chw = C.w / 2, chh = C.h / 2;
+        let best = Infinity, bx = 0, by = 0;
+        for (let k = 0; k < 4; k += 1) {
+          const nx = k < 2 ? (k ? -av : au) : (k === 2 ? cu : -cv);
+          const ny = k < 2 ? (k ? au : av) : (k === 2 ? cv : cu);
+          const pa = Math.abs(ahw * (au * nx + av * ny)) + Math.abs(ahh * (-av * nx + au * ny));
+          const pc = Math.abs(chw * (cu * nx + cv * ny)) + Math.abs(chh * (-cv * nx + cu * ny));
+          const gap = dx * nx + dy * ny;
+          const ov = pa + pc + pad - Math.abs(gap);
+          if (ov <= 0) return null;                 // an axis separates them
+          if (ov < best) { best = ov; const sg = gap < 0 ? -1 : 1; bx = nx * sg; by = ny * sg; }
+        }
+        /* push C along +(ox, oy) and A along -(ox, oy) to part them */
+        return { ox: bx * best, oy: by * best };
+      };
+
+      /* HOW MANY GO UP TOP IS DECIDED FOR THE ROOM, NOT PER PIECE.
+
+         Rolling each piece independently against a 72% share is the obvious
+         way to write this and it is wrong at this sample size. Nine coins come
+         up six-three most of the time and nine-nothing often enough to notice:
+         one load in ten had the whole handful up in the empty half with nothing
+         above the name, and one had nothing up there at all. Neither is the
+         composition; both are what independent rolls do to nine of anything.
+
+         So the COUNT is chosen once — two, three or four strays, never none and
+         never half the room — and WHICH pieces get to be strays is a shuffle.
+         The arrangement is different every load in the way that matters (which
+         pieces, where they land, how the pile below them settles) and stable in
+         the way that matters (there is always a pile, and there are always a
+         few above it). That is the difference between controlled randomness and
+         a coin flip deciding whether the design happens. */
+      const upTop = new Set();
+      if (Z.pack && moving.length > 2) {
+        const idx = moving.map((_, i) => i);
+        for (let i = idx.length - 1; i > 0; i -= 1) {
+          const j = (Math.random() * (i + 1)) | 0;
+          const t = idx[i]; idx[i] = idx[j]; idx[j] = t;
+        }
+        const want = Math.round(idx.length * (1 - Z.pack.share));
+        const jit = Math.random() < 0.45 ? (Math.random() < 0.5 ? -1 : 1) : 0;
+        const few = clamp(want + jit, 1, Math.max(1, Math.floor(idx.length / 2)));
+        idx.slice(0, few).forEach((i) => upTop.add(moving[i]));
+      }
 
       bodies.forEach((b2, i) => {
         const cells = b2.r.def.cells;
@@ -7160,7 +7387,22 @@
            two in it and not a row. The ceiling is the one that belongs to the
            column it is falling down — high on the right where there is only
            paper above, and well clear of the headline on the left. */
-        b2.base = h.height * rnd(this.ceil(b2.x / h.width), Z.y1) - b2.h;
+        /* The line it happens to stop on, as a fraction of the depth between
+           this column's ceiling and the region's floor. Uniform unless the
+           region asked for a weighting — see `zone`. */
+        const ceil = this.ceil(b2.x / h.width);
+        let u = Math.random();
+        if (Z.pack) {
+          u = upTop.has(b2)
+            ? Math.random() * Z.pack.high
+            : Z.pack.low + Math.random() * (1 - Z.pack.low);
+        }
+        b2.base = h.height * (ceil + (Z.y1 - ceil) * u) - b2.h;
+        /* the same ceiling, applied to the line it is AIMING at, using the
+           worst extent the tumble can give it — a piece cannot be asked to
+           come to rest somewhere it would not fit */
+        b2.base = Math.max(b2.base,
+          (Z.edgeTop || 0.02) * h.height + (Math.hypot(b2.w, b2.h) - b2.h) / 2);
         b2.floor = b2.base;
         b2.isle = rnd(0.02, 0.34);   /* where below the column it settles */
         b2.hits = 0; b2.live = false; b2.still = 0;
@@ -7180,6 +7422,26 @@
 
         bodies.forEach((b2) => {
           if (b2.fixed) return;
+          /* THE HAND WINS, AND THE SIMULATION LETS GO OF THE PIECE ENTIRELY.
+
+             A falling piece is not grabbable — `.is-auto` sees to that — but a
+             trickled one lands into a room somebody may be working in, and the
+             moment a rec is in a hand it must have exactly one owner. Rather
+             than two systems writing the same transform and the last one per
+             frame winning, the body stops being the loop's to move: it turns
+             into an obstacle at the position the drag has it at, the others
+             still bounce off it, and nothing this loop does afterwards touches
+             it or its animation classes again. */
+          if (b2.r.it.dragging || this.held === b2.r) {
+            b2.fixed = true;
+            b2.r.auto = false;
+            b2.r.it.sx = 1; b2.r.it.sy = 1;
+            b2.r.it.node.classList.remove('is-auto', 'is-settle');
+            b2.x = b2.r.it.x + b2.r.bx; b2.y = b2.r.it.y + b2.r.by;
+            b2.a = b2.r.it.rest || 0;
+            b2.vx = 0; b2.vy = 0; b2.va = 0;
+            return;
+          }
           if (!b2.live) { if (el >= b2.wait) b2.live = true; else return; }
           b2.vy += G * dt;
           b2.x += b2.vx * dt;
@@ -7232,10 +7494,10 @@
           for (let j = i + 1; j < bodies.length; j += 1) {
             const C = bodies[j];
             if (!C.live) continue;
-            const ox = Math.min(A.x + A.w, C.x + C.w) - Math.max(A.x, C.x);
-            const oy = Math.min(A.y + A.h, C.y + C.h) - Math.max(A.y, C.y);
-            if (ox <= 0 || oy <= 0) continue;
             if (A.fixed && C.fixed) continue;
+            const p = clear(A, C, 0);
+            if (!p) continue;
+            const ox = Math.abs(p.ox), oy = Math.abs(p.oy);
             /* share of the correction each side takes. A fixed body takes
                none of it and gives all of it to the other, which is what
                "immovable" means in a positional solver. */
@@ -7267,15 +7529,16 @@
               P.va += clamp(off / w, -1, 1) * 34 * share;
               P.va *= 0.86;
             };
-            if (ox < oy) {
-              const d = (A.x < C.x ? -1 : 1) * ox;
-              A.x += d * sa; C.x -= d * sc;
+            /* the push itself is the axis the test chose; only which velocity
+               and which torque go with it still depends on which way it points */
+            A.x -= p.ox * sa; A.y -= p.oy * sa;
+            C.x += p.ox * sc; C.y += p.oy * sc;
+            if (ox >= oy) {
+              const d = -p.ox;
               const v = (A.vx - C.vx) * 0.36;
               A.vx -= v * sa; C.vx += v * sc;
               spin(A, C, d, sa); spin(C, A, -d, sc);
             } else {
-              const d = (A.y < C.y ? -1 : 1) * oy;
-              A.y += d * sa; C.y -= d * sc;
               const v = (A.vy - C.vy) * 0.36;
               A.vy -= v * sa; C.vy += v * sc;
               /* centre to centre, so a piece landing squarely on another gets
@@ -7312,9 +7575,58 @@
           b2.r.it.node.style.setProperty('--sy', (1 + st).toFixed(4));
         });
 
-        const resting = moving.every((b3) => b3.live && b3.y >= b3.floor - 1.5
-          && Math.abs(b3.vy) < 18 && Math.abs(b3.vx) < 18 && Math.abs(b3.va) < 26);
+        const resting = moving.every((b3) => b3.fixed || (b3.live && b3.y >= b3.floor - 1.5
+          && Math.abs(b3.vy) < 18 && Math.abs(b3.vx) < 18 && Math.abs(b3.va) < 26));
         if (!resting && el < CAP) { requestAnimationFrame(step); return; }
+
+        /* --- AND NOTHING IS LEFT INSIDE ANYTHING ELSE ----------------------
+
+           The physics is a good way to arrive and a bad way to guarantee
+           anything. It converges on most loads and it is allowed to stop the
+           moment every piece is slow, which is not the same as every piece
+           being clear — and `CAP` can cut it off mid-squeeze, which is exactly
+           the load where two bricks are furthest inside each other.
+
+           So the arrangement is checked rather than hoped for. The same
+           separating-axis test the contacts use is run to convergence with a
+           little padding, purely positionally, with no velocity and no bounce:
+           whatever the fall produced, the thing that is finally written to the
+           page has no piece intersecting another. It runs on a room that has
+           already stopped, so it is invisible — a handful of pieces move a few
+           pixels between the last simulated frame and the first painted one.
+
+           The floor is a ceiling here and not a floor: a piece may be pushed
+           UP off the line it landed on, because that is what resting on top of
+           another brick looks like, but it may not be pushed back down through
+           the one below it. That inversion is the whole reason this is a
+           separate pass rather than another constraint inside the loop. */
+        const PAD = 2;
+        for (let pass = 0; pass < 48; pass += 1) {
+          let moved = 0;
+          for (let i = 0; i < bodies.length; i += 1) {
+            const A = bodies[i];
+            for (let j = i + 1; j < bodies.length; j += 1) {
+              const C = bodies[j];
+              if (A.fixed && C.fixed) continue;
+              const p = clear(A, C, PAD);
+              if (!p) continue;
+              const sa = A.fixed ? 0 : (C.fixed ? 1 : 0.5);
+              const sc = C.fixed ? 0 : (A.fixed ? 1 : 0.5);
+              A.x -= p.ox * sa; A.y -= p.oy * sa;
+              C.x += p.ox * sc; C.y += p.oy * sc;
+              moved += 1;
+            }
+          }
+          moving.forEach((b2) => {
+            if (b2.fixed) return;
+            const L = lim(b2);
+            b2.x = Math.min(Math.max(b2.x, L.l), L.r);
+            if (b2.y > L.floor) b2.y = L.floor;
+            if (b2.y < L.top) b2.y = L.top;
+          });
+          if (!moved) break;
+        }
+        moving.forEach((b2) => { if (!b2.fixed) this.moveTo(b2.r, b2.x, b2.y); });
 
         /* STOP. This is the whole ending: the loop exits and every piece keeps
            the position, the angle and the neighbours physics gave it. The only
@@ -7334,6 +7646,7 @@
            and nothing else about it is touched. */
         if (Z.island) {
           moving.forEach((b2) => {
+            if (b2.fixed) return;
             const rad = b2.a * Math.PI / 180;
             const ca = Math.abs(Math.cos(rad)), sn = Math.abs(Math.sin(rad));
             const hw = (b2.w * ca + b2.h * sn) / 2, hh = (b2.w * sn + b2.h * ca) / 2;
@@ -7345,7 +7658,18 @@
           });
         }
 
+        /* NOTHING OF THE FALL SURVIVES IT. The speed-stretch is a motion cue
+           and is wound back to 1; the animation classes come off; `auto` — the
+           flag that tells the solver this piece is not a place to land — is
+           cleared; and the transform each piece is wearing becomes, unmodified,
+           the position the drag system will pick it up from. There is no second
+           coordinate left behind for anything to disagree with.
+
+           A body the loop handed to a hand mid-flight is skipped: it did all of
+           this at the moment it was grabbed, and writing to it now would be the
+           fall reaching back into a gesture that is still running. */
         moving.forEach((b2) => {
+          if (b2.fixed) return;
           b2.r.it.sx = 1; b2.r.it.sy = 1;
           b2.r.it.rest = b2.a;
           b2.r.auto = false;
@@ -7490,9 +7814,25 @@
        that group's grid, no cell of ours on a cell of theirs, and at least one
        of our cells edge-to-edge with one of theirs. What has changed is which
        lawful landing wins when there are several, and how far out we look. */
-    plan(set, skip) {
+    plan(set, skip, keep) {
       const U = this.U, a = set[0];
       const REACH = this.detect();
+      /* STAY ON THE TARGET YOU ARE ALREADY ON.
+
+         The sweep scores every lawful landing and takes the lowest, which is
+         the right answer to "where should this go" and the wrong answer to
+         "where should this go THIS FRAME". Two candidates a stud apart are
+         separated by a fraction of a pixel of score, the pointer moves a pixel,
+         and the winner changes — the ghost flicks between two seats forty times
+         a second and neither of them ever feels like the one being offered.
+
+         So the seat that was chosen last frame is handed back in and keeps
+         about half a stud of credit. It is not sticky enough to hold a target
+         you have plainly moved away from, and it is sticky enough that ties and
+         near-ties stop being decided by the last pixel of hand tremor. The
+         result is a preview that stands still and then moves once, decisively,
+         which is what makes it readable. */
+      const STICK = U * 0.45;
       const SPAN = Math.ceil(REACH / U) + 1;
       const ax = this.ax(a), ay = this.ay(a);
       const mc = [];
@@ -7603,7 +7943,8 @@
                every extra shared edge earns back a third of one, so a join
                along a whole side beats a join on a single corner when the two
                are otherwise equally close. */
-            const k2 = d0 + buried * U * 1.5 - Math.min(touch, cap) * U * 0.34 + bias;
+            const k2 = d0 + buried * U * 1.5 - Math.min(touch, cap) * U * 0.34 + bias
+              - (keep && keep.g === g && keep.cx === cx && keep.cy === cy ? STICK : 0);
             if (this.debug) this._cand.push({ tx: tx0, ty: ty0, d: d0, k: k2, touch, buried });
             if (best && k2 >= best.k) continue;
             best = { d: d0, k: k2, slack: U * 2, tx: tx0, ty: ty0, g, cx, cy, ox, oy, touch, buried };
@@ -7977,6 +8318,12 @@
       this.dirty();
       rec.aim = (rec.aim == null ? rec.it.rest : rec.aim) + 90;
       this.spin(rec);
+      /* The footprint just changed shape, so the seat the last frame chose is
+         not a seat this piece can take any more — and it must not be handed to
+         the solver as something to stay loyal to. The preview that comes back
+         from the re-plan below is a fresh answer about the piece as it now is,
+         which is the whole point of turning it. */
+      g.plan = null; g.shown = false;
       this.move(rec);                    // re-plan now; the pointer has not moved
       this.hintAt(rec);
       Sound.voice({ freq: 880, gain: 0.022, dur: 0.035, bright: 4200, drop: 1.1, noise: 0.4 });
@@ -8048,6 +8395,30 @@
        press actually travelled; the window listener runs on every release
        including the one that was just a click. Whichever gets here first does
        the work and the other finds nothing to do. */
+    /* EVERY GESTURE ENDS HERE, WHATEVER ENDED IT.
+
+       Drag calls this last on every ending — a release that placed a piece, a
+       press that never travelled, a pointercancel, a lost capture, the window
+       losing focus with a brick in the hand. `drop` has usually already run and
+       already torn the gesture down, in which case there is nothing here to do;
+       when it has not, this is the only thing that will.
+
+       It is written to be safe to call twice and safe to call on a piece that
+       was never held, because it is called from a path that cannot know which
+       of those is true. The old arrangement instead added a one-shot window
+       listener per grab inside `grab` itself: correct for the case it was
+       written for, one listener leaked per cancelled gesture, and silent about
+       `rec.gest`, which is the field that decides whether this piece thinks it
+       is still being carried. */
+    abort(rec) {
+      rec.gest = null;
+      this.before = null;
+      /* A press landing while another piece is still marked as held means that
+         one's ending went missing. Take it down too — one hand, one piece. */
+      if (this.held && this.held !== rec) this.endHold(this.held);
+      this.endHold(rec);
+    },
+
     endHold(rec) {
       if (this.held !== rec) return;
       clearTimeout(this.hintT);
@@ -8072,6 +8443,10 @@
       if ((e.altKey || e.metaKey) && rec.g.members.length > 1) this.pop(rec);
 
       const set = rec.g.members.slice();
+      /* THE HAND TAKES OWNERSHIP OF EVERY PIECE IT IS ABOUT TO CARRY. Anything
+         still being written by a settle from the last release stops being
+         written the moment this runs — see `animate`. */
+      set.forEach((r) => { r.an = null; });
       rec.gest = {
         set,
         leadX: it.x, leadY: it.y,
@@ -8123,10 +8498,9 @@
         this.hintT = setTimeout(() => { if (this.held === rec) this.hintOn(rec); }, 220);
       }
 
-      /* A press that never travels never reaches `drop`, so the teardown
-         cannot live there alone. */
-      addEventListener('pointerup', () => this.endHold(rec), { once: true });
-      addEventListener('pointercancel', () => this.endHold(rec), { once: true });
+      /* A press that never travels never reaches `drop`. It does reach
+         `abort` — see it.onEnd in mk() — which is bound once per piece rather
+         than once per press. */
 
       /* The soft edge has to hold the whole structure, not the one brick the
          pointer happens to be on — Drag measured the single node before this
@@ -8164,17 +8538,17 @@
         s.r.it.x = s.x + dx; s.r.it.y = s.y + dy;
       });
 
-      let plan = this.plan(g.set, rec.g);
+      let plan = this.plan(g.set, rec.g, g.plan);
       /* Truing the target can change its footprint, so anything measured
          against the old one is stale by definition — re-plan against the piece
          as it now is rather than drawing one frame of a promise that is about
          to stop being true. It runs at most once per structure per page. */
-      if (plan && this.square(plan.g)) plan = this.plan(g.set, rec.g);
+      if (plan && this.square(plan.g)) plan = this.plan(g.set, rec.g, g.plan);
 
       g.plan = plan;
 
       if (!plan) {
-        this.lit(g.set, false); this.ghost(g, null);
+        this.lit(g.set, false); this.ghost(g, null); g.shown = false;
         this.blocked(null);
         this.paint(g.set, rec); this.hintAt(rec); return;
       }
@@ -8195,6 +8569,7 @@
         this.lit(g.set, false);
         this.paint(g.set, rec);
         this.ghost(g, plan);
+        g.shown = true;
         this.blocked(g.set);
         this.hintAt(rec);
         return;
@@ -8203,12 +8578,18 @@
 
       /* Range is generous on touch, where there is no cursor to aim with and
          the finger is covering the thing being aimed. */
-      /* Beyond DETECT there is nothing to say, so nothing is said. */
-      if (plan.d > this.detect()) {
-        this.lit(g.set, false); this.ghost(g, null);
+      /* Beyond DETECT there is nothing to say, so nothing is said — but it
+         takes a little more to lose the preview than it took to earn it. One
+         threshold in both directions means that hovering AT the threshold
+         blinks the ghost on and off with every pixel of movement, which reads
+         as the system being unsure. Coming in it is DETECT; going out it is a
+         sixth further. */
+      if (plan.d > (g.shown ? this.detect() * 1.18 : this.detect())) {
+        this.lit(g.set, false); this.ghost(g, null); g.shown = false;
         this.blocked(null);
         this.paint(g.set, rec); this.hintAt(rec); return;
       }
+      g.shown = true;
 
       /* INSIDE DETECT BUT OUTSIDE THE MAGNET: the ghost is up and the piece is
          still entirely yours. This is the stretch that did not exist before —
@@ -8301,7 +8682,16 @@
          question. There is one now: if a ghost is on screen, releasing puts
          the piece exactly where the ghost is, and if there is no ghost nothing
          happens at all. The preview IS the promise. */
-      if (plan && (plan.force || plan.d <= this.detect())) {
+      /* THE PREVIEW IS THE PROMISE, AND NOW IT IS THE SAME BOOLEAN.
+
+         This used to re-derive the question — `plan.d <= detect()` — which was
+         the same test the preview used right up until the preview grew a little
+         hysteresis, and then it was a test that could disagree with what was on
+         the screen by a sixth of a stud. So it does not re-derive it: `shown`
+         is written by the frame that drew the ghost, and this reads it. If
+         there was a ghost, the release lands on it. If there was not, nothing
+         happens. There is no third answer and no second threshold. */
+      if (plan && (plan.force || g.shown)) {
         const from = g.set.map((r) => ({ r, x: r.it.x, y: r.it.y }));
         this.weld(g.set, plan);
         if (this.wallSettle(g.set)) {
@@ -8549,21 +8939,40 @@
       /* 200ms and stiffer. The settle is the sound the connection makes; a long
          soft one reads as the piece drifting into place, which is the opposite
          of a part seating in a socket. */
+      /* ONE OWNER PER PIECE, HERE TOO. The settle is two hundred milliseconds
+         of something other than the user writing a piece's position, and a
+         piece can be picked up inside that window — the seat clicks home, the
+         hand comes straight back for it. If both write, the piece stutters
+         between the pointer and the tail of an animation that no longer
+         describes anything.
+
+         So the loop stamps every piece it is moving and checks the stamp on
+         every frame. `grab` clears the stamp on whatever it takes hold of, and
+         a stamp that no longer matches means this animation does not own that
+         piece any more: it stops writing to it and never writes the final
+         position either. Same generation-counter shape as `spin`, for the same
+         reason and with the same one-line cost. */
       const t0 = performance.now(), DUR = 200;
-      from.forEach((f) => f.r.it.node.classList.add('is-settle'));
+      this.an = (this.an || 0) + 1;
+      const tag = this.an;
+      from.forEach((f) => { f.r.an = tag; f.r.it.node.classList.add('is-settle'); });
+      const mine = (f) => f.r.an === tag && !f.r.it.dragging;
       const step = (now) => {
         const t = Math.min(1, (now - t0) / DUR);
         const e = 1 - Math.exp(-8.5 * t) * Math.cos(7.4 * t);
         from.forEach((f, i) => {
+          if (!mine(f)) return;
           f.r.it.x = f.x + (to[i].x - f.x) * e;
           f.r.it.y = f.y + (to[i].y - f.y) * e;
           Drag.apply(f.r.it);
         });
         if (t < 1) { requestAnimationFrame(step); return; }
         from.forEach((f, i) => {
-          f.r.it.x = to[i].x; f.r.it.y = to[i].y;
-          Drag.apply(f.r.it);
           f.r.it.node.classList.remove('is-settle');
+          if (!mine(f)) return;
+          f.r.it.x = to[i].x; f.r.it.y = to[i].y;
+          f.r.an = null;
+          Drag.apply(f.r.it);
         });
       };
       requestAnimationFrame(step);
@@ -12943,6 +13352,99 @@
     },
   };
 
+
+  /* ==========================================================================
+     THE CANVAS IS A SURFACE, NOT A PHOTOGRAPH
+
+     On a phone the hero is a play area: you press bricks, drag them, draw on
+     the paper. Every one of those is a finger on glass, and so is a pinch —
+     so a gesture meant for the page gets read as a gesture about the page, and
+     the whole document ends up scaled to 1.8 with the composition half off the
+     screen and no way back except pinching until it looks right again. There
+     is nothing on this page that rewards being magnified; the bricks are
+     vector and the type is already set at the size it wants to be read at.
+
+     Three layers, because no single one of them holds everywhere:
+
+       CSS       `touch-action` on the scroller declares which gestures the page
+                 accepts at all. Panning yes, pinching no. This is the real fix
+                 on Chrome and Android, it costs nothing at runtime, and unlike
+                 preventDefault on touchmove it does not put a non-passive
+                 listener in the scroll path.
+
+       GESTURES  Safari runs its own pinch on top of touch events and reports it
+                 as `gesturestart`, which is the only place it can be refused.
+                 `user-scalable=no` has been ignored there since iOS 10.
+
+       RECOVERY  And if one gets through anyway — a browser we have not met, an
+                 accessibility setting that overrides the lot, iOS honouring the
+                 pinch it began before the listener attached — the page puts
+                 itself back rather than leaving the reader stranded at 2.4x.
+                 Toggling the viewport's maximum-scale makes the engine re-read
+                 it and clamp; the value has to CHANGE for that to happen, which
+                 is what the alternating fourth decimal is for.
+
+     ONLY WHERE THERE IS A CANVAS, AND ONLY ON A TOUCHSCREEN. A case study is a
+     column of text and photographs and zooming into it is a reasonable thing to
+     want, so it keeps the behaviour it always had. Desktop browser zoom — the
+     ctrl-plus kind, the one people actually rely on — is not a viewport gesture
+     and is not touched by any of this on any page.
+     ====================================================================== */
+  const Pinch = {
+    init() {
+      if (!matchMedia('(pointer: coarse)').matches) return;
+      if (!$('.canvas')) return;
+      const meta = $('meta[name="viewport"]');
+      if (!meta) return;
+
+      this.meta = meta;
+      this.base = (meta.getAttribute('content') || '')
+        .replace(/,?\s*(maximum-scale|user-scalable)\s*=\s*[^,]*/g, '');
+      this.flip = 0;
+      this.clamp();
+
+      /* Safari's pinch, refused at the door. Non-passive, because refusing is
+         the entire purpose. */
+      ['gesturestart', 'gesturechange', 'gestureend'].forEach((n) => {
+        document.addEventListener(n, (e) => e.preventDefault(), { passive: false });
+      });
+      /* a trackpad pinch arrives as a wheel with ctrl held — the same intent
+         through a different door, on the iPads that have one */
+      addEventListener('wheel', (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const watch = () => {
+        if (vv.scale <= 1.02) return;
+        clearTimeout(this.t);
+        /* after the fingers have left, not during — snapping the page back
+           mid-pinch is a fight, and losing a fight to a web page is worse than
+           the zoom was */
+        this.t = setTimeout(() => this.refit(), 140);
+      };
+      vv.addEventListener('resize', watch);
+      vv.addEventListener('scroll', watch);
+    },
+
+    /* the viewport as this page wants it, with a maximum-scale whose exact
+       value is meaningless and whose CHANGING is the whole mechanism */
+    clamp() {
+      this.flip = 1 - this.flip;
+      this.meta.setAttribute('content',
+        `${this.base}, maximum-scale=${this.flip ? '1.0' : '1.0001'}, user-scalable=no`);
+    },
+
+    refit() {
+      const vv = window.visualViewport;
+      if (!vv || vv.scale <= 1.02) return;
+      this.clamp();
+      /* and the offset the zoom left behind. The page scrolls `.app`, so the
+         document itself is always at the origin — this is the visual viewport
+         being somewhere other than over it. */
+      if (vv.offsetTop || vv.offsetLeft) scrollTo(0, 0);
+    },
+  };
+
   /* ======================================================== boot ======== */
 
   function boot() {
@@ -12971,6 +13473,8 @@
     /* last, so the handle mounts above the furniture it sits beside */
     Deck.init();
     Peek.init();
+    /* after the page has built, because it asks whether this one has a canvas */
+    Pinch.init();
     observeReveals();
 
     /* One frame loop. It keeps running while the reveal is still easing toward
@@ -13059,6 +13563,25 @@
       ax: +Bricks.ax(r).toFixed(1), ay: +Bricks.ay(r).toFixed(1),
     }));
     window.__brickU = () => Bricks.U;
+    /* IS ANYTHING STILL BEING HELD? The one question a screenshot cannot
+       answer and the one the stuck-drag bug turned on. Every flag that has to
+       come down when a press ends, read straight off the objects that own
+       them: Drag's live gesture, Bricks' held record, each item's dragging
+       flag, each record's gesture, and the classes on the page. A release that
+       leaves any of these set is the bug, whatever it looks like. */
+    window.__brkState = () => ({
+      active: !!Drag.active,
+      held: Bricks.held ? Bricks.recs.indexOf(Bricks.held) : -1,
+      heldSet: (Bricks.heldSet || []).length,
+      gest: Bricks.recs.reduce((n, r) => n + (r.gest ? 1 : 0), 0),
+      dragging: Bricks.recs.reduce((n, r) => n + (r.it.dragging ? 1 : 0), 0),
+      isDrag: document.querySelectorAll('.brk.is-drag').length,
+      isHold: document.querySelectorAll('.brk.is-hold').length,
+      auto: Bricks.recs.reduce((n, r) => n + (r.auto ? 1 : 0), 0),
+      isAuto: document.querySelectorAll('.brk.is-auto').length,
+      ghost: !!(Bricks.gl && Bricks.gl.classList.contains('is-on')),
+      hov: document.querySelectorAll('.brk.is-hov').length,
+    });
     /* THE ENTRANCE'S SCHEDULE. When each piece is due to snap, in milliseconds
        from the first throw, as the loop worked it out — the rolls, the floor
        that keeps two placements from crowding, and the margin that keeps the
@@ -13081,6 +13604,12 @@
         side: p.g && p.g.wall ? (p.side || Bricks.wallSide(p.g, p, g.set)) : null,
         blocked: !!p.blocked,
         d: +p.d.toFixed(1),
+        /* where the ghost is standing, so a test can compare the promise with
+           what the release actually did rather than trusting they agree */
+        tx: p.tx == null ? null : +p.tx.toFixed(1),
+        ty: p.ty == null ? null : +p.ty.toFixed(1),
+        seat: p.cx == null ? null : `${p.cx},${p.cy}`,
+        shown: !!g.shown,
       };
     };
     /* THE HERO'S COLLISION GEOMETRY, FROM THE OUTSIDE.

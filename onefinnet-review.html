@@ -46,8 +46,19 @@ p.body{margin:0 0 9px;color:var(--ink2)}
 .img a:hover{text-decoration:underline}
 .none{color:var(--dim);font-style:italic;font-size:13.5px}
 code{background:#f0eeea;padding:1px 5px;border-radius:4px;font-size:12.5px}
-</style><link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="assets/img/favicon.svg">
+</style>
+<!-- The mark follows the reader's system theme, not the site's. favicon.svg
+     carries the media query inside it, which Chrome and Firefox honour;
+     Safari renders SVG favicons but ignores their CSS, so the dark copy is
+     also linked with a media attribute it does understand. The PNG is for
+     anything that cannot take an SVG at all, and favicon.ico at the root
+     answers the request browsers make whether it is linked or not. The
+     apple-touch icon has to be a PNG — iOS will not take the SVG — and is
+     full-bleed square because iOS rounds the corners itself. -->
+<link rel="icon" href="assets/img/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ishaan Gupta">
 <meta property="og:title" content="Onefinnet review — Ishaan Gupta">
