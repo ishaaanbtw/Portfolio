@@ -8094,13 +8094,7 @@ body.past-hero .sel { opacity: 0; }
   --app-x: 0px;
   --app-y: 0px;
   --app-s: 1;
-  /* ONE MORE TERM IN THE SAME TRANSFORM. The entrance holds the page a slide
-     below where it belongs and then puts it back, and it does that here
-     rather than by writing `transform` on `.app` — which is the deck's, and
-     overriding it would have quietly stopped the menu from moving the page
-     for the rest of the session. Zero on every load that is not an entrance,
-     and zero again the moment this one has landed. */
-  --wake-y: 0px;
+
   --app-r: 0px;
   --app-lit: 0;
 
@@ -8184,7 +8178,7 @@ body.deck-open {
     -1px 0 0 rgba(20, 16, 12, calc(0.05 * var(--frame))),
     -10px 0 26px -12px rgba(20, 16, 12, calc(0.16 * var(--frame))),
     -34px 0 70px -34px rgba(20, 16, 12, calc(0.26 * var(--frame)));
-  transform: translate3d(var(--app-x), calc(var(--app-y) + var(--wake-y)), 0) scale(var(--app-s));
+  transform: translate3d(var(--app-x), var(--app-y), 0) scale(var(--app-s));
   transition: transform var(--deck-move), border-radius var(--deck-move);
 }
 
@@ -9928,16 +9922,18 @@ textarea,
 
 /* ==========================================================================
    44. THE ENTRANCE
-   A construction drawing becoming a real object, and then the page sliding up
-   through it.
+   A construction drawing becoming a real object, and then the sheet it is
+   drawn on being lifted off the page that was underneath it all along.
 
-   The sheet is opaque, and that is the whole reason this section is short. The
-   entrance it replaces was a transparent layer over a live page, so the page's
-   paper, its dot field and the sky pane behind it all had to be stood down and
-   kept in phase across an edge that was moving — a dozen rules whose only job
-   was to stop two identical backgrounds from disagreeing. This one covers the
-   screen. Nothing underneath it is touched, because nothing underneath it can
-   be seen.
+   The sheet is opaque, and nothing under it moves. Those two facts are why
+   this section is a third of what it was. The first entrance was a
+   transparent layer over a live page, so the paper, the dot field and the sky
+   pane all had to be stood down and kept in phase across a moving edge. The
+   second was opaque but travelled, and the page travelled with it, so the two
+   had to be welded by arithmetic and the page's real background only arrived
+   at the end of the journey. This one is opaque AND still: the page is at its
+   final position, with its own background, from the first frame, and the only
+   animated property in the whole entrance is one translate on one element.
    ========================================================================== */
 
 /* --- THE FIRST PAINTED FRAME IS ALREADY DARK -----------------------------
@@ -9963,59 +9959,47 @@ html.wake-armed body {
    is visible again in the same tick. */
 html.wake-armed body:not(.waking) > * { visibility: hidden; }
 
-/* --- THE PAGE, HELD ONE SCREEN LOW ---------------------------------------
-   `.app` is the whole document. It starts pushed down by `--slide` and is put
-   back on the same curve, at the same moment, as the sheet leaves — which is
-   what makes the two one movement instead of two.
+/* --- THE PAGE IS NOT HELD, AND THAT IS THE WHOLE ARCHITECTURE -------------
+   There used to be a dozen rules here, and all of them were in service of one
+   idea: the sheet goes up by a viewport, the page comes up from a viewport
+   below on the same curve at the same instant, and their edges are welded by
+   arithmetic so no band of anything is ever exposed between them.
 
-   `--slide` is a whole viewport plus a cell or two (see `Boot.arm`), so the
-   sheet's lower edge is at or below the bottom of the screen and the page's
-   upper edge is at or below that, for every frame of the journey. They cannot
-   come apart: the gap between them is `--slide` minus the viewport, which is
-   never negative. Nothing has to be hidden behind them. */
-body.waking { --wake-y: var(--slide, 100vh); }
-/* AND IT IS NOT EASED INTO. `.app` transitions its transform for the deck's
-   sake, which would turn "the page starts a screen low" into "the page slides
-   down and then back up again". Off until the journey it is there for. */
-body.waking:not(.sliding):not(.landed) .app,
-body.waking:not(.sliding):not(.landed) .sig { transition: none; }
-/* AND BOTH ARE PROMOTED FOR THE WHOLE OF THE ENTRANCE, not from the frame the
-   slide starts. `will-change` announced at the moment a transition begins is
+   The arithmetic was exact and the feeling was wrong. Two surfaces travelling
+   is two surfaces travelling however well they are synchronised — you watch a
+   loading screen leave and a homepage arrive, in that order, and the join
+   between them is the thing you notice. It also meant the page's real
+   background, its paper and its dot field, only reached the screen at the END
+   of the entrance, arriving from below behind the charcoal one: two
+   backgrounds, in sequence, which is the clumsiness this whole section was
+   built to hide and could not.
+
+   So nothing underneath moves. `.app` sits at zero from the first frame, laid
+   out, revealed, its bricks already fallen, its furniture already where its
+   furniture goes. There is one transform in this entrance and it belongs to
+   the sheet. There is one background and it belongs to the page — `wake-armed`
+   is taken off the root the moment the sheet is mounted (`Boot.begin`), so the
+   charcoal exists only for the few milliseconds before there is an opaque
+   thing to cover them with, and what is behind the sheet for the whole build
+   is the same paper the reader ends up looking at.
+
+   That deletes the travel, the welding, the `--wake-y` term in `.app`'s
+   transform, the suppression of the sky pane behind the join, and the
+   suppression of the window's own frame while it was arriving into itself.
+   None of it has anything to do any more. */
+
+/* PROMOTED WHILE NOTHING IS MOVING — and only the sheet, because only the
+   sheet moves. `will-change` announced at the moment a transition begins is
    announced too late to be useful: the layer is created and the content
-   rasterised on the first frame of the movement, which is the frame that then
+   rasterised on the first frame of the movement, which is then the frame that
    runs long. Declared here it is paid for while the sheet is standing still
    and nobody is looking at anything but four bricks. */
-body.waking:not(.landed) .app,
 body.waking:not(.landed) .sig { will-change: transform; }
-body.waking.sliding,
-body.landed { --wake-y: 0px; }
-/* both of them on the same curve, because they are one movement */
-body.waking.sliding .app,
-body.waking.sliding .sig {
-  transition: transform var(--slide-ms, 470ms) cubic-bezier(0.58, 0.02, 0.16, 1);
-}
-
-/* AND NO FRAME AROUND IT. `.app` is also the window: a rounded box with a
-   shadow cast off its leading edge, which is right when it fills the viewport
-   and wrong when it is arriving into one. Off until it has landed. */
-body.waking:not(.landed) .app { border-radius: 0; box-shadow: none; }
-
-/* AND NOTHING PALE BEHIND THE JOIN. The two edges are welded by arithmetic —
-   the travel is exactly one viewport, so the sheet's lower edge and the page's
-   upper edge resolve to the same number on every frame — but they are two
-   composited layers and two layers can round a fractional viewport apart by a
-   pixel. Whatever is behind them at that hairline is `.pane`, the sky layer,
-   which is fixed at the very back and picks up an opaque `#f1efec` from the
-   image-pane rule it shares a class name with. Stand it down and the only
-   thing that can show through a rounding error is `body`, which for the length
-   of the entrance is the same charcoal as the sheet. A seam you cannot see is
-   cheaper than a seam you have to prevent. */
-body.waking:not(.landed) .pane { visibility: hidden; }
 
 /* THE PAGE DOES NOT FADE UP UNDER ITS OWN ARRIVAL. `.sheet` carries a 700ms
    `sheetIn` — opacity from zero, ten pixels of travel — which is the right
-   entrance when the page appears all at once and a redundant one here. The
-   travel above has that job now. */
+   entrance for a page that appears all at once, and this one does not appear
+   at all. It is already here. */
 body.waking .sheet { animation: none; }
 
 /* --- LEAVING ---------------------------------------------------------------
@@ -10044,15 +10028,62 @@ body.waking .sheet { animation: none; }
   position: fixed;
   inset: 0;
   z-index: 400;
-  pointer-events: none;
+  /* AND IT SWALLOWS THE POINTER, which the old sheet did not have to. There
+     was nothing under that one — the page was a whole viewport below it — so
+     it could be a hole. This one has a live, laid-out, interactive homepage
+     directly beneath it from the first frame, and a click that went through
+     would land on a brick nobody can see. It goes back to being a hole on the
+     frame it starts leaving, which is the frame the hero becomes yours. */
+  pointer-events: auto;
   background-color: #30363d;
   background-image: radial-gradient(135% 105% at 50% 44%, #343a42 0%, #2d3239 100%);
+  transform: translate3d(0, 0, 0);
+  transition: transform var(--sig-ms, 540ms) cubic-bezier(0.25, 1, 0.5, 1);
 }
-/* THE SAME VARIABLE AS THE PAGE, so the two cannot come apart: one custom
-   property changes, both transforms resolve from it, and both animate over the
-   same duration on the same curve. At rest that is `slide - slide`, nothing;
-   once the page is back it is `0 - slide`, one screenful up and gone. */
-.sig { transform: translate3d(0, calc(var(--wake-y, 0px) - var(--slide, 100vh)), 0); }
+/* AND IT IS NOT EASED INTO ITS RESTING POSE. The transition above exists for
+   exactly one movement; before that movement there is nothing to interpolate,
+   and a live transition during the build is a transition waiting for an
+   accident. */
+body.waking:not(.sliding) .sig { transition: none; }
+
+/* --- THE EXIT: ONE PROPERTY, ONE DIRECTION, ONE CURVE --------------------
+   A hundred percent of its own height, straight up, and nothing else. No fade,
+   no wipe, no mask, no clip. Opacity is 1 on every frame of it — a surface
+   that dissolves is a layer being switched off, and a surface that travels is
+   an object being taken off a table. Only the second one leaves a page behind
+   instead of replacing it.
+
+   The curve is a quartic ease-out, and it was a quintic first. A quintic is
+   at full speed inside two frames and has covered seven eighths of a viewport
+   before the third — which is not a fast movement, it is a cut with a tail on
+   it, and a sheet that is gone before you have seen it move is a sheet you did
+   not watch leave. A quartic keeps the same decisive attack and gives the
+   travel about three hundred milliseconds of legible movement before it
+   settles out, which is what the reference does and why the reference reads as
+   an object rather than as a state change. No overshoot and no bounce: the
+   sheet is not landing anywhere, it is leaving. */
+body.sliding .sig {
+  transform: translate3d(0, -100%, 0);
+  pointer-events: none;
+}
+
+/* --- AND THE DRAWING RECEDES A HAIR AS IT GOES ---------------------------
+   The only depth in the transition, and it is on the contents of the sheet
+   rather than on the sheet: scaling `.sig` itself would inset its own edges
+   and expose a two-pixel sliver of the page down either side of it for the
+   length of the journey, which is exactly the seam this refactor exists to
+   remove. Eight thousandths, on the same clock and the same curve — not
+   enough to read as a zoom, just enough that the object is travelling away
+   from you rather than merely upward. */
+.sig__stage {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 42%;
+}
+body.sliding .sig__stage {
+  transform: scale(0.992);
+  transition: transform var(--sig-ms, 540ms) cubic-bezier(0.25, 1, 0.5, 1);
+}
 
 /* --- THE STENCIL ----------------------------------------------------------
    The whole finished assembly, drawn once, hairline, at a fifth of the ink,
@@ -10221,9 +10252,7 @@ body.waking.awake .rv { opacity: 1; transform: none; }
   /* never armed in this mode — the inline script tests for it too — but if it
      somehow were, the page is where it belongs and there is nothing to watch */
   html.wake-armed, html.wake-armed body { background-color: revert-layer; background-image: revert-layer; }
-  body.waking { --wake-y: 0px; }
   body.waking .rv { opacity: 1; filter: none; transform: none; transition: none; }
-  body.waking .pane { visibility: visible; }
   .sig { display: none; }
 }
 

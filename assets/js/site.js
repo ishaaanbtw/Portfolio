@@ -7410,6 +7410,7 @@
 
       const G = 2750;
       const CAP = 2600;                   /* a backstop, never the plan */
+      this.rushed = false;                /* and the entrance's own stop */
       const t0 = performance.now();
       let ticks = 0;
 
@@ -7577,7 +7578,10 @@
 
         const resting = moving.every((b3) => b3.fixed || (b3.live && b3.y >= b3.floor - 1.5
           && Math.abs(b3.vy) < 18 && Math.abs(b3.vx) < 18 && Math.abs(b3.va) < 26));
-        if (!resting && el < CAP) { requestAnimationFrame(step); return; }
+        /* `rushed` is the entrance asking for the room to be finished NOW —
+           see `Boot.finish`. It ends the simulation the way the cap does, on
+           the same line, so every guarantee below it still runs. */
+        if (!resting && el < CAP && !this.rushed) { requestAnimationFrame(step); return; }
 
         /* --- AND NOTHING IS LEFT INSIDE ANYTHING ELSE ----------------------
 
@@ -10429,8 +10433,8 @@
 
   /* ============================================== 5c2c. the entrance =====
 
-     A CONSTRUCTION DRAWING BECOMING A REAL OBJECT, AND THEN THE PAGE
-     SLIDING UP THROUGH IT.
+     A CONSTRUCTION DRAWING BECOMING A REAL OBJECT, AND THEN BEING LIFTED OFF
+     THE PAGE IT WAS DRAWN ON TOP OF.
 
      On a first visit the screen is a single sheet of dark charcoal — no dots,
      no paper, no type, no spinner. A stencil is drawn on it first: the whole
@@ -10443,8 +10447,9 @@
      it stops being a drawing: colour floods down through the geometry it was
      drawn into, the hairline turns from cream into the brick's own edge, a
      contact shadow appears underneath it, and the piece compresses and comes
-     back the way plastic does. When the last one lands the whole sheet
-     travels upward and the page comes up from below with it.
+     back the way plastic does. The finished object is given a fifth of a
+     second to be looked at, and then the sheet it is drawn on is taken
+     straight up off the screen and the homepage is underneath it.
 
      ONE CREATIVE MOVE, AND ONLY ONE. Everything up to the snap is a technical
      drawing rendered honestly; the snap is where the drawing becomes plastic.
@@ -10459,12 +10464,38 @@
      covered when the piece lands on it — the piece is opaque and occupies
      exactly that box. Empty slot, brick approaches, snap, slot filled.
 
-     THE SHEET IS OPAQUE, AND THAT SIMPLIFIES EVERYTHING. The old entrance was
-     transparent, so the page's paper, its dot field and the sky pane behind it
-     all had to be suppressed and kept in phase across a moving edge. This one
-     covers the screen, so nothing underneath it needs touching: the travel is
-     exactly one viewport, the sheet's lower edge and the page's upper edge
-     start coincident and stay coincident, and no band is ever exposed.
+     THE SHEET IS A SHEET, AND THE PAGE IS UNDERNEATH IT THE WHOLE TIME.
+
+     This is the part that was rebuilt, and it is worth being exact about what
+     changed, because the old version was correct and still read wrong.
+
+     It used to be TWO movements, welded. The sheet went up by exactly one
+     viewport; the page, which had been pushed down by exactly one viewport,
+     came up by the same distance on the same curve at the same instant. Their
+     edges were guaranteed coincident to the pixel, no band was ever exposed,
+     and the whole thing was a page arriving from below at the same time as a
+     loading screen left from above. Two surfaces moving is two surfaces
+     moving, however tightly they are synchronised: what you saw was a loader
+     finish and a homepage turn up, in that order, with a join. And because the
+     page carried its own paper and its own dot field up with it, its real
+     background reached the screen at the END of the entrance, behind the
+     charcoal one — two backgrounds, in sequence.
+
+     Now there is ONE moving thing and ONE background. `.app` is at zero from
+     the first frame and never leaves it. The charcoal comes off the document
+     the moment the sheet is mounted (`begin`), so from that point what is
+     behind the sheet is the page's own paper, its own dots, its own furniture
+     — the same surface the reader is looking at two seconds later. The type
+     reveals and the eighteen bricks fall while all of it is covered, so by the
+     time anything is visible the homepage is not arriving, it is standing
+     still and has been for a second. The sheet lifts, and the page is not
+     delivered by that movement — it is uncovered by it.
+
+     What it costs: the fall happens where nobody watches it. That is the
+     trade, and it is the right one. A room you are shown is worth more than a
+     room you are shown being filled, and the brief for this entrance was never
+     "watch the page assemble" — it was "the construction finishes and the
+     portfolio is revealed".
 
      THE PIECES ARE DRAWN HERE, not by `Bricks.art`. The canvas draws bricks
      flat and face on, which is right for a desk you can put things on and
@@ -10556,15 +10587,15 @@
 
   const Boot = {
     on: false,
-    fall: null,
-    freed: false,
+    woke: false,
+    stage: null,
 
     /* --- the clock, in ms from the sheet appearing ---------------------- */
     T: {
-      hold: 145,        /* the finished object sits still this long  */
-      wake: 215,        /* then the type starts arriving             */
-      slide: 470,       /* and the sheet takes this long to leave    */
-      fall: 1.02,       /* the hero's fall is let go this far into it */
+      hold: 200,        /* the finished object sits still this long  */
+      ready: 90,        /* the page underneath is let go this soon   */
+      exit: 580,        /* and the sheet takes this long to leave    */
+      wait: 340,        /* the longest the exit waits before ending the fall */
     },
 
     /* --- THE CURVES ---------------------------------------------------------
@@ -10641,23 +10672,16 @@
         return;
       }
       this.on = true;
-      /* HOW FAR THE PAGE TRAVELS: EXACTLY ONE VIEWPORT, AND EXACTLY IS THE
-         POINT. The sheet is fixed and a viewport tall, so its lower edge sits
-         at `travel - slide + viewport` and the page's upper edge at `travel`.
-         Those are the same number only when `slide` equals the viewport — any
-         other distance leaves a band of the difference between them, which is
-         off screen at both ends of the journey and drifts across the middle of
-         it. One viewport, and the two edges are welded for every frame.
-
-         Nothing is repainted during the journey — the page's own dots are
-         inside `.app` and travel with it, back to the zero they started at —
-         so there is no grid phase to preserve and no reason to round. */
-      this.SLIDE = innerHeight;
-      document.body.style.setProperty('--slide', `${this.SLIDE}px`);
-      document.body.style.setProperty('--slide-ms', `${this.T.slide}ms`);
-      /* the distance before the class that uses it, so the first computed
-         style is the real one rather than the stylesheet's fallback */
+      /* NOTHING IS MOVED OUT OF THE WAY. The old entrance pushed `.app` down
+         by exactly one viewport here and put it back as the sheet left, so the
+         two edges were welded for every frame of the journey. The arithmetic
+         was right; the idea was wrong. A page that travels is a page that
+         arrives, and this one is meant to have been here all along. So the
+         only number the exit needs is how long it takes, and the only thing
+         that reads it is the sheet. */
+      document.body.style.setProperty('--sig-ms', `${this.T.exit}ms`);
       document.body.classList.add('waking');
+
       /* AND THE DRAWING GOES UP NOW, BEFORE THE PAGE IS BUILT. It used to be
          mounted from the middle of `Pages.home`, which put it on screen a
          quarter of a second later than it needed to be — a quarter of a second
@@ -10667,36 +10691,50 @@
          time the browser spends building the page underneath into the beat
          before the first throw instead of into dead air. */
       this.begin();
+
+      /* AND THE PAGE UNDERNEATH IS LET GO A BEAT LATER. `Pages.home` runs on
+         the next line of `boot()`; this fires just after it, which is early
+         enough that the reveal and the fall both finish inside the build and
+         late enough that neither of them is competing with the sheet's own
+         first paint. */
+      this.ready = setTimeout(() => this.wakePage(), this.T.ready);
     },
 
+    /* THE FALL IS NOT HELD ANY MORE, AND THAT IS THE CHANGE.
+
+       This used to take `Bricks.rain` and keep it until the page had slid up
+       into view, on the reasoning that a brick should fall into a room you can
+       see. The room is not arriving now — it is already here, under the sheet
+       — so the fall belongs where everything else about the page belongs:
+       before the reveal, not after it. It runs while four bricks are being
+       thrown at a stencil on top of it, finishes in that time, and by the time
+       the sheet lifts the canvas is a settled arrangement rather than a
+       shower. `finish` waits on `data-arriving` for the loads where it is not.
+
+       The signature is unchanged because `Bricks.init` is unchanged: it asks,
+       and the answer is now always yes-and-here-it-is. */
     hold(fn) {
       if (!this.on) return false;
-      /* AND PARK THEM. `Bricks.init` has just laid all of them out at their
-         composed positions, and `rain()` — which is what normally throws them
-         above the fold before anyone sees them there — is the thing being
-         held. The sheet is opaque so none of this is visible either way, but a
-         piece left standing at its composed spot would be on screen the
-         instant the page arrives and would then fall from there, which is not
-         the entrance the hero has. `rain()` re-parks them at its own entry
-         points when it runs, so this costs nothing. `is-settle` because `.drg`
-         eases every transform over 150ms and the park must be instant. */
-      /* AND NOT EVERY PAGE HAS ANY. The home page and the 404 both build a
-         canvas full of them; Work and the case studies do not, and on those
-         this is simply a page being held one screen low. */
-      (Bricks.recs || []).forEach((r) => {
-        r.it.node.classList.add('is-settle');
-        Bricks.moveTo(r, Bricks.px(r), -1400);
-      });
-      if (this.freed) { fn(); return true; }
-      this.fall = fn;
+      fn();
       return true;
     },
 
-    release() {
-      this.freed = true;
-      const f = this.fall;
-      this.fall = null;
-      if (f) f();
+    /* AND THE TYPE ARRIVES ON THE SAME EARLY CLOCK, for the same reason.
+
+       `.awake` releases the reveal — nineteen elements, opacity and five
+       pixels of travel. On the old entrance it was fired a beat into the slide
+       so the page was not blank when it landed. There is no landing now, so it
+       fires while the sheet is up: the reveal is over, in full, before anybody
+       can see the elements it belongs to. That is the brief. The page is not
+       supposed to make an entrance; it is supposed to have been here.
+
+       Not on the same tick as the mount, though — a beat later, so the first
+       paint of the sheet is not sharing a frame with nineteen elements being
+       promoted and rasterised. */
+    wakePage() {
+      if (this.woke) return;
+      this.woke = true;
+      document.body.classList.add('awake');
     },
 
     /* --- COLOUR -------------------------------------------------------------
@@ -10906,11 +10944,43 @@
     begin() {
       if (!this.on || this.el) return;
       const parts = this.layout();
-      if (!parts.length) return;
+      if (!parts.length) { this.on = false; this.wakePage(); return; }
 
+      /* --- THE SHEET, AND ONE ELEMENT INSIDE IT ---------------------------
+         `.sig` is the surface and does nothing but sit there and then travel.
+         `.sig__stage` holds every drawn thing on it, and exists so the exit
+         can shrink the construction by eight thousandths as it leaves without
+         shrinking the surface it is drawn on — a scale on `.sig` itself insets
+         its own edges and shows a sliver of the page down either side of it,
+         which is precisely the seam this is here to remove. */
       const layer = el('div', { class: 'sig', 'aria-hidden': 'true' });
+      const stage = el('div', { class: 'sig__stage' });
+      layer.appendChild(stage);
       document.body.appendChild(layer);
+
+      /* AND THE CHARCOAL COMES OFF THE DOCUMENT IN THE SAME TICK IT IS NO
+         LONGER NEEDED.
+
+         `wake-armed` paints the root charcoal before the first frame, and its
+         entire job is the window between that frame and this line — the
+         handful of milliseconds in which the sheet does not exist yet and the
+         page would otherwise flash paper. The sheet exists now, and it is
+         opaque, so the flag is a liability from here on: leaving it up means
+         the document's real background arrives at the END of the entrance,
+         behind a page that is already there, which is the second background
+         the whole refactor is about. Taken off here, inside the same task, so
+         no frame is ever painted between the two. What is behind the sheet
+         from this moment is the page's own paper and its own dot field, and
+         it is the same paper and the same dots the reader is looking at a
+         second and a half later. There is one background. */
+      document.documentElement.classList.remove('wake-armed');
+
       this.el = layer;
+      this.stage = stage;
+      /* AND THE PAGE UNDERNEATH IS SEALED OFF. It is live, laid out and one
+         click from a brick nobody can see, so the sheet takes the pointer
+         (`.sig` is `pointer-events: auto`) and the scroll is pinned. Both are
+         given back on the frame the sheet starts to leave. */
       App.lock(true);
 
       const T = this.T;
@@ -10944,7 +11014,7 @@
              the first piece is on its way. */
           + `--in:${60 + i * 78}ms;`;
         g.innerHTML = p.line;
-        layer.appendChild(g);
+        stage.appendChild(g);
         p.gh = g;
         p.rank = i + 1;
       });
@@ -10970,7 +11040,7 @@
         q.innerHTML = `<div class="sig__wipe">${p.solid}</div>`
           + `<div class="sig__ln">${p.line}</div>`;
         n.appendChild(q);
-        layer.appendChild(n);
+        stage.appendChild(n);
         p.n = n; p.q = q; p.ln = q.lastChild;
         /* the first pose, written before the element has ever been painted */
         p.n.style.transform =
@@ -11204,47 +11274,72 @@
       requestAnimationFrame(wait);
     },
 
-    /* --- and then the page moves ---------------------------------------- */
+    /* --- AND THEN THE SHEET LEAVES -------------------------------------
+       Nothing else does. See `slide`. */
     finish(forced) {
       if (this.ending) return;
       this.ending = true;
       clearTimeout(this.guard);
       clearTimeout(this.timer);
-      /* the loop is NOT cancelled here — the last piece may still be finishing
-         a settle nobody can see, and stopping it would freeze that piece a
-         hundredth of a percent off true */
-      this.slide(forced);
+      if (forced) { this.slide(true); return; }
+
+      /* AND IT WAITS FOR THE ROOM UNDERNEATH TO HAVE STOPPED MOVING.
+
+         The page's own arrival — nineteen revealed elements and eighteen
+         bricks thrown down a canvas — was let go a beat after the sheet went
+         up, and it has had the whole build to happen in. Usually it is long
+         over by here. Occasionally, on a cold cache or a slow machine, the
+         last brick is still rolling, and a brick still rolling when the sheet
+         lifts is the single thing this entrance must never show: it turns a
+         page that was already there into a page that is arriving.
+
+         So the exit asks, and then it insists. `data-arriving` is set by
+         `Bricks.rain` for exactly as long as the fall is live, and the sheet
+         holds while it is there — but past `wait` the answer is not a longer
+         hold, it is a shorter fall. Waiting on a physics loop to converge
+         makes the length of the entrance a property of a random roll, and the
+         only thing worse than a brick still moving is a loading screen that
+         will not go. `Bricks.rushed` ends the simulation on its next frame and
+         lets its own resolution pass run exactly as it would have — the one
+         that guarantees no piece is left inside another — so what is uncovered
+         is a finished arrangement either way. Bounded, and always static. */
+      const t0 = performance.now();
+      const settled = () => {
+        if (this.gone) return;
+        if (!document.body.dataset.arriving) { this.slide(false); return; }
+        if (performance.now() - t0 > this.T.wait) Bricks.rushed = true;
+        requestAnimationFrame(settled);
+      };
+      settled();
     },
 
-    /* THE SLIDE IS ONE MOVEMENT AND EVERYTHING IS IN IT. The page comes up
-       from a whole screen below; the sheet, which is fixed to the window,
-       goes up by the same distance at the same moment on the same curve, so it
-       holds still relative to the page and carries the construction off the
-       top of the screen with it — the object is not dismissed, it leaves
-       because the view moved past it. Nothing fades and nothing is replaced.
+    /* THE EXIT IS ONE OBJECT MOVING AND IT IS THE SHEET.
 
-       AND THE HERO'S OWN FALL IS LET GO LATE. Two thirds of the way up, when
-       there is enough of the page on screen for a brick to be falling into
-       something. Earlier than that and the fall has already happened by the
-       time anyone can see where it happened. */
+       This is the whole point of the refactor. It used to be two movements
+       welded by arithmetic: the sheet went up a viewport and the page came up
+       from a viewport below, on the same curve, at the same instant, their
+       edges guaranteed coincident to the pixel. It was correct and it read as
+       two surfaces — a loading screen leaving and a homepage arriving, one
+       after the other, which is what the eye reports however tightly the two
+       are synchronised.
+
+       Now the page never moves. It has been sitting at zero since the first
+       frame, laid out, revealed, its bricks fallen, its toolbar where its
+       toolbar goes, under an opaque sheet. The sheet lifts, and what is
+       underneath is not delivered by the movement — it is uncovered by it.
+       Nothing fades, nothing mounts, nothing is replaced, and there is no
+       frame anywhere in it where two backgrounds exist at once.
+
+       Everything the old exit had to choreograph — when to wake the type, when
+       to let the fall go, how to keep two dot fields in phase across a moving
+       edge — has no work to do here, because all of it already happened while
+       the sheet was standing still. */
     slide(forced) {
-      const T = this.T;
+      this.wakePage();
       document.body.classList.add('sliding');
+      /* the page is interactive from the frame the sheet starts moving: the
+         sheet stops taking the pointer in the same rule that starts it */
       App.lock(false);
-
-      /* AND BOTH OF THE PAGE'S OWN ENTRANCES ARE KEPT OUT OF THE TRAVEL.
-
-         The reveal is a transition on every revealed element and the fall is
-         eighteen bricks being thrown; either one landing in the middle of the
-         slide costs the slide frames, and the slide is a whole viewport of
-         movement that has to be clean. So the type starts two thirds of the
-         way up — late enough that most of its work happens after the page has
-         arrived, early enough that the hero is not blank when it does — and
-         the fall is let go a hair after the page has landed, which is also
-         the only order that makes sense to watch: the room arrives, and then
-         things start falling into it. */
-      setTimeout(() => document.body.classList.add('awake'), forced ? 0 : T.wake);
-      setTimeout(() => this.release(), forced ? 0 : Math.round(T.slide * T.fall));
 
       setTimeout(() => {
         this.gone = true;
@@ -11252,7 +11347,8 @@
         document.body.classList.remove('sliding');
         document.documentElement.classList.remove('wake-armed');
         if (this.el) { this.el.remove(); this.el = null; }
-      }, forced ? 40 : T.slide + 60);
+        this.stage = null;
+      }, forced ? 40 : this.T.exit + 40);
     },
   };
 
