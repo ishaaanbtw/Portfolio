@@ -99,12 +99,13 @@
        --bp-portrait  48rem    768        mobile ceiling / tablet floor
        --bp-phone     30rem    480
        --bp-small     22.5rem  360        the narrowest screen designed for  */
-  --bp-desktop: 90rem;
-  --bp-laptop: 80rem;
-  --bp-tablet: 64rem;
+  /* Documented, not usable: a custom property cannot appear in a media
+     query's condition, so a stylesheet can never read one of these. The
+     numbers still have to live somewhere, and the table above this block is
+     that somewhere. Only --bp-portrait is kept, because site.js quotes it by
+     name to explain the 48rem it hard-codes; the other five were read by
+     nothing at all. */
   --bp-portrait: 48rem;
-  --bp-phone: 30rem;
-  --bp-small: 22.5rem;
 
   --step--1: clamp(0.75rem, 0.73rem + 0.1vw, 0.8125rem);
   --step-0: clamp(0.875rem, 0.85rem + 0.12vw, 0.9375rem);
@@ -561,8 +562,6 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 .nav[data-ink='light'] a { text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55); }
 .nav[data-ink='dark'] a { text-shadow: 0 1px 12px rgba(255, 255, 255, 0.6); }
 
-.nav-toggle { display: none; }
-
 /* ==========================================================================
    5. HERO SHELL
    The home hero is now the Figma canvas (section 26). This just keeps the CTA
@@ -602,19 +601,14 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 }
 .canvas__cta .btn--ghost:hover { --btn-fg: var(--ink); }
 
-.hero__hint {
-  position: absolute;
-  z-index: 2;
-  left: 50%; bottom: 2.25rem;
-  transform: translateX(-50%);
-  font-size: var(--step--1);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-ghost);
-  animation: bob 2.6s ease-in-out infinite;
-  pointer-events: none;
-}
-
+/* THIS SHADOWS THE @keyframes bob ABOVE, AND THE SKY IS CURRENTLY USING IT.
+   Two @keyframes can share a name and the LAST one wins, so `.sky-root
+   .clouds i span` — which asks for `bob` to breathe vertically and scale —
+   resolves to this instead and is being translated 50% to its own left. That
+   is a real bug and it is visible: it is why the clouds sit where they do.
+   It is left exactly as it is because this pass is not allowed to change what
+   the site looks like, and removing or renaming either one WOULD. Fixing it
+   is a one-line rename, and it needs its own before/after check. */
 @keyframes bob {
   0%, 100% { opacity: 0.4; transform: translate(-50%, 0); }
   50%      { opacity: 1;   transform: translate(-50%, 4px); }
@@ -1435,127 +1429,6 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 .reveal.is-in { opacity: 1; transform: none; }
 
 /* ==========================================================================
-   11. WORK CARDS
-   ========================================================================== */
-
-.projects { display: grid; gap: 1px; background: var(--line); border-top: 1px solid var(--line); }
-
-.project {
-  --accent: var(--ink);
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.45rem;
-  padding: clamp(1.4rem, 3.5vh, 2.2rem) clamp(1rem, 3vw, 1.6rem);
-  background: var(--paper);
-  transition: background 360ms ease, transform 560ms var(--spring);
-}
-
-.project::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 2px;
-  background: var(--accent);
-  transform: scaleY(0);
-  transform-origin: top;
-  transition: transform 460ms var(--ease);
-}
-
-.project:hover { background: var(--paper-2); }
-.project:hover::before { transform: scaleY(1); }
-
-.project__top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem; }
-.project__title { font-size: var(--step-2); line-height: 1.1; letter-spacing: -0.024em; font-weight: 500; }
-.project__year { color: var(--ink-dim); font-size: var(--step--1); font-variant-numeric: tabular-nums; margin-left: auto; }
-.project__role { color: var(--accent); font-size: var(--step--1); font-weight: 500; }
-.project__summary { color: var(--ink-2); max-width: 34rem; line-height: 1.5; }
-
-/* PROJECT-CARD CHIPS, AND THEY ARE SCOPED NOW.
-
-   `.tag` was a bare class here and `.block .tag` is the story's design-tool
-   selection around the word "desirable" — two unrelated things a thousand lines
-   apart sharing one name. Specificity settles the properties both of them
-   declare, and says nothing about the three only this one declared: the story's
-   selection was silently inheriting `text-transform: uppercase`, a 999px radius
-   and a border from here, which is precisely what turned a tight rectangular
-   selection into a rounded uppercase pill. Scoped to its own container, which
-   is the only place it is ever used. */
-.tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
-.tags .tag {
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0.16rem 0.5rem;
-}
-
-/* ==========================================================================
-   12. PEOPLE
-   ========================================================================== */
-
-.group { margin-top: clamp(2rem, 6vh, 3.5rem); }
-
-.group__label {
-  font-size: var(--step--1);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  padding-bottom: 0.7rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.person {
-  display: grid;
-  grid-template-columns: minmax(8rem, 12rem) 1fr;
-  gap: 1rem;
-  align-items: baseline;
-  padding: 0.9rem 0;
-  border-bottom: 1px solid var(--line-soft);
-  transition: transform 560ms var(--spring);
-}
-.person:hover { transform: translateX(5px); }
-.person__name { font-weight: 500; }
-.person__note { color: var(--ink-dim); line-height: 1.5; }
-
-@media (max-width: 40rem) {
-  .person { grid-template-columns: 1fr; gap: 0.2rem; }
-}
-
-/* ==========================================================================
-   13. WRITING
-   ========================================================================== */
-
-.posts { border-top: 1px solid var(--line); }
-
-.post {
-  display: block;
-  padding: clamp(1.2rem, 3vh, 1.9rem) 0;
-  border-bottom: 1px solid var(--line-soft);
-  transition: transform 560ms var(--spring);
-}
-.post:hover { transform: translateX(5px); }
-
-.post__meta {
-  display: flex; gap: 0.75rem; align-items: center;
-  font-size: var(--step--1);
-  color: var(--ink-dim);
-  font-variant-numeric: tabular-nums;
-}
-.post__title {
-  font-size: var(--step-2);
-  line-height: 1.14;
-  letter-spacing: -0.024em;
-  font-weight: 500;
-  margin: 0.3rem 0 0.45rem;
-  max-width: 30rem;
-}
-.post:hover .post__title { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
-.post__excerpt { color: var(--ink-dim); max-width: 34rem; line-height: 1.55; }
-
-/* ==========================================================================
    14. FOOTER
    ========================================================================== */
 
@@ -2325,56 +2198,6 @@ body.is-field .people-trigger {
   .field__card { transform: none !important; }
 }
 
-.pager__side {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  padding: 0.75rem 0;
-  background: none;
-  border: 0;
-  cursor: pointer;
-  text-align: left;
-  color: inherit;
-  font: inherit;
-  transition: transform 460ms var(--spring), opacity 260ms var(--ease);
-}
-.pager__side--next { text-align: right; align-items: flex-end; }
-
-.pager__dir {
-  font-size: var(--step--1);
-  color: var(--ink-dim);
-  transition: color 260ms var(--ease);
-}
-
-.pager__name {
-  font-size: clamp(1.15rem, 2.4vw, 1.6rem);
-  line-height: 1.2;
-  letter-spacing: -0.015em;
-  color: var(--ink);
-}
-
-.pager__meta {
-  font-size: var(--step--1);
-  color: var(--ink-dim);
-}
-
-/* the arrow is drawn on the direction label, so it travels with the hover */
-.pager__side--prev .pager__dir::before { content: '\2190\00a0'; }
-.pager__side--next .pager__dir::after { content: '\00a0\2192'; }
-
-:root:not(.hover-cold) .pager__side--prev:hover { transform: translateX(-4px); }
-:root:not(.hover-cold) .pager__side--next:hover { transform: translateX(4px); }
-:root:not(.hover-cold) .pager__side:hover .pager__dir { color: var(--ink-2); }
-
-/* one column on a narrow drawer, next first so it stays the primary action */
-@media (max-width: 40rem) {
-  .pager__side--next { text-align: left; align-items: flex-start; order: -1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pager__side { transition-duration: 1ms; }
-}
-
 /* ==========================================================================
    23. PROJECT PAGE  (case study)
    Measured off the recording at a 1470px viewport: rail ink x26–119, content
@@ -2748,46 +2571,6 @@ body[data-page='project'] .nav { display: none; }
 }
 .vs__sub { display: block; color: var(--ink-dim); }
 
-/* --- the entrance ---------------------------------------------------------
-   The card reads left to right, so it arrives that way: the Not panel, then the
-   arrow, then each fact in turn, every one sliding in from its left.
-
-   No observer of its own. `--i` is an index the renderer writes on each part,
-   and the release is the section's existing `.is-shown` gate — so this cannot
-   drift out of step with the rest of the page, and it inherits the section's
-   own `--stag` offset rather than starting the moment the card is built.
-
-   18px, not more: at this size a longer throw reads as the row being dragged
-   into place rather than settling. */
-.stag .vs__side--no,
-.stag .vs__arrow,
-.stag .vs__row {
-  --vs-d: calc(var(--stag, 0) * 90ms + 120ms + var(--i, 0) * 70ms);
-  opacity: 0;
-  transition:
-    opacity 520ms var(--ease) var(--vs-d),
-    transform 640ms var(--spring-soft) var(--vs-d),
-    scale 640ms var(--spring-soft) var(--vs-d);
-}
-.vs__side--no { --i: 0; }
-.vs__arrow { --i: 1; }
-.stag .vs__side--no,
-.stag .vs__row { transform: translateX(-18px); }
-/* the arrow is already carrying `translate` for its centring, and `rotate` when
-   the card stacks — a transform here would be applied in the rotated space and
-   travel downward. It scales instead, which composes cleanly with both. */
-.stag .vs__arrow { scale: 0.82; }
-
-.sec.is-shown .stag .vs__side--no,
-.sec.is-shown .stag .vs__arrow,
-.sec.is-shown .stag .vs__row { opacity: 1; transform: none; scale: 1; }
-
-@media (prefers-reduced-motion: reduce) {
-  .stag .vs__side--no,
-  .stag .vs__arrow,
-  .stag .vs__row { opacity: 1; transform: none; scale: 1; transition: none; }
-}
-
 /* on the band the card lifts off it, the same step the other panels take.
    Only the four neutrals and the two accents are restated — every rule above
    reads them through the tokens, so nothing has to be duplicated. */
@@ -3056,7 +2839,7 @@ body[data-page='project'] .nav { display: none; }
   border-radius: 50%;
   background: var(--ink-ghost);
 }
-.bul li b, .bul__lead b, .lead__t b { color: var(--ink); font-weight: 600; }
+.bul li b, .bul__lead b { color: var(--ink); font-weight: 600; }
 
 /* --- the Figma frame ------------------------------------------------------
    20px radius, hairline border, soft shadow, generous padding. Hover lifts it
@@ -3385,86 +3168,6 @@ body[data-page='project'] .nav { display: none; }
 .sec--dark .spark__rule { opacity: 0.09; }
 .sec--dark .spark__base { opacity: 0.2; }
 
-/* --- the metrics entrance -------------------------------------------------
-   Cards arrive one after another; inside each, the line draws itself from left
-   to right and the end dot lands once the line reaches it. The figure counts up
-   over the same window (see Counters in site.js).
-
-   `--md` is written by JS, not declared here, so the count and the drawing share
-   one delay. The 0ms fallback below is what runs if that never happens — the
-   animation degrades to "all at once", never to "invisible".
-
-   Everything hangs off `.stag`, which only exists once Reveal has bound the
-   section. A page that never binds it renders the cards plainly rather than
-   leaving them stuck at zero opacity. */
-.mcard { --md: 0ms; }
-
-/* The cards own the entrance, so the block itself must not fade as well: two
-   nested opacity ramps multiply, and the grid arrives washed out for the length
-   of the longer one. */
-.blk-metrics.stag { opacity: 1; transform: none; filter: none; }
-
-.stag .mcard {
-  opacity: 0;
-  transform: translateY(16px);
-  transition:
-    opacity 560ms var(--ease) var(--md),
-    transform 640ms var(--spring-soft) var(--md);
-}
-.sec.is-shown .stag .mcard { opacity: 1; transform: none; }
-
-/* The chart builds in the order it would be drawn by hand: the ruling first,
-   then the line across it, then the area filling in behind, then the marker on
-   the last reading.
-
-   Each layer is named. `.mcard__spark path` used to be enough when the line was
-   the only path in the SVG — it now also matches the area fill, which would be
-   handed the line's dash animation and vanish. */
-.stag .spark__grid {
-  opacity: 0;
-  transition: opacity 420ms var(--ease) calc(var(--md) + 60ms);
-}
-/* pathLength="1" on the line makes these two values the whole of it, whatever
-   its real length — so the timing is identical across all four cards even
-   though their data traces different distances */
-.stag .spark__line {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 1000ms var(--ease) calc(var(--md) + 200ms);
-}
-.stag .spark__area {
-  opacity: 0;
-  transition: opacity 760ms var(--ease) calc(var(--md) + 420ms);
-}
-.stag .spark__halo,
-.stag .spark__dot {
-  opacity: 0;
-  transition: opacity 240ms var(--ease) calc(var(--md) + 1200ms);
-}
-.sec.is-shown .stag .spark__grid { opacity: 1; }
-.sec.is-shown .stag .spark__line { stroke-dashoffset: 0; }
-.sec.is-shown .stag .spark__area { opacity: 1; }
-.sec.is-shown .stag .spark__dot { opacity: 1; }
-.sec.is-shown .stag .spark__halo { opacity: 0.14; }   /* back to its own value, not 1 */
-
-/* --md-end is written by JS from the number of cards, so this lands after the
-   last line finishes however many there are */
-.stag .mcard__note {
-  opacity: 0;
-  transition: opacity 480ms var(--ease) var(--md-end, 1500ms);
-}
-.sec.is-shown .stag .mcard__note { opacity: 1; }
-
-@media (prefers-reduced-motion: reduce) {
-  .stag .mcard,
-  .stag .mcard__note,
-  .stag .spark__grid,
-  .stag .spark__area,
-  .stag .spark__dot { opacity: 1; transform: none; transition: none; }
-  .stag .spark__halo { opacity: 0.14; transition: none; }
-  .stag .spark__line { stroke-dasharray: none; stroke-dashoffset: 0; transition: none; }
-}
-
 .mcard__note {
   margin-top: 0.85rem;
   font-size: var(--step--1);
@@ -3706,25 +3409,6 @@ body[data-page='project'] .nav { display: none; }
   padding-top: 0.7rem;
   border-top: 1px solid var(--line-soft);
   color: var(--ink-dim);
-}
-
-/* --- staggered entrance ---------------------------------------------------
-   Each section releases its own children in order, so a block arrives as one
-   considered unit rather than the page animating all at once. */
-
-.stag {
-  opacity: 0;
-  transform: translateY(14px);
-  filter: blur(6px);
-  transition:
-    opacity 660ms var(--ease) calc(var(--stag, 0) * 90ms),
-    transform 680ms var(--spring-soft) calc(var(--stag, 0) * 90ms),
-    filter 620ms var(--ease) calc(var(--stag, 0) * 90ms);
-}
-.sec.is-shown .stag { opacity: 1; transform: none; filter: none; }
-
-@media (prefers-reduced-motion: reduce) {
-  .stag { opacity: 1; transform: none; filter: none; transition: none; }
 }
 
 /* --- the lightbox --------------------------------------------------------- */
@@ -4135,7 +3819,6 @@ body.is-lbox { overflow: hidden; }
   /* the position is written by Marquee; --dir says which way this row runs */
   transform: translate3d(0, 0, 0);
 }
-.tick__row--b .tick__lane { --dir: -1; }
 
 /* Nothing but the artwork. Each export already carries its own device frame with
    rounded corners and transparent surrounds, so a background plate, a radius and a
@@ -4487,8 +4170,6 @@ body.is-lbox { overflow: hidden; }
   --y-undo: 304px;      /* centre */
   --div-w: 32.5px;
   /* how far each object's near edge sits from the panel's inner left edge */
-  --x-pencil: 10.5px;
-  --x-note: 30.5px;
 
   position: relative;
   width: var(--p-w);
@@ -6813,7 +6494,6 @@ body.past-hero .sel { opacity: 0; }
 
   /* the two link columns still sit side by side — they are short lists, and
      stacking them would push the page down for no gain */
-  .foot__cols,
   .foot > .foot__col { break-inside: avoid; }
 
   /* Generous, consistent breathing room. One value, from the spacing scale,
@@ -6848,8 +6528,6 @@ body.past-hero .sel { opacity: 0; }
    is a third of the viewport moving, which reads as jank however smooth it is. */
 @media (max-width: 48rem) {
   :root {
-    --rv-rise: 12px;          /* was ~24px */
-    --marq-speed: 0.6;        /* the ticker eases off on a small screen */
   }
   .rv { --rv-blur: 8px; }     /* less blur to resolve = less to composite */
 }

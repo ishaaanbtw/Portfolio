@@ -448,21 +448,6 @@
         ? `rgba(0, 0, 0, ${SCRIM})`
         : `rgba(255, 255, 255, ${SCRIM})`);
 
-      /* A surface for the controls that sit on the sky, decided by the same
-         light-or-dark answer the ink was. A frosted panel over a night sky and
-         a white one over a noon sky are the same idea: put the chip on the far
-         side of mid-luminance from its own text, so a button is legible at
-         every hour without anyone choosing a colour per hour. */
-      r.setProperty('--outro-chip', useLight
-        ? 'rgba(255, 255, 255, 0.13)'
-        : 'rgba(255, 255, 255, 0.55)');
-      r.setProperty('--outro-chip-hi', useLight
-        ? 'rgba(255, 255, 255, 0.2)'
-        : 'rgba(255, 255, 255, 0.74)');
-      r.setProperty('--outro-edge', useLight
-        ? 'rgba(255, 255, 255, 0.17)'
-        : 'rgba(20, 16, 12, 0.08)');
-
       const pod = $('.timepod');
       if (pod) {
         const lbl = $('.timepod__label', pod);
@@ -4903,7 +4888,6 @@
         wrap.style.setProperty('--sticker-peelback-hover', `${d.hover ?? c.hoverPct}%`);
         wrap.style.setProperty('--sticker-peelback-active', `${d.active ?? c.activePct}%`);
         wrap.style.setProperty('--peel-direction', `${d.dir || 0}deg`);
-        wrap.style.setProperty('--sticker-shadow-opacity', d.shadow ?? c.shadow);
 
         wrap.innerHTML = this.filters(uid, d.shadow ?? c.shadow, d.light ?? c.light);
 
@@ -11872,12 +11856,6 @@
       this.invalidate(false);
     },
 
-    clearSurface(node) {
-      const before = this.strokes.length;
-      this.strokes = this.strokes.filter((s) => s.surf !== node);
-      if (this.strokes.length !== before) this.invalidate(false);
-    },
-
     /* Called once per animation frame. Rendering is locked to the display here —
        never to the input rate — and each layer is painted only if something it
        shows has actually changed. */
@@ -12028,114 +12006,6 @@
     },
   };
 
-  /* ------------------------------------------------------------------ Counters
-     The outcome figures count up as their card arrives.
-
-     Two things here are deliberate.
-
-     The delay is computed HERE and written back as `--md`, which the stylesheet
-     then reads for the sparkline and the card's own fade. One source of truth:
-     the number and the line it explains cannot drift apart, which they would if
-     each side kept its own copy of the timing.
-
-     And the final frame writes the ORIGINAL string back verbatim rather than a
-     reformatted one. The values are not all plain numbers — "+7" carries a sign
-     and "40%" a suffix — so re-deriving the text at the end is how a card ends
-     up reading "7" after a perfectly good animation. */
-  const Counters = {
-    NUM: /^([^\d-]*)(-?\d+(?:\.\d+)?)(.*)$/,
-    DUR: 900,
-
-    bind(root) {
-      $$('.blk-metrics', root).forEach((blk) => {
-        const stag = parseFloat(blk.style.getPropertyValue('--stag')) || 0;
-        const cards = $$('.mcard', blk);
-        cards.forEach((card, i) => {
-          card.style.setProperty('--i', String(i));
-          card.style.setProperty('--md', `${stag * 90 + i * 110}ms`);
-        });
-        /* the footnote waits for the last line to finish drawing. Derived rather
-           than a number typed into the stylesheet, so adding a fifth card moves
-           it automatically instead of leaving it landing mid-animation. */
-        const last = cards.length ? stag * 90 + (cards.length - 1) * 110 : 0;
-        blk.style.setProperty('--md-end', `${last + 1400}ms`);
-      });
-    },
-
-    run(sec) {
-      $$('.mcard__v', sec).forEach((n) => {
-        if (n.dataset.counted) return;
-        n.dataset.counted = '1';
-        /* the truth is already in the DOM, so reduced motion and a failed parse
-           both fall through to the correct value rather than to zero */
-        const full = n.textContent;
-        const m = Counters.NUM.exec(full);
-        if (!m || REDUCED) return;
-
-        const target = parseFloat(m[2]);
-        const dp = (m[2].split('.')[1] || '').length;
-        const card = n.closest('.mcard');
-        const delay = parseFloat(card && card.style.getPropertyValue('--md')) || 0;
-        const t0 = performance.now() + delay + 120;
-
-        n.textContent = m[1] + (0).toFixed(dp) + m[3];
-        const step = (t) => {
-          const p = clamp((t - t0) / Counters.DUR);
-          if (p >= 1) { n.textContent = full; return; }
-          const e = 1 - Math.pow(1 - p, 3);   /* ease-out: a readout settling */
-          n.textContent = m[1] + (target * e).toFixed(dp) + m[3];
-          requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      });
-    },
-  };
-
-  /* Per-block staggered entrance. Each section's children are indexed and the
-     whole group is released when the section scrolls in, so a block arrives as
-     one considered unit — heading, then body, then bullets, then the artifact —
-     rather than the entire page animating at once.
-
-     `.stag` is the hook the stylesheet hangs every resting state on, and it is
-     only ever applied here. So a page that never binds Reveal renders everything
-     visible instead of leaving it stuck at opacity 0 — which is what would
-     happen if the resting state keyed off the component's own class. */
-  const Reveal = {
-    bind(root, scroller) {
-      const secs = $$('.sec', root);
-      if (!secs.length) return;
-      secs.forEach((sec) => {
-        const kids = $$('.sec__eyebrow, .sec__pre, .sec__heading, .sec__body, .blk', sec);
-        kids.forEach((n, i) => {
-          n.classList.add('stag');
-          n.style.setProperty('--stag', String(i));
-        });
-      });
-      Counters.bind(root);            /* after --stag exists, since it reads it */
-      if (REDUCED || !window.IntersectionObserver) {
-        secs.forEach((sec) => sec.classList.add('is-shown'));
-        return;
-      }
-      const io = new IntersectionObserver((rows) => {
-        rows.forEach((r) => {
-          if (!r.isIntersecting) return;
-          r.target.classList.add('is-shown');
-          Counters.run(r.target);     /* the figures start with their cards */
-          io.unobserve(r.target);            /* it only arrives once */
-        });
-      }, { root: scroller || null, rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
-      secs.forEach((sec) => io.observe(sec));
-    },
-  };
-
-  /* The rail sits above the dark band, so its ink has to flip where the band
-     passes behind it. Hit-testing will not work here: the band is painted by a
-     spread shadow, and the dark section's own box stops at the content column,
-     nowhere near the rail. So this compares each link's centre against the dark
-     regions' vertical ranges instead — geometry, not hit-testing.
-
-     Per link rather than per rail, so the change cascades down the list as the
-     boundary crosses it, and each one fades on its own. */
   /* ------------------------------------------------------------------ Marquee
      Continuous scrollers that slow on hover instead of stopping.
 
@@ -12269,14 +12139,6 @@
       this.raf = requestAnimationFrame(tick);
     },
 
-    /* dropped lanes must not be stepped forever after their host goes */
-    prune() {
-      this.items = this.items.filter((it) => it.lane.isConnected);
-      if (!this.items.length && this.raf) {
-        cancelAnimationFrame(this.raf);
-        this.raf = 0;
-      }
-    },
   };
 
   /* Play a clip while it is on screen, pause it when it leaves — so it starts as
