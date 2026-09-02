@@ -3,22 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ishaan Gupta — Product Designer</title>
-<meta name="description" content="Product designer working on self-custody, hardware and onchain interfaces.">
+<title>Cypherock X0 — Ishaan Gupta</title>
+<meta name="description" content="Designing the digital identity of Cypherock X0: a new product category inside an existing ecosystem.">
 <meta name="theme-color" content="#f7f6f3">
 <!-- The one font the page always needs, started before the stylesheet has been
      parsed. Without this the request only begins once the CSS is read and the
      first glyph is wanted, which is a swap you can see. The italic and the mono
      are not preloaded on purpose: one word on the home page is italic and only
      case studies set code, so both can arrive late without anything moving. -->
-<link rel="preload" href="assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/site.css">
-<!-- The X0 card's thumbnail is a video, and until its poster is painted the
-     card shows the CSS preview underneath it — a flash of blue on every cold
-     load. The poster is fetched here rather than when site.js reaches the
-     showcase, so it is already in the cache by the time the card mounts.
-     Remove this line if that card stops using a video thumbnail. -->
-<link rel="preload" as="image" href="assets/media/x0/companion-thumb.webp">
+<link rel="preload" href="../assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT.
      What this is: site.js section 5c2c, site.css section 44. Why it cannot
      live in site.js: the sheet is charcoal and the page is paper, and site.js
@@ -79,6 +72,7 @@
   } catch (e) {}
 })();
 </script>
+<link rel="stylesheet" href="../assets/css/site.css">
 <!-- The mark follows the reader's system theme, not the site's. favicon.svg
      carries the media query inside it, which Chrome and Firefox honour;
      Safari renders SVG favicons but ignores their CSS, so the dark copy is
@@ -101,30 +95,39 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ishaan Gupta">
-<meta property="og:title" content="Ishaan Gupta — Product Designer">
-<meta property="og:description" content="Product designer working on self-custody, hardware and onchain interfaces.">
-<meta property="og:image" content="assets/img/og.png">
+<meta property="og:title" content="Cypherock X0 — Ishaan Gupta">
+<meta property="og:description" content="Designing the digital identity of Cypherock X0: a new product category inside an existing ecosystem.">
+<meta property="og:image" content="../assets/img/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Ishaan Gupta — Product Designer">
-<meta name="twitter:description" content="Product designer working on self-custody, hardware and onchain interfaces.">
-<meta name="twitter:image" content="assets/img/og.png">
+<meta name="twitter:title" content="Cypherock X0 — Ishaan Gupta">
+<meta name="twitter:description" content="Designing the digital identity of Cypherock X0: a new product category inside an existing ecosystem.">
+<meta name="twitter:image" content="../assets/img/og.png">
 </head>
-<body data-page="home">
+<body data-page="project" data-project="cypherock-x0">
 
-  <nav id="nav" class="nav" aria-label="Primary"></nav>
+  <aside id="rail"></aside>
 
+  <!-- A PROJECT ENDS ON ITS OWN WORK, AND THAT IS WHY THERE ARE NO SLOTS HERE.
+
+       `Shell.foot()` and `Shell.outro()` are not conditional and do not need to
+       be: each one looks for its element and returns if there is not one. So the
+       question "does this page have the home footer" is answered by the page,
+       in its own markup, and the answer here is no. It was yes, and that is the
+       whole of the bug that was reported — a case study ran out and then handed
+       the reader 294px of the home footer's address block followed by 341px of
+       the home sky, neither of which this page had anything to do with. 404.html
+       has been proving the mechanism the whole time: no slots, no footer.
+
+       What ends the page instead is `.onward` — Index, Previous, Next — which
+       `Project` already builds as the last block of `#main`. It is the right
+       ending; it was simply not the last thing on the page. -->
   <div class="sheet">
-    <main id="main">
-      <div id="hero"></div>
-    </main>
-    <footer id="foot"></footer>
+    <main id="main"></main>
   </div>
 
-  <div id="outro"></div>
-
-  <script src="assets/js/content.js"></script>
-  <script src="assets/js/site.js"></script>
+  <script src="../assets/js/content.js"></script>
+  <script src="../assets/js/site.js"></script>
 </body>
 </html>

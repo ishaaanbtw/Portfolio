@@ -19,7 +19,62 @@
   const S = window.SITE;
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ------------------------------------------------------- WHERE THE SITE IS
+     Case studies live at `/work/<slug>`, which is one directory deeper than
+     everything else, and on Vercel they are served without the `.html` the file
+     actually has. Either fact on its own is enough to break every relative path
+     in content.js: `assets/img/x0/…` resolved against `/work/cypherock-x0`
+     asks for `/work/assets/img/…`, which is not there.
+
+     A `<base>` tag would fix it in one line and break opening the site off a
+     disk, where the root of the server is the root of the drive. So the root is
+     DERIVED instead, from the one URL that is always right — this script's own
+     `src`, which the browser has already resolved for us. It is correct over
+     http, over file://, at any depth, behind any rewrite.
+
+     Every FILE content.js names is rebased through here once, at boot. Page
+     LINKS are not: half a dozen places test an href for what it points at
+     ("does this start with 'index'", "is this off-site"), and rewriting them
+     into absolute URLs behind those tests is how you get a footer that opens
+     your own pages in a new tab. Those go through `url()` where they are built,
+     which is a handful of sites and all of them visible. */
+  const ROOT = (() => {
+    const n = document.currentScript
+      || document.querySelector('script[src*="site.js"]');
+    const u = (n && n.src) || location.href;
+    return u.replace(/assets\/js\/site\.js(?:[?#].*)?$/, '');
+  })();
+
+  /* absolute, protocol-relative, root-relative, anchors and data: are already
+     answers; anything else is relative to the site and gets the prefix */
+  const url = (p) => (typeof p === 'string' && p && !/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(p)
+    ? ROOT + p : p);
+
+  /* THE ROUTE A CASE STUDY LIVES AT. The shell is a real file — work/<slug>.html
+     — and Vercel rewrites the extensionless form onto it, so the address bar
+     reads `/work/cypherock-x0`. Off a disk there is nothing to do the rewriting,
+     so the file's own name is used and the link still opens. */
+  const projectHref = (slug) =>
+    `${ROOT}work/${slug}${location.protocol === 'file:' ? '.html' : ''}`;
+
   /* ======================================================== 0. utils ====== */
+
+  /* One walk, at boot, over everything content.js declares: any string that
+     names a file in `assets/` or a page at the root is rewritten to an absolute
+     URL. Done here so that no renderer, no block type and no future addition
+     has to remember which of the two things it is holding. */
+  const rebase = (o, seen) => {
+    if (!o || typeof o !== 'object') return;
+    const mark = seen || new Set();
+    if (mark.has(o)) return;
+    mark.add(o);
+    for (const k of Object.keys(o)) {
+      const v = o[k];
+      if (typeof v === 'string') {
+        if (/^assets\//.test(v)) o[k] = ROOT + v;
+      } else if (v && typeof v === 'object') rebase(v, mark);
+    }
+  };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -463,7 +518,7 @@
                weather pods live here: they have to stay put when the shell
                slides, and they have to sit ABOVE the page rather than behind
                it, which is the one thing the deck could not offer them.
-       .hud    fixed. Every overlay the modules mount: nav, dock, drawer, menu
+       .hud    fixed. Every overlay the modules mount: nav, dock, menu
                sheet, toasts. Its box is the viewport, so its fixed children
                keep measuring from the viewport exactly as before.
        .tips   fixed, untransformed, unclipped, and empty but for one label.
@@ -495,6 +550,12 @@
 
       const nav = $('.nav', this.app);
       if (nav) this.hud.appendChild(nav);
+
+      /* the two writes in shell() are only live while the deck is out; this
+         keeps them right if you scroll or resize while it is */
+      const keep = () => this.shell();
+      addEventListener('scroll', keep, { passive: true });
+      addEventListener('resize', keep, { passive: true });
     },
 
     /* Modules mount their furniture through here instead of onto the body.
@@ -508,32 +569,80 @@
     /* and the label goes over everything, including the thing it labels */
     mountTip(node) { this.tips.appendChild(node); return node; },
 
-    /* THE PAGE SCROLLS INSIDE `.app`, NOT INSIDE THE WINDOW, and that is what
-       lets the shell move while you are still reading. A rounded, scaled window
-       has to be clipped to the viewport rectangle; if the document were the
-       scroller, `.app` would be a box thousands of pixels tall and the clip
-       would have to be rewritten in document coordinates on every scroll frame.
-       Made viewport-sized instead, it clips itself with a plain border-radius
-       and the scroll is just a scroll.
+    /* THE WINDOW SCROLLS, AND IT IS THE ONLY THING THAT DOES.
 
-       Everything that used to ask the window how far down the page it was asks
-       here instead. One place, so there is one answer. */
-    y() { return this.app ? this.app.scrollTop : (window.scrollY || 0); },
+       `.app` was the scroller for a while, because a rounded, scaled window is
+       easiest to clip when the thing being clipped is already the size of the
+       screen. What that bought in the shell it charged back everywhere else:
+       every case study opened inside a second scroller nested in the first, and
+       two scrollers in one gesture is something you can feel.
+
+       So the document is the scroller and the shell pays the cost instead, in
+       `shell()` below. Everything that wants to know how far down the page it is
+       still asks here. One place, so there is one answer. */
+    y() { return window.scrollY || document.documentElement.scrollTop || 0; },
 
     to(top, smooth) {
-      const s = this.app || window;
-      const opt = { top, behavior: smooth && !REDUCED ? 'smooth' : 'instant' };
-      if (s.scrollTo) s.scrollTo(opt); else s.scrollTop = top;
+      window.scrollTo({ top, behavior: smooth && !REDUCED ? 'smooth' : 'instant' });
     },
 
-    onScroll(fn) { (this.app || window).addEventListener('scroll', fn, { passive: true }); },
+    onScroll(fn) { window.addEventListener('scroll', fn, { passive: true }); },
 
-    /* Holding the page still for a modal. An element scroller keeps its
-       scrollTop under `overflow: hidden`, so none of the pin-the-body-at-a
-       -negative-offset dance the document scroller needed applies here — and
-       neither does the scrollbar-width compensation, because the bar belongs to
-       `.app` and `.app` is not going anywhere. */
-    lock(on) { document.body.classList.toggle('is-locked', !!on); },
+    /* WHAT THE SHELL COSTS NOW, AND IT IS TWO LINES OF ARITHMETIC.
+
+       `.app` is a document-tall block, so the menu's `scale(0.935)` cannot be
+       left to its own devices: scaling about the middle of a box five thousand
+       pixels tall throws the page hundreds of pixels up the screen. Pinning the
+       origin to the middle of the VIEWPORT — in the element's own coordinates,
+       which is the scroll offset plus half a screen — reproduces exactly what a
+       fixed, viewport-sized box did for free.
+
+       The clip is the other half. The window's rounded corners belong to the
+       screen and not to the ends of the document, so `.app` is clipped to the
+       visible rectangle with the shell's radius on it. Both are written only
+       while the deck is out or on its way back, and taken off again after, so
+       nothing in this pays for itself during an ordinary scroll. */
+    shell() {
+      const a = this.app;
+      if (!a) return;
+      const c = document.body.classList;
+      if (!c.contains('deck-open') && !c.contains('deck-shut')) {
+        if (!this._shell) return;
+        this._shell = false;
+        a.style.transformOrigin = '';
+        a.style.clipPath = '';
+        return;
+      }
+      this._shell = true;
+      const y = this.y();
+      const vh = window.innerHeight;
+      const gap = Math.max(0, a.offsetHeight - y - vh);
+      a.style.transformOrigin = `50% ${(y + vh / 2).toFixed(1)}px`;
+      a.style.clipPath = `inset(${y.toFixed(1)}px 0 ${gap.toFixed(1)}px 0 round var(--app-r))`;
+    },
+
+    /* HOLDING THE PAGE STILL FOR A MODAL. The document is the scroller, so this
+       is the pin-at-a-negative-offset dance: taking the page out of flow takes
+       the scrollbar with it, and on a desktop that is fifteen pixels of layout
+       vanishing behind the reader, which you see at both edges. The padding puts
+       back exactly what the bar was taking. */
+    lock(on) {
+      const b = document.body;
+      const was = b.classList.contains('is-locked');
+      if (!!on === was) return;
+      if (on) {
+        this._keep = this.y();
+        const bar = window.innerWidth - document.documentElement.clientWidth;
+        b.style.top = `-${this._keep}px`;
+        if (bar > 0) b.style.paddingRight = `${bar}px`;
+        b.classList.add('is-locked');
+      } else {
+        b.classList.remove('is-locked');
+        b.style.top = '';
+        b.style.paddingRight = '';
+        window.scrollTo(0, this._keep || 0);
+      }
+    },
   };
 
   /* ================================================ 2b. ONE POINTER SPACE ===
@@ -651,7 +760,7 @@
         const href = l.kind === 'resume' ? (S.person.resumeUrl || '#')
           : l.kind === 'email' ? `mailto:${S.person.email}`
             : l.href;
-        const a = el('a', { class: 'deck__link', href }, esc(l.label));
+        const a = el('a', { class: 'deck__link', href: url(href) }, esc(l.label));
         /* the document-level [data-action] delegate opens the resume in the
            page's own viewer rather than handing the file to the PDF plugin */
         if (l.kind === 'resume') a.dataset.action = 'resume';
@@ -906,6 +1015,7 @@
       this.podFit();
       document.body.classList.remove('deck-shut');
       document.body.classList.add('deck-open');
+      App.shell();
       /* THE SHELL IS ABOUT TO MOVE FOR 600ms, so anything that tracks the
          pointer against it has to be running. The frame loop sleeps when
          nothing is animating, and a cursor held still over the canvas is
@@ -939,6 +1049,7 @@
       this.t = setTimeout(() => {
         if (this.isOpen) return;
         document.body.classList.remove('deck-shut');
+        App.shell();
       }, REDUCED ? 20 : 680);
     },
 
@@ -984,7 +1095,7 @@
       if (!nav) return;
       S.nav.forEach((item, i) => {
         const current = item.href.startsWith(this.page === 'home' ? 'index' : this.page);
-        const a = el('a', { href: item.href, ...(current ? { 'aria-current': 'page' } : {}) }, esc(item.label));
+        const a = el('a', { href: url(item.href), ...(current ? { 'aria-current': 'page' } : {}) }, esc(item.label));
         if (this.page === 'home') {
           const rv = (S.canvas && S.canvas.reveal) || {};
           a.classList.add('rv');
@@ -1035,12 +1146,11 @@
          so anything that scrolls under it collides with it — at the experience
          table that is two headings written over each other. Its job is done by
          then anyway: the page below it says whose site this is at length. */
-      bar.appendChild(el('a', { class: 'mbar__name', href: 'index.html' },
+      bar.appendChild(el('a', { class: 'mbar__name', href: url('index.html') },
         esc(S.person.name)));
 
       const away = () => bar.classList.toggle('is-away', App.y() > 24);
-      addEventListener('scroll', away, { passive: true });
-      if (App.app) App.app.addEventListener('scroll', away, { passive: true });
+      App.onScroll(away);
 
       App.mount(bar);
     },
@@ -1104,7 +1214,7 @@
           const here = it.href.startsWith(this.page === 'home' ? 'index' : this.page);
           const mark = asGlyphs ? glyph(it.href) : '';
           const a = el('a', {
-            href: it.href,
+            href: url(it.href),
             /* The label does not disappear when the word does — it moves to the
                accessible name, so a screen reader still says "Twitter" and a
                cursor still gets a tooltip. An icon-only link with no name is
@@ -2071,7 +2181,15 @@
     const host = sheet ? el('div', { class: 'wcard__poster' }, '') : vid;
     if (sheet) host.appendChild(vid);
 
-    vid.addEventListener('error', () => { host.remove(); });
+    /* IF THE FILE IS NOT THERE, THE PANEL UNDERNEATH COMES BACK. The poster
+       probe often settles before the video does, and `reveal()` cuts the CSS
+       preview as part of settling — so a video that then fails used to leave a
+       card with nothing on it at all: no artwork, and the fallback switched off
+       on its behalf. The class goes back with the element. */
+    vid.addEventListener('error', () => {
+      host.remove();
+      media.classList.remove('is-covered', 'is-instant');
+    });
 
     /* Idempotent: several things race to call this and the first one wins.
        Three jobs, and the second is the one the blue flash came down to.
@@ -2206,10 +2324,21 @@
       const section = el('section', { class: 'showcase', id: 'showcase' });
       const grid = el('div', { class: 'showcase__grid' });
 
+      /* A TILE IS A LINK TO A PAGE NOW.
+
+         It used to be an anchor to `#x0-identity` with its default prevented,
+         and what happened instead was a drawer sliding up over the page with
+         the case study inside it. Everything that was wrong with that is
+         downstream of the same fact: the study had no address. You could not
+         send it, bookmark it, land on it, or leave it with the back button —
+         and the panel it lived in had to carry its own scroller, nested inside
+         the one the page was already using, which is the stutter.
+
+         So the href is real and nothing intercepts it. */
       data.items.forEach((item) => {
         const card = el('a', {
           class: 'wcard',
-          href: item.href || '#',
+          href: item.study ? projectHref(item.study.slug) : (item.href || '#'),
           'aria-label': `${item.title} — ${item.meta || ''}`,
         });
         const media = el('div', { class: 'wcard__media' },
@@ -2225,378 +2354,6 @@
 
       section.appendChild(grid);
       mount.appendChild(section);
-      this.drawer(data.items);
-    },
-
-    /* ---------------------------------------------------------- the drawer
-       Slides up from the bottom over the dimmed page. One panel, re-filled per
-       project, so there's a single set of listeners no matter how many cards. */
-    drawer(items) {
-      const wrap = el('div', { class: 'drawer' });
-      const scrim = el('button', {
-        class: 'drawer__scrim', type: 'button', 'aria-label': 'Close project',
-        'data-nopress': '',
-      });
-      const panel = el('div', {
-        class: 'drawer__panel', role: 'dialog', 'aria-modal': 'true',
-        'aria-labelledby': 'drawer-title',
-      });
-
-      const bar = el('div', { class: 'drawer__bar' });
-      const title = el('h2', { class: 'drawer__title', id: 'drawer-title' });
-      const sub = el('span', { class: 'drawer__sub' });
-      const close = el('button', {
-        class: 'drawer__close', type: 'button', 'aria-label': 'Close project',
-      }, '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg>');
-      bar.append(title, sub, close);
-
-      const scroll = el('div', { class: 'drawer__scroll' });
-      panel.append(bar, scroll);
-      wrap.append(scrim, panel);
-      App.mount(wrap);
-
-      let open = false;
-      let restoreTo = null;
-      let closeTimer = null;
-
-      /* --- grow: the panel docks to the top as you scroll its content ------
-         Driven by a spring off the scroll container's own scrollTop, so it
-         eases into place rather than tracking the scroll one-to-one. */
-      /* tuned: 233ms to 90% docked, and just over-damped so the panel can
-         never overshoot past the top of the screen */
-      const growSp = Spring(0, 340, 38);
-      this.grow = growSp;
-      const GROW_OVER = 150;          // px of scroll to fully dock
-
-      /* ONE scroll listener on this container. There were three: the dock's grow
-         spring, the rail's ink, and the section spy — each reading layout
-         independently, on every event. The spy is gone (an observer replaces it),
-         and the other two are coalesced here and throttled to one run per frame,
-         so a burst of scroll events cannot queue up more work than the display
-         can show. */
-      let raf = 0;
-      const onScroll = () => {
-        if (raf) return;
-        raf = requestAnimationFrame(() => {
-          raf = 0;
-          growSp.target = clamp(scroll.scrollTop / GROW_OVER);
-          if (RailInk.current) RailInk.current.tick();
-          wakeLoop();
-        });
-      };
-      scroll.addEventListener('scroll', onScroll, { passive: true });
-      /* cached measurements are only invalid when the layout changes */
-      addEventListener('resize', () => {
-        if (RailInk.current) RailInk.current.measure();
-        if (SectionNav.rebuild) SectionNav.rebuild();
-      }, { passive: true });
-
-      this.growTick = (dt) => {
-        if (!open) return false;
-        const moving = growSp.step(dt);
-        wrap.style.setProperty('--grow', growSp.v.toFixed(3));
-        return moving;
-      };
-
-      /* --- the full case study, rendered into the drawer ------------------ */
-      const study = (data, item) => {
-        /* If the case study opens on a dark section, the header above it joins
-           the band — otherwise the band starts halfway down the first screen,
-           with a hard edge across the title. */
-        const darkTop = data.sections[0] && data.sections[0].tone === 'dark';
-        const grid = el('div', {
-          class: `drawer__study${darkTop ? ' drawer__study--darktop' : ''}` });
-
-        const rail = el('nav', { class: 'drawer__rail', 'aria-label': 'Sections' });
-        const links = [];
-        data.sections.forEach((sec) => {
-          /* behaviour lives in SectionNav, bound once the sections exist */
-          const a = el('a', { class: 'rail__link', href: `#${sec.id}` },
-            esc(sec.nav || sec.eyebrow || ''));
-          rail.appendChild(a);
-          links.push(a);
-        });
-
-        const col = el('div');
-        col.appendChild(el('header', { class: `proj__head${darkTop ? ' proj__head--dark' : ''}` },
-          `<span class="proj__eyebrow">${esc(data.eyebrow || '')}</span>` +
-          `<h3 class="proj__title">${esc(data.title || '')}</h3>`));
-
-        const secs = [];
-        data.sections.forEach((sec) => {
-          const s = el('section', {
-            class: `sec${sec.tone === 'dark' ? ' sec--dark' : ''}`, id: sec.id });
-          s.innerHTML =
-            `<span class="sec__eyebrow">${esc(sec.eyebrow || '')}</span>` +
-            /* an optional opener that sits ABOVE the section heading, which is
-               where the original portfolio puts "Going back to how it started…" */
-            (sec.preamble
-              ? `<div class="sec__pre is-in">` +
-                  `<h5 class="sec__pre__t">${esc(sec.preamble.title)}</h5>` +
-                  `<p class="sec__pre__b">${sec.preamble.body}</p>` +
-                `</div>`
-              : '') +
-            /* The scroll anchor. Zero-height, sitting immediately before the
-               HEADING rather than at the top of the section — which is what makes
-               every section land identically. Scrolling to the section box put the
-               heading at a different height depending on what preceded it inside
-               (Research has a preamble above its heading; the others do not), which
-               is why one section arrived near the top and another mid-screen.
-               Its scroll-margin-top carries the landing allowance, so the layout
-               decides the final position and no JS offset is involved. */
-            `<i class="sec__anchor" aria-hidden="true"></i>` +
-            `<h4 class="sec__heading is-in">${esc(sec.heading || '')}</h4>` +
-            /* body copy is authored, and content.js documents <b>/<em>/<a> as
-               allowed inside any string — escaping it printed the tags */
-            `<div class="sec__body is-in">${(sec.body || []).map((t) => `<p>${t}</p>`).join('')}</div>` +
-            (sec.blocks || []).map((b) => (BLOCK[b.type] || (() => ''))(b)).join('');
-          $$('.blk', s).forEach((n) => n.classList.add('is-in'));
-          rhythm(s);
-          col.appendChild(s);
-          secs.push(s);
-        });
-
-        /* the pager belongs in the text column, not under the sticky rail */
-        const pg = pager(item);
-        if (pg) col.appendChild(pg);
-
-        grid.append(rail, col);
-
-        /* No scroll handler: SectionNav observes a reading band instead, so
-           nothing measures the DOM as the reader scrolls. */
-        SectionNav.bind(scroll, secs, links);
-
-        return grid;
-      };
-
-      /* --- the highlights carousel ----------------------------------------
-         Bound after the study renders. Autoplay is the default because the
-         slides are a showcase, but it stops the moment the visitor touches a dot
-         or hovers — nothing is more annoying than a carousel that moves while
-         you are reading it. */
-      const carousels = (root) => {
-        $$('[data-carousel]', root).forEach((wrap) => {
-          const track = $('.hltrack', wrap);
-          const dots = $$('.hl__dot', wrap);
-          const n = $$('.hl', wrap).length;
-          if (!n) return;
-          let at = 0, timer = null, stopped = false;
-
-          const show = (i) => {
-            at = (i + n) % n;
-            track.style.setProperty('--at', String(at));
-            dots.forEach((d, k) => {
-              d.classList.toggle('is-on', k === at);
-              d.setAttribute('aria-selected', k === at ? 'true' : 'false');
-            });
-          };
-          const stop = () => { stopped = true; clearInterval(timer); timer = null; };
-          const play = () => {
-            if (stopped || timer || REDUCED || n < 2) return;
-            timer = setInterval(() => show(at + 1), b_delay);
-          };
-
-          dots.forEach((d, k) => d.addEventListener('click', () => {
-            stop(); show(k); Sound.tap();
-          }));
-          wrap.addEventListener('pointerenter', () => { clearInterval(timer); timer = null; });
-          wrap.addEventListener('pointerleave', play);
-
-          /* keyboard, once a dot has focus */
-          wrap.addEventListener('keydown', (e) => {
-            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-            e.preventDefault(); stop();
-            show(at + (e.key === 'ArrowRight' ? 1 : -1));
-            dots[at].focus();
-          });
-
-          /* a horizontal drag flicks between slides */
-          let x0 = null;
-          wrap.addEventListener('pointerdown', (e) => { x0 = e.clientX; });
-          wrap.addEventListener('pointerup', (e) => {
-            if (x0 === null) return;
-            const dx = e.clientX - x0; x0 = null;
-            if (Math.abs(dx) < 40) return;
-            stop(); show(at + (dx < 0 ? 1 : -1));
-          });
-
-          show(0);
-          play();
-          wrap.__hl = { show, get at() { return at; }, get n() { return n; },
-                        get playing() { return !!timer; }, stop };
-        });
-      };
-      const b_delay = 3000;   /* 3s per slide, as asked */
-
-      /* --- prev / next project ---------------------------------------------
-         Sits at the very end of a case study. It cycles rather than clamping,
-         so the last project still offers somewhere to go instead of dead-ending
-         the way the drawer used to. Clicking refills the open drawer rather
-         than closing and reopening it, which keeps the dock and scroll position
-         machinery untouched. */
-      const pager = (item) => {
-        const i = items.indexOf(item);
-        if (i < 0 || items.length < 2) return null;
-        const prev = items[(i - 1 + items.length) % items.length];
-        const next = items[(i + 1) % items.length];
-
-        const nav = el('nav', { class: 'drawer__pager', 'aria-label': 'Projects' });
-        const side = (dir, target) => {
-          const b = el('button', {
-            type: 'button',
-            class: `pager__side pager__side--${dir}`,
-            'aria-label': `${dir === 'prev' ? 'Previous' : 'Next'} project: ${target.title}`,
-          });
-          b.appendChild(el('span', { class: 'pager__dir' },
-            dir === 'prev' ? 'Back' : 'Next project'));
-          b.appendChild(el('span', { class: 'pager__name' }, esc(target.title)));
-          if (target.meta) b.appendChild(el('span', { class: 'pager__meta' }, esc(target.meta)));
-          b.addEventListener('click', () => {
-            fill(target);
-            scroll.scrollTop = 0;
-            Sound.tap();
-          });
-          return b;
-        };
-        nav.append(side('prev', prev), side('next', next));
-        return nav;
-      };
-
-      const fill = (item) => {
-        title.textContent = item.title;
-        /* innerHTML below destroys any notes/stickers placed in here, so the
-           ink drawn on this surface goes with them */
-        Ink.clearSurface(scroll);
-        scroll.innerHTML = '';
-        /* the lanes in there are gone, so stop stepping them every frame */
-        Marquee.prune();
-        /* the observed sections are gone with the innerHTML */
-        SectionNav.stop();
-        RailInk.current = null;
-        scroll.scrollTop = 0;
-        growSp.v = 0; growSp.vel = 0; growSp.target = 0;
-        wrap.style.setProperty('--grow', '0');
-
-        /* a card can carry a whole case study instead of short detail rows */
-        const data = item.study === true ? S.project : item.study;
-        if (data && data.sections) {
-          sub.textContent = data.eyebrow || item.meta || '';
-          scroll.appendChild(study(data, item));
-          carousels(scroll);
-          videos(scroll);
-          compares(scroll);
-          Lightbox.bind(scroll);
-          Reveal.bind(scroll, scroll);
-          RailInk.bind($('.drawer__rail', scroll), scroll);
-          /* after the append, so anything that measures itself can */
-          Marquee.bind(scroll);
-          /* The dock opens with the study, the same as on a project page. A
-             study marked `reading: true` opts out and starts collapsed to its
-             tab. applyScope is called rather than setMode so the decision stays
-             in one place, and so the dock arrives with the study instead of
-             waiting for the visitor's first scroll. */
-          Rack.reading = !!data.reading;
-          Rack.applyScope();
-          return;
-        }
-
-        sub.textContent = item.detail?.subtitle || item.meta || '';
-        let step = 0;
-        const stagger = () => `--sd:${60 + step++ * 70}ms`;
-
-        (item.detail?.sections || [
-          { label: 'Overview', body: [`A writeup for ${item.title} goes here. Add a "detail" block to this item in content.js.`] },
-        ]).forEach((sec) => {
-          const row = el('div', { class: 'drawer__row', style: stagger() });
-          row.appendChild(el('span', { class: 'drawer__label' }, esc(sec.label)));
-          row.appendChild(el('div', { class: 'drawer__body' },
-            (Array.isArray(sec.body) ? sec.body : [sec.body]).map((p) => `<p>${p}</p>`).join('')));
-          scroll.appendChild(row);
-
-          /* a preview panel can sit after any section */
-          if (sec.preview) {
-            scroll.appendChild(el('figure', { class: 'drawer__media', style: stagger() },
-              (PREVIEW[sec.preview] || PREVIEW.bloom)(sec)));
-          }
-        });
-
-        /* short-detail cards get the same pager */
-        const pg = pager(item);
-        if (pg) scroll.appendChild(pg);
-      };
-
-      const setOpen = (next, item) => {
-        if (next === open) return;
-        clearTimeout(closeTimer);
-        open = next;
-
-        if (open) {
-          fill(item);
-          /* annotations land in the drawer while it's the project on screen */
-          Canvas.prevSurface = Canvas.surface;
-          scroll.style.position = 'relative';
-          Canvas.setSurface(scroll);
-          Canvas.placement();
-          /* Wait for the panel to finish its slide before the dock arrives.
-             Showing it during the transition read as the toolbar sliding in
-             from behind the sheet. */
-          clearTimeout(this._rackIn);
-          this._rackIn = setTimeout(() => Rack.applyScope(), 470);
-          restoreTo = document.activeElement;
-          wrap.classList.remove('is-closing');
-          wrap.classList.add('is-open');
-          /* lock the page behind without losing its scroll position */
-          document.documentElement.style.overflow = 'hidden';
-          close.focus({ preventScroll: true });
-          Sound.voice({ freq: 260, gain: 0.05, dur: 0.16, bright: 1500, drop: 2.1, noise: 0.22 });
-        } else {
-          wrap.classList.add('is-closing');
-          wrap.classList.remove('is-open');
-          Rack.reading = false;
-          Canvas.setSurface(Canvas.prevSurface || null);
-          /* and it leaves first, so it never hangs over a closing panel */
-          clearTimeout(this._rackIn);
-          Rack.applyScope();
-          document.documentElement.style.overflow = '';
-          Sound.voice({ freq: 520, gain: 0.038, dur: 0.11, bright: 1700, drop: 0.4, noise: 0.22 });
-          if (restoreTo && restoreTo.focus) restoreTo.focus({ preventScroll: true });
-          closeTimer = setTimeout(() => wrap.classList.remove('is-closing'), 380);
-        }
-      };
-
-      /* cards keep their href so they still behave like links, but a plain
-         click opens the drawer instead of navigating */
-      this.cards.forEach((c, i) => {
-        c.el.addEventListener('click', (e) => {
-          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-          e.preventDefault();
-          setOpen(true, items[i]);
-        });
-      });
-
-      close.addEventListener('click', () => setOpen(false));
-      scrim.addEventListener('click', () => setOpen(false));
-
-      addEventListener('keydown', (e) => {
-        if (!open) return;
-        /* The lightbox sits above this drawer. Both listen for Escape on the
-           window, and this one was registered first, so without this guard one
-           Escape closed the lightbox AND the drawer underneath it. The topmost
-           layer gets the key. */
-        if (document.body.classList.contains('is-lbox')) return;
-        if (e.key === 'Escape') { setOpen(false); return; }
-        /* keep Tab inside the panel while it's modal */
-        if (e.key !== 'Tab') return;
-        const focusable = $$('a[href], button, [tabindex]:not([tabindex="-1"])', panel)
-          .filter((n) => n.offsetParent !== null);
-        if (!focusable.length) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-      });
-
-      this.setDrawerOpen = setOpen;
     },
 
     /* Cards grow from small to full size as they cross the viewport. Springs,
@@ -2713,7 +2470,7 @@
 
   /* Gradient fills need an id, and ids are document-global — two cards sharing
      one would both take the first card's colour. Monotonic rather than derived
-     from the index, because the drawer re-renders the study on every open. */
+     from the index, so a block rendered twice on one page cannot collide. */
   let sparkId = 0;
 
   const BLOCK = {
@@ -2929,6 +2686,107 @@
          rhythm as every other framed artifact. */
       return `<figure class="blk blk-frame blk-cmp">` +
         inner +
+        (b.caption
+          ? `<figcaption class="fframe__cap${b.pill ? ' fframe__cap--pill' : ''}">` +
+            `<span>${esc(b.caption)}</span></figcaption>`
+          : '') +
+      `</figure>`;
+    },
+
+    /* --- THE ONBOARDING TOUR -------------------------------------------------
+
+       A flow, walked. Twelve screens inside one phone, running by themselves,
+       with a note set beside the device and a hairline from the note to the
+       thing it is about.
+
+         { type: 'tour', base: 'assets/img/x0/onboarding/', max: '900px',
+           caption: '…', pill: true,
+           stops: [ { src, screen, title, body, hold, mode, side, ct,
+                      point: [x, y], focus: [x, y, w, h] }, … ] }
+
+       WHY A NOTE BESIDE THE PHONE AND NOT A CAPTION UNDER IT. A caption on the
+       far side of a figure is not an annotation — the reader has to hold the
+       sentence in their head and go looking for what it refers to. Beside the
+       object, with a line to the place, there is nothing to hold.
+
+       EVERY DIMENSION IS A FRACTION OF THE GLASS. `--glass` is the only number;
+       the rail, the bezel, the corner radii, the note's offset and the buttons
+       all derive from it, so the whole device scales with the column and
+       nothing falls out of register. The hotspots in `focus` are percentages of
+       the frame for the same reason.
+
+       THE STOPS TRAVEL AS JSON, not as data attributes. A dozen objects with
+       apostrophes in their prose is a quoting problem waiting to happen; a
+       `application/json` script element has no escaping rules to get wrong
+       beyond the closing tag, and it keeps the markup readable.
+
+       NOT `data-zoom`. Every other framed artifact opens in the lightbox on
+       click; this one is a control surface. The two cannot share a gesture, so
+       FRAME is bypassed and the caption markup reproduced, exactly as the
+       `compare` block does. */
+    tour: (b) => {
+      const stops = b.stops || [];
+      if (!stops.length) return '';
+      const uid = `t${Math.random().toString(36).slice(2, 8)}`;
+      const base = b.base || '';
+
+      /* All twelve are mounted at once and cross-dissolved, so a stop never
+         waits on a decode. Only the first is eager: the rest are lazy, and the
+         block is usually well below the fold. */
+      const imgs = stops.map((s, i) =>
+        `<img class="tour__shot" src="${esc(base + s.src)}" alt=""` +
+        ` loading="${i ? 'lazy' : 'eager'}" decoding="async" draggable="false">`).join('');
+
+      const ticks = stops.map((s, i) =>
+        `<button class="tour__tick" type="button" data-go="${i}"` +
+        ` aria-label="Screen ${i + 1}: ${esc(s.screen)}"><span></span></button>`).join('');
+
+      const scene =
+        `<div class="tour__scene">` +
+          `<svg class="tour__leads" aria-hidden="true">` +
+            `<path class="tour__lead" d=""></path>` +
+            `<circle class="tour__dot" r="2.4" cx="-99" cy="-99"></circle>` +
+          `</svg>` +
+          `<div class="tour__phone">` +
+            `<span class="tour__side tour__side--l" style="--y:15.6%;--h:3.2%"></span>` +
+            `<span class="tour__side tour__side--l" style="--y:21.8%;--h:6.4%"></span>` +
+            `<span class="tour__side tour__side--l" style="--y:30.4%;--h:6.4%"></span>` +
+            `<span class="tour__side tour__side--r" style="--y:23.6%;--h:9.2%"></span>` +
+            `<div class="tour__gasket"><div class="tour__glass">` +
+              imgs +
+              `<svg class="tour__spot" viewBox="0 0 393 852" preserveAspectRatio="none" aria-hidden="true">` +
+                `<defs><mask id="${uid}m">` +
+                  `<rect x="0" y="0" width="393" height="852" fill="#fff"></rect>` +
+                  `<rect class="tour__hole" x="0" y="0" width="393" height="852" rx="20" fill="#000"></rect>` +
+                `</mask></defs>` +
+                `<rect x="0" y="0" width="393" height="852" fill="rgba(4,4,5,0.72)" mask="url(#${uid}m)"></rect>` +
+                `<rect class="tour__halo" x="0" y="0" width="393" height="852" rx="20"></rect>` +
+                `<rect class="tour__ring" x="0" y="0" width="393" height="852" rx="20"></rect>` +
+              `</svg>` +
+              `<span class="tour__island" aria-hidden="true"></span>` +
+            `</div></div>` +
+          `</div>` +
+          `<div class="tour__note"><h5 class="tour__t"></h5><p class="tour__b"></p></div>` +
+        `</div>`;
+
+      return `<figure class="blk blk-frame blk-tour"${b.max ? ` style="--fw:${esc(b.max)}"` : ''}>` +
+        `<div class="tour"${b.max ? ` style="--tw:${esc(b.max)}"` : ''}>` +
+          `<div class="tour__rail">` +
+            `<span>${esc(b.label || 'X0 Wallet — Onboarding')}</span>` +
+            `<span class="tour__count">01 / ${String(stops.length).padStart(2, '0')}</span>` +
+          `</div>` +
+          scene +
+          `<div class="tour__foot">` +
+            `<button class="tour__btn" type="button" data-act="prev">Prev</button>` +
+            `<span class="tour__sep">/</span>` +
+            `<button class="tour__btn is-on" type="button" data-act="play">Pause</button>` +
+            `<span class="tour__sep">/</span>` +
+            `<button class="tour__btn" type="button" data-act="next">Next</button>` +
+            `<span class="tour__ticks">${ticks}</span>` +
+            `<span class="tour__screen"></span>` +
+          `</div>` +
+          `<script type="application/json" class="tour__data">${JSON.stringify(stops).replace(/</g, '\\u003c')}<\/script>` +
+        `</div>` +
         (b.caption
           ? `<figcaption class="fframe__cap${b.pill ? ' fframe__cap--pill' : ''}">` +
             `<span>${esc(b.caption)}</span></figcaption>`
@@ -3286,18 +3144,40 @@
     sections: [],
     active: -1,
 
-    init() {
-      const p = S.project;
+    /* WHICH STUDY THIS PAGE IS.
+
+       The shell file at work/<slug>.html contains one fact — its slug, on the
+       body — and everything else is looked up here, out of the same
+       `showcase.items` the home grid and the Work index are built from. So a
+       case study is written once, in content.js, and the tile, the index entry
+       and the page are three readings of it rather than three copies.
+
+       `S.project` is the fallback for the bare project.html, which predates the
+       routes and is kept working rather than deleted. */
+    find(slug) {
+      const items = (S.showcase && S.showcase.items) || [];
+      this.all = items.filter((i) => i.study && i.study.slug);
+      this.item = (slug && this.all.find((i) => i.study.slug === slug)) || null;
+      if (this.item) return this.item.study;
+      this.all = [];
+      return S.project || null;
+    },
+
+    init(slug) {
+      const p = this.find(slug);
       if (!p) return;
-      document.title = `${p.title} — ${S.person.name}`;
+      const item = this.item;
+      const name = item ? item.title : p.title;
+      document.title = `${name} — ${S.person.name}`;
 
       /* the rail */
       const rail = $('#rail');
       if (rail) {
         rail.className = 'rail';
         rail.setAttribute('aria-label', 'Case study sections');
-        rail.appendChild(el('a', { class: 'rail__back', href: p.back?.href || 'work.html' },
-          esc(p.back?.label || 'BACK')));
+        rail.appendChild(el('a', {
+          class: 'rail__back', href: url(p.back?.href || 'work.html'),
+        }, esc(p.back?.label || 'BACK')));
         const list = el('nav', { class: 'rail__list' });
         p.sections.forEach((sec) => {
           const a = el('a', { class: 'rail__link', href: `#${sec.id}` }, esc(sec.nav || sec.eyebrow));
@@ -3305,6 +3185,7 @@
           this.links.push(a);
         });
         rail.appendChild(list);
+        this.rail = rail;
       }
 
       /* the page */
@@ -3312,9 +3193,29 @@
       const body = el('div', { class: 'proj proj__body' });
       const col = el('div', { class: 'proj__col' });
 
-      col.appendChild(el('header', { class: 'proj__head' },
-        `<span class="proj__eyebrow">${esc(p.eyebrow || '')}</span>` +
-        `<h1 class="proj__title">${esc(p.title)}</h1>`));
+      /* THE HERO OWNS THE FIRST SCREEN, and it is the only thing on it.
+
+         What it replaces is a drawer that opened over the Work page with the
+         title in a 44px bar: the study arrived as a panel on top of something
+         else, and there was no moment where the piece was simply the thing you
+         were looking at. A viewport of paper with the name on it is that
+         moment, and it costs one screen.
+
+         `100svh` rather than `100vh`: on a phone `vh` is the tallest the
+         viewport ever gets, so a full-height hero measured in it is a hero with
+         its last line under the address bar until you scroll. `svh` is the
+         smallest, which is the one that is always on screen; the fallback below
+         it in the stylesheet keeps older engines honest.
+
+         The artwork is the tile's artwork — same panel, same fallback, same
+         video — because the piece the reader clicked should still be the piece
+         in front of them on the next screen. */
+      if (item) col.appendChild(this.hero(p, item));
+      else {
+        col.appendChild(el('header', { class: 'proj__head' },
+          `<span class="proj__eyebrow">${esc(p.eyebrow || '')}</span>` +
+          `<h1 class="proj__title">${esc(p.title)}</h1>`));
+      }
 
       p.sections.forEach((sec) => {
         const s = el('section', {
@@ -3336,13 +3237,131 @@
         this.sections.push(s);
       });
 
+      /* --- WHAT IS INSIDE THE PROJECT LAYOUT, AND WHAT IS AFTER IT ---------
+
+         THE RAIL MOVES IN. It was a sibling of `.sheet`, `position: fixed`,
+         pinned to the viewport at 56px from the left — which means it had no
+         idea where the case study began or ended. It floated at the top-left of
+         the screen forever: over the ending, and (until the shells stopped
+         declaring one) over the home footer, which is the "Learnings written
+         next to my email address" in the recording. Nothing about that is
+         fixable with an offset, because a viewport-anchored element cannot know
+         about a document.
+
+         So it becomes a child of `.proj__body` and sticky instead of fixed. The
+         gutter it used to be pinned into is now that layout's first grid track
+         — the same 351px the padding used to reserve, so the content column
+         does not move — and a sticky item cannot travel outside its own grid
+         area. The area is the case study. That is the containment, and it is
+         structural: there is no number in it that could be right at one size
+         and wrong at another.
+
+         AND THE ENDING MOVES OUT. `.onward` — Index, Previous, Next — used to
+         be the last child of the content column, which put it INSIDE the rail's
+         area and let the rail ride down alongside it. It is the project's own
+         ending, not part of the study, so it belongs after the layout: a
+         full-width block, last thing in `#main`, with nothing beside it. */
+      if (this.rail) body.appendChild(this.rail);
       body.appendChild(col);
       main.appendChild(body);
+      if (item) main.appendChild(this.onward());
       Marquee.bind(main);       // attached first, so measurements are real
       videos(main);
       compares(main);
+      tours(main);
 
-      this.smoothLinks();
+      /* THE RAIL THE DRAWER USED TO HAVE, ON THE PAGE THAT REPLACED IT.
+
+         `SectionNav` and `RailInk` were written for the drawer and are the best
+         two things in it: an IntersectionObserver reading band instead of a
+         scroll handler doing twenty forced layout reads, and a rail whose ink
+         flips over the dark bands off cached geometry. Deleting the drawer is
+         no reason to delete those, so they move here and the naive scroll spy
+         that was on this page goes instead. Passing `null` for the scroll
+         container is what tells them the document is the scroller. */
+      if (this.rail && this.sections.length && this.links.length) {
+        SectionNav.bind(null, this.sections, this.links);
+        RailInk.bind(this.rail, null);
+        App.onScroll(() => { if (RailInk.current) RailInk.current.tick(); });
+        addEventListener('resize', () => {
+          if (RailInk.current) RailInk.current.measure();
+          if (SectionNav.rebuild) SectionNav.rebuild();
+        }, { passive: true });
+      } else {
+        this.smoothLinks();
+      }
+
+      /* ENTERING A PAGE STARTS AT THE TOP OF IT. A reload keeps the browser's
+         restored offset and a deep link keeps its own anchor; a fresh arrival
+         should not open halfway down because the last page was scrolled. */
+      if (!location.hash) requestAnimationFrame(() => App.to(0));
+    },
+
+    /* --- the first screen ------------------------------------------------- */
+    hero(p, item) {
+      const h = el('header', { class: 'phero' });
+
+      const top = el('div', { class: 'phero__top' });
+      top.appendChild(el('p', { class: 'phero__eyebrow' }, esc(p.eyebrow || '')));
+      top.appendChild(el('h1', { class: 'phero__title' }, esc(item.title)));
+      if (p.lede) top.appendChild(el('p', { class: 'phero__lede' }, esc(p.lede)));
+      h.appendChild(top);
+
+      /* WHAT IT IS, IN FIVE LABELLED FACTS. The tile says
+         "Product identity, 2026, Singapore" in one comma-separated line, which
+         is the right shape for a caption under a picture and the wrong one for
+         the top of a case study — nothing there says which of the three is the
+         discipline and which is the place. */
+      const facts = [
+        ['Role', p.role], ['Company', p.company],
+        ['Discipline', p.category], ['Year', p.year], ['Where', p.place],
+      ].filter((f) => f[1]);
+      if (facts.length) {
+        h.appendChild(el('dl', { class: 'phero__facts' },
+          facts.map(([k, v]) =>
+            `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')));
+      }
+
+      /* the tile's own artwork, built by the tile's own two functions */
+      const media = el('div', { class: 'wcard__media phero__panel' },
+        (PREVIEW[item.preview] || PREVIEW.bloom)(item));
+      mountThumb(item, media);
+      h.appendChild(media);
+
+      return h;
+    },
+
+    /* --- the way on ------------------------------------------------------- */
+
+    /* A case study that ends is a page with nowhere to go from. Three doors:
+       back to the index, and the piece either side of this one in the same
+       order the Work page lists them — which is why it is derived from that
+       list rather than authored, and cannot fall out of step with it. */
+    onward() {
+      const list = this.all;
+      const i = list.indexOf(this.item);
+      const prev = list[(i - 1 + list.length) % list.length];
+      /* With two studies the piece before and the piece after are the SAME
+         piece, and offering it twice under two different words is worse than
+         offering it once. `next` wins, because forward is the direction a
+         reader who has finished is already going. */
+      const next = list[(i + 1) % list.length];
+      const nav = el('nav', { class: 'onward', 'aria-label': 'More work' });
+
+      const door = (kind, it) => {
+        if (!it || it === this.item || (kind === 'prev' && it === next)) return '';
+        return `<a class="onward__go onward__go--${kind}" href="${projectHref(it.study.slug)}">`
+          + `<span class="onward__k">${kind === 'prev' ? 'Previous' : 'Next'}</span>`
+          + `<span class="onward__t">${esc(it.title)}</span>`
+          + `<span class="onward__m">${esc(it.meta || '')}</span></a>`;
+      };
+
+      nav.innerHTML =
+        `<a class="onward__all" href="${url('work.html')}">`
+        + '<span class="onward__k">Index</span>'
+        + '<span class="onward__t">All work</span></a>'
+        + door('prev', prev) + door('next', next);
+      return nav;
     },
 
     /* clicking a rail link scrolls there rather than jumping */
@@ -4617,8 +4636,7 @@
     IDLE_MS: 30000,
 
     onProject() {
-      return document.body.dataset.page === 'project'
-        || !!document.querySelector('.drawer.is-open');
+      return document.body.dataset.page === 'project';
     },
 
     onHero() {
@@ -5277,8 +5295,9 @@
     },
 
     /* Notes and stickers land on whichever surface is currently the "project":
-       the hero canvas on the homepage, the sheet on a case-study page, or the
-       drawer's scroll container when a study is open inside it. */
+       the hero canvas on the homepage, or the sheet on a case-study page. There
+       used to be a third — the panel a study opened inside — and a case study
+       is a page of its own now, so there are two. */
     setSurface(node) {
       this.surface = node;
       this.host = node;
@@ -5294,7 +5313,7 @@
         const host = this.surface;
         if (!host) return;
         if (Rack.mode !== 'open') return;                // no panel, no placing
-        if (hit(e, '.drg, .tools, .btn, .drawer__bar, .rail')) return;
+        if (hit(e, '.drg, .tools, .btn, .rail')) return;
         if (!host.contains(e.target) && host !== document.body) return;
         /* WHERE THE THING GOES, IN THE SURFACE'S OWN COORDINATES.
 
@@ -11116,8 +11135,8 @@
          no `getBoundingClientRect`, no computed style. Four elements, one
          string each, sixty times a second. */
       /* AND THE CLOCK DOES NOT START HERE. This runs before the page has been
-         built — the canvas, the showcase, the ink layer, the rack, the drawer
-         and the deck are all still to come, and so are the fonts and the first
+         built — the canvas, the showcase, the ink layer, the rack and the
+         deck are all still to come, and so are the fonts and the first
          paint of any of it. Several hundred milliseconds of main thread, in
          other words, landing squarely on the first throw and showing up as a
          stutter in the one part of the page whose entire job is to look
@@ -11531,8 +11550,8 @@
 
        So the ink is mounted INSIDE the hero while the hero is the surface,
        where it joins that stacking context and sits below the objects, and
-       goes back to the body for anything else — over a drawer or a case-study
-       sheet it genuinely does need to clear a fixed panel at z-index 80.
+       goes back to the body for anything else — on a case study it genuinely
+       does need to clear the fixed furniture above it.
 
        THE COORDINATE CATCH. Inside the hero these cannot stay `position:
        fixed`. `.sheet`, the wrapper the whole page sits in, carries a transform
@@ -11635,9 +11654,9 @@
            `.drg` has no behaviour to protect from a press. All the exclusion
            did was carve object-shaped holes in the drawing surface.
 
-           The rest stay: the toolbar, the lightbox and the drawer rail are
-           chrome, and a stroke that begins on a button is a misfire. */
-        if (t && t.closest && t.closest('.tools, .lbox, .drawer__rail')) return;
+           The rest stay: the toolbar, the lightbox and the case study's rail
+           are chrome, and a stroke that begins on a button is a misfire. */
+        if (t && t.closest && t.closest('.tools, .lbox, .rail')) return;
         /* A finger is normally left to the page so touch scrolling keeps
            working — a mouse or a stylus has a second way to scroll the page and
            a finger does not. A phone has no mouse to fall back to, so the pen
@@ -11711,14 +11730,11 @@
       this._down = down; this._move = move; this._up = up;   // for the harness
     },
 
-    /* how far the surface the ink belongs to has been scrolled */
-    offset() {
-      const surf = Canvas.surface;
-      if (surf && surf.classList && surf.classList.contains('drawer__scroll')) {
-        return surf.scrollTop || 0;
-      }
-      return App.y();
-    },
+    /* How far the surface the ink belongs to has been scrolled. There is one
+       answer now: the document. It used to have to ask whether the surface was
+       the study panel's own scroller, which is exactly the nested scroll this
+       refactor removed. */
+    offset() { return App.y(); },
 
     resize() {
       const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -12253,7 +12269,7 @@
       this.raf = requestAnimationFrame(tick);
     },
 
-    /* dropped lanes must not be stepped forever after a drawer closes */
+    /* dropped lanes must not be stepped forever after their host goes */
     prune() {
       this.items = this.items.filter((it) => it.lane.isConnected);
       if (!this.items.length && this.raf) {
@@ -12291,6 +12307,265 @@
     });
   };
 
+
+  /* --- THE ONBOARDING TOUR, WALKING ITSELF ----------------------------------
+
+     Twelve screens, a note beside the phone, and a line from one to the other.
+     Three things here are worth stating because each of them is a decision the
+     obvious build gets wrong.
+
+     THE CLOCK IS SET BY THE WRITING. Every stop's `hold` was derived from its
+     own note's length rather than being a round number, so a three-line stop
+     sits longer than a two-line one and the tour never leaves a sentence half
+     read. One timeout per stop, not one interval for all of them — the whole
+     point is that they do not last the same length of time.
+
+     NOTHING SLIDES A SCREEN'S WIDTH. These screens share most of their pixels:
+     the same status bar, the same back chevron, the same pager dots, the same
+     button in the same place. Sliding one screenshot off and another on moves
+     all of that for no reason, and the eye reads the travel of things that were
+     never supposed to travel. So both layers are held in register and
+     cross-dissolved — every shared element is the same pixel in both frames and
+     does not move at all — and only the parts that differ change. `drift` adds
+     six percent of direction-aware travel on top, which says which way you went
+     without dragging the furniture with it. `sheet` reveals upward from the
+     bottom edge, for the approval sheet.
+
+     IT ONLY RUNS WHILE IT IS ON SCREEN. A case study is a long page and this
+     block is a long way down it. An observer starts the clock when the block
+     arrives and stops it when it leaves, so nothing is animating in a part of
+     the document nobody is looking at.                                       */
+  const tours = (root) => {
+    $$('.tour', root).forEach((box) => {
+      if (box.dataset.on) return;
+      box.dataset.on = '1';
+
+      let STOPS = [];
+      try { STOPS = JSON.parse($('.tour__data', box).textContent); } catch (e) { return; }
+      if (!STOPS.length) return;
+
+      const glass = $('.tour__glass', box);
+      const scene = $('.tour__scene', box);
+      const phone = $('.tour__phone', box);
+      const note = $('.tour__note', box);
+      const titleEl = $('.tour__t', box);
+      const bodyEl = $('.tour__b', box);
+      const spot = $('.tour__spot', box);
+      const marks = $$('.tour__hole, .tour__ring, .tour__halo', box);
+      const lead = $('.tour__lead', box);
+      const dot = $('.tour__dot', box);
+      const leads = $('.tour__leads', box);
+      const countEl = $('.tour__count', box);
+      const screenEl = $('.tour__screen', box);
+      const playBtn = $('[data-act="play"]', box);
+      const shots = $$('.tour__shot', box);
+      const ticks = $$('.tour__tick', box);
+
+      let at = -1, tmr = null, auto = !REDUCED, held = false, seen = false;
+
+      const PARKED = 'translate3d(100%,0,0)';
+      const wipe = (n) => {
+        n.className = 'tour__shot';
+        n.style.clipPath = '';
+      };
+
+      const move = (from, to, dir) => {
+        const mode = STOPS[dir === 1 ? to : from].mode || 'drift';
+        const A = shots[from], B = shots[to];
+        shots.forEach((n, k) => {
+          if (k === from || k === to) return;
+          wipe(n); n.style.transform = PARKED; n.style.opacity = '0'; n.style.zIndex = '0';
+        });
+
+        let openB, closeA;
+        if (mode === 'sheet') {
+          openB = { t: 'translate3d(0,0,0) scale(1)', o: '1', c: dir === 1 ? 'inset(100% 0 0 0)' : '' };
+          closeA = { t: 'translate3d(0,0,0) scale(1)', o: '1', c: dir === 1 ? '' : 'inset(100% 0 0 0)' };
+        } else if (mode === 'morph') {
+          openB = { t: 'translate3d(0,0,0) scale(1.012)', o: '0', c: '' };
+          closeA = { t: 'translate3d(0,0,0) scale(0.994)', o: '0', c: '' };
+        } else {
+          openB = { t: `translate3d(${dir * 6}%,0,0) scale(1.006)`, o: '0', c: '' };
+          closeA = { t: `translate3d(${dir * -4}%,0,0) scale(0.998)`, o: '0', c: '' };
+        }
+
+        const lower = mode === 'sheet' && dir === -1;
+        wipe(B);
+        B.style.zIndex = lower ? '1' : '2';
+        B.style.transform = openB.t; B.style.opacity = openB.o; B.style.clipPath = openB.c;
+        wipe(A);
+        A.style.zIndex = lower ? '2' : '1';
+        A.style.transform = 'translate3d(0,0,0) scale(1)'; A.style.opacity = '1';
+        A.style.clipPath = lower ? 'inset(0 0 0 0)' : '';
+        /* the opening pose has to be committed before the movement is allowed
+           to start, or the browser coalesces the two writes and it just appears */
+        void B.offsetWidth;
+
+        const cls = `is-${mode}`;
+        B.classList.add(cls);
+        B.style.transform = 'translate3d(0,0,0) scale(1)'; B.style.opacity = '1';
+        if (mode === 'sheet' && dir === 1) B.style.clipPath = 'inset(0 0 0 0)';
+        A.classList.add(cls);
+        A.style.transform = closeA.t; A.style.opacity = closeA.o;
+        if (lower) A.style.clipPath = 'inset(100% 0 0 0)';
+      };
+
+      /* The mark arrives rather than appearing: written once at 6% oversize and
+         once on target, a frame apart, so the ring travels the last stretch
+         onto its subject. Attention follows movement; contrast only tells you
+         where to look eventually. */
+      const setSpot = (r) => {
+        if (!r) { spot.classList.remove('is-on'); return; }
+        const write = (pad) => {
+          const x = (r[0] - pad) / 100 * 393;
+          const y = (r[1] - pad * 0.46) / 100 * 852;
+          const w = (r[2] + pad * 2) / 100 * 393;
+          const h = (r[3] + pad * 0.92) / 100 * 852;
+          marks.forEach((n) => {
+            n.setAttribute('x', x.toFixed(1)); n.setAttribute('y', y.toFixed(1));
+            n.setAttribute('width', w.toFixed(1)); n.setAttribute('height', h.toFixed(1));
+          });
+        };
+        if (!spot.classList.contains('is-on') && !REDUCED) {
+          marks.forEach((n) => { n.style.transition = 'none'; });
+          write(6);
+          void spot.offsetWidth;
+          marks.forEach((n) => { n.style.transition = ''; });
+        }
+        write(0);
+        spot.classList.add('is-on');
+      };
+
+      /* Two segments and a right angle: down the note's inner edge, then across
+         to the phone. It stops at the device rather than crossing the
+         screenshot — inside the glass, the ring finishes the sentence. */
+      const drawLead = () => {
+        const s = STOPS[at];
+        if (!s || scene.clientWidth < 680) {
+          lead.setAttribute('d', ''); dot.setAttribute('cx', -99); return;
+        }
+        const sr = scene.getBoundingClientRect();
+        const nr = note.getBoundingClientRect();
+        const gr = glass.getBoundingClientRect();
+        const pr = phone.getBoundingClientRect();
+        const p = s.point || (s.focus
+          ? [s.focus[0] + s.focus[2] / 2, s.focus[1] + s.focus[3] / 2]
+          : [50, 50]);
+        const ty = gr.top - sr.top + p[1] / 100 * gr.height;
+        const tx = (s.side === 'l' ? pr.left : pr.right) - sr.left;
+        const ix = (s.side === 'l' ? nr.right : nr.left) - sr.left;
+        lead.setAttribute('d',
+          `M${ix.toFixed(1)},${(nr.top - sr.top + 6).toFixed(1)}` +
+          ` L${ix.toFixed(1)},${ty.toFixed(1)}` +
+          ` L${tx.toFixed(1)},${ty.toFixed(1)}`);
+        dot.setAttribute('cx', tx.toFixed(1));
+        dot.setAttribute('cy', ty.toFixed(1));
+        leads.classList.add('is-on');
+      };
+
+      const dwell = (i) => STOPS[i].hold || 3600;
+
+      const schedule = () => {
+        clearTimeout(tmr);
+        if (!auto || held || !seen || REDUCED) return;
+        tmr = setTimeout(() => go(at + 1 >= STOPS.length ? 0 : at + 1, 1), dwell(at));
+      };
+
+      function go(i, dirIn) {
+        if (i < 0 || i >= STOPS.length) return;
+        const dir = dirIn || (at === -1 ? 1 : (i > at ? 1 : -1));
+        const from = at;
+        at = i;
+
+        if (from === -1 || from === i) {
+          shots.forEach((n, k) => {
+            wipe(n);
+            n.style.transform = k === i ? 'translate3d(0,0,0)' : PARKED;
+            n.style.opacity = k === i ? '1' : '0';
+            n.style.zIndex = k === i ? '2' : '0';
+          });
+        } else {
+          move(from, i, dir);
+        }
+
+        const s = STOPS[i];
+        setSpot(s.focus);
+        note.className = `tour__note tour__note--${s.side || 'r'} is-on`;
+        note.style.top = `${s.ct || 30}%`;
+        titleEl.textContent = s.title;
+        bodyEl.textContent = s.body;
+        countEl.textContent = `${String(i + 1).padStart(2, '0')} / ${String(STOPS.length).padStart(2, '0')}`;
+        screenEl.textContent = s.screen;
+        note.classList.remove('is-new');
+        void note.offsetWidth;
+        note.classList.add('is-new');
+        /* the line is drawn after the note has been laid out at its new height
+           and side, not from an assumed one */
+        requestAnimationFrame(drawLead);
+
+        ticks.forEach((t, k) => {
+          const bar = t.firstElementChild;
+          t.classList.toggle('is-done', k < i);
+          t.classList.toggle('is-on', k === i);
+          bar.style.transition = 'none';
+          bar.style.transform = 'scaleX(0)';
+          if (k !== i) return;
+          void bar.offsetWidth;
+          if (auto && !held && seen && !REDUCED) {
+            bar.style.transition = `transform ${dwell(i)}ms linear`;
+          }
+          bar.style.transform = 'scaleX(1)';
+        });
+
+        schedule();
+      }
+
+      const pause = () => {
+        auto = false; clearTimeout(tmr);
+        playBtn.textContent = 'Play'; playBtn.classList.remove('is-on');
+        const bar = ticks[at] && ticks[at].firstElementChild;
+        if (bar) { bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)'; }
+      };
+      const resume = () => {
+        auto = true;
+        playBtn.textContent = 'Pause'; playBtn.classList.add('is-on');
+        go(at, 1);
+      };
+
+      box.addEventListener('click', (e) => {
+        const t = e.target.closest('[data-act], [data-go]');
+        if (!t) return;
+        const act = t.dataset.act;
+        if (act === 'play') { auto ? pause() : resume(); return; }
+        pause();
+        if (act === 'prev') go(at - 1 < 0 ? STOPS.length - 1 : at - 1, -1);
+        else if (act === 'next') go(at + 1 >= STOPS.length ? 0 : at + 1, 1);
+        else if (t.dataset.go) go(+t.dataset.go);
+      });
+
+      /* pointing at a screen holds it — the natural gesture for "wait, what
+         was that" is already pointing at it */
+      scene.addEventListener('pointerenter', () => { held = true; clearTimeout(tmr); });
+      scene.addEventListener('pointerleave', () => { held = false; if (auto) go(at, 1); });
+
+      addEventListener('resize', drawLead, { passive: true });
+
+      if (REDUCED) { playBtn.textContent = 'Play'; playBtn.classList.remove('is-on'); }
+
+      /* nothing runs until the block is actually on screen, and it stops again
+         when it leaves */
+      const io = new IntersectionObserver((es) => {
+        es.forEach((en) => {
+          seen = en.isIntersecting;
+          if (seen) { drawLead(); schedule(); } else clearTimeout(tmr);
+        });
+      }, { threshold: 0.25 });
+      io.observe(box);
+
+      go(0, 1);
+    });
+  };
+
   const videos = (root) => {
     const vids = $$('.shotvid', root);
     if (!vids.length) return;
@@ -12323,12 +12598,12 @@
 
      What was here before, and why each part was wrong:
 
-     1. CLICKS LANDED BETWEEN SECTIONS. The target was `t.offsetTop - 8`.
-        offsetTop is measured from the nearest POSITIONED ancestor, and .drawer is
-        `position: fixed` while .drawer__scroll is static — so offsetTop counted
-        from the drawer's box while scrollTop counts from the scroll container's
-        content. Every destination was off by the drawer header's height, a
-        constant error that put the reader mid-section every time.
+     1. CLICKS LANDED BETWEEN SECTIONS. The target was `t.offsetTop - 8`, and
+        offsetTop is measured from the nearest POSITIONED ancestor rather than
+        from the thing that scrolls — so every destination was off by the height
+        of whatever chrome sat above the article, a constant error that put the
+        reader mid-section every time. It reads the anchor's own rect against
+        the scroller's now, which cannot drift apart.
 
      2. THE ACTIVE ITEM WAS APPROXIMATE. A scroll handler walked all ten sections
         and marked the last one whose top had passed 30% of the viewport. On a
@@ -12345,8 +12620,20 @@
      is active. The band is contiguous, so exactly one section always qualifies —
      which is what stops the flicker between neighbours. */
   const SectionNav = {
+    /* `scroll` is the element that scrolls, or NULL for the document — which is
+       every caller now, and was none of them when this was written for a panel
+       that scrolled inside itself. The adapter is four lines rather than a
+       branch at each of the six places the container is asked something, and it
+       is what lets the IntersectionObserver take `root: null` at the same
+       time. */
     bind(scroll, secs, links) {
       if (!secs.length || !links.length) return;
+      const box = scroll || {
+        get scrollTop() { return App.y(); },
+        set scrollTop(v) { App.to(v); },
+        getBoundingClientRect: () => ({ top: 0 }),
+        scrollTo: (o) => App.to(o.top, o.behavior === 'smooth'),
+      };
 
       /* One anchor per section, sitting immediately before its heading. These are
          the navigation targets — not the section boxes, whose tops are different
@@ -12411,14 +12698,14 @@
              less the allowance the layout declares for it. Every anchor sits the
              same distance above its heading (zero), so every section comes to rest
              with its heading at exactly the same height. */
-          const top = scroll.scrollTop
+          const top = box.scrollTop
             + anc.getBoundingClientRect().top
-            - scroll.getBoundingClientRect().top
+            - box.getBoundingClientRect().top
             - headroom();
-          if (typeof scroll.scrollTo === 'function') {
-            scroll.scrollTo({ top, behavior: REDUCED ? 'auto' : 'smooth' });
+          if (typeof box.scrollTo === 'function') {
+            box.scrollTo({ top, behavior: REDUCED ? 'auto' : 'smooth' });
           } else {
-            scroll.scrollTop = top;          // older engines, and jsdom
+            box.scrollTop = top;          // older engines, and jsdom
           }
           unpin();
         });
@@ -12452,14 +12739,14 @@
             else inBand.delete(en.target);
           });
           choose();
-        }, { root: scroll, rootMargin: `-${Math.round(headroom())}px 0px -55% 0px`,
+        }, { root: scroll || null, rootMargin: `-${Math.round(headroom())}px 0px -55% 0px`,
              threshold: 0 });
         secs.forEach((sx) => this.io.observe(sx));
       };
       build();
       setActive(0);
 
-      this.secs = secs; this.links = links; this.scroll = scroll;
+      this.secs = secs; this.links = links; this.scroll = box;
       this.anchors = anchors; this.headroom = headroom;
       this.setActive = setActive;
       this.choose = choose;
@@ -12472,9 +12759,16 @@
   };
 
   const RailInk = {
+    /* `scroll` is the element that scrolls, or NULL for the document — see the
+       note on SectionNav.bind. The dark bands are searched for under the
+       scroller when there is one and under the document when there is not. */
     bind(rail, scroll) {
       if (!rail) return;
-      const darks = $$('.sec--dark, .proj__head--dark', scroll);
+      const box = scroll || {
+        get scrollTop() { return App.y(); },
+        getBoundingClientRect: () => ({ top: 0 }),
+      };
+      const darks = $$('.sec--dark, .proj__head--dark', scroll || document);
       const links = $$('.rail__link', rail);
       if (!darks.length || !links.length) return;
 
@@ -12488,8 +12782,8 @@
       let bands = [];        // content-space top/bottom of each dark region
       let offs = [];         // each link's offset inside the rail, plus its height
       const measure = () => {
-        const sr = scroll.getBoundingClientRect().top;
-        const st = scroll.scrollTop;
+        const sr = box.getBoundingClientRect().top;
+        const st = box.scrollTop;
         bands = darks.map((d) => {
           const r = d.getBoundingClientRect();
           return { top: st + r.top - sr, bottom: st + r.bottom - sr };
@@ -12538,20 +12832,20 @@
 
       let lastY = null;
       const tick = () => {
-        const y = scroll.scrollTop;
+        const y = box.scrollTop;
         if (lastY !== null && Math.abs(y - lastY) < 4) return;
         lastY = y;
         if (!bands.length) return;
         /* the single read: where the rail currently sits inside the container */
         apply(rail.getBoundingClientRect().top
-              - scroll.getBoundingClientRect().top + y);
+              - box.getBoundingClientRect().top + y);
       };
       measure();
       tick();
       lastY = null;                        /* so the first scroll always runs */
       rail.__inkTick = tick;
       rail.__inkMeasure = measure;
-      /* the drawer's single scroll handler drives this; RailInk owns no listener */
+      /* the page's scroll handler drives this; RailInk owns no listener */
       this.current = {
         tick, measure, apply,
         /* the harness installs known geometry: jsdom reports every rect from a
@@ -12721,7 +13015,7 @@
         const isRes = l.kind === 'resume';
         const a = el('a', {
           class: `btn${l.primary ? '' : ' btn--ghost'}`,
-          href: isRes ? (S.person.resumeUrl || '#') : l.href,
+          href: isRes ? (S.person.resumeUrl || '#') : url(l.href),
         }, `<span class="btn__label">${esc(l.label)}</span>`);
         if (isRes) a.dataset.action = 'resume';
         links.appendChild(a);
@@ -12767,17 +13061,17 @@
        the one on the Work page.
 
        So the archive is built from `S.showcase.items` — the same four, the same
-       titles, the same metadata, the same preview panels, the same artwork, the
-       same case-study drawer. Nothing is restated in a second voice and nothing
-       is invented. The five text-only entries are real credits with no work to
+       titles, the same metadata, the same preview panels, the same artwork, and
+       links to the same case-study pages. Nothing is restated in a second voice
+       and nothing is invented. The five text-only entries are real credits with no work to
        show, so they keep their place as an index at the foot rather than being
        dressed up as pieces they are not.
 
-       WHY THE TILES GO INTO `Showcase.cards`. That array is what `drawer()`
-       binds its clicks to. Pushing the archive's tiles into it and then calling
-       `drawer()` gives this page the identical case study, opening the identical
-       way, with no second implementation and no route of its own — which is
-       also why clicking a project here does not feel like leaving the page. */
+       WHY THE TILES GO INTO `Showcase.cards`. That array is what `Showcase.tick`
+       animates, so registering the archive's tiles there gives them the home
+       grid's entrance without a second scroll animation being written for them.
+       It used to be what the drawer bound its clicks to as well; the tiles are
+       links to real pages now and nothing is bound to them at all. */
     work() {
       const items = (S.showcase && S.showcase.items) || [];
       const main = $('#main');
@@ -12820,7 +13114,7 @@
       const made = [];
       items.forEach((item, i) => {
         const a = el('a', {
-          class: 'wkt', href: item.href || '#',
+          class: 'wkt', href: item.study ? projectHref(item.study.slug) : (item.href || '#'),
           'aria-label': `${item.title} — ${item.meta || ''}`,
         });
         const media = el('div', { class: 'wkt__media' },
@@ -12842,7 +13136,7 @@
            and not of the tile. It was on the tile, which is also positioned —
            so `bottom: 0.9rem` measured from the bottom of the whole anchor,
            caption included, and the pill hovered on top of the title. */
-        if (item.href && item.href !== '#') {
+        if (item.study) {
           media.appendChild(el('span', { class: 'wkt__go', 'aria-hidden': 'true' }, 'Case study'));
         } else {
           a.classList.add('is-quiet');
@@ -12874,14 +13168,7 @@
 
       main.appendChild(sec);
 
-      /* THE HOME PAGE'S DRAWER, ON THIS PAGE'S TILES. `drawer()` binds its
-         clicks to `Showcase.cards`, so the tiles are registered there and the
-         case study that opens is the one already written — same panel, same
-         pager, same close. `Showcase.tick` also animates whatever is in that
-         array, which is how these inherit the home grid's entrance without a
-         second scroll animation being written for them. */
       Showcase.cards = made;
-      Showcase.drawer(items);
 
       /* --- the column drift ----------------------------------------------
          The reference's columns travel at slightly different rates, which is
@@ -12910,7 +13197,7 @@
        which is the right answer for a page that no longer exists. */
 
     project() {
-      Project.init();
+      Project.init(document.body.dataset.project || '');
       /* the page itself is the project surface, so notes and stickers can land
          anywhere on the case study */
       const sheet = $('.sheet');
@@ -13153,6 +13440,7 @@
            Written on the two layers that draw the frame rather than on the root,
            for the reason in the comment above. */
         if (App.app) App.app.style.setProperty('--sheet-lift', lift);
+        if (App.pane) App.pane.style.setProperty('--sheet-lift', lift);
         if (App.hud) App.hud.style.setProperty('--sheet-lift', lift);
         /* the phone's second reader — see measure(). Two subtrees dirtied
            instead of one, and neither write touches layout. */
@@ -13544,6 +13832,11 @@
   /* ======================================================== boot ======== */
 
   function boot() {
+    /* Before anything reads a path out of it: every relative file name in
+       content.js becomes an absolute one, so a case study two directories down
+       loads the same pictures the home page does. See `rebase` up top. */
+    rebase(S);
+
     /* First, before anything mounts: the three layers exist, and every module
        after this lands in one of them rather than on the body. */
     App.init();
@@ -13588,7 +13881,6 @@
          stay in sync regardless of display refresh rate */
       const a = Words.tick(vh, dt);
       const b = Showcase.tick(vh, dt);
-      const g = Showcase.growTick ? Showcase.growTick(dt) : false;
       Project.tick(vh);
       Ink.tick();
       Rack.applyScope();
@@ -13600,7 +13892,7 @@
       const dk = Deck.tick(dt);
       Sheet.tick(vh);
 
-      if (a || b || g || dr || pr || gh || pk || dk) idleFrames = 0;
+      if (a || b || dr || pr || gh || pk || dk) idleFrames = 0;
       else idleFrames++;
 
       if (idleFrames > 6) { live = false; return; }
@@ -13834,7 +14126,7 @@
     };
     window.__navPinned = () => (SectionNav.pinnedIs ? SectionNav.pinnedIs() : -2);
     window.__railInk = () => $$('.rail__link').map((a) => a.dataset.ink || '');
-    window.__railTick = () => { const r = $('.drawer__rail'); if (r && r.__inkTick) r.__inkTick(); };
+    window.__railTick = () => { const r = $('.rail'); if (r && r.__inkTick) r.__inkTick(); };
     window.__inkSurfaces = () => Ink.strokes.map((s) => (s.surf ? s.surf.className : 'null'));
     window.__inkPts = () => (Ink.strokes[0] ? Ink.strokes[0].pts.length : 0);
     window.__inkColour = () => (Ink.strokes.at(-1) ? Ink.strokes.at(-1).color : null);
@@ -13843,7 +14135,6 @@
     window.__pointer = (x, y) => { Pointer.x = x; Pointer.y = y; Pointer.seen = true; };
     window.__rackMode = () => Rack.mode;
     window.__rackSet = (m) => Rack.setMode(m, 'test');
-    window.__surfaceIsDrawer = () => !!Canvas.surface?.classList?.contains('drawer__scroll');
     window.__navInk = () => Nav.ink;
     window.__navSet = (surface) => Nav.set(surface);
 

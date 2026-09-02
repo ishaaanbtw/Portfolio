@@ -609,6 +609,24 @@ window.SITE = {
            sharing one frame today, but the point lands harder as four `shot`
            blocks, one screen under each idea.                                */
         study: {
+          /* THE ROUTE THIS STUDY LIVES AT, and the reason it is a word rather
+             than an index: `/work/cypherock-x0` is a URL somebody can read
+             aloud, send, and land on cold. The shell file at work/<slug>.html
+             carries nothing but this name; everything below is what it finds. */
+          slug: 'cypherock-x0',
+          /* The hero's own facts. They were one comma-separated string on the
+             tile — "Product identity, 2026, Singapore" — which is the right
+             shape for a caption and the wrong one for a page that sets them in
+             a row with labels over them. */
+          company: 'Cypherock',
+          category: 'Product identity',
+          year: '2026',
+          place: 'Singapore',
+          role: 'Senior Product Designer',
+          /* the one sentence the whole study answers, lifted from the overview
+             rather than written twice */
+          lede: 'How do you create a product that feels new enough to justify '
+            + 'its own identity, while remaining unmistakably Cypherock?',
           eyebrow: 'Cypherock · Product Design',
           title: 'X0',
           /* The dock opens with the study, as it does on a project page and as
@@ -784,6 +802,137 @@ window.SITE = {
 
                 { type: 'callout',
                   text: 'The earlier concepts helped validate feature priorities but lacked <b>consistency, scalability and a clear visual identity</b> aligned with the upcoming X0 product.' },
+
+                /* --- WHERE IT LANDED ---------------------------------------
+                   The section's own argument, finished. The frame above is the
+                   concepts that came before; this is the flow they turned into,
+                   and putting the two in one section is what makes "evolution"
+                   a claim the page can actually support rather than a word in
+                   a heading.
+
+                   It walks itself: a stop per screen, each saying why that
+                   screen exists rather than what is on it, and each holding for
+                   as long as its own note takes to read. Five of the twelve
+                   mark a region — the ones that are genuinely about one part of
+                   the interface — and the rest mark nothing, because an
+                   onboarding screen carries a single idea and pointing at a
+                   corner of it promises a detail that is not there. */
+                { type: 'head', title: 'Where it landed' },
+
+                { type: 'tour', max: '900px', pill: true,
+                  label: 'X0 Wallet \u2014 Onboarding',
+                  base: 'assets/img/x0/onboarding/',
+                  caption: 'The onboarding flow as it shipped \u2014 twelve screens, and the reason for each one',
+                  stops: [
+                    { src: '01-splash.webp',
+                      screen: 'Splash',
+                      hold: 4350,
+                      mode: 'drift',
+                      side: 'r',
+                      ct: 20,
+                      point: [50, 46],
+                      title: 'Hold the first second',
+                      body: 'A cold start has real work to do. That second exists either way, so it is spent on the mark rather than on a progress bar.' },
+                    { src: '02-welcome.webp',
+                      screen: 'Welcome',
+                      hold: 4255,
+                      mode: 'morph',
+                      side: 'l',
+                      ct: 54,
+                      point: [50, 84],
+                      title: 'One decision, and no account',
+                      body: 'Most wallets open with a sign-up. This one opens with a button, because what identifies you here is a card, not an email address.' },
+                    { src: '03-meet.webp',
+                      screen: 'Meet Cypherock X0',
+                      hold: 4350,
+                      mode: 'drift',
+                      side: 'r',
+                      ct: 22,
+                      point: [48, 55],
+                      title: 'The object before the process',
+                      body: 'People arrive having just unboxed a metal card. The first slide says what it is, so everything after it has something physical to attach to.' },
+                    { src: '04-no-seed.webp',
+                      screen: 'No seed phrase',
+                      hold: 4255,
+                      mode: 'drift',
+                      side: 'r',
+                      ct: 14,
+                      point: [50, 14],
+                      title: 'Lead with the objection',
+                      body: 'The seed phrase is where wallet onboarding usually dies. Removing it is the strongest thing this product has to say, so it is said second.' },
+                    { src: '05-distributed.webp',
+                      screen: 'Distributed keys',
+                      hold: 4065,
+                      mode: 'drift',
+                      side: 'r',
+                      ct: 24,
+                      point: [50, 50],
+                      title: 'Answer the obvious question',
+                      body: '“No seed phrase” immediately raises “then what protects it”. The key is split across the cards, so no single place ever holds it.' },
+                    { src: '06-currencies.webp',
+                      screen: '22,000+ assets',
+                      hold: 4065,
+                      mode: 'drift',
+                      side: 'r',
+                      ct: 42,
+                      point: [50, 60],
+                      title: 'Will it hold mine?',
+                      body: 'After the security argument the last objection is coverage, and a wall of logos someone recognises answers that faster than a number does.' },
+                    { src: '07-consent.webp',
+                      screen: 'Consent',
+                      hold: 4350,
+                      mode: 'drift',
+                      side: 'l',
+                      ct: 50,
+                      focus: [4, 84.3, 92, 9.6],
+                      title: 'Ask before collecting',
+                      body: 'Consent comes before setup, in plain words, with what is never collected listed as clearly as what is. Refuse all is the same size as Accept all.' },
+                    { src: '08-card-stack.webp',
+                      screen: 'Card set',
+                      hold: 4540,
+                      mode: 'drift',
+                      side: 'l',
+                      ct: 20,
+                      point: [50, 55],
+                      title: 'Name what is about to happen',
+                      body: 'Setup is the one part of this flow that cannot be undone. Showing the four cards means nobody taps Continue without knowing what they are starting.' },
+                    { src: '09-tap-idle.webp',
+                      screen: 'Tap to approve',
+                      hold: 4920,
+                      mode: 'sheet',
+                      side: 'r',
+                      ct: 44,
+                      focus: [0.8, 36.4, 98.4, 65],
+                      title: 'A sheet, not a new screen',
+                      body: 'Approval rises over the page that asked for it, so the context never disappears. Where to hold the card is in the sheet, because that is what people get wrong.' },
+                    { src: '10-tap-loading.webp',
+                      screen: 'Holding',
+                      hold: 5000,
+                      mode: 'morph',
+                      side: 'r',
+                      ct: 44,
+                      focus: [0.8, 36.4, 98.4, 65],
+                      title: 'Hold is a state, so it has one',
+                      body: 'The read takes a moment and the card has to stay put for all of it. The spinner is the contract: it lasts exactly as long as the hold.' },
+                    { src: '11-tap-success.webp',
+                      screen: 'Approved',
+                      hold: 4635,
+                      mode: 'morph',
+                      side: 'r',
+                      ct: 44,
+                      focus: [0.8, 36.4, 98.4, 65],
+                      title: 'Confirm where it was asked',
+                      body: 'Success replaces the spinner in place. No screen change and no toast to miss — the surface that asked for the tap is the one that says it worked.' },
+                    { src: '12-user-type.webp',
+                      screen: 'New or existing',
+                      hold: 4540,
+                      mode: 'drift',
+                      side: 'l',
+                      ct: 18,
+                      focus: [4, 29.5, 92, 33],
+                      title: 'One fork, asked once',
+                      body: 'Two paths, and both of them need the cards. Asking after a tap has proven a card is present means the answer routes setup rather than gating it.' },
+                  ] },
               ] },
 
             /* --- 04. Principles ---------------------------------------------------
@@ -972,6 +1121,15 @@ window.SITE = {
         thumbFit: 'sheet',
         preview: 'words', line: 'Shortlisted',
         study: {
+          slug: 'onefinnet-talent',
+          company: 'Onefinnet',
+          category: 'B2B SaaS',
+          year: '2024\u201325',
+          place: 'Noida (on-site)',
+          role: 'Product Designer',
+          lede: 'Automating candidate sourcing, shortlisting and screening \u2014 '
+            + 'so a hiring team spends its day building teams, not filtering '
+            + 'resumes.',
           eyebrow: 'Onefinnet \u00b7 Product Design',
           title: 'Talent',
           /* The dock opens with the study, as it does on a project page. Set

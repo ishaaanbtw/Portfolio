@@ -71,6 +71,17 @@
      is invalid in a browser that does not implement it, and an invalid value
      drops the whole declaration — so a padding written without one does not
      degrade to zero, it disappears, taking the padding with it. */
+  /* --- the project rail's gutter -------------------------------------------
+     Read twice: as the first track of the case study's layout, and as the
+     offset that puts the study's ending on the same reading column. It is at
+     the ROOT and not on `.proj` for a reason that has bitten this file before —
+     the ending is a SIBLING of `.proj`, not a descendant, so a token declared
+     there resolves to nothing for it, and a `var()` that resolves to nothing
+     takes its whole declaration with it. The ending lost its offset AND its
+     width that way, and started at x0 with "INDEX" half off the screen.
+     Measured 351px. */
+  --proj-rail: 21.9375rem;
+
   --sa-top: env(safe-area-inset-top, 0px);
   --sa-right: env(safe-area-inset-right, 0px);
   --sa-bottom: env(safe-area-inset-bottom, 0px);
@@ -249,11 +260,29 @@
 }
 
 
-/* NEITHER OF THESE SCROLLS ANY MORE — `.app` does. See section 38: a rounded,
-   scaled window has to be clipped to the viewport, and a viewport-sized scroll
-   container clips itself with a border-radius instead of needing its clip
-   rewritten in document coordinates on every frame. */
-html { -webkit-text-size-adjust: 100%; overflow: hidden; height: 100%; }
+/* THE DOCUMENT SCROLLS, AND IT IS THE ONLY THING THAT DOES.
+
+   This was the other way round for a while: `.app` was a viewport-sized scroll
+   container, because a rounded, scaled window is easiest to clip when the thing
+   being clipped is already the size of the screen. Project case studies made
+   that untenable — a case study that scrolls inside a box inside another box is
+   a scrolling sheet however it is dressed, and you can feel the second scroller
+   in your hand. So the browser owns the scroll, there is exactly one of it, and
+   the window's clip is written in viewport terms by `App.shell()` for the six
+   hundred milliseconds a year the shell is actually moving. */
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: none;
+  /* `clip`, not `hidden`. Something on a phone is always twenty pixels wider
+     than the screen — a rotated label, a 128vw strip, a shadow — and the page
+     used to be spared it because it scrolled inside a box with its x-overflow
+     hidden. The document is the scroller now, and `overflow-x: hidden` on the
+     document would force `overflow-y: auto` on it as well, which turns the
+     root into a scroll container and breaks everything that measures against
+     the viewport. `clip` cuts the overflow without creating a scroller. */
+  overflow-x: clip;
+}
 
 body {
   margin: 0;
@@ -281,8 +310,8 @@ body {
   background-position: 0 var(--grid-y, 0px);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow: hidden;
-  height: 100%;
+  overflow-x: clip;
+  min-height: 100%;
 }
 
 img, svg, video { display: block; max-width: 100%; }
@@ -416,7 +445,8 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
   .sky-root .shoot { display: none; }
 }
 
-/* same reason as .drawer__scroll: a 128vw strip must not create page scroll */
+/* the same reason the document clips its own x-overflow: a 128vw strip must
+   not create page scroll */
 .proj, .sheet { overflow-x: clip; }
 
 .sheet {
@@ -2295,165 +2325,6 @@ body.is-field .people-trigger {
   .field__card { transform: none !important; }
 }
 
-/* ==========================================================================
-   22. PROJECT DRAWER
-   Slides up from the bottom over a dimmed, blurred page. Measured from the
-   recording: rests with its top ~14% down the viewport (so it covers ~86%),
-   rounded top corners, a sticky header, and its own internal scroll.
-   ========================================================================== */
-
-.drawer {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  visibility: hidden;
-  pointer-events: none;
-}
-/* Visibility can't be interpolated, so it has to stay `visible` for the whole
-   exit or the panel vanishes instead of sliding out. `is-closing` keeps it
-   painted while the transform and opacity finish. */
-.drawer.is-open,
-.drawer.is-closing { visibility: visible; }
-.drawer.is-open { pointer-events: auto; }
-
-/* --- the dimmed, blurred page behind ------------------------------------- */
-
-.drawer__scrim {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  background: rgba(16, 13, 10, 0.42);
-  backdrop-filter: blur(7px) saturate(0.9);
-  -webkit-backdrop-filter: blur(7px) saturate(0.9);
-  opacity: 0;
-  transition: opacity 380ms var(--ease);
-  /* its own layer: without this, fading an element that also carries a
-     backdrop-filter can flash as the compositor re-rasterises */
-  will-change: opacity;
-  transform: translateZ(0);
-}
-.drawer.is-open .drawer__scrim { opacity: 1; }
-
-/* --- the panel ----------------------------------------------------------- */
-
-.drawer__panel {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  /* Full height, pushed down 14% at rest (the measured resting position) and
-     slid to 0 as you scroll. Doing this with a transform rather than a height
-     means docking to the top never re-lays-out the content mid-scroll. */
-  height: 100%;
-  --rest: 14%;
-  display: flex;
-  flex-direction: column;
-  background: var(--paper-2);
-  border-radius: calc((1 - var(--grow, 0)) * 18px) calc((1 - var(--grow, 0)) * 18px) 0 0;
-  box-shadow: 0 -8px 60px -12px rgba(16, 13, 10, 0.4);
-  overflow: hidden;
-  transform: translate3d(0, 100%, 0);
-  /* a drawer wants to arrive decisively and stop dead — no overshoot, or the
-     panel appears to bounce off the bottom of the screen */
-  transition: transform 460ms cubic-bezier(0.22, 1, 0.3, 1);
-  will-change: transform;
-}
-.drawer.is-open .drawer__panel {
-  transform: translate3d(0, calc((1 - var(--grow, 0)) * var(--rest)), 0);
-}
-
-/* Closing is quicker than opening, which is how drawers usually feel right —
-   but not so quick that it snaps. The panel accelerates away while the scrim
-   holds its dim slightly longer, so the page doesn't brighten under a panel
-   that's still on screen. */
-.drawer.is-closing .drawer__panel {
-  transition-duration: 340ms;
-  transition-timing-function: cubic-bezier(0.36, 0, 0.66, 0.36);
-}
-.drawer.is-closing .drawer__scrim { transition-duration: 300ms; }
-
-/* --- sticky header ------------------------------------------------------- */
-
-.drawer__bar {
-  position: relative;
-  z-index: 2;
-  flex: none;
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  padding: 1.15rem clamp(1.25rem, 4vw, 2.5rem);
-  border-bottom: 1px solid var(--line-soft);
-  background: rgba(255, 254, 252, 0.92);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.drawer__title { font-size: var(--step-0); font-weight: 600; color: var(--ink); }
-.drawer__sub   { font-size: var(--step-0); color: var(--ink-dim); }
-.drawer__sub::before { content: '· '; }
-
-.drawer__close {
-  margin-left: auto;
-  width: 1.6rem; height: 1.6rem;
-  display: grid; place-items: center;
-  border-radius: 50%;
-  color: var(--ink-dim);
-  transition: background 260ms ease, color 260ms ease, transform 480ms var(--spring);
-}
-.drawer__close:hover { background: rgba(20, 16, 12, 0.06); color: var(--ink); transform: rotate(90deg); }
-.drawer__close svg { width: 0.8rem; height: 0.8rem; }
-
-/* --- scrolling body ----------------------------------------------------- */
-
-.drawer__scroll {
-  flex: 1;
-  overflow-y: auto;
-  /* The NDA tape is 128vw and has to cross the whole page. Clipping it at its
-     own wrapper cut it off at the reading column's edge; the clip belongs here,
-     which is the actual viewport for this content. hidden rather than clip,
-     because it pairs with overflow-y: auto everywhere. */
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  /* the last 6rem is the run-out past the final section; the inset keeps it
-     clear of the home indicator rather than ending underneath it */
-  padding: var(--drawer-top) clamp(1.25rem, 4vw, 2.5rem)
-           calc(6rem + var(--sa-bottom));
-}
-
-/* the two-column doc layout: small grey label in a gutter, content beside it */
-.drawer__row {
-  display: grid;
-  grid-template-columns: 7.5rem minmax(0, 34rem);
-  gap: 1.5rem;
-  margin: 0 auto clamp(1.75rem, 5vh, 2.75rem);
-  width: max-content;
-  max-width: 100%;
-}
-
-.drawer__label {
-  font-size: var(--step--1);
-  color: var(--ink-dim);
-  padding-top: 0.2em;
-}
-
-.drawer__body { font-size: var(--step-0); line-height: 1.62; color: var(--ink-2); }
-.drawer__body p + p { margin-top: 0.85em; }
-
-/* --- prev / next project, at the end of a case study ---------------------
-   Two halves of one rule: a quiet direction label, then the project name at
-   reading size so it is the thing you actually see. It cycles, so the last
-   project points back to the first rather than dead-ending. */
-
-.drawer__pager {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(1rem, 3vw, 2.5rem);
-  margin: clamp(3rem, 8vh, 5rem) 0 clamp(2rem, 6vh, 3.5rem);
-  padding-top: clamp(1.5rem, 4vh, 2.25rem);
-  border-top: 1px solid var(--line);
-}
-
 .pager__side {
   display: flex;
   flex-direction: column;
@@ -2497,48 +2368,11 @@ body.is-field .people-trigger {
 
 /* one column on a narrow drawer, next first so it stays the primary action */
 @media (max-width: 40rem) {
-  .drawer__pager { grid-template-columns: 1fr; gap: 0.5rem; }
   .pager__side--next { text-align: left; align-items: flex-start; order: -1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pager__side { transition-duration: 1ms; }
-}
-
-.drawer__media {
-  position: relative;
-  width: min(44rem, 100%);
-  margin: 0 auto clamp(1.75rem, 5vh, 2.75rem);
-  aspect-ratio: 1.62;
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--pv-bg, #f1efec);
-  box-shadow: 0 0 0 1px rgba(20, 16, 12, 0.05);
-}
-
-/* each row and panel eases in as the drawer settles */
-.drawer__row,
-.drawer__media {
-  opacity: 0;
-  transform: translateY(14px);
-  transition:
-    opacity 460ms var(--ease) var(--sd, 0ms),
-    transform 620ms var(--spring-soft) var(--sd, 0ms);
-}
-.drawer.is-open .drawer__row,
-.drawer.is-open .drawer__media { opacity: 1; transform: none; }
-
-@media (max-width: 46rem) {
-  .drawer__panel { --rest: 8%; }
-  .drawer__row { grid-template-columns: 1fr; gap: 0.4rem; width: auto; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .drawer__panel,
-  .drawer__scrim,
-  .drawer__row,
-  .drawer__media { transition-duration: 1ms; }
-  .drawer__row, .drawer__media { opacity: 1; transform: none; }
 }
 
 /* ==========================================================================
@@ -2550,14 +2384,35 @@ body.is-field .people-trigger {
 
 body[data-page='project'] .nav { display: none; }
 
-.proj { padding: clamp(2.5rem, 7vh, 4.5rem) 0 0; }
+.proj {
+  /* named, because the hero below has to subtract it to be exactly one screen */
+  --proj-top: clamp(2.5rem, 7vh, 4.5rem);
+  padding: var(--proj-top) 0 0;
+}
 
 /* --- sticky left rail ---------------------------------------------------- */
 
 .rail {
-  position: fixed;
+  /* STICKY, NOT FIXED, AND THE DIFFERENCE IS THE WHOLE BUG.
+     Fixed is anchored to the viewport, which cannot be told where a document
+     ends; this rail floated at the top-left of the screen for as long as the
+     tab was open, over the project's ending and over whatever came after it.
+     Sticky is anchored to its containing block, and its containing block is now
+     the grid area below — the case study. It travels to the end of that and
+     stops there, because that is all the room it has. */
+  position: sticky;
   top: clamp(2.5rem, 7vh, 4.5rem);
-  left: 1.625rem;                    /* measured 26px */
+  align-self: start;
+  height: fit-content;
+  /* Measured 26px off the reference, and moved to 56 for a reason the
+     reference did not have: the menu handle is a paper tab fixed to the left
+     edge at half the viewport's height, about 34px wide, and at 26px the rail
+     ran straight through it — "Learnings" and the word MENU written over each
+     other. The handle is global furniture and stays where it is on every page;
+     the rail is this page's own, so the rail moves. */
+  /* a margin now rather than an offset, because it is in the layout instead
+     of on top of it — the same 56px, measured from the same edge */
+  margin-left: 3.5rem;
   width: 11rem;
   z-index: 40;
   font-size: 0.8125rem;              /* measured ~13px */
@@ -2603,7 +2458,21 @@ body[data-page='project'] .nav { display: none; }
 
 /* --- content column ------------------------------------------------------ */
 
-.proj__body { padding-left: 21.9375rem; }   /* measured 351px */
+/* THE GUTTER IS A TRACK NOW, NOT PADDING.
+   It was `padding-left: 21.9375rem` — 351px of reserved emptiness for a fixed
+   rail to be pinned into. The same 351px is the first column of a two-track
+   grid, so the content column's containing block is exactly the width it was
+   (the element's content box either way) and nothing on the page moves; what
+   changes is that the rail is now IN the first track rather than floating over
+   it, which is what gives it something to be contained by.
+   `align-items: start` so the two tracks size independently: without it the
+   rail's row would stretch to the case study's height and its `top` would have
+   nothing to stick against. */
+.proj__body {
+  display: grid;
+  grid-template-columns: var(--proj-rail) minmax(0, 1fr);
+  align-items: start;
+}
 
 /* was min(53.875rem, ...) — widened to match the drawer. The prose caps inside
    keep the measure honest, so this only buys room for media. */
@@ -3094,17 +2963,6 @@ body[data-page='project'] .nav { display: none; }
 }
 .proj__head--dark .proj__eyebrow { color: #7e94a1; }
 .proj__head--dark .proj__title { color: #ffffff; }
-
-/* the scroll container's own top padding would show as a pale strip above the
-   band, so a dark-topped study pulls the band up over it */
-.drawer__study--darktop { margin-top: calc(-1 * var(--drawer-top)); }
-.drawer__study--darktop .drawer__rail { padding-top: clamp(1.9rem, 5.6vh, 3.1rem); }
-
-/* --- the rail over the band ----------------------------------------------
-   The rail must paint above the band, and each link flips its own ink as the
-   boundary crosses it (see RailInk). The colour transition is what makes that
-   read as a smooth change rather than a snap. */
-.drawer__rail { z-index: 5; }
 
 .rail__link { transition: color 420ms var(--ease), opacity 420ms var(--ease); }
 .rail__link[data-ink='light'] { color: #8ba0ad; }
@@ -3982,7 +3840,7 @@ body.is-lbox { overflow: hidden; }
      they need no reserved space; the frame spaces itself like any other. */
   padding-block: 0;
   /* deliberately NOT clipping: the strips must run past this column and across
-     the whole page. .drawer__scroll does the clipping instead. */
+     the whole page. The page's own x-clip does it instead. */
   overflow: visible;
 }
 
@@ -4385,17 +4243,47 @@ body.is-lbox { overflow: hidden; }
 /* --- narrow: the rail lies down across the top --------------------------- */
 
 @media (max-width: 70rem) {
-  .proj__body { padding-left: 0; }
-  .proj__col { width: min(53.875rem, calc(100% - var(--gut) * 2)); margin-inline: auto; }
+  /* ONE COLUMN, AND DELIBERATELY NOT A COLLAPSED GRID.
+     A sticky item in a single-track grid gets an area the size of itself and
+     unsticks on the first pixel of scroll — the same trap the case-study rail
+     fell into. As a block container the rail is simply its first child, sticky
+     against the whole of it, which is the strip lying across the top. */
+  .proj__body { display: block; grid-template-columns: none; }
+  .proj__col,
+  /* the ending is on the study's measure at every width, which below 70rem is
+     a centred column rather than an offset one */
+  .onward {
+    width: min(53.875rem, calc(100% - var(--gut) * 2));
+    margin-inline: auto;
+  }
   .rail {
     position: sticky;
     top: 0; left: 0;
+    /* the sidebar's 56px gutter margin is a sidebar idea; lying down, the strip
+       runs the full width and starts at the edge */
+    margin-left: 0;
     width: 100%;
+    height: auto;
     display: flex;
     align-items: center;
     gap: 1rem;
     padding: 0.7rem var(--gut);
     overflow-x: auto;
+    /* THE MENU HANDLE IS IN THE WAY AT THIS WIDTH. It drops out of the left
+       edge and into the top-right corner, fixed there, exactly where this strip
+       runs — and the strip scrolls sideways, so no amount of padding keeps a
+       link out from under it: padding only reserves room at the END of the
+       scroll, and the section you are reading can be anywhere in it.
+
+       So the strip is faded out before it gets there. The padding is still
+       useful — it means the last section can be scrolled clear of the fade
+       rather than dying in it — and the mask is what actually keeps a word from
+       being written underneath the word MENU. */
+    padding-right: calc(var(--gut) + 5.5rem);
+    -webkit-mask-image:
+      linear-gradient(to right, #000 calc(100% - 6.25rem), transparent calc(100% - 3.9rem));
+    mask-image:
+      linear-gradient(to right, #000 calc(100% - 6.25rem), transparent calc(100% - 3.9rem));
     background: rgba(247, 246, 243, 0.9);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -4975,49 +4863,6 @@ body.past-hero .sel { opacity: 0; }
   [data-tool-btn='select'] { width: 30px; height: 30px; }
 }
 
-/* ==========================================================================
-   25. CASE STUDY INSIDE THE DRAWER
-   The same content as project.html, laid out for the narrower panel: the rail
-   sticks to the top of the drawer's own scroll container.
-   ========================================================================== */
-
-/* The content column takes whatever width is going rather than being pinned to
-   44rem, so media blocks — the tile field, the three-across rows, the facts grid
-   — get the room they were always short of.
-
-   The prose does NOT widen with it: .sec__body caps at 44rem, .sec__heading at
-   34rem and .blk-quote at 40rem, so the measure stays readable while only the
-   media stretches. Widening the column without those caps would have pushed
-   body copy past 1000px, which is unreadable. */
-.drawer__study {
-  display: grid;
-  grid-template-columns: 8.5rem minmax(0, 1fr);
-  gap: clamp(2.5rem, 4vw, 4.5rem);
-  width: min(100%, 84rem);
-  margin-inline: auto;
-}
-
-.drawer__rail {
-  position: sticky;
-  top: 0;
-  align-self: start;
-  padding-top: 0.2rem;
-  font-size: 0.8125rem;
-  line-height: 1.3;
-}
-
-.drawer__rail .rail__link { height: 2.25rem; line-height: 2.25rem; }
-
-/* The dark head carries the band right up to the first section, so any bottom
-   margin here opens a white strip between the two bands. Excluding it in the
-   selector rather than overriding it later keeps this order-independent — an
-   override would tie at two classes and lose on source order. */
-.drawer__study .proj__head:not(.proj__head--dark) {
-  margin-bottom: var(--sp-6);
-}
-.drawer__study .proj__title { font-size: var(--step-2); }
-.drawer__study .sec { padding-block: var(--sp-6); }
-
 /* --- the scroll anchor ----------------------------------------------------
    One per section, zero-height, immediately before the heading. Every rail click
    scrolls to one of these, so the HEADING lands in the same place every time —
@@ -5034,15 +4879,6 @@ body.past-hero .sel { opacity: 0; }
   display: block;
   height: 0;
   scroll-margin-top: var(--nav-land);
-}
-.drawer__study .sec:first-of-type { padding-top: 0; }
-.drawer__study .blk-tiles { columns: 5 4.5rem; max-height: 18rem; }
-.drawer__study .blk-row__grid { gap: 0.6rem; }
-
-@media (max-width: 60rem) {
-  .drawer__study { grid-template-columns: 1fr; gap: 1rem; width: auto; }
-  .drawer__rail { position: static; display: flex; flex-wrap: wrap; gap: 0.85rem; }
-  .drawer__rail .rail__link { height: auto; line-height: 1.5; }
 }
 
 /* ==========================================================================
@@ -7428,8 +7264,8 @@ body.past-hero .sel { opacity: 0; }
    every heading, paragraph, block and figure 960px wide inside a 390px panel,
    with the right two thirds of every line off the screen.
 
-   ONE CAUSE, INHERITED BY EVERYTHING. `.drawer__study` is a two-column grid
-   that collapses to `grid-template-columns: 1fr` below 60rem. `1fr` is
+   ONE CAUSE, INHERITED BY EVERYTHING. The study was a two-column grid that
+   collapsed to `grid-template-columns: 1fr` below 60rem. `1fr` is
    shorthand for `minmax(auto, 1fr)`, and that `auto` minimum is the largest
    min-content contribution of anything in the track. One block inside the
    study cannot get narrower than 960px, so the track cannot either — and every
@@ -7442,7 +7278,7 @@ body.past-hero .sel { opacity: 0; }
    instead of silently widening the page.                                    */
 
 @media (max-width: 767.98px) {
-  .drawer__study,
+  
   .proj__grid { grid-template-columns: minmax(0, 1fr); }
 
   /* THE ONE THING THAT DID NOT FOLLOW FROM THE TRACK.
@@ -7457,196 +7293,6 @@ body.past-hero .sel { opacity: 0; }
      the only thing that beats one. The height cap is left alone: once the width
      is bounded the aspect ratio takes care of the rest. */
   .shotimg { max-width: 100% !important; height: auto; }
-
-  /* A table of long phrases has a min-content width that no column on a phone
-     can satisfy, so it gets to scroll on its own rather than push the page —
-     the columns stay aligned and readable, and the reader swipes the table
-     instead of the article. No study carries one today; this is here so that
-     the first one to do so does not repeat the overflow above. */
-  .drawer__scroll table {
-    display: block;
-    max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* --- the section rail, kept on screen ---------------------------------- *
-
-     On a desktop the rail is a sticky column beside the article: you always
-     know which section you are in and you can jump to any other. Below 60rem it
-     becomes `position: static` and wraps to three lines at the very top, so it
-     scrolls away with the first paragraph and never comes back — the one piece
-     of navigation in a nine-section article, gone after two swipes.
-
-     WHY IT CANNOT SIMPLY BE MADE STICKY. `position: sticky` on a GRID ITEM can
-     only travel inside its own grid area. In the collapsed single-column grid
-     that area is exactly the rail's own height, so it comes unstuck the instant
-     it starts. The study is laid out as blocks here instead, which makes the
-     rail's containing block the whole article — the same relationship it has to
-     the content column on a desktop, arrived at differently.
-
-     AND WHY IT DOES NOT BLOCK THE READING. It is one line, not three: the chips
-     sit in a row that scrolls sideways, so nine sections cost 44px of height
-     instead of 132. It is the pattern the standalone project page already uses
-     at 46rem — a translucent blurred strip with a hairline under it — so this
-     is the same object in a second place rather than a new one. */
-  .drawer__study { display: block; }
-
-  .drawer__study > .drawer__rail,
-  .drawer__study--darktop .drawer__rail {
-    position: sticky;
-    /* NEGATIVE, by exactly the scroller's own top padding. A sticky element's
-       constraint rectangle is inset by that padding, so `top: 0` pinned the
-       rail 42px down the panel and left a strip above it that the article
-       scrolled through — a gap that looked like a rendering fault. Pulling it
-       back by the same amount puts it flush against the header bar. */
-    top: calc(-1 * var(--drawer-top));
-    z-index: 6;
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    /* the chips carry 0.7rem of their own padding a side now */
-    gap: 0.15rem;
-    /* full bleed, so the strip reads as chrome across the panel rather than a
-       floating box — the negative margin matches the scroller's own padding and
-       is clipped by its overflow-x */
-    margin-inline: calc(-1 * clamp(1.25rem, 4vw, 2.5rem));
-    margin-bottom: 1.5rem;
-    padding: 0.7rem clamp(1.25rem, 4vw, 2.5rem);
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-  }
-  .drawer__rail::-webkit-scrollbar { display: none; }
-
-  /* --- THE BAR FOLLOWS THE BAND ------------------------------------------- *
-
-     The desktop rail is transparent and recolours its links per band. Here the
-     bar has a background too, so BOTH have to move, and the hard part is that
-     they move in opposite directions: the surface goes light while the label
-     goes dark. Interpolate them over the same 320ms and their luminances cross
-     at almost exactly the halfway point — 245→35 against 18→255 meet at t=0.51
-     — so for one frame the label is the same brightness as the bar it is on.
-     That was the grey-on-grey in the screenshot, and matching the durations is
-     what causes it rather than what fixes it.
-
-     So the two are deliberately out of step. The surface glides over 320ms; the
-     ink waits 240ms and then switches in 80. By the time it moves, the bar is
-     four fifths of the way to its new tone, and the worst contrast at any
-     instant during the whole crossing is about 2.9:1 — on either side of the
-     switch, never at the crossing point, because there no longer is one.
-
-     ONE STATE, NOT TWO. Every colour here comes off `.is-dark` on the bar,
-     including the ink. The links' own `data-ink` — the per-band signal the
-     desktop uses — is explicitly overridden, because two systems colouring the
-     same text from two separately-timed sources is what broke twice. */
-  .drawer__study .drawer__rail,
-  .drawer__study--darktop .drawer__rail {
-    --bar: rgba(247, 246, 243, 0.92);
-    --bar-line: var(--line-soft);
-    --bar-ink: #6f6a63;
-    --bar-on: #14100c;
-
-    background: var(--bar);
-    border-bottom: 1px solid var(--bar-line);
-    transition:
-      background-color 260ms var(--ease),
-      border-color 260ms var(--ease);
-  }
-
-  .drawer__study .drawer__rail.is-dark,
-  .drawer__study--darktop .drawer__rail.is-dark {
-    --bar: rgba(18, 38, 51, 0.94);
-    --bar-line: rgba(255, 255, 255, 0.12);
-    --bar-on: #ffffff;
-  }
-
-  /* THE LABELS COME OFF THE BAR ENTIRELY, AND THAT IS THE WHOLE FIX.
-     Three attempts failed here for one reason, and it is arithmetic rather than
-     taste: text sitting directly on a surface that travels from light to dark
-     cannot stay readable. The surface passes through every luminance between
-     its two tones on the way — including the ink's own — so at some instant of
-     every crossing the two match. Measured: rgb(126,134,138) on
-     rgba(133,143,147) at 1.1:1. Crossfading the ink too only moves the
-     collision; a single fixed ink still gets run over (rgb(132,128,122) on
-     rgba(79,93,102), 2.4:1); staggering the timings cannot help because the
-     band crossing and the section change are independent triggers arriving at
-     arbitrary offsets.
-     So every chip carries its own opaque pill and the ink lives on that. The
-     pill and its ink are one fixed pair — 5.6:1, invariant, no transition, no
-     midpoint — and the bar is then free to glide between tones behind them,
-     which is the part that was asked to be smooth. It reads as a segmented
-     control: nearly invisible on the light bar, a light track on the dark one. */
-  .drawer__study .drawer__rail,
-  .drawer__study .drawer__rail.is-dark,
-  .drawer__study--darktop .drawer__rail,
-  .drawer__study--darktop .drawer__rail.is-dark {
-    --bar-chip: #efece6;
-    --bar-ink: #5f5a53;
-  }
-
-  /* THE SELECTED CHIP DOES NOT TAKE PART IN ANY OF IT.
-
-     Two staggered transitions was the second attempt and it was still wrong:
-     the bar flips when you cross a band and the selected chip moves when you
-     enter a section, two independent triggers at arbitrary offsets, so there is
-     always some pair of moments where a half-faded label sits on a half-faded
-     surface. The choreography cannot be tuned, because the events it is trying
-     to choreograph do not arrive together.
-
-     So the selected state stops being a text colour and becomes a filled pill —
-     white on #7c3aed, the same purple that means "the current thing" on the
-     phone's toolbar. Its contrast is 4.6:1 against its own background and owes
-     the bar nothing, at any point in any transition. The bar underneath is then
-     free to glide with the band, which is what was asked for.
-
-     EVERY chip carries the padding, not just the selected one, so the pill
-     appears and disappears without a single width changing — otherwise the strip
-     would re-lay-out and jump sideways each time the active section moved. */
-  .drawer__rail .rail__link,
-  .drawer__rail .rail__link[data-ink='light'],
-  .drawer__rail .rail__link[data-ink='dark'],
-  /* aria-current is set by the same scroll-spy and the desktop paints it white
-     on a light band — which over the light bar is white on off-white. It is
-     covered explicitly here rather than left to specificity. */
-  .drawer__rail .rail__link[data-ink='light'][aria-current='true'],
-  .drawer__rail .rail__link[data-ink='dark'][aria-current='true'] {
-    padding: 0.3rem 0.7rem;
-    border-radius: 999px;
-    background: var(--bar-chip);
-    color: var(--bar-ink);
-    /* and the pill does not fade either. A purple fading up from transparent is
-       a half-purple, and white on half-purple over a light bar measures 2.4:1
-       at the midpoint. The chip is a scroll-spy — it is meant to answer "where
-       am I" instantly, so switching instantly is also the better interaction. */
-    transition: none;
-  }
-
-  .drawer__rail .rail__link.is-active,
-  .drawer__rail .rail__link[data-ink='light'].is-active,
-  .drawer__rail .rail__link[data-ink='dark'].is-active {
-    background: #7c3aed;
-    color: #ffffff;
-    font-weight: 600;
-  }
-
-  /* hover darkens the ink WITHIN the chip; --bar-on is the bar's own contrast
-     colour and would put white on the light pill when the bar goes dark */
-  :root:not(.hover-cold) .drawer__rail .rail__link:hover { color: #14100c; }
-
-  .drawer__rail .rail__link {
-    height: auto;
-    line-height: 1.6;
-    /* a chip that wraps is a chip that breaks the row */
-    white-space: nowrap;
-  }
-
-  /* The heading has to land BELOW the strip now, not underneath it. --nav-land
-     is the desktop allowance; the rail's own height is added to it here, so a
-     tap on a chip still puts the heading on the reading line. */
-  .drawer__scroll .sec__anchor { scroll-margin-top: calc(var(--nav-land) + 3rem); }
 }
 
 /* --- 34. the phone's footer ------------------------------------------------
@@ -7876,7 +7522,7 @@ body.past-hero .sel { opacity: 0; }
    detaches, which is the one thing at the end of this page that is supposed to
    be sky. A real phone never draws it; this is the emulator's edge showing.
 
-   Hidden the same way `.drawer__rail` hides its own, and only below 48rem: a
+   Hidden with the same two declarations the rail uses, and only below 48rem: a
    desktop window keeps its scrollbar, because there it is the only thing
    telling you how much page is left. */
 @media (max-width: 48rem) {
@@ -8143,17 +7789,22 @@ body.deck-open {
   z-index: 0;
 }
 
-/* The scroll surface, and the window. Viewport-sized, so its own border-radius
-   is the window's radius and its fixed descendants — of which there are none
-   left, but still — would measure from the screen either way. */
+/* THE PAGE. A plain block in the document flow — see the note on `html`.
+
+   IT IS ONLY TRANSFORMED WHILE THE SHELL IS MOVING. The transform used to be
+   declared here unconditionally at identity, which was free when this was a
+   viewport-sized box and is not free now: a `translate3d` on an element several
+   thousand pixels tall promotes the whole of it, so it is declared on the two
+   deck states instead and this is untransformed the rest of the time. The
+   transition stays here so both directions read from one curve.
+
+   `transform-origin` and the window clip are written from `App.shell()`, in
+   viewport terms, on the frames the deck is out. A scale about the middle of a
+   document-tall box would throw the page hundreds of pixels; a scale about the
+   middle of the SCREEN is what the fixed box used to do for free. */
 .app {
-  position: fixed;
-  inset: 0;
+  position: relative;
   z-index: 2;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: none;
-  scroll-behavior: smooth;
   /* THE FRAME HANDS OVER TO THE PAPER AT THE FOOTER.
 
      This layer is the viewport, and framing the viewport is right at the top of
@@ -8169,6 +7820,38 @@ body.deck-open {
      are at the footer the only edge on screen is the sheet's own, which is the
      right one: the paper is the canvas, the weather is the desk, and there is
      one of each. */
+  transform: none;
+  transition: transform var(--deck-move);
+}
+
+body.deck-open .app,
+body.deck-shut .app {
+  transform: translate3d(var(--app-x), var(--app-y), 0) scale(var(--app-s));
+}
+
+/* THE FRAME THE SHELL CASTS, and the reason it is not on `.app` any more.
+
+   `.app` is a document-tall block: a border-radius on it would round the two
+   ends of the DOCUMENT rather than the four corners of the screen, and its
+   box-shadow would be cut away by the window clip, which has to be there for
+   the corners to exist at all. Both of those belong to the viewport, so the
+   viewport draws them — one fixed layer carrying the shell's transform to the
+   pixel, same expression, same curve.
+
+   It sits at the top of `.pane`, above the sky and below the deck. The deck has
+   no surface of its own, so the cast still falls across the menu rather than
+   behind it.
+
+   THE FRAME HANDS OVER TO THE PAPER AT THE FOOTER. --sheet-lift is the number
+   the scroll loop already computes for that detachment — 0 up top, 1 when the
+   paper is fully off the desk — and the frame is its inverse, because drawing a
+   rounded, shadowed box around sky with the same sky continuing outside it is
+   what made the bottom of the page read as two environments. */
+.pane::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
   --frame: calc(1 - var(--sheet-lift, 0));
   border-radius: calc(var(--app-r) * var(--frame));
   /* Cast mostly sideways, off the leading edge, because that is the only edge
@@ -8182,9 +7865,17 @@ body.deck-open {
   transition: transform var(--deck-move), border-radius var(--deck-move);
 }
 
-/* held still for a modal — the scrollTop survives, because this is an element
-   and not the document */
-body.is-locked .app { overflow: hidden; }
+/* HELD STILL FOR A MODAL. The document is the scroller again, so this is the
+   pin-the-page-at-a-negative-offset dance after all — `App.lock()` writes the
+   offset and the scrollbar's width back, and this is the half of it that has to
+   be a rule rather than a style. */
+body.is-locked {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+}
 
 /* THE LAYER THAT STAYS PUT AND STILL PAINTS ON TOP. Only the two weather pods
    are in here. They cannot be in `.hud`, because that rides the shell and would
@@ -8204,7 +7895,7 @@ body.is-locked .app { overflow: hidden; }
   inset: 0;
   z-index: 4;
   /* the layer itself is a hole; its children keep whatever they declared, and
-     `:where` keeps this from outranking a `.drawer` that means to be inert */
+     `:where` keeps this from outranking a child that means to be inert */
   pointer-events: none;
   transition: transform var(--deck-move);
 }
@@ -8785,7 +8476,7 @@ body[data-page] .nav { display: none; }
      view and the scale puts sky down both flanks, so the hairline goes all the
      way round and the cast falls upward off the leading edge — the same
      asymmetry the desktop uses, turned ninety degrees with everything else. */
-  .app {
+  .pane::after {
     box-shadow:
       0 0 0 1px rgba(20, 16, 12, calc(0.045 * var(--frame))),
       0 -8px 22px -12px rgba(20, 16, 12, calc(0.16 * var(--frame))),
@@ -8801,9 +8492,8 @@ body[data-page] .nav { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pane, .hud, .hud::after,
-  body.deck-open .app,
-  body.deck-shut .app { transition-duration: 1ms; }
+  .pane, .pane::after, .hud, .hud::after,
+  .app { transition-duration: 1ms; }
   .deck__link { transition-duration: 1ms; }
 }
 
@@ -9893,8 +9583,11 @@ body[data-game] .shelf { display: none; }
      .canvas--archive   the work page's grid is a canvas by class only —
                         nothing on it is dragged, and the project titles are
                         real words somebody might want.
-     .drawer            the case studies live in the HUD, and they are the one
-                        thing in there made of sentences.
+                        (A case study used to need an exclusion here too, when
+                        it opened as a panel inside the HUD — the one thing in
+                        there made of sentences. It is a page now, in the flow,
+                        so it is selectable by default and there is nothing to
+                        exclude.)
      the editables      the note tool is a `contenteditable`, and a note you
                         cannot select inside is a note you cannot edit.
    ========================================================================== */
@@ -9910,7 +9603,7 @@ body[data-game] .shelf { display: none; }
   -webkit-touch-callout: none;
 }
 
-.drawer,
+
 .note__text,
 input,
 textarea,
@@ -10283,4 +9976,519 @@ body.waking.awake .rv { opacity: 1; transform: none; }
   html:has(.canvas),
   html:has(.canvas) body,
   html:has(.canvas) .app { touch-action: pan-x pan-y; }
+}
+
+/* ==========================================================================
+   46. THE ONBOARDING TOUR
+   A flow walked inside a case study: twelve screens in one phone, a note set
+   beside the device, and a hairline from the note to the thing it is about.
+
+   It is the one dark object in a light document, deliberately. The app is
+   black, the screenshots are black, and a light panel would turn the phone
+   into a hole in the page rather than the lit thing on it.
+
+   ONE NUMBER SIZES ALL OF IT. `--glass` is the width of the display; the rail,
+   the bezel, every corner radius, the side buttons and the note's offset are
+   fractions of it, so the device scales with the column and nothing falls out
+   of register. The hotspots in the data are percentages of the frame for the
+   same reason.
+
+   AND THAT NUMBER MUST BE AN ABSOLUTE LENGTH, WHICH IS THE BUG THIS FIXES.
+   It was `min(200px, 24%)`, and a percentage inside a variable used by half a
+   dozen different properties is a different number in each of them: a percent
+   in `width` and `padding` resolves against the containing block's width, in
+   `border-radius` against the element's OWN width for the horizontal radius
+   and its own HEIGHT for the vertical one, and in `left` against yet another
+   box. So the phone's corners went elliptical, the radii of the rail, the
+   bezel and the glass stopped agreeing with one another, and the side buttons
+   drifted off the rail — all of it changing as the column changed, which is
+   why it looked broken at one width and passable at another.
+
+   `cqw` is a percentage of the container that is also a LENGTH, so it means
+   one thing everywhere it is used. The `vw` line is the fallback for engines
+   without container queries; they get a phone sized off the viewport, which is
+   close enough inside a column of this width.
+   ========================================================================== */
+
+.blk-tour { --fw: 900px; }
+
+.tour {
+  --tw: 900px;
+  /* the display's width: a quarter of the panel, capped, so the phone is a
+     phone on a wide column and still legible on a narrow one */
+  container-type: inline-size;
+  --glass: min(200px, 22vw);
+  --gap: clamp(22px, 5vw, 52px);
+  --t-ink: #fff;
+  --t-body: rgba(255, 255, 255, 0.46);
+  --t-label: rgba(255, 255, 255, 0.30);
+  --t-line: rgba(255, 255, 255, 0.20);
+  --t-hair: rgba(255, 255, 255, 0.09);
+
+  position: relative;
+  width: 100%;
+  max-width: var(--tw);
+  border-radius: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(58% 46% at 50% 46%, rgba(255, 255, 255, 0.055) 0%, transparent 68%),
+    #060607;
+  color: var(--t-ink);
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+@supports (width: 1cqw) {
+  .tour {
+    --glass: clamp(146px, 23cqw, 200px);
+    --gap: clamp(22px, 5cqw, 52px);
+  }
+}
+
+/* --- the corner labels --------------------------------------------------- */
+.tour__rail,
+.tour__foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  font-size: 9.5px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--t-label);
+  white-space: nowrap;
+}
+.tour__rail { justify-content: space-between; }
+.tour__count { font-variant-numeric: tabular-nums; }
+.tour__foot { border-top: 1px solid var(--t-hair); }
+.tour__screen { margin-left: auto; overflow: hidden; text-overflow: ellipsis; }
+
+.tour__btn {
+  font: inherit;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  background: none;
+  border: 0;
+  padding: 3px 0;
+  color: var(--t-label);
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.tour__btn:hover { color: var(--t-ink); }
+.tour__btn.is-on { color: var(--t-ink); }
+.tour__btn:focus-visible { outline: 1px solid var(--t-ink); outline-offset: 3px; }
+.tour__sep { color: rgba(255, 255, 255, 0.16); }
+
+.tour__ticks { display: flex; gap: 3px; margin-left: 6px; }
+.tour__tick {
+  position: relative;
+  width: 16px;
+  height: 2px;
+  padding: 0;
+  border: 0;
+  background: var(--t-hair);
+  cursor: pointer;
+  overflow: hidden;
+}
+.tour__tick.is-done { background: rgba(255, 255, 255, 0.28); }
+.tour__tick > span {
+  position: absolute;
+  inset: 0;
+  background: var(--t-ink);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+.tour__tick:focus-visible { outline: 1px solid var(--t-ink); outline-offset: 3px; }
+
+/* --- the scene ----------------------------------------------------------- */
+.tour__scene {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 30px 20px 34px;
+}
+
+/* --- the device — iPhone 16, black --------------------------------------- */
+.tour__phone {
+  position: relative;
+  z-index: 2;
+  width: calc(var(--glass) * 1.094);
+  padding: calc(var(--glass) * 0.012);
+  border-radius: calc(var(--glass) * 0.187);
+  background: linear-gradient(143deg,
+    #6a6c70 0%, #26282c 9%, #43454a 26%, #1c1d20 46%,
+    #35373b 62%, #17181b 80%, #55575c 93%, #202124 100%);
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.8),
+    0 30px 60px -28px rgba(0, 0, 0, 0.9),
+    0 0 70px -20px rgba(255, 255, 255, 0.05);
+}
+.tour__gasket {
+  padding: calc(var(--glass) * 0.035);
+  border-radius: calc(var(--glass) * 0.175);
+  background: #000;
+}
+.tour__glass {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 393 / 852;
+  border-radius: calc(var(--glass) * 0.14);
+  overflow: hidden;
+  background: #000;
+  isolation: isolate;
+}
+.tour__side {
+  position: absolute;
+  top: var(--y);
+  height: var(--h);
+  width: calc(var(--glass) * 0.0095);
+  background: linear-gradient(180deg, #4c4e52, #212226 38%, #55575b 74%, #26272b);
+}
+.tour__side--l { left: calc(var(--glass) * -0.008); border-radius: 1.5px 0 0 1.5px; }
+.tour__side--r { right: calc(var(--glass) * -0.008); border-radius: 0 1.5px 1.5px 0; }
+
+/* drawn by the frame — these screens were exported without one, and a phone
+   without an island is not the phone this ships on */
+.tour__island {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  top: 1.3%;
+  width: 31.8%;
+  height: 4.35%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #000;
+}
+.tour__island::after {
+  content: "";
+  position: absolute;
+  right: 15%;
+  top: 50%;
+  width: 11.5%;
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #191a1e 0%, #060608 72%);
+}
+
+/* --- the screens, and why none of them slides ---------------------------- */
+.tour__shot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: translate3d(100%, 0, 0);
+  user-select: none;
+  -webkit-user-drag: none;
+  z-index: 1;
+}
+.tour__shot.is-morph { transition: opacity 420ms cubic-bezier(0.4, 0, 0.22, 1), transform 420ms cubic-bezier(0.34, 0.72, 0.14, 1); }
+.tour__shot.is-drift { transition: opacity 440ms cubic-bezier(0.4, 0, 0.22, 1), transform 460ms cubic-bezier(0.32, 0.72, 0.08, 1); }
+.tour__shot.is-sheet { transition: clip-path 420ms cubic-bezier(0.3, 0.75, 0, 1); }
+
+/* --- the mark ------------------------------------------------------------ */
+.tour__spot {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 190ms cubic-bezier(0.4, 0, 0.25, 1);
+}
+.tour__spot.is-on { opacity: 1; }
+.tour__spot rect {
+  transition: x 260ms cubic-bezier(0.22, 0.9, 0.18, 1), y 260ms cubic-bezier(0.22, 0.9, 0.18, 1),
+              width 260ms cubic-bezier(0.22, 0.9, 0.18, 1), height 260ms cubic-bezier(0.22, 0.9, 0.18, 1);
+}
+.tour__ring { fill: none; stroke: #fff; stroke-width: 2.2; }
+.tour__halo { fill: none; stroke: rgba(255, 255, 255, 0.2); stroke-width: 6; }
+
+/* --- the note and its line ----------------------------------------------- */
+.tour__note {
+  position: absolute;
+  z-index: 3;
+  width: min(250px, 29cqw);
+  opacity: 0;
+  transition: opacity 220ms cubic-bezier(0.4, 0, 0.25, 1);
+}
+.tour__note.is-on { opacity: 1; }
+.tour__note--l { right: calc(50% + var(--glass) * 0.547 + var(--gap)); text-align: left; }
+.tour__note--r { left: calc(50% + var(--glass) * 0.547 + var(--gap)); text-align: right; }
+
+.tour__t {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-family: var(--sans, system-ui, sans-serif);
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.16;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  color: var(--t-ink);
+}
+.tour__note--r .tour__t { flex-direction: row-reverse; }
+.tour__t::before {
+  content: "";
+  flex: none;
+  width: 4px;
+  height: 4px;
+  background: var(--t-ink);
+  transform: translateY(-3px);
+}
+.tour__b {
+  margin: 0;
+  font-size: 8.5px;
+  line-height: 2.05;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--t-body);
+}
+.tour__note.is-new .tour__t,
+.tour__note.is-new .tour__b { animation: tourSettle 440ms cubic-bezier(0.28, 0.86, 0.2, 1) both; }
+.tour__note.is-new .tour__b { animation-delay: 70ms; }
+@keyframes tourSettle {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.tour__leads {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms cubic-bezier(0.4, 0, 0.25, 1);
+}
+.tour__leads.is-on { opacity: 1; }
+.tour__lead { fill: none; stroke: var(--t-line); stroke-width: 1; }
+.tour__dot { fill: var(--t-ink); }
+
+/* --- narrow: the note goes under the phone and the lines drop out --------- */
+@media (max-width: 860px) {
+  /* the note has stacked under the phone by now, so the phone can have the
+     width the note was using */
+  .tour { --glass: min(212px, 60cqw); }
+  .tour__scene {
+    grid-auto-flow: row;
+    gap: 24px;
+    padding-bottom: 28px;
+  }
+  .tour__leads { display: none; }
+  .tour__note {
+    position: static;
+    width: min(340px, 86%);
+    text-align: left !important;
+  }
+  .tour__note--r .tour__t { flex-direction: row; }
+  .tour__ticks { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour__shot, .tour__spot, .tour__spot rect, .tour__note, .tour__leads { transition: none; }
+  .tour__note.is-new .tour__t, .tour__note.is-new .tour__b { animation: none; }
+}
+
+
+/* ==========================================================================
+   47. THE CASE STUDY'S FIRST SCREEN, AND ITS LAST
+
+   A case study used to arrive as a panel sliding up over the Work page, with
+   its title in a 44px bar at the top of it. There was no moment at which the
+   piece was simply the thing you were looking at — it was always a layer on
+   something else, and the something else was still scrolling underneath.
+
+   So the study is a page, and the page opens on one screen with the name of
+   the work on it. Nothing here is borrowed from the reference: it is the site's
+   own paper, its own dot field, its own type, and the same artwork the tile
+   carried, held still and given room. The whole hero is four things in a column
+   — what it is, what it is called, the question it answers, and the facts —
+   with the picture taking whatever height is left.
+
+   `svh`, NOT `vh`. On a phone `100vh` is the viewport at its TALLEST, which is
+   the state it is in only after the address bar has retracted; a hero measured
+   in it opens with its last line underneath the browser. `100svh` is the
+   smallest the viewport ever gets, which is the one that is always on screen.
+   The `vh` line above it is the fallback for engines that have neither, and it
+   is written first so the better answer overwrites it.
+   ========================================================================== */
+
+.phero {
+  min-height: calc(100vh - var(--proj-top));
+  min-height: calc(100svh - var(--proj-top));
+  display: grid;
+  grid-template-rows: auto auto minmax(8rem, 1fr);
+  gap: clamp(1.25rem, 3.4vh, 2.25rem);
+  padding-bottom: var(--sp-7);
+}
+
+.phero__eyebrow {
+  font-size: var(--step--1);
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+  margin: 0 0 0.75rem;
+}
+
+/* One size below the biggest thing on the home page, on purpose: the home page
+   is where the name shouts, and a case study's title is a caption to the work
+   rather than a headline over it. */
+.phero__title {
+  font-size: var(--step-3);
+  line-height: 1.02;
+  letter-spacing: -0.028em;
+  font-weight: 500;
+  margin: 0;
+  max-width: 22ch;
+}
+
+.phero__lede {
+  margin: 1.1rem 0 0;
+  max-width: 46ch;
+  font-size: var(--step-0);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* THE FACTS, LABELLED. The tile writes them as one comma-separated line —
+   "Product identity, 2026, Singapore" — which is the right shape for a caption
+   under a picture and the wrong one at the top of a case study: nothing in it
+   says which of the three is the discipline and which is the place. */
+.phero__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem clamp(1.5rem, 4vw, 3.25rem);
+  margin: 0;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+}
+.phero__facts dt {
+  font-size: 0.6875rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 0.2rem;
+}
+.phero__facts dd {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink);
+}
+
+/* The tile's own panel, released from the tile's proportions: on a card the
+   aspect ratio is what keeps a grid of four in step, and here there is one of
+   them and the height is whatever the screen has left. */
+.phero__panel {
+  aspect-ratio: auto;
+  height: 100%;
+  min-height: 9rem;
+  border-radius: 6px;
+}
+
+/* --- the way on ---------------------------------------------------------
+   A case study that ends is a page with nowhere to go from, and the back
+   button is not an answer — it is what you press when a page has failed to
+   offer you one. Three doors, on hairlines, in the same ink as everything
+   else: the index, and the piece either side of this one. */
+/* --- the project's ending ------------------------------------------------
+   THE SAME BLOCK, ONE LEVEL OUT. This was the last child of the content column
+   and is now a sibling of the whole layout, which is what keeps the rail from
+   riding down beside it — but a block that has left a column has left the
+   column's measure with it, and on the first run it started at x0 with "INDEX"
+   half off the edge of the screen. So it carries the column's geometry itself:
+   the rail's gutter as an offset, and the same cap the study's prose has.
+
+   AND IT ENDS THE PAGE, so it is followed by air rather than by a border. The
+   space below is the closing beat that the home footer used to occupy by
+   accident — 635px of somebody else's address block. This is a tenth of that
+   and it belongs here. */
+.onward {
+  margin-top: var(--sp-7);
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  padding-bottom: clamp(3.5rem, 11vh, 7rem);
+}
+
+/* THE OFFSET IS SCOPED TO THE WIDTH THAT HAS A SIDEBAR, and it is written as a
+   min-width for an ordering reason rather than a stylistic one. The narrow
+   rules for this block live a few thousand lines up, next to the rest of the
+   rail's lying-down state; putting the offset in the unscoped rule down here
+   meant it came LATER in the file at equal specificity and beat them, so below
+   70rem the ending kept a 351px indent on a 390px screen and had 1px of itself
+   left. Scoped, the two states are exclusive and neither has to win. */
+@media (min-width: 70.0625rem) {
+  .onward {
+    margin-left: var(--proj-rail);
+    width: min(72rem, calc(100% - var(--proj-rail) - var(--gut)));
+  }
+}
+.onward > a {
+  display: grid;
+  align-content: start;
+  gap: 0.3rem;
+  padding: clamp(1.4rem, 3.4vh, 2.2rem) 0;
+  transition: transform 560ms var(--spring), opacity 300ms var(--ease);
+}
+.onward > a + a {
+  padding-left: clamp(1rem, 2.4vw, 1.75rem);
+  border-left: 1px solid var(--line);
+}
+.onward__k {
+  font-size: 0.6875rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.onward__t {
+  font-size: var(--step-1);
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+  transition: color 240ms var(--ease);
+}
+.onward__m { font-size: var(--step--1); color: var(--ink-dim); }
+.onward__go--next .onward__t::after { content: '\00a0\2192'; }
+:root:not(.hover-cold) .onward > a:hover { transform: translateY(-3px); }
+:root:not(.hover-cold) .onward > a:hover .onward__t { color: var(--accent); }
+
+@media (max-width: 48rem) {
+  .onward { grid-template-columns: 1fr; }
+  .onward > a + a {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* --- BETWEEN TWO PAGES ---------------------------------------------------
+   Clicking a piece of work is a navigation now, not a panel opening, and a
+   navigation with nothing on it is a white blink between two off-white pages.
+
+   This is the whole transition: the browser holds the outgoing page, paints
+   the incoming one, and cross-fades them over 380ms — no spinner, no skeleton,
+   nothing pretending to load. Where the engine cannot do it the pages simply
+   swap, which is what they did before, so there is nothing to fall back to.
+
+   Deliberately NOT a slide. The two pages share a background, a dot field, a
+   toolbar and a menu; moving all of that sideways to say "you went somewhere"
+   moves the parts that did not change, which is the same mistake the old
+   drawer made at a different scale. */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation-duration: 1ms; }
 }

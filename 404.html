@@ -16,34 +16,52 @@
 
      ARRIVING, NOT MOVING. An intro is something you sit through when you get
      somewhere; the moment it becomes a toll on every click it stops being an
-     intro and starts being a wait. So: a cold visit yes, a link from
-     elsewhere yes, a reload yes — a reload is someone deliberately asking for
-     this page again. A click from one page of this site to another, no: the
-     referrer says they were already here. Back and forward, no: returning to
-     a page is not arriving at it.
+     intro and starts being a wait. It plays once per tab session and then not
+     again — not on a click between pages, not on back or forward, not on a
+     reload.
 
-     This was briefly gated on sessionStorage instead — once per tab, reloads
-     included. That is a tidier sentence and a worse rule: it makes the one
-     thing you do most while building the site the one thing that cannot show
-     you the site.
+     THIS USED TO BE INFERRED, AND INFERENCE WAS THE BUG. The old rule read
+     `document.referrer` to decide whether you had come from inside the site,
+     and armed whenever it could not tell. Measured in Chromium the inference
+     is right — a walk from home to work to a project and back armed nothing —
+     but every one of its inputs is deniable. A referrer is empty under
+     `rel=noreferrer`, under a `no-referrer` policy, from a bookmark, from an
+     app, and on `file://` where the origins cannot be compared at all; each of
+     those looked exactly like a cold visit, and the loader played. And the one
+     case it got wrong on purpose was `reload`, which armed every single time.
+     A flag is not an inference. It cannot be wrong about whether it has been
+     set, so there is nothing left to deny.
+
+     What the old rule was protecting is real, and it is kept: gating on the
+     session takes away the ability to see the entrance by reloading, which is
+     the thing you do most while building it. That is what `?intro` is for.
 
      The timeout is the failsafe: if site.js never lands, the class comes off
      by itself and the page is simply the page. -->
 <script>
 (function () {
   try {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var n = (performance.getEntriesByType('navigation')[0] || {}).type || '';
-    if (n === 'back_forward') return;
-    if (n !== 'reload') {
-      var inside = false;
-      try {
-        inside = !!document.referrer
-          && new URL(document.referrer).origin === location.origin;
-      } catch (e) { inside = false; }
-      if (inside) return;
-    }
     var d = document.documentElement;
+
+    /* ONE FLAG, SET BEFORE ANYTHING ELSE CAN RETURN.
+       Every page that loads site.js runs this identical block, and every one of
+       them writes the flag — including the pages that then decide not to arm.
+       That is the whole mechanism: whichever page you land on first arms the
+       entrance and marks the session, and every page after it, in any order,
+       reads the mark and does not. */
+    var seen = false;
+    try {
+      seen = !!sessionStorage.getItem('site:entered');
+      sessionStorage.setItem('site:entered', '1');
+    } catch (e) {}
+
+    /* THE WAY BACK IN, because the rule above takes away the one thing you do
+       most while building the site. `?intro` on any URL plays it again. */
+    var force = /(^|[?&])intro(=|&|$)/.test(location.search);
+
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (seen && !force) return;
+
     d.classList.add('wake-armed');
     setTimeout(function () { d.classList.remove('wake-armed'); }, 4000);
   } catch (e) {}
