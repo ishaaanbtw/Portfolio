@@ -1,0 +1,26 @@
+# WHAT DOES NOT GO ON THE PUBLIC SITE.
+#
+# Vercel deploys the repository as-is, so anything committed here is served at
+# its own URL whether it is part of the site or not. That is how
+# VERCEL-SETUP.md — the deploy runbook, GitHub-token instructions included —
+# came to be readable at https://<domain>/VERCEL-SETUP.md. It was not linked
+# from anywhere, which is not the same as being private.
+#
+# This file is the deployment's own boundary and is separate from .gitignore on
+# purpose: .gitignore decides what is worth version-controlling, this decides
+# what strangers can fetch. The QA harnesses and the setup notes are worth
+# keeping and are not worth publishing.
+
+# the deploy runbook and the repo notes — for whoever works on this, not for readers
+VERCEL-SETUP.md
+README.md
+
+# the Playwright harnesses. They import a browser driver and assert against a
+# local server; on the public site they are dead weight at best.
+*.mjs
+.tools/
+
+# never part of a static deploy
+node_modules/
+_to_delete/
+.DS_Store

@@ -13,3 +13,11 @@ node_modules
 dist/
 build/
 
+# THE QA HARNESSES BELONG IN .tools/, NOT AT THE ROOT.
+# aboutqa.mjs, refactorqa.mjs and storyqa.mjs were committed to the repo root
+# by accident — they are Playwright scripts that drive a local server and
+# assert against it, they import a browser driver the site does not use, and
+# Vercel served them at their own URLs. .tools/ above already excludes the rest
+# of them; this catches any that land at the top level again.
+# (Deployment exclusions are separate and live in .vercelignore.)
+/*.mjs

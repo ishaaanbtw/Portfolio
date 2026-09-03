@@ -20,10 +20,9 @@
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ------------------------------------------------------- WHERE THE SITE IS
-     Case studies live at `/work/<slug>`, which is one directory deeper than
-     everything else, and on Vercel they are served without the `.html` the file
-     actually has. Either fact on its own is enough to break every relative path
-     in content.js: `assets/img/x0/…` resolved against `/work/cypherock-x0`
+     Case studies live at `/work/<slug>.html`, one directory deeper than
+     everything else. That on its own is enough to break every relative path in
+     content.js: `assets/img/x0/…` resolved against `/work/cypherock-x0.html`
      asks for `/work/assets/img/…`, which is not there.
 
      A `<base>` tag would fix it in one line and break opening the site off a
@@ -51,11 +50,23 @@
     ? ROOT + p : p);
 
   /* THE ROUTE A CASE STUDY LIVES AT. The shell is a real file — work/<slug>.html
-     — and Vercel rewrites the extensionless form onto it, so the address bar
-     reads `/work/cypherock-x0`. Off a disk there is nothing to do the rewriting,
-     so the file's own name is used and the link still opens. */
-  const projectHref = (slug) =>
-    `${ROOT}work/${slug}${location.protocol === 'file:' ? '.html' : ''}`;
+     — and the link names it in full, extension included, on every protocol.
+
+     IT USED TO DROP THE `.html` OVER http, ON THE BELIEF THAT VERCEL REWRITES
+     THE EXTENSIONLESS FORM ONTO THE FILE. It does not, and that belief cost
+     every case-study link on the deployed site: `cleanUrls` is `false` in
+     vercel.json, which means `/work/cypherock-x0` is not a route at all.
+     Verified against the live deployment — `/onefinnet-review` returns 404
+     while `/onefinnet-review.html` returns 200 — so the pretty form was a
+     guaranteed 404 in production and worked only off a disk, which is the one
+     place it was written to fall back for.
+
+     THE OTHER WAY ROUND WOULD ALSO WORK AND IS NOT WORTH IT. Setting
+     `cleanUrls: true` buys the extensionless address bar, but it also maps
+     `work.html` onto `/work` while `work/<slug>.html` maps onto `/work/<slug>`
+     — a file and a directory claiming the same path, which is the shape Vercel
+     refuses to deploy. Naming the file is one line and cannot collide. */
+  const projectHref = (slug) => `${ROOT}work/${slug}.html`;
 
   /* ======================================================== 0. utils ====== */
 

@@ -572,9 +572,10 @@ window.SITE = {
            blocks, one screen under each idea.                                */
         study: {
           /* THE ROUTE THIS STUDY LIVES AT, and the reason it is a word rather
-             than an index: `/work/cypherock-x0` is a URL somebody can read
-             aloud, send, and land on cold. The shell file at work/<slug>.html
-             carries nothing but this name; everything below is what it finds. */
+             than an index: `/work/cypherock-x0.html` is a URL somebody can
+             read aloud, send, and land on cold. The shell file at
+             work/<slug>.html carries nothing but this name; everything below
+             is what it finds. */
           slug: 'cypherock-x0',
           /* The hero's own facts. They were one comma-separated string on the
              tile — "Product identity, 2026, Singapore" — which is the right
