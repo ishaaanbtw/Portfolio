@@ -1,20 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": null,
+  "outputDirectory": ".",
   "cleanUrls": false,
   "trailingSlash": false,
-
-  "// routes": [
-    "A case study is a real file at work/<slug>.html and a real URL at",
-    "/work/<slug>. cleanUrls stays off because it would also fold work.html",
-    "into /work, which is the directory these live in — one name, two things.",
-    "This rewrite does the one job that is wanted and nothing else: the address",
-    "bar keeps the slug, the file keeps its extension, and opening the file",
-    "directly off a disk still works because nothing here is required for it."
-  ],
-  "rewrites": [
-    { "source": "/work/:slug", "destination": "/work/:slug.html" }
-  ],
-
   "headers": [
     {
       "source": "/(.*)",
@@ -57,15 +47,6 @@
     },
     {
       "source": "/assets/js/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/(favicon.*|apple-touch-icon.png|robots.txt|sitemap.xml)",
       "headers": [
         {
           "key": "Cache-Control",
