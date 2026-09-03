@@ -1487,172 +1487,6 @@
       this._tt = setTimeout(() => t.classList.remove('is-up'), 1900);
     },
 
-    /* The three-card product stack. Cards cycle so the front one changes, each
-       card springing to its new depth. The tooltip tracks whatever is in front. */
-    stacks() {
-      $$('.stack').forEach((stack) => {
-        const cards = $$('.stack__card', stack);
-        if (!cards.length) return;
-
-        let front = 0;
-        const apply = () => {
-          cards.forEach((c, i) => {
-            const depth = (i - front + cards.length) % cards.length;
-            c.dataset.depth = String(depth);
-          });
-          stack.dataset.tip = cards[front].dataset.name || '';
-        };
-
-        const cycle = () => {
-          front = (front + 1) % cards.length;
-          apply();
-          Sound.tick();
-          /* keep the tooltip label in step with the new front card */
-          stack.dispatchEvent(new Event('pointermove', { bubbles: true }));
-        };
-
-        apply();
-        stack.addEventListener('click', cycle);
-        stack.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cycle(); }
-        });
-        /* auto-flip while hovered, so it feels alive without a click */
-        let timer = null;
-        stack.addEventListener('pointerenter', () => { timer = setInterval(cycle, 1100); });
-        stack.addEventListener('pointerleave', () => { clearInterval(timer); timer = null; });
-      });
-    },
-
-    /* Avatar-group hover (transitions.dev). Every sibling shifts, with the
-       amount falling off by distance from the hovered one, so the group moves
-       like a connected row rather than one item popping. The timing function is
-       written inline *before* the variable writes — ease-in on the way up,
-       a springier ease-out on the way back — as the recipe requires. */
-    avatars() {
-      const read = (name, fallback) => {
-        const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-        return v === '' ? fallback : parseFloat(v);
-      };
-      const lift = read('--avatar-lift', -4);
-      const scale = read('--avatar-scale', 1.05);
-      const falloff = read('--avatar-falloff', 0.45);
-
-      $$('.t-avatar-group').forEach((group) => {
-        const items = $$('.t-avatar', group);
-        if (items.length < 2) return;
-
-        const write = (ease) => {
-          items.forEach((node) => { node.style.transitionTimingFunction = ease; });
-        };
-
-        items.forEach((item, active) => {
-          item.addEventListener('pointerenter', () => {
-            write('var(--avatar-ease-in)');
-            items.forEach((node, i) => {
-              const distance = Math.abs(i - active);
-              node.style.setProperty('--shift', `${(lift * Math.pow(falloff, distance)).toFixed(3)}px`);
-              node.style.setProperty('--scale-active', i === active ? String(scale) : '1');
-            });
-          });
-        });
-
-        group.addEventListener('pointerleave', () => {
-          write('var(--avatar-ease-out)');
-          items.forEach((node) => {
-            node.style.setProperty('--shift', '0px');
-            node.style.setProperty('--scale-active', '1');
-          });
-        });
-      });
-    },
-
-    /* The "people" field. Cards are scattered on a jittered grid so they never
-       overlap badly, spring in with a stagger, and the page blurs behind them.
-       Escape or a click on the backdrop closes it. */
-    field() {
-      const trigger = $('.people-trigger');
-      if (!trigger || !S.people.field?.length) return;
-
-      const field = el('div', { class: 'field', 'aria-hidden': 'true' });
-      const scrim = el('button', {
-        class: 'field__scrim', type: 'button', 'aria-label': 'Close',
-        'data-nopress': '',
-      });
-      field.appendChild(scrim);
-
-      const cards = S.people.field;
-      /* lay them out on a 4x3 jittered grid, skipping the middle column where
-         the prose sits, so the text stays readable through the blur */
-      const slots = [];
-      for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 4; col++) {
-          if (col === 1 || col === 2) { if (row !== 2) continue; }
-          slots.push([col, row]);
-        }
-      }
-
-      /* Jitter is decided once so the field doesn't reshuffle on every open,
-         but the percentages are resolved against the live viewport each time —
-         otherwise a card's random offset can push it off the screen edge. */
-      const nodes = cards.map((c, i) => {
-        const [col, row] = slots[i % slots.length];
-        const card = el('figure', { class: 'field__card' });
-        card.appendChild(el('img', { src: c.src, alt: '', loading: 'lazy' }));
-        card.style.setProperty('--rot', `${((Math.random() - 0.5) * 13).toFixed(2)}deg`);
-        /* measured: ~85ms before the first card appears, then a short stagger */
-        card.style.setProperty('--delay', `${85 + i * 38}ms`);
-        field.appendChild(card);
-        return {
-          card, col, row,
-          w: c.w || 13,
-          ratio: c.ratio || '4/3',
-          jx: (Math.random() - 0.5) * 7,
-          jy: (Math.random() - 0.5) * 9,
-        };
-      });
-
-      const REM = 16;
-      const layout = () => {
-        const vw = innerWidth, vh = innerHeight;
-        nodes.forEach((n) => {
-          const [rw, rh] = n.ratio.split('/').map(Number);
-          const wpx = n.w * REM;
-          const hpx = wpx * (rh / rw);
-          /* keep a 12px margin so a rotated, hover-scaled card can't clip */
-          const maxLeft = Math.max(1, ((vw - wpx - 12) / vw) * 100);
-          const maxTop = Math.max(1, ((vh - hpx - 12) / vh) * 100);
-          const left = clamp(n.col * 25 + 3 + n.jx, 1, maxLeft);
-          const top = clamp(n.row * 30 + 8 + n.jy, 1, maxTop);
-          n.card.style.left = `${left.toFixed(2)}%`;
-          n.card.style.top = `${top.toFixed(2)}%`;
-          n.card.style.width = `${n.w}rem`;
-          n.card.style.aspectRatio = n.ratio;
-        });
-      };
-
-      layout();
-      App.mount(field);
-
-      let open = false;
-      const setOpen = (next) => {
-        if (next === open) return;
-        open = next;
-        if (open) layout();          // re-resolve against the current viewport
-        field.classList.toggle('is-open', open);
-        field.setAttribute('aria-hidden', String(!open));
-        document.body.classList.toggle('is-field', open);
-        trigger.setAttribute('aria-expanded', String(open));
-        if (open) Sound.voice({ freq: 420, gain: 0.05, dur: 0.14, bright: 1800, drop: 1.9, noise: 0.2 });
-        else Sound.voice({ freq: 620, gain: 0.04, dur: 0.11, bright: 1600, drop: 0.4, noise: 0.2 });
-      };
-
-      trigger.addEventListener('click', (e) => { e.preventDefault(); setOpen(!open); });
-      scrim.addEventListener('click', () => setOpen(false));
-      addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
-      /* scrolling away should dismiss it rather than leave it floating */
-      App.onScroll(() => { if (open) setOpen(false); });
-    },
-
     /* soft cross-page fade */
     transitions() {
       if (REDUCED) return;
@@ -1674,7 +1508,7 @@
 
     /* ripple + sound on every button, plus the two hero actions */
     buttons() {
-      const HIT = 'a, button, .row, .tab, .project, .post, .person, .stack, .chip-badge, input[type="range"]';
+      const HIT = 'a, button, .row, .tab, input[type="range"]';
 
       /* Press lifecycle: dip immediately on pointerdown, release on pointerup
          anywhere (so dragging off a control still resolves), spring back via
@@ -1804,7 +1638,7 @@
       nodes.forEach((node) => {
         if (!node.nodeValue.trim()) return;
         /* these are glyphs and widgets, not prose — leave their text alone */
-        if (node.parentElement.closest('.chip, .chip-badge, .stack')) return;
+        if (node.parentElement.closest('.chip')) return;
         const frag = document.createDocumentFragment();
 
         node.nodeValue.split(/(\s+)/).forEach((tok) => {
@@ -1835,7 +1669,7 @@
           el: b,
           /* Badges and the logo stack are NOT reveal units — in the reference
              they sit at full colour while the text around them is still grey. */
-          units: $$('.c, .chip, .scribble', b),
+          units: $$('.c, .chip', b),
           lit: -1,
           band: [],
           /* spring that chases raw scroll progress — the boundary decelerates
@@ -12592,10 +12426,21 @@
         if (best >= 0) setActive(best);      // empty band keeps the last, no flicker
       };
 
+      /* THE OBSERVER IS THIS BIND'S, NOT THE MODULE'S.
+         It used to live on `this`, which made a second call to `bind` on the
+         same page disconnect the first one's observer — so a page with two
+         navigators had one working navigator and one that never moved. The
+         About page has two (a rail for its chapters and a dock for its
+         movements) and that is how the fault surfaced.
+         Everything else about a bind was already closure-local; only the
+         handle was shared. It is local now, and still published below so
+         `stop()` and the debug hooks behave exactly as they did for the
+         single-bind callers. */
+      let io = null;
       const build = () => {
-        if (this.io) this.io.disconnect();
+        if (io) io.disconnect();
         if (typeof IntersectionObserver !== 'function') { setActive(0); return; }
-        this.io = new IntersectionObserver((entries) => {
+        io = new IntersectionObserver((entries) => {
           entries.forEach((en) => {
             if (en.isIntersecting) inBand.add(en.target);
             else inBand.delete(en.target);
@@ -12603,7 +12448,8 @@
           choose();
         }, { root: scroll || null, rootMargin: `-${Math.round(headroom())}px 0px -55% 0px`,
              threshold: 0 });
-        secs.forEach((sx) => this.io.observe(sx));
+        secs.forEach((sx) => io.observe(sx));
+        this.io = io;
       };
       build();
       setActive(0);
@@ -12779,6 +12625,127 @@
 
   /* ======================================================== 7. pages ==== */
 
+  /* ===================================================== 6d. the desk =====
+
+     TWO INTERACTIONS FOR THE ABOUT PAGE. One of them behaves like an object;
+     the other behaves like ink.
+
+     THE PHOTOGRAPH STACK IS NOT A CAROUSEL, and the difference is where the
+     state lives. A carousel has an index and slides everything past a window;
+     this has a pile, and clicking a photograph brings that one to the front
+     while the others fall back a place. Nothing travels sideways, nothing
+     leaves the pile, and the order is the state — which is what makes it read
+     as a stack of prints on a desk rather than as a control.
+
+     Each card's resting pose is written as three custom properties — depth,
+     tilt, offset — and CSS composes them into one transform with a spring on
+     it. That is deliberate: a transform assembled in JS cannot be overridden
+     by a hover rule without the two fighting, and the hover here needs to add
+     to the pose rather than replace it.
+
+     AND THE RÉSUMÉ'S CURRENT ENTRY IS NOT AN OBJECT AT ALL. It is a document,
+     so the only thing that marks where you are in it is weight of ink — the
+     marker fills, the company name darkens, and nothing moves. See `track`. */
+  const Desk = {
+    /* --- the photograph stack ------------------------------------------- */
+    stack(host) {
+      const cards = $$('.pcard', host);
+      if (cards.length < 2) return;
+
+      /* the pile, front first. Splicing rather than rotating: the clicked card
+         is lifted out and put on top, and everything else keeps its relative
+         order — which is what happens when you pull a print out of a pile. */
+      let order = cards.map((_, i) => i);
+
+      const pose = () => {
+        order.forEach((card, depth) => {
+          const n = cards[card];
+          n.style.setProperty('--depth', String(depth));
+          n.style.zIndex = String(order.length - depth);
+          n.classList.toggle('is-front', depth === 0);
+          /* the front one is the only one that answers the pointer; the rest
+             are still clickable, but they are not the hover subject */
+          n.setAttribute('aria-current', depth === 0 ? 'true' : 'false');
+        });
+        host.style.setProperty('--lifted', String(order[0]));
+      };
+
+      const bring = (i) => {
+        const at = order.indexOf(i);
+        if (at <= 0) return;
+        order.splice(at, 1);
+        order.unshift(i);
+        pose();
+        Sound.tap();
+      };
+
+      cards.forEach((n, i) => {
+        n.addEventListener('click', () => bring(i));
+        n.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bring(i); }
+        });
+      });
+
+      /* hovering the pile separates it a little — the neighbours fan, the
+         front one lifts. Done with a class on the host rather than per-card
+         hover, so the whole pile responds as one object. */
+      host.addEventListener('pointerenter', () => host.classList.add('is-held'), { passive: true });
+      host.addEventListener('pointerleave', () => host.classList.remove('is-held'), { passive: true });
+
+      pose();
+    },
+
+    /* --- WHICH JOB YOU ARE READING ---------------------------------------
+       The résumé's entries are typeset on the page rather than boxed, so the
+       only thing that can say "this one" is ink: the current entry's marker
+       fills in, its company name darkens, and the rest stay legible but
+       quieter. That is the whole effect — no movement, nothing on the page
+       animating while you scroll past it.
+
+       IT IS THE SAME READING BAND `SectionNav` USES, and deliberately so: a
+       band under the header, the topmost entry that touches it wins, and an
+       empty band keeps the last answer. That last rule is what stops the
+       highlight dropping off between two entries and what holds the final job
+       lit while its tags scroll by.
+
+       AN OBSERVER, NOT A SCROLL HANDLER. Two entries produce four callbacks in
+       the life of the page; a scroll handler would do this work on every frame
+       for the same answer. */
+    track(jobs, anchor) {
+      if (jobs.length < 2 || typeof IntersectionObserver !== 'function') {
+        if (jobs[0]) jobs[0].classList.add('is-current');
+        return;
+      }
+      /* THE ALLOWANCE IS READ, NOT HELD. `--nav-land` is a calc(), so asking
+         the root element for the custom property hands back the expression
+         rather than a length — but `scroll-margin-top` on a `.sec__anchor` is
+         that same token already resolved into pixels by the layout. Which is
+         also where `SectionNav` gets it, so the two navigators and this
+         highlight all flip on one line. */
+      const land = () => {
+        const v = anchor ? parseFloat(getComputedStyle(anchor).scrollMarginTop) : NaN;
+        return Number.isFinite(v) ? v : 56;
+      };
+      const inBand = new Set();
+      let at = -1;
+      const choose = () => {
+        for (let i = 0; i < jobs.length; i++) {
+          if (!inBand.has(jobs[i])) continue;
+          if (i === at) return;
+          if (at >= 0) jobs[at].classList.remove('is-current');
+          jobs[i].classList.add('is-current');
+          at = i;
+          return;
+        }
+      };
+      const io = new IntersectionObserver((rows) => {
+        rows.forEach((r) => (r.isIntersecting ? inBand.add(r.target) : inBand.delete(r.target)));
+        choose();
+      }, { rootMargin: `-${Math.round(land())}px 0px -45% 0px`, threshold: 0 });
+      jobs.forEach((j) => io.observe(j));
+    },
+  };
+
   const Pages = {
     home() {
       /* The hero is a Figma-style canvas: dotted grid, an intro whose pills are
@@ -12800,27 +12767,29 @@
 
       $('.canvas__intro', hero).appendChild(cta);
 
-      /* story → showcase → closing → index */
-      const story = el('div', { class: 'story' });
-      const scol = el('div', { class: 'col' });
-      Words.mount(scol, S.story);
-      story.appendChild(scol);
-      $('#main').appendChild(story);
-
       Showcase.init($('#main'));
 
-      const closing = el('div', { class: 'closing' });
-      const ccol = el('div', { class: 'col' });
-      Words.mount(ccol, S.closing);
-      closing.appendChild(ccol);
-      $('#main').appendChild(closing);
+      /* THE HOME PAGE ENDS ON THE WORK. Three things used to sit between the
+         showcase and the footer and all three are gone.
 
-      Tabs.init($('#main'));
+         THE CLOSING BLOCK — five lines of scroll-revealed type with five
+         underlined words that opened cards ("I'm currently at Cypherock,
+         otherwise vibecoding and playing poker…"). Its data is out of
+         content.js with it; `Words` and `Peek`, the two modules that drove it,
+         are still here and are now unreached. Both are guarded — `Peek.init`
+         returns on finding no `mark.rule[data-peek]`, `Words.tick` on having
+         nothing mounted — so they cost nothing while they wait, and either
+         comes back the moment something asks for it.
 
-      /* the desk illustration used to sit here, above the footer. Removed: the
-         footer now carries the closing weight itself, and a decorative drawing
-         between the work and the contact details was the only thing on the page
-         that belonged to no system. */
+         THE TEAMS / AWARDS TABLE — `Tabs.init($('#main'))`. THE COMPONENT AND
+         ITS DATA BOTH STAY: `Pages.work` builds the same component off the
+         same `S.index.tabs`, so this is one call site removed, not a feature.
+         The table is still on the work page.
+
+         THE DESK ILLUSTRATION — removed earlier: the footer carries the
+         closing weight itself, and a decorative drawing between the work and
+         the contact details was the only thing on the page that belonged to no
+         system. */
     },
 
     /* --- THE 404 IS A ROOM, NOT A MESSAGE ---------------------------------
@@ -13049,6 +13018,495 @@
         App.onScroll(() => { if (!raf) raf = requestAnimationFrame(drift); });
         requestAnimationFrame(drift);
       }
+    },
+
+    /* --- THE ABOUT PAGE ---------------------------------------------------
+
+       Four chapters, and no two of them composed the same way. That is the
+       point of the page rather than a flourish on it: a personal page whose
+       sections all share a layout reads as a template no matter how good the
+       parts are, and the thing being communicated here is that somebody made
+       it on purpose.
+
+       IT IS FOUR AND NOT EIGHT BECAUSE THE EXTRAS CAME OUT. A tools strip, a
+       brick timeline, a drawer of things I like, a field of loose words, a
+       table of what I am reading and a sign-off were all here and all gone:
+       every one of them was a section that existed to fill a scroll rather
+       than to say something. What is left is the introduction, the story, the
+       argument and the work — and then the footer, which is the site's own
+       ending and does not need one written above it.
+
+       THE GRID IS REAL AND IT IS NOT CENTRED. Measured off the reference at a
+       1470px viewport: the writing starts at 17% of the width and ends at 46%,
+       the visual runs 57% to 84%, and the remaining 16% on the right is left
+       empty. Nothing is centred and the two columns are not the same width —
+       so the page is laid out on a fourteen-track grid (an edge, twelve
+       columns, an edge) and everything is placed on it by column number. A few
+       things deliberately hang outside their column, which is what stops a
+       grid from looking like a table.
+
+       WHAT IS BORROWED. The dot field, the pill row, the annotation artifacts,
+       the reveal-on-scroll, the sticky rail's active-section detection, the
+       footer and its sky are all the site's own. What is new is the
+       composition, the pile, the spreads, the résumé and the edge utilities.
+
+       THERE IS ONE NAVIGATOR, AND IT IS THE READ'S. It walks the five chapters
+       of the story and nothing else. A second one used to sit fixed at the
+       foot of the window naming the page's movements; with the page down to
+       four bands it was a table of contents for a document you can see the
+       whole of, so it went. What remains is driven by `SectionNav`, which
+       computes the active chapter from where the sections actually are —
+       there is not an offset in this file. */
+    about() {
+      const c = S.about;
+      const main = $('#main');
+      if (!c || !main) return;
+
+      const wrap = el('div', { class: 'ab' });
+      wrap.appendChild(el('div', { class: 'canvas__dots', 'aria-hidden': 'true' }));
+
+      /* ---- this page's grammar ------------------------------------------ */
+      const eyebrow = (t, cls = '') => el('p', { class: `ab__eyebrow reveal ${cls}`.trim() },
+        `<i class="ab__stud" aria-hidden="true"></i>${esc(t)}`);
+
+      /* type set as authored lines. At this size the line breaks are a design
+         decision, so they are written in the content rather than left to the
+         measure — and each line reveals on its own, a beat after the one
+         above it. */
+      const lines = (arr, tag, cls) => {
+        const h = el(tag, { class: cls });
+        (arr || []).forEach((ln, i) => {
+          const s = el('span', { class: 'ab__ln reveal' }, esc(ln));
+          s.style.setProperty('--rv-delay', `${i * 90}ms`);
+          h.appendChild(s);
+        });
+        return h;
+      };
+
+      /* A photograph that does not exist yet. `p.w` and `p.at`, when present,
+         place it inside a composition; without them it sits in the flow. Give
+         the entry a `src` and the real image takes the same box. */
+      const photo = (p, extra = '') => {
+        const st = [`--rot:${p.rot || 0}deg`, `--tint:${p.tint || '#eceae4'}`];
+        if (p.w) st.push(`--w:${p.w}%`);
+        if (p.at) for (const [k, v] of Object.entries(p.at)) st.push(`${k}:${v}`);
+        const fig = el('figure', {
+          class: `pcard${p.shot ? ' pcard--shot' : ''}${p.at ? ' pcard--set' : ''}${extra ? ` ${extra}` : ''}`,
+          style: st.join(';'),
+          tabindex: '0',
+          role: 'button',
+          'aria-label': `${p.label}${p.note ? ` — ${p.note}` : ''}`,
+        });
+        const win = el('div', { class: 'pcard__win' });
+        if (p.src) win.appendChild(el('img', { class: 'pcard__img', src: p.src, alt: p.note || '', loading: 'lazy' }));
+        else win.appendChild(el('span', { class: 'pcard__label' }, esc(p.label)));
+        fig.appendChild(win);
+        fig.appendChild(el('figcaption', { class: 'pcard__cap' }, esc(p.note || '')));
+        return fig;
+      };
+
+      /* a note in the margin, placed against the composition it refers to */
+      const scrawl = (n) => {
+        const st = [];
+        if (n.at) for (const [k, v] of Object.entries(n.at)) st.push(`${k}:${v}`);
+        if (n.rot) st.push(`--rot:${n.rot}deg`);
+        const p = el('p', {
+          class: `ab__scrawl${n.at ? ' ab__scrawl--set' : ''} reveal`,
+          style: st.join(';'),
+        });
+        if (n.arrow === 'l') p.appendChild(el('i', { class: 'ab__arrow ab__arrow--l', 'aria-hidden': 'true' }));
+        p.appendChild(el('span', {}, esc(n.text)));
+        if (n.arrow === 'r') p.appendChild(el('i', { class: 'ab__arrow', 'aria-hidden': 'true' }));
+        return p;
+      };
+
+      const stage = (items, notes, cls) => {
+        const st = el('div', { class: `spread ${cls}`.trim() });
+        (items || []).forEach((p, i) => {
+          const f = photo(p);
+          f.classList.add('reveal');
+          f.style.setProperty('--rv-delay', `${i * 110}ms`);
+          st.appendChild(f);
+        });
+        (notes || []).forEach((n) => st.appendChild(scrawl(n)));
+        return st;
+      };
+
+      /* ================================================ 01. a whole screen */
+      {
+        const h = c.hero;
+        const s = el('section', { class: 'ab__hero', id: 'ab-top' });
+        s.appendChild(el('i', { class: 'sec__anchor', 'aria-hidden': 'true' }));
+
+        const col = el('div', { class: 'ab__hero-col' });
+        col.appendChild(eyebrow(h.eyebrow));
+        col.appendChild(el('h1', { class: 'ab__hi reveal' }, esc(h.hi)));
+        col.appendChild(lines(h.statement, 'p', 'ab__say'));
+        const meta = el('div', { class: 'ab__meta reveal' });
+        meta.style.setProperty('--rv-delay', '420ms');
+        (h.meta || []).forEach((m) => meta.appendChild(el('span', { class: 'pill' }, esc(m))));
+        col.appendChild(meta);
+        s.appendChild(col);
+
+        /* the pile, and the notes that point at it */
+        const vis = el('div', { class: 'ab__hero-vis' });
+        const stack = el('div', { class: 'pile__stack' });
+        (h.pile || []).forEach((p) => stack.appendChild(photo(p)));
+        vis.appendChild(stack);
+        (h.notes || []).forEach((n) => vis.appendChild(scrawl(n)));
+        s.appendChild(vis);
+
+        /* NO SCROLL CUE. "The longer version" used to sit at the foot of this
+           screen on the writing's own column, linking down to the story. A
+           full-height first screen with the type running off the bottom of it
+           already says there is more; a label saying so is a caption on an
+           affordance nobody needed explained. */
+        wrap.appendChild(s);
+        this._pile = stack;
+      }
+
+      /* ============================================ 02. the rail, and the read */
+      {
+        const s = el('section', { class: 'ab__read-sec', id: 'ab-story' });
+        s.appendChild(el('i', { class: 'sec__anchor', 'aria-hidden': 'true' }));
+
+        const rail = el('aside', { class: 'ab__rail' });
+        rail.appendChild(el('p', { class: 'ab__rail-t' }, esc(c.chaptersTitle || 'Contents')));
+        const list = el('nav', { class: 'ab__rail-list', 'aria-label': 'Chapters' });
+        const links = [];
+        const sections = [];
+
+        (c.chapters || []).forEach((ch, i) => {
+          const a = el('a', { class: 'ab__rl', href: `#${ch.id}` });
+          a.appendChild(el('span', { class: 'ab__rl-n' }, String(i + 1).padStart(2, '0')));
+          const txt = el('span', { class: 'ab__rl-x' });
+          txt.appendChild(el('span', { class: 'ab__rl-h' }, esc(ch.nav)));
+          txt.appendChild(el('span', { class: 'ab__rl-s' }, esc(ch.tiny || '')));
+          a.appendChild(txt);
+          list.appendChild(a);
+          links.push(a);
+        });
+        rail.appendChild(list);
+        s.appendChild(rail);
+
+        const read = el('div', { class: 'ab__read' });
+        (c.chapters || []).forEach((ch, i) => {
+          const sec = el('article', { class: 'ab__ch sec', id: ch.id });
+          sec.appendChild(el('i', { class: 'sec__anchor', 'aria-hidden': 'true' }));
+
+          const words = el('div', { class: 'ab__ch-w' });
+          words.appendChild(el('p', { class: 'ab__ch-e reveal' }, esc(ch.eyebrow)));
+          words.appendChild(lines(ch.heading, 'h2', 'ab__ch-h'));
+          const body = el('div', { class: 'ab__ch-b' });
+          (ch.body || []).forEach((para, k) => {
+            const pEl = el('p', { class: 'reveal' }, esc(para));
+            pEl.style.setProperty('--rv-delay', `${120 + k * 70}ms`);
+            body.appendChild(pEl);
+          });
+          words.appendChild(body);
+          sec.appendChild(words);
+
+          /* the spread. It alternates side so the read does not become a
+             column of text with a column of pictures beside it. */
+          if (ch.spread) {
+            const sp = stage(ch.spread, ch.notes, i % 2 ? 'spread--left' : 'spread--right');
+            sec.appendChild(sp);
+          }
+          read.appendChild(sec);
+          sections.push(sec);
+        });
+        s.appendChild(read);
+        wrap.appendChild(s);
+        this._rail = { sections, links };
+      }
+
+      /* ============================================== 03. a wall of type */
+      {
+        const cr = c.creed;
+        const s = el('section', { class: 'ab__creed', id: 'ab-creed' });
+        s.appendChild(el('i', { class: 'sec__anchor', 'aria-hidden': 'true' }));
+        s.appendChild(eyebrow(cr.eyebrow, 'ab__eyebrow--creed'));
+        s.appendChild(lines(cr.lines, 'h2', 'ab__creed-h'));
+        const body = el('div', { class: 'ab__creed-b' });
+        (cr.body || []).forEach((para, k) => {
+          const p = el('p', { class: 'reveal' }, esc(para));
+          p.style.setProperty('--rv-delay', `${200 + k * 80}ms`);
+          body.appendChild(p);
+        });
+        s.appendChild(body);
+        /* two prints hung in the corners of the type, not beside it */
+        (cr.loose || []).forEach((p, i) => {
+          const f = photo(p, 'pcard--hung reveal');
+          f.style.setProperty('--rv-delay', `${300 + i * 120}ms`);
+          s.appendChild(f);
+        });
+        wrap.appendChild(s);
+      }
+
+      /* ============================================= 04. the record ---------
+
+         An editorial résumé, not a résumé component. Two columns that do not
+         line up: a quiet rail of metadata on the left, the work itself on the
+         right, and no card around any of it.
+
+         IT IS ON THE READ'S OWN COLUMNS. The rail sits on 2–4 and the work on
+         6–13, which is exactly where `.ab__rail` and `.ab__read` sit two bands
+         above — so the page's widest editorial spread happens twice and lands
+         on the same two edges both times. Measured off the reference at 2940px:
+         its rail runs 1.9%–28% of the canvas and its experience column 35%–98%,
+         which on this page's twelve tracks is those two placements to within
+         half a track. The proportion was borrowed; the grid was already here.
+
+         NOTHING IS IN A BOX. The entries are separated by space and by a
+         hairline guide, which is what makes it read as a typeset document
+         rather than a list of cards — and it is why the guide is a gradient
+         that fades out at both ends instead of a border with two hard stops. */
+      {
+        const rs = c.resume;
+        const s = el('section', { class: 'ab__cv', id: 'ab-cv' });
+        s.appendChild(el('i', { class: 'sec__anchor', 'aria-hidden': 'true' }));
+
+        /* a heading in the rail's voice: small, set solid, and stronger than
+           the mono eyebrows so the rail has a hierarchy of its own */
+        const grp = (title) => {
+          const g = el('div', { class: 'cv__grp reveal' });
+          g.appendChild(el('h3', { class: 'cv__grp-t' }, esc(title)));
+          return g;
+        };
+
+        /* one metadata chip. The same object in the rail and at the foot of an
+           entry — a skill named beside a job and a skill named on its own are
+           the same kind of thing, so they are the same piece. */
+        const tag = (t) => el('li', { class: 'cv__tag' }, esc(t));
+
+        /* ---- the rail ---------------------------------------------------- */
+        const rail = el('aside', { class: 'cv__rail' });
+        {
+          const ex = rs.expertise || {};
+          const g = grp(ex.title || 'Expertise');
+          const list = el('ul', { class: 'cv__tags' });
+          (ex.items || []).forEach((t) => list.appendChild(tag(t)));
+          g.appendChild(list);
+          rail.appendChild(g);
+        }
+        {
+          const ed = rs.education || {};
+          const g = grp(ed.title || 'Education');
+          const list = el('ul', { class: 'cv__edu' });
+          (ed.items || []).forEach((e) => {
+            const li = el('li', { class: 'cv__ed' });
+            li.appendChild(el('span', { class: 'cv__ed-w' }, esc(e.what)));
+            li.appendChild(el('span', { class: 'cv__ed-s' }, esc(e.where)));
+            if (e.when) li.appendChild(el('span', { class: 'cv__ed-y' }, esc(e.when)));
+            list.appendChild(li);
+          });
+          g.appendChild(list);
+          rail.appendChild(g);
+        }
+        {
+          /* THE THREE CONTROLS ARE NOT NEW LINKS. They are the page's own
+             `_links()` — the same address, the same profile found by its href,
+             the same resume that carries `data-action` so it opens in the
+             site's viewer rather than the browser's. Change the address in
+             content.js and it changes here, in the sign-off and in the footer
+             together, because all three ask the same function.
+
+             THE ORDER IS A READING ORDER, not the order `_links()` happens to
+             build them in: the profile, the address, the file. Anything that is
+             not one of the three is left out rather than rendered as a circle
+             with no mark in it. */
+          const g = grp((rs.reach || {}).title || 'Reach me');
+          const row = el('div', { class: 'cv__reach' });
+          const MARK = { LinkedIn: ICON.linkedin, Email: ICON.mail, Resume: 'CV' };
+          const ORDER = Object.keys(MARK);
+          const three = this._links()
+            .filter((l) => ORDER.includes(l.label))
+            .sort((a, z) => ORDER.indexOf(a.label) - ORDER.indexOf(z.label));
+          three.forEach((l) => {
+            const out = /^https?:/.test(l.href);
+            const a = el('a', {
+              class: 'cv__dot',
+              href: url(l.href),
+              'aria-label': l.label,
+              ...(l.action ? { 'data-action': l.action } : {}),
+              ...(out ? { target: '_blank', rel: 'noopener' } : {}),
+            });
+            /* a glyph where there is one, the word where there is not — the
+               resume has no mark of its own, and "CV" is shorter than any
+               drawing of a document */
+            const m = MARK[l.label];
+            if (m.charAt(0) === '<') a.appendChild(el('i', { class: 'cv__dot-i', 'aria-hidden': 'true' }, m));
+            else a.appendChild(el('span', { class: 'cv__dot-t', 'aria-hidden': 'true' }, m));
+            row.appendChild(a);
+          });
+          g.appendChild(row);
+          rail.appendChild(g);
+        }
+        s.appendChild(rail);
+
+        /* ---- the work ---------------------------------------------------- */
+        const exp = el('div', { class: 'cv__exp' });
+        exp.appendChild(eyebrow(rs.eyebrow || 'Experience'));
+
+        const list = el('ol', { class: 'cv__list' });
+        const jobs = [];
+        (rs.jobs || []).forEach((j) => {
+          const li = el('li', { class: 'cv__job' });
+
+          /* the marker: a two-stud brick on the guide. It is the one place in
+             this band the home page is quoted, and it is four pixels of it. */
+          li.appendChild(el('i', { class: 'cv__node', 'aria-hidden': 'true' }, '<i></i><i></i>'));
+
+          /* THE MARK AND THE NAME REVEAL SEPARATELY, one beat apart, because
+             they are the first two things in the entry's reading order and the
+             stagger is what makes the rest of it feel like it follows rather
+             than appears. The head itself is not a reveal unit — a container
+             that fades carries its children with it and there is no order
+             inside it. */
+          const head = el('div', { class: 'cv__head' });
+          const logo = el('span', { class: 'cv__logo reveal', 'aria-hidden': 'true' });
+          /* THE MARK'S BOX IS THE SAME WHETHER THERE IS ARTWORK IN IT OR NOT,
+             so dropping a real logo in later moves nothing on the page. */
+          if (j.glyph && PILL_ICON[j.glyph]) {
+            logo.classList.add(`cv__logo--${j.glyph}`);
+            logo.innerHTML = PILL_ICON[j.glyph];
+          } else if (j.logo) {
+            logo.appendChild(el('img', { src: url(j.logo), alt: '', loading: 'lazy' }));
+          } else {
+            logo.classList.add('cv__logo--letters');
+            logo.textContent = j.initials || (j.company || '?').slice(0, 2).toUpperCase();
+          }
+          head.appendChild(logo);
+          const co = el('h3', { class: 'cv__co reveal' }, esc(j.company));
+          co.style.setProperty('--rv-delay', '55ms');
+          head.appendChild(co);
+          li.appendChild(head);
+
+          const meta = el('p', { class: 'cv__meta reveal' });
+          meta.style.setProperty('--rv-delay', '110ms');
+          meta.appendChild(el('span', { class: 'cv__role' }, esc(j.role || '')));
+          if (j.when) meta.appendChild(el('span', { class: 'cv__when' }, esc(j.when)));
+          li.appendChild(meta);
+
+          if (j.body) {
+            const p = el('p', { class: 'cv__body reveal' }, esc(j.body));
+            p.style.setProperty('--rv-delay', '165ms');
+            li.appendChild(p);
+          }
+
+          /* the achievements carry on the same 55ms beat rather than starting a
+             new one, so an entry arrives as one movement and not as four */
+          let beat = 4;
+          if ((j.wins || []).length) {
+            const wins = el('ul', { class: 'cv__wins' });
+            j.wins.forEach((w) => {
+              const wi = el('li', { class: 'cv__win reveal' }, `<i class="cv__win-o" aria-hidden="true"></i><span>${esc(w)}</span>`);
+              wi.style.setProperty('--rv-delay', `${beat++ * 55}ms`);
+              wins.appendChild(wi);
+            });
+            li.appendChild(wins);
+          }
+
+          if ((j.tags || []).length) {
+            const tl = el('ul', { class: 'cv__tags cv__tags--job reveal' });
+            tl.style.setProperty('--rv-delay', `${beat * 55}ms`);
+            j.tags.forEach((t) => tl.appendChild(tag(t)));
+            li.appendChild(tl);
+          }
+
+          list.appendChild(li);
+          jobs.push(li);
+        });
+        exp.appendChild(list);
+
+        /* ---- the awards ---------------------------------------------------
+           A RULED LIST, NOT A ROW OF TROPHY CARDS. Four prizes is a table's
+           worth of information — a year, a thing, and what the thing was —
+           and the three-column rule is what makes it scannable at a glance
+           instead of four more paragraphs to read. It sits at the foot of the
+           work column rather than in its own band, because it IS résumé
+           content: the same document, one run further down.
+
+           A NAME IS A LINK ONLY WHEN THERE IS SOMEWHERE TO GO. Give a row a
+           `url` in content.js and it becomes an anchor with the arrow after
+           it; without one it is plain type. No placeholder href, because a
+           link that goes nowhere is worse than no link. */
+        if (((rs.awards || {}).items || []).length) {
+          const aw = rs.awards;
+          const box = el('div', { class: 'cv__aw' });
+          box.appendChild(eyebrow(aw.title || 'Awards'));
+
+          const ol = el('ol', { class: 'cv__aws' });
+          aw.items.forEach((a, i) => {
+            const li = el('li', { class: 'cv__aw-r reveal' });
+            li.style.setProperty('--rv-delay', `${i * 55}ms`);
+            li.appendChild(el('span', { class: 'cv__aw-y' }, esc(a.year || '')));
+            li.appendChild(a.url
+              ? el('a', {
+                class: 'cv__aw-n cv__aw-n--to',
+                href: url(a.url),
+                ...(/^https?:/.test(a.url) ? { target: '_blank', rel: 'noopener' } : {}),
+              }, esc(a.name))
+              : el('span', { class: 'cv__aw-n' }, esc(a.name)));
+
+            const d = el('span', { class: 'cv__aw-d' });
+            d.appendChild(el('span', { class: 'cv__aw-p' }, esc(a.result || '')));
+            if (a.where) d.appendChild(el('span', {}, ` · ${esc(a.where)}`));
+            li.appendChild(d);
+            ol.appendChild(li);
+          });
+          box.appendChild(ol);
+          exp.appendChild(box);
+        }
+
+        s.appendChild(exp);
+
+        wrap.appendChild(s);
+        this._jobs = jobs;
+        this._jobLand = $('.sec__anchor', s);
+      }
+
+      /* THE PAGE ENDS ON THE RÉSUMÉ, and it ends there deliberately rather
+         than by attrition. The table of what I am currently reading and the
+         "Let's make something." sign-off both came out: the footer below is
+         already an end-of-page — the address is its headline, "Get in touch"
+         is its lead, and every link the sign-off offered is in its Links
+         column. Two closings in a row is one closing and then a repeat. */
+
+      main.appendChild(wrap);
+
+      /* ---- and the interactions ----------------------------------------- */
+      if (this._pile) Desk.stack(this._pile);
+      if (this._jobs && this._jobs.length) Desk.track(this._jobs, this._jobLand);
+      if (this._rail && this._rail.sections.length) {
+        SectionNav.bind(null, this._rail.sections, this._rail.links);
+      }
+    },
+
+    /* THE WAYS TO REACH ME, resolved from the data the rest of the site
+       already uses rather than typed out again: the address is the footer's,
+       the profiles are found by their href the way the footer's own glyphs
+       are, and the resume carries `data-action` so it opens in the page's
+       viewer.
+
+       ONE CALLER LEFT — the résumé's "Reach me" row, which takes three of the
+       four and puts them in that order. The sign-off and the fixed edge
+       utilities both used to ask this too and both are gone; it stays a
+       lookup rather than being inlined at its one call site, because the
+       moment an address is written into a builder it is written in two
+       places. */
+    _links() {
+      const fl = (S.footer && S.footer.links) || [];
+      const byHref = (re) => fl.find((l) => re.test(l.href || ''));
+      const mail = (S.footer && S.footer.email) || S.person.email;
+      const x = byHref(/(^|\/\/|\.)(x|twitter)\.com/);
+      const li = byHref(/linkedin\.com/);
+      return [
+        { label: 'Email', href: `mailto:${mail}`, primary: true },
+        li && { label: 'LinkedIn', href: li.href },
+        x && { label: 'X', href: x.href },
+        S.person.resumeUrl && { label: 'Resume', href: S.person.resumeUrl, action: 'resume' },
+      ].filter(Boolean);
     },
 
     /* THE PEOPLE AND WRITING PAGES ARE GONE, and their routes with them.
@@ -13714,12 +14172,9 @@
     const page = Shell.page;
     (Pages[page] || Pages.home).call(Pages);
 
-    Shell.stacks();
-    Shell.avatars();
     Ink.init();
     Ghost.init();
     Rack.init();
-    Shell.field();
     Sheet.init();
     /* last, so the handle mounts above the furniture it sits beside */
     Deck.init();

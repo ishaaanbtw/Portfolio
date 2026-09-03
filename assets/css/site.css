@@ -168,13 +168,6 @@
   --spring-soft: cubic-bezier(0.22, 1.18, 0.36, 1);
   --spring-snap: cubic-bezier(0.16, 1.32, 0.3, 1);
 
-  /* avatar-group hover (transitions.dev) */
-  --avatar-lift: -4px;
-  --avatar-dur: 320ms;
-  --avatar-scale: 1.05;
-  --avatar-falloff: 0.45;
-  --avatar-ease-in: cubic-bezier(0.22, 1, 0.36, 1);
-  --avatar-ease-out: cubic-bezier(0.34, 3.85, 0.64, 1);
 }
 
 /* ==========================================================================
@@ -670,18 +663,10 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 }
 @keyframes ripple { to { transform: translate(-50%, -50%) scale(14); opacity: 0; } }
 
-/* ==========================================================================
-   7. SCROLL-REVEAL PROSE
-   ========================================================================== */
-
-.story { padding: clamp(3rem, 12vh, 8rem) 0; }
-
 /* Measured: the prose column's centre sits ~38px left of the viewport centre —
    consistent at 858px and 1470px wide. Reserving 76px on the right reproduces
    that offset exactly. (In the reference this space holds a progress rail.) */
 @media (min-width: 48rem) {
-  .story,
-  .closing,
   .index { padding-right: 4.75rem; }
 }
 
@@ -785,53 +770,6 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 /* mark, base: no browser yellow, effects layer on via .band / .rule */
 .block mark { background: transparent; color: inherit; }
 
-/* "blur" — actually blurred. Hovering sharpens it, which is the only way to
-   read the word, and is the whole point of the gag. */
-/* AND THE AMOUNT OF BLUR IS MEASURED, NOT PICKED.
-
-   In the reference this word is soft but still black: sampling it gives a
-   darkest pixel of 16, the same ink as the sharp text around it. Ours was
-   reaching 131 — a grey smudge, not a blurred word, because 2.6px of blur on a
-   400-weight stem spreads the ink until there is no core left. The reference's
-   strokes are visibly heavier than their neighbours, and that is what lets a
-   blur stay legible: at 600 and 1.3px the darkest pixel comes back to 26,
-   which is the reference's neighbourhood, and the counters of the b and the u
-   stay open. Blurred enough to be the joke, black enough to still be a word. */
-.block mark.blurred {
-  font-weight: 600;
-  filter: blur(0px);
-  transition: filter 520ms var(--ease);
-  cursor: help;
-}
-.block mark.blurred:has(.is-lit) { filter: blur(1.3px); }
-:root:not(.hover-cold) .block mark.blurred:hover { filter: blur(0px); }
-
-/* "consequence" — a hand-drawn highlighter swash: slightly skewed, rough ends,
-   sitting over the text rather than behind a tidy rectangle */
-.block mark.band {
-  position: relative;
-  padding: 0.04em 0.2em;
-  margin-inline: -0.2em;
-}
-.block mark.band::before {
-  content: '';
-  position: absolute;
-  inset: -0.1em -0.24em -0.16em -0.2em;
-  z-index: -1;
-  /* MEASURED, LIKE THE RAMP. Sampling the interior of the swash across three
-     frames of the reference — the soft edges excluded, because they drag the
-     average toward the paper — gives a flat (182,182,182) on a paper of
-     (251,251,251): 27.7% ink coverage. This was at 19%, which read a shade too
-     polite behind a word whose whole job is to look struck through with a
-     marker. */
-  background: rgba(20, 16, 12, 0.277);
-  border-radius: 3px 10px 4px 8px;
-  transform: skewX(-9deg) scaleX(0);
-  transform-origin: left center;
-  transition: transform 620ms var(--ease);
-}
-.block mark.band:has(.is-lit)::before { transform: skewX(-9deg) scaleX(1); }
-
 /* underline that draws itself in — "people", "email", "X" */
 .block mark.rule {
   background-image: linear-gradient(to right, rgba(20, 16, 12, 0.72), rgba(20, 16, 12, 0.72));
@@ -842,74 +780,6 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   transition: background-size 700ms var(--ease);
 }
 .block mark.rule:has(.is-lit) { background-size: 100% 1.5px; }
-
-/* the ".." that trails "consequence" */
-.block .dots { font-style: normal; letter-spacing: 0.04em; }
-
-/* "desirable" — serif italic sitting inside what looks like a design-tool
-   selection: grey fill, hairline border, and four little corner handles */
-.block .tag {
-  position: relative;
-  /* SERIF, AND THE COMMENT ABOVE WAS RIGHT ALL ALONG. The reference sets this
-     word in an old-style book italic — the curved ascender on the d, the
-     single-storey a, the swash on the b and the l — and the rest of the line
-     in the sans. That contrast is the point: the selected object is visibly a
-     different kind of thing from the sentence holding it. It had drifted to
-     `var(--sans)`, which is an oblique, not an italic, and read as the same
-     word leaning over. */
-  font-family: var(--serif);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 1em;
-  letter-spacing: 0;
-  padding: 0.04em 0.34em;
-  margin-inline: 0.1em;
-  /* the fill measured off the reference: (222,220,221) on a paper of
-     (251,251,251), so twelve per cent, not five and a half */
-  background: rgba(20, 16, 12, 0.12);
-  outline: 1px solid transparent;
-  transition: outline-color 480ms var(--ease), background 480ms var(--ease);
-}
-/* and the frame is near-black in the reference, not a half-tone */
-.block .tag:has(.is-lit) { outline-color: rgba(20, 16, 12, 0.88); }
-
-/* All four handles drawn by one pseudo-element: the same little square
-   painted at each corner. Cheaper and cleaner than four separate nodes. */
-.block .tag::after {
-  /* SOLID, NOT HOLLOW. The reference's handles are filled black squares — the
-     ones here were paper-filled with a dark stroke, which is the other
-     convention and reads as a hollow point rather than a grabbed one. */
-  --handle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect x='0' y='0' width='6' height='6' fill='%2314100c'/%3E%3C/svg%3E");
-  content: '';
-  position: absolute;
-  inset: -3px;
-  background-image: var(--handle), var(--handle), var(--handle), var(--handle);
-  background-size: 6px 6px;
-  background-repeat: no-repeat;
-  background-position: left top, right top, left bottom, right bottom;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: opacity 380ms var(--ease) 140ms, transform 520ms var(--spring) 140ms;
-  pointer-events: none;
-}
-.block .tag:has(.is-lit)::after { opacity: 1; transform: none; }
-
-/* the little hand-drawn scribble that sits before "complexity" */
-.block .scribble {
-  display: inline-block;
-  width: 1.15em;
-  height: 0.82em;
-  margin-right: 0.2em;
-  vertical-align: -0.02em;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 30'%3E%3Cg fill='none' stroke='%2314100c' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M6 20c2-9 9-14 15-11 5 3 4 11-2 13-7 2-12-3-10-9 2-7 12-10 18-5 6 4 6 14-1 17-8 4-17-2-16-11 1-8 11-13 19-9'/%3E%3Cpath d='M14 9c5-4 13-3 17 2M10 24c6 4 15 3 20-2M20 6c-4 6-4 14 1 19M28 8c3 6 3 13-1 18'/%3E%3C/g%3E%3C/svg%3E");
-  opacity: 0;
-  transform: translateY(2px) rotate(-4deg);
-  transition: opacity 500ms ease, transform 620ms var(--ease);
-}
-.block .scribble.is-lit { opacity: 0.85; transform: none; }
 
 .block a {
   background-image: linear-gradient(to right, currentColor, currentColor);
@@ -1432,7 +1302,6 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
    14. FOOTER
    ========================================================================== */
 
-.closing { padding: clamp(2rem, 8vh, 5rem) 0 clamp(3rem, 10vh, 6rem); }
 
 /* --- the footer -----------------------------------------------------------
    Written to answer the header rather than to close the page off.
@@ -1845,147 +1714,6 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 }
 
 /* ==========================================================================
-   15d. LOGO STACK
-   ========================================================================== */
-
-.stack {
-  position: relative;
-  display: inline-block;
-  width: 1.5em;
-  height: 1.5em;
-  vertical-align: -0.3em;
-  margin-inline: 0.16em 0.3em;
-  cursor: pointer;
-}
-
-.stack__card {
-  position: absolute;
-  inset: 0;
-  border-radius: 28%;
-  background: var(--card, #2b2b2b);
-  box-shadow: 0 1px 3px rgba(20, 16, 12, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-  display: grid;
-  place-items: center;
-  font-size: 0.5em;
-  font-weight: 700;
-  color: #fff;
-  transition: transform 620ms var(--spring), opacity 340ms ease;
-  will-change: transform;
-}
-
-/* the two cards behind fan out slightly and sit lower */
-.stack__card[data-depth='0'] { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; z-index: 3; }
-.stack__card[data-depth='1'] { transform: translateY(-2px) rotate(-7deg) scale(0.94); opacity: 0.55; z-index: 2; }
-.stack__card[data-depth='2'] { transform: translateY(-4px) rotate(-13deg) scale(0.88); opacity: 0.28; z-index: 1; }
-
-:root:not(.hover-cold) .stack:hover .stack__card[data-depth='0'] { transform: translateY(-2px) scale(1.06); }
-:root:not(.hover-cold) .stack:hover .stack__card[data-depth='1'] { transform: translate(4px, -5px) rotate(9deg) scale(0.96); opacity: 0.8; }
-:root:not(.hover-cold) .stack:hover .stack__card[data-depth='2'] { transform: translate(-5px, -7px) rotate(-16deg) scale(0.92); opacity: 0.6; }
-
-/* ==========================================================================
-   15e. AVATAR GROUP  (transitions.dev)
-   The hover spring is owned entirely by .t-avatar; .chip-badge only brings the
-   size, shape and colour. JS writes --shift and --scale-active per sibling with
-   a distance falloff, so neighbours lift less the further out they are.
-   ========================================================================== */
-
-.t-avatar {
-  transform-origin: center;
-  /* translateY before scale so scale doesn't amplify the lift offset */
-  transform:
-    translateY(var(--shift, 0px))
-    scale(calc(var(--scale-active, 1) * var(--press, 1)));
-  transition: transform var(--avatar-dur) var(--avatar-ease-in);
-  will-change: transform;
-}
-
-/* the press dip multiplies into the same transform instead of replacing it,
-   so a badge can be lifted and pressed at the same time */
-.t-avatar.is-press { --press: 0.92; }
-
-.t-avatar-group { display: inline-flex; }
-
-@media (prefers-reduced-motion: reduce) {
-  .t-avatar { transition: none !important; transform: none !important; }
-}
-
-/* --- the badges themselves: round, overlapping, brand-coloured ----------- */
-
-/* --- WHERE THE STACK SITS ON THE LINE ----------------------------------------
-
-   It was `-0.22em`, and measured against the rendered page that put the discs'
-   centres 1px BELOW the text baseline — the whole group hanging off the bottom
-   of the line with its lower third in the descender space, which is what read
-   as "not aligned". A round mark in running text wants its centre on the CAP
-   midpoint, half a cap-height above the baseline; anything lower and it looks
-   like it fell off the words.
-
-   Stated in em so it tracks the type size rather than being right at one
-   breakpoint. Measured, not guessed: at 29px the cap is 21.2px, so the target
-   centre is 10.6px above the baseline and this is the offset that puts it
-   there. */
-.badges {
-  vertical-align: 0.17em;
-  margin-left: 0.3em;
-}
-
-.chip-badge {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  /* JUST UNDER CAP HEIGHT. It was 1.28em, which at the story's 29px came out
-     at 20.8 against a 21.2px cap — a disc the full height of a capital, ringed
-     in paper and dropped in shadow, which is more weight than three of them in
-     a row can carry without becoming the sentence. Sat a step down, the group
-     reads as an aside inside the line, which is what it is. */
-  width: 1.1em;
-  height: 1.1em;
-  border-radius: 50%;
-  background: var(--chip, #cfcac2);
-  color: #fff;
-  font-size: 0.56em;
-  font-weight: 700;
-  font-style: normal;
-  cursor: pointer;
-  /* the ring came down with the disc — 2px on an 18px circle is a bezel */
-  box-shadow: 0 1px 2.5px rgba(20, 16, 12, 0.22), 0 0 0 1.5px var(--paper);
-}
-
-.badges .chip-badge + .chip-badge { margin-left: -0.28em; }
-
-/* the hovered one has to come forward or the overlap clips its lift */
-.chip-badge:hover { z-index: 3; }
-
-/* THE INSET IS ONE NUMBER FOR EVERY MARK, and it can be because the marks
-   themselves are now cropped to their own ink — see the note at the top of
-   safe.svg. 64% of the disc is the usual seat for a logo in a lockup: enough
-   air that the glyph is not pressed against the rim, tight enough that it is
-   the thing you see rather than the circle. It came down from 64 once the
-   viewBoxes were cropped: the same number against uncropped art and against
-   cropped art are two different amounts of ink, and at 64 the shield and the
-   boat were touching the rim.
-
-   `--mark` is the one concession to reality. Optical sizing of logos in a
-   lockup is per-logo work in every design system that has ever shipped one: a
-   wide, short mark and a tall, narrow one do not read at the same weight at
-   the same box size however square you make their boxes. The default is 1 and
-   only a mark that genuinely needs it sets otherwise. */
-.chip-badge img,
-.chip-badge svg {
-  width: 56%;
-  height: 56%;
-  display: block;
-  pointer-events: none;
-  /* A SCALE, NOT A calc ON THE PERCENTAGE. `calc(64% * var(--mark))` parses,
-     and then an <img> of an SVG that carries a viewBox but no intrinsic width
-     resolves it to something else entirely — measured, the marked-up badge came
-     back 68px wide inside an 18px disc. A transform sidesteps replaced-element
-     sizing completely: it is applied after layout, it cannot be renegotiated by
-     the image, and it costs nothing. */
-  transform: scale(var(--mark, 1));
-}
-
-/* ==========================================================================
    16. TOAST
    ========================================================================== */
 
@@ -2093,110 +1821,23 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
   .reveal { opacity: 1; transform: none; }
 }
 
-/* ==========================================================================
-   21. PEOPLE FIELD
-   Clicking "people" scatters a field of cards over the page. The page itself
-   blurs and desaturates behind them; the trigger word stays sharp on top.
-   ========================================================================== */
+/* THE 900ms COLOUR EASE ON `.outro` HAS NEVER RUN, AND THIS IS WHAT WAS
+   STOPPING IT. `.outro` asks for `transition: color 900ms linear` at its own
+   rule, so its ink would ease as the sky changes hour — that is what the note
+   up there means by "written by the sky module".
 
-.people-trigger {
-  font: inherit;
-  color: inherit;
-  padding: 0;
-  cursor: pointer;
-}
+   The people field used to declare `transition: filter …, transform …` on
+   `.sheet, .outro` here, further down the file. `transition` is a SHORTHAND: it
+   replaces the whole property rather than adding to it, so the colour ease was
+   overwritten and the footer ink has always snapped between hours instead.
 
-/* While the field is open the paper falls back and out of focus.
-   Measured off the recording: the blur is NOT animated — it snaps in one 17ms
-   frame in both directions. --field-blur-ms exists so it can be softened, but
-   0ms is what the reference actually does. */
+   The field is gone. These two lines are all that is left of it, and they are
+   kept ON PURPOSE: they reproduce the suppression exactly, because removing
+   them lets the ease run for the first time — a visible change, which the pass
+   that removed the section was not allowed to make. Deleting them is the fix,
+   and it wants its own before/after check. */
 .sheet,
-.outro {
-  transition:
-    filter var(--field-blur-ms, 0ms) linear,
-    transform var(--field-blur-ms, 0ms) linear;
-}
-
-body.is-field .sheet,
-body.is-field .outro {
-  filter: blur(7px) saturate(0.72);
-  transform: scale(0.994);
-}
-
-/* the trigger word is lifted above the blur so it stays legible */
-body.is-field .people-trigger {
-  position: relative;
-  z-index: 62;
-  filter: none;
-}
-
-.field {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 320ms ease;
-}
-.field.is-open { pointer-events: auto; opacity: 1; }
-
-/* a click anywhere that isn't a card closes the field */
-.field__scrim {
-  position: absolute;
-  inset: 0;
-  background: rgba(247, 246, 243, 0.28);
-  backdrop-filter: blur(1px);
-  -webkit-backdrop-filter: blur(1px);
-  border: 0;
-  cursor: zoom-out;
-}
-
-.field__card {
-  position: absolute;
-  margin: 0;
-  border-radius: 12px;
-  background: var(--paper-2);
-  box-shadow:
-    0 1px 2px rgba(20, 16, 12, 0.08),
-    0 18px 40px -16px rgba(20, 16, 12, 0.28);
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  padding: 8%;
-  /* Measured: cards appear ~85ms after the trigger and grow from roughly 0.86
-     to full size over ~300ms, easing out. They do not start tiny. */
-  opacity: 0;
-  transform:
-    translate3d(0, 9px, 0)
-    scale(0.86)
-    rotate(calc(var(--rot, 0deg) * 1.5));
-  transition:
-    opacity 240ms ease var(--delay, 0ms),
-    transform 320ms var(--spring-soft) var(--delay, 0ms);
-  will-change: transform;
-}
-
-.field.is-open .field__card {
-  opacity: 1;
-  transform: translate3d(0, 0, 0) scale(1) rotate(var(--rot, 0deg));
-}
-
-.field__card img { width: 100%; height: 100%; object-fit: contain; }
-
-/* a card lifts and straightens when you point at it */
-.field__card:hover {
-  transform: translate3d(0, -6px, 0) scale(1.045) rotate(calc(var(--rot, 0deg) * 0.3));
-  box-shadow:
-    0 2px 4px rgba(20, 16, 12, 0.1),
-    0 30px 60px -18px rgba(20, 16, 12, 0.34);
-  z-index: 3;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  body.is-field .sheet,
-  body.is-field .outro { filter: none; transform: none; }
-  .field__card { transform: none !important; }
-}
+.outro { transition: filter 0ms linear, transform 0ms linear; }
 
 /* ==========================================================================
    23. PROJECT PAGE  (case study)
@@ -6290,16 +5931,14 @@ body.past-hero .sel { opacity: 0; }
   .tool:not(.tool--obj),
   .drawerpad button,
   .tools__tab,
-  .tab,
-  .stack { position: relative; }
+  .tab { position: relative; }
 
   .inks button::after,
   .mute::after,
   .tool::after,
   .drawerpad button::after,
   .tools__tab::after,
-  .tab::after,
-  .stack::after {
+  .tab::after {
     content: '';
     position: absolute;
     left: 50%;
@@ -6481,8 +6120,6 @@ body.past-hero .sel { opacity: 0; }
 @media (max-width: 48rem) {
   /* Line length. Prose that runs the full width of a phone is uncomfortable
      to read at any size; the gutter does most of the work, this caps the rest. */
-  .story p,
-  .story .line,
   .foot__note { max-width: 34ch; }
 
   /* one column, in reading order, with the email first as it is on desktop */
@@ -6498,7 +6135,6 @@ body.past-hero .sel { opacity: 0; }
 
   /* Generous, consistent breathing room. One value, from the spacing scale,
      rather than each section carrying its own guess. */
-  .story { padding-block: var(--sp-7, 3rem); }
   .showcase { padding-block: var(--sp-6, 2.25rem); }
   .index { padding-block: var(--sp-6, 2.25rem); }
 }
@@ -6527,8 +6163,6 @@ body.past-hero .sel { opacity: 0; }
    crossing a 1440px screen is a flourish, and the same 40px on a 390px screen
    is a third of the viewport moving, which reads as jank however smooth it is. */
 @media (max-width: 48rem) {
-  :root {
-  }
   .rv { --rv-blur: 8px; }     /* less blur to resolve = less to composite */
 }
 
@@ -10169,4 +9803,990 @@ body.waking.awake .rv { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root),
   ::view-transition-new(root) { animation-duration: 1ms; }
+}
+
+/* ==========================================================================
+   45. THE ABOUT PAGE
+   Eight chapters, none of them composed the same way. The variation IS the
+   design: a personal page whose sections share a layout reads as a template
+   however good the parts are, and what this page is for is showing that
+   somebody made it deliberately.
+
+   THE GRID, AND WHY IT IS NOT CENTRED
+   Measured off the reference at a 1470px viewport: the writing runs from 17%
+   to 46% of the width, the visual from 57% to 84%, and the last 16% is left
+   empty on purpose. So this page is laid out on fourteen tracks — an edge,
+   twelve columns, an edge — and everything is PLACED on it by column number
+   rather than centred in a container. Two columns of different widths with an
+   unequal margin either side is what makes a page look art-directed; one
+   `max-width: 700px; margin: 0 auto` is what makes it look like a template.
+
+   A few things hang deliberately outside their column — the hung prints in the
+   creed, the notes beside the pile. A grid that is never broken reads as a
+   table.
+
+   BORROWED, NOT REBUILT: the dot field, the pill, the annotation artifacts,
+   the buttons, `.reveal`, `.sec__anchor` and the rail's active-section
+   detection, the footer and its sky.
+   ========================================================================== */
+
+.ab {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  /* THE EDGE IS WIDE ON PURPOSE. Measured off the reference, its writing
+     starts at 17% of the viewport — not at a 24px page margin. A generous
+     edge is most of what separates an art-directed page from a document. */
+  --edge: clamp(1.25rem, 9vw, 10rem);
+  --gap: clamp(0.75rem, 1.5vw, 1.5rem);
+}
+.ab > *:not(.canvas__dots) { position: relative; z-index: 1; }
+
+/* every band is the same fourteen tracks, so a heading in one section and a
+   photograph in another can share an edge without either knowing about it */
+.ab__hero,
+.ab__read-sec,
+.ab__creed,
+.ab__cv {
+  display: grid;
+  grid-template-columns: var(--edge) repeat(12, minmax(0, 1fr)) var(--edge);
+  column-gap: var(--gap);
+}
+
+/* ---- the voices -----------------------------------------------------------
+   Size, weight and ink all carry hierarchy, so no two levels are separated by
+   size alone. There were five; the section-heading level between the statement
+   and the body copy went out with the last of the sections that used it, and
+   is not being kept warm for a future one. */
+.ab__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.ab__stud {
+  flex: none;
+  width: 6px; height: 6px;
+  border-radius: 2px;
+  background: var(--ink-ghost);
+  box-shadow: inset 0 0 0 1px rgba(20, 16, 12, 0.06);
+}
+
+/* LEVEL ONE. The largest thing on the site — deliberately larger than the
+   work page's lede, because this is the one page that is about a person. */
+.ab__hi {
+  margin: var(--sp-5) 0 var(--sp-4);
+  font-size: clamp(2.75rem, 6.4vw, 6rem);
+  font-weight: 500;
+  line-height: 0.94;
+  letter-spacing: -0.042em;
+}
+/* LEVEL TWO, set as authored lines */
+.ab__say {
+  margin: 0 0 var(--sp-6);
+  font-size: clamp(1.375rem, 2.2vw, 2rem);
+  font-weight: 400;
+  line-height: 1.18;
+  letter-spacing: -0.026em;
+  color: var(--ink-2);
+}
+.ab__ln { display: block; }
+.ab__meta { display: flex; flex-wrap: wrap; gap: 0.4375rem; }
+
+/* ==========================================================================
+   45a. THE HERO — ONE WHOLE SCREEN
+   Writing on columns 2–6, the pile on 8–12, and the sixteen per cent on the
+   right left empty. The two are NOT vertically centred against each other:
+   the writing sits above the middle and the pile hangs below it, which is what
+   gives the screen a diagonal to read along.
+   ========================================================================== */
+
+.ab__hero {
+  min-height: 100svh;
+  align-content: center;
+  align-items: center;
+  padding-block: clamp(5rem, 12vh, 9rem) clamp(4rem, 10vh, 7rem);
+}
+.ab__hero-col {
+  grid-column: 2 / span 6;
+  grid-row: 1;
+  align-self: center;
+  padding-bottom: clamp(1rem, 5vh, 4rem);
+}
+.ab__hero-vis {
+  position: relative;
+  grid-column: 9 / span 5;
+  grid-row: 1;
+  align-self: center;
+  margin-top: clamp(1rem, 6vh, 5rem);
+}
+
+/* ==========================================================================
+   45b. PHOTOGRAPHS
+   A print is paper: a white border, a caption strip under the window, a tilt,
+   and a shadow that says how far off the desk it is. The placeholder says what
+   it is waiting for in the same mono the rest of the page labels things in —
+   a deliberate temporary artifact rather than a grey box.
+   ========================================================================== */
+
+.pcard {
+  margin: 0;
+  padding: 0.5rem 0.5rem 0;
+  border-radius: 3px;
+  background: var(--paper-2);
+  box-shadow:
+    inset 0 0 0 1px rgba(20, 16, 12, 0.05),
+    0 6px 18px -8px rgba(20, 16, 12, 0.22);
+  transform: rotate(var(--rot, 0deg));
+  transition: transform 620ms var(--spring), box-shadow 320ms var(--ease);
+  cursor: pointer;
+  will-change: transform;
+}
+.pcard:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.pcard__win {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-radius: 1px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(152deg, rgba(255, 255, 255, 0.6) 0%, transparent 48%),
+    var(--tint, #eceae4);
+}
+.pcard--shot .pcard__win { aspect-ratio: 16 / 10; }
+.pcard__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pcard__label {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(20, 16, 12, 0.28);
+}
+.pcard__cap {
+  padding: 0.5625rem 0.25rem 0.625rem;
+  font-size: 0.625rem;
+  line-height: 1.3;
+  color: var(--ink-dim);
+  text-align: center;
+  min-height: 1.9rem;
+}
+
+/* a print PLACED in a composition rather than sitting in the flow */
+.pcard--set { position: absolute; width: var(--w, 40%); }
+
+/* ---- the pile -------------------------------------------------------------
+   Not a carousel: nothing travels sideways and nothing leaves the pile.
+   `--depth` is written by JS, `--rot` is how the print was put down, `--fan`
+   is how far the pile separates — and the transform is composed HERE from all
+   three, which is what lets the hover add to the pose instead of rewriting it.
+   ========================================================================== */
+.pile__stack {
+  position: relative;
+  width: 100%;
+  max-width: 27rem;
+  margin-left: auto;
+  aspect-ratio: 4 / 5.3;
+  --fan: 0px;
+}
+/* THE PILE LEANS ONE WAY. Each print behind the front one steps down and to
+   the LEFT rather than straight down: a stack that fans symmetrically reads as
+   a stack of cards, and one that leans reads as paper somebody put down in a
+   hurry. The step is small — nine pixels and a degree — because the tilts each
+   print already carries are doing most of the work. */
+.pile__stack .pcard {
+  position: absolute;
+  inset: 0;
+  transform:
+    translate3d(
+      calc(var(--depth, 0) * (var(--fan, 0px) - 5px)),
+      calc(var(--depth, 0) * 7px), 0)
+    rotate(calc(var(--rot, 0deg) + var(--depth, 0) * 1.1deg))
+    scale(calc(1 - var(--depth, 0) * 0.024));
+}
+.pile__stack .pcard.is-front {
+  box-shadow:
+    inset 0 0 0 1px rgba(20, 16, 12, 0.05),
+    0 16px 38px -14px rgba(20, 16, 12, 0.3);
+}
+.pile__stack.is-held { --fan: 16px; }
+/* picking one up: it turns toward you, lifts, and grows a little */
+:root:not(.hover-cold) .pile__stack.is-held .pcard.is-front {
+  transform: translate3d(0, -10px, 0) rotate(calc(var(--rot, 0deg) * 0.3)) scale(1.028);
+  box-shadow:
+    inset 0 0 0 1px rgba(20, 16, 12, 0.05),
+    0 28px 60px -20px rgba(20, 16, 12, 0.36);
+}
+
+/* ---- a spread: prints composed inside their own box ---------------------- */
+.spread { position: relative; aspect-ratio: 1 / 1.02; }
+:root:not(.hover-cold) .spread .pcard:hover {
+  transform: rotate(calc(var(--rot, 0deg) * 0.4)) translateY(-5px) scale(1.02);
+  z-index: 4;
+  box-shadow:
+    inset 0 0 0 1px rgba(20, 16, 12, 0.05),
+    0 22px 46px -18px rgba(20, 16, 12, 0.32);
+}
+
+/* ==========================================================================
+   45c. ANNOTATIONS
+   Small, grey, and set against the thing they refer to rather than in a
+   caption slot. They are discoveries, not content — so they are never the
+   first thing read and never the widest.
+   ========================================================================== */
+
+.ab__scrawl {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  margin: 0;
+  max-width: 12rem;
+  font-style: italic;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  letter-spacing: -0.004em;
+  color: var(--ink-dim);
+  transform: rotate(var(--rot, -1deg));
+}
+.ab__scrawl--set { position: absolute; z-index: 5; }
+/* the hero's notes sit OUTSIDE the pile's box, not over it — an annotation on
+   top of the thing it annotates is a label */
+.ab__hero-vis .ab__scrawl--set { max-width: 9.5rem; }
+.ab__arrow {
+  flex: none;
+  width: 2.125rem; height: 0.8125rem;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 16'%3E%3Cg fill='none' stroke='%23c9c4bc' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M2 9c8-6 20-8 38-4'/%3E%3Cpath d='M34 1c3 2 5 3 6 4-2 1-4 3-5 6'/%3E%3C/g%3E%3C/svg%3E");
+}
+.ab__arrow--l { transform: scaleX(-1); }
+/* The page's own annotations sit in the flow, unlike the study figures'. Any
+   future annotation placed by coordinate needs its own `position: absolute`
+   AFTER this rule — the blanket `static` here outranks a single-class one. */
+.ab .anno { position: static; display: inline-block; max-width: 13rem; }
+.ab .anno--note { padding: 0.375rem 0.625rem; }
+
+/* ==========================================================================
+   45d. THE READ — a rail, and a spread per chapter
+   The rail is sticky inside its own grid column, so it travels with the read
+   and stops where the read stops. The spreads alternate side, so the chapter
+   is never a column of text with a column of pictures next to it.
+   ========================================================================== */
+
+.ab__read-sec { position: relative; padding-block: clamp(5rem, 14vh, 10rem); align-items: start; }
+
+.ab__rail {
+  grid-column: 2 / span 3;
+  position: sticky;
+  top: clamp(3rem, 16vh, 8rem);
+  align-self: start;
+  height: fit-content;
+}
+.ab__rail-t {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.ab__rail-list { display: flex; flex-direction: column; }
+.ab__rl {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  align-items: baseline;
+  padding: 0.5625rem 0.6875rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background-color 260ms var(--ease), transform 420ms var(--spring),
+              opacity 260ms var(--ease);
+}
+.ab__rl-n {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--ink-ghost);
+  font-variant-numeric: tabular-nums;
+  transition: color 260ms var(--ease);
+}
+.ab__rl-x { display: block; min-width: 0; }
+.ab__rl-h {
+  display: block;
+  font-size: var(--step-0);
+  font-weight: 500;
+  letter-spacing: -0.008em;
+  color: var(--ink-2);
+  transition: color 260ms var(--ease);
+}
+.ab__rl-s {
+  display: block;
+  margin-top: 0.0625rem;
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  color: var(--ink-dim);
+}
+.ab__rl::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 2px; height: 0;
+  border-radius: 1px;
+  background: var(--ink);
+  transform: translateY(-50%);
+  transition: height 380ms var(--spring);
+}
+:root:not(.hover-cold) .ab__rl:hover { background: var(--line-soft); transform: translateX(2px); }
+:root:not(.hover-cold) .ab__rl:hover .ab__rl-h { color: var(--ink); }
+.ab__rl:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.ab__rl.is-active { background: var(--line-soft); }
+.ab__rl.is-active::before { height: calc(100% - 0.9rem); }
+.ab__rl.is-active .ab__rl-h { color: var(--ink); font-weight: 560; }
+.ab__rl.is-active .ab__rl-n { color: var(--ink-2); }
+.ab__rail-list:has(.is-active) .ab__rl:not(.is-active) { opacity: 0.55; }
+
+.ab__read { grid-column: 6 / span 8; min-width: 0; }
+
+/* A CHAPTER IS A SPREAD, NOT A BLOCK. Words and pictures each get their own
+   half and their own vertical zone; the spread alternates side so turning the
+   page changes the composition rather than repeating it. */
+.ab__ch {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  column-gap: var(--gap);
+  padding-block: clamp(4rem, 13vh, 9rem);
+}
+.ab__ch + .ab__ch { border-top: 1px solid var(--line-soft); }
+/* EVERY ANCHOR SITS AT ITS SECTION'S TOP EDGE. Left static, an anchor lands
+   wherever the grid puts it — the hero's sat 368px down its own section, so
+   clicking "About" in the navigator scrolled DOWN to reach the top of the
+   page. Absolute at top 0 makes the target the edge it is supposed to be, and
+   the landing allowance stays the site's own `--nav-land`. */
+.ab__hero > .sec__anchor,
+.ab__read-sec > .sec__anchor,
+.ab__creed > .sec__anchor,
+.ab__cv > .sec__anchor,
+.ab__ch .sec__anchor {
+  position: absolute;
+  top: 0;
+  display: block;
+  width: 1px;
+  height: 1px;
+}
+.ab__ch .sec__anchor { scroll-margin-top: clamp(4rem, 15vh, 8rem); }
+.ab__ch-w { grid-column: 1 / span 4; align-self: center; }
+.ab__ch .spread--right { grid-column: 5 / span 4; }
+.ab__ch .spread--left { grid-column: 1 / span 4; grid-row: 1; }
+.ab__ch .spread--left + .ab__ch-w,
+.ab__ch:has(.spread--left) .ab__ch-w { grid-column: 5 / span 4; }
+
+.ab__ch-e {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+/* LEVEL TWO on the read: a statement, set in lines, not a label */
+.ab__ch-h {
+  margin: 0 0 var(--sp-4);
+  font-size: clamp(1.75rem, 2.9vw, 2.625rem);
+  font-weight: 500;
+  line-height: 1.0;
+  letter-spacing: -0.032em;
+}
+.ab__ch-b { max-width: 34ch; }
+.ab__ch-b p {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--step-0);
+  line-height: 1.62;
+  color: var(--ink-2);
+}
+.ab__ch-b p:last-child { margin-bottom: 0; }
+
+/* ==========================================================================
+   45e. THE WALL OF TYPE
+   One statement across the page, prints hung in its corners rather than
+   arranged beside it, and the supporting copy set narrow and low so the type
+   is unmistakably the subject.
+   ========================================================================== */
+
+.ab__creed {
+  position: relative;
+  padding-block: clamp(6rem, 18vh, 12rem);
+  align-content: center;
+}
+.ab__eyebrow--creed { grid-column: 2 / span 6; }
+.ab__creed-h {
+  grid-column: 2 / span 11;
+  margin: var(--sp-4) 0 0;
+  font-size: clamp(2.25rem, 6.6vw, 6.25rem);
+  font-weight: 500;
+  line-height: 0.94;
+  letter-spacing: -0.042em;
+}
+/* the copy sits under the second line and only a third of the width — the
+   asymmetry is the composition */
+.ab__creed-b { grid-column: 7 / span 5; margin-top: var(--sp-6); max-width: 38ch; }
+.ab__creed-b p {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--step-0);
+  line-height: 1.62;
+  color: var(--ink-2);
+}
+/* hung in the corners, outside the type's own columns */
+.pcard--hung { position: absolute; width: var(--w, 15%); z-index: 2; }
+:root:not(.hover-cold) .pcard--hung:hover {
+  transform: rotate(calc(var(--rot, 0deg) * 0.4)) translateY(-4px);
+}
+
+/* ==========================================================================
+   45f. THE RECORD — A RÉSUMÉ SET AS A DOCUMENT
+
+   THE TWO COLUMNS ARE THE READ'S OWN. The rail is on tracks 2–4 and the work
+   on 6–13, which is exactly where §45d puts `.ab__rail` and `.ab__read`. That
+   is not a coincidence being reused: measured off the reference at 2940px, its
+   metadata rail runs 1.9%–28% of the canvas and its experience column 35%–98%,
+   and on this page's twelve tracks those two placements ARE 2/span 3 and
+   6/span 8 to within half a track. The proportion is the reference's; the grid
+   was already here.
+
+   AND THE TWO COLUMNS DO NOT LINE UP, on purpose. The rail is a persistent
+   strip of metadata and the work is the story; forcing them onto shared rows
+   would turn the band into a table. The rail is sticky within its own column,
+   which — being a grid item — stops of its own accord when the band ends. No
+   scroll handler decides that.
+
+   NOTHING IS IN A BOX. The entries are separated by space and by one hairline
+   guide, and that guide is a gradient rather than a border so it fades in at
+   the first entry and out after the last instead of stopping at two hard
+   edges. A rounded rectangle around each job would read as a card grid, which
+   is the one thing this section must not be.
+   ========================================================================== */
+
+.ab__cv {
+  padding-block: clamp(5rem, 15vh, 10rem);
+  row-gap: clamp(3rem, 8vh, 5rem);
+}
+
+/* ---- the rail: quieter than the work, and with its own rhythm ------------ */
+.ab__cv .cv__rail {
+  grid-column: 2 / span 3;
+  position: sticky;
+  /* the same allowance the read's rail sits at, so the two bands' left columns
+     come to rest on the same line */
+  top: clamp(3rem, 16vh, 8rem);
+  align-self: start;
+  /* THE TWO COLUMNS START ON DIFFERENT LINES, and this is the whole of it. In
+     the reference the rail's first heading sits about a tenth of the canvas
+     width below the experience label — 67px of a 680px canvas — and that
+     offset is most of what stops the band reading as a two-column table with a
+     shared first row. Held in vw so the ratio survives the width. */
+  margin-top: clamp(2rem, 7.8vw, 7.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 5vh, 3.25rem);
+}
+.cv__grp-t {
+  margin: 0 0 var(--sp-4);
+  font-size: var(--step-05);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.012em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* ---- metadata chips ------------------------------------------------------
+   The same object in the rail and at the foot of a job, because a skill named
+   on its own and a skill named beside the work it was used on are the same
+   kind of thing. Not the site's `.pill`: those are 31px controls with a glyph
+   slot and a hover detail, and these are labels. */
+.cv__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cv__tag {
+  padding: 0.28125rem 0.5625rem 0.34375rem;
+  border-radius: 7px;
+  background: var(--paper-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  letter-spacing: -0.004em;
+  color: var(--ink-2);
+  /* the lift is three pixels and it happens in a fifth of a second. Anything
+     more on a label reads as a button that does something. */
+  transition:
+    transform 260ms var(--ease),
+    box-shadow 260ms var(--ease),
+    background-color 260ms var(--ease),
+    color 260ms var(--ease);
+}
+:root:not(.hover-cold) .cv__tag:hover {
+  transform: translateY(-2px);
+  background: #f2f1ed;
+  box-shadow: inset 0 0 0 1px var(--ink-ghost), 0 4px 10px -6px rgba(20, 16, 12, 0.28);
+  color: var(--ink);
+}
+
+/* ---- education: type, not cards ----------------------------------------- */
+.cv__edu { margin: 0; padding: 0; list-style: none; }
+.cv__ed + .cv__ed { margin-top: var(--sp-4); }
+.cv__ed-w {
+  display: block;
+  font-size: var(--step-0);
+  font-weight: 500;
+  letter-spacing: -0.008em;
+  color: var(--ink);
+}
+.cv__ed-s { display: block; margin-top: 0.125rem; font-size: 0.75rem; line-height: 1.4; color: var(--ink-2); }
+.cv__ed-y {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- reach me: three physical little controls --------------------------- */
+.cv__reach { display: flex; gap: 0.5rem; }
+.cv__dot {
+  display: grid;
+  place-items: center;
+  width: 2.125rem; height: 2.125rem;
+  border-radius: 999px;
+  background: var(--paper-2);
+  box-shadow: inset 0 0 0 1px var(--line), 0 2px 6px -4px rgba(20, 16, 12, 0.22);
+  color: var(--ink-2);
+  text-decoration: none;
+  transition:
+    transform 320ms var(--spring),
+    box-shadow 280ms var(--ease),
+    background-color 260ms var(--ease),
+    color 260ms var(--ease);
+}
+.cv__dot-i { display: grid; place-items: center; width: 14px; height: 14px; }
+.cv__dot-i svg { width: 100%; height: 100%; display: block; }
+.cv__dot-t {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+:root:not(.hover-cold) .cv__dot:hover {
+  transform: translateY(-3px);
+  background: var(--ink);
+  box-shadow: 0 8px 18px -10px rgba(20, 16, 12, 0.45);
+  color: var(--paper);
+}
+.cv__dot:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+/* ---- the work ----------------------------------------------------------- */
+.ab__cv .cv__exp { grid-column: 6 / span 8; }
+.cv__list {
+  position: relative;
+  margin: clamp(2rem, 5vh, 3rem) 0 0;
+  /* room for the guide and the markers, which live outside the text column */
+  padding: 0 0 0 2.25rem;
+  list-style: none;
+}
+/* THE GUIDE IS STRUCTURAL, NOT DECORATIVE. One pixel, in the softest line
+   token, and it fades at both ends so it reads as a margin rule rather than a
+   graphic with a start and a stop. */
+.cv__list::before {
+  content: '';
+  position: absolute;
+  /* 9px is the centre of an 18px marker sitting at the list's left edge, so the
+     bricks are ON the guide rather than beside it */
+  top: 0.5rem; bottom: 0.5rem; left: 9px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--line) 6%,
+    var(--line) 94%,
+    transparent
+  );
+}
+.cv__job { position: relative; }
+.cv__job + .cv__job { margin-top: clamp(3.5rem, 9vh, 6rem); }
+
+/* the marker: a two-stud brick, and the only place this band quotes the home
+   page at all. Ghosted until you are reading its entry. */
+.cv__node {
+  position: absolute;
+  top: 0.5rem;
+  left: -2.25rem;
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  width: 18px; height: 9px;
+  padding-top: 1px;
+  border-radius: 2px;
+  background: var(--ink-ghost);
+  transition:
+    background-color 320ms var(--ease),
+    box-shadow 320ms var(--ease),
+    transform 380ms var(--spring);
+}
+.cv__node > i { width: 5px; height: 3px; border-radius: 1px 1px 0 0; background: rgba(255, 255, 255, 0.5); }
+.cv__job.is-current .cv__node {
+  background: var(--ink);
+  box-shadow: 0 2px 6px -2px rgba(20, 16, 12, 0.4);
+}
+.cv__job.is-current .cv__node > i { background: rgba(255, 255, 255, 0.22); }
+
+.cv__head { display: flex; align-items: center; gap: 0.625rem; }
+/* THE MARK'S BOX IS FIXED AND THE ARTWORK IS NOT. A glyph, an image or two
+   letters all occupy the same 26px square, so dropping a real logo in later
+   changes nothing about where the company name sits. */
+.cv__logo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.625rem; height: 1.625rem;
+  border-radius: 7px;
+  background: var(--paper-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  overflow: hidden;
+  color: var(--ink);
+  /* OPACITY IS IN THIS LIST BECAUSE THE MARK IS ALSO A `.reveal`. A transition
+     shorthand replaces the whole property, and this rule sits after `.reveal`
+     in the file — leave opacity out and the entrance stops fading and starts
+     switching on. Same for the company name below. */
+  transition:
+    opacity 380ms var(--ease),
+    transform 380ms var(--spring),
+    box-shadow 280ms var(--ease);
+}
+.cv__logo svg { display: block; height: 60%; width: auto; }
+.cv__logo img { width: 100%; height: 100%; object-fit: contain; }
+.cv__logo--letters {
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+}
+.cv__co {
+  margin: 0;
+  font-size: var(--step-1);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink-dim);
+  transition: opacity 380ms var(--ease), transform 380ms var(--ease), color 320ms var(--ease);
+}
+.cv__job.is-current .cv__co { color: var(--ink); }
+
+/* hovering an entry lifts its mark and its marker and draws a rule under the
+   name. It does not draw a card. */
+:root:not(.hover-cold) .cv__job:hover .cv__logo {
+  transform: translateY(-2px);
+  box-shadow: inset 0 0 0 1px var(--ink-ghost), 0 5px 12px -7px rgba(20, 16, 12, 0.32);
+}
+:root:not(.hover-cold) .cv__job:hover .cv__node { transform: translateY(-1px); }
+:root:not(.hover-cold) .cv__job:hover .cv__co { color: var(--ink); }
+.cv__co::after {
+  content: '';
+  display: block;
+  height: 1px;
+  margin-top: 0.1875rem;
+  background: var(--ink-ghost);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 420ms var(--ease);
+}
+:root:not(.hover-cold) .cv__job:hover .cv__co::after { transform: scaleX(1); }
+
+.cv__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: var(--sp-3) 0 0;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.cv__role { color: var(--ink-2); }
+.cv__when { color: var(--ink-dim); }
+
+.cv__body {
+  margin: var(--sp-4) 0 0;
+  /* a readable measure, held independently of the column's width */
+  max-width: 58ch;
+  font-size: var(--step-0);
+  line-height: 1.62;
+  color: var(--ink-2);
+}
+
+/* ---- the achievements --------------------------------------------------- */
+.cv__wins { margin: var(--sp-5) 0 0; padding: 0; list-style: none; }
+.cv__win {
+  display: grid;
+  grid-template-columns: 0.875rem minmax(0, 1fr);
+  gap: 0 0.625rem;
+  padding: 0.28125rem 0;
+  max-width: 62ch;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.cv__win > span { transition: transform 260ms var(--ease), color 260ms var(--ease); }
+.cv__win-o {
+  width: 0.4375rem; height: 0.4375rem;
+  margin-top: 0.5em;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--ink-ghost);
+  transition: box-shadow 260ms var(--ease), background-color 260ms var(--ease);
+}
+:root:not(.hover-cold) .cv__win:hover .cv__win-o {
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+:root:not(.hover-cold) .cv__win:hover > span { transform: translateX(2px); color: var(--ink); }
+
+.cv__tags--job { margin-top: var(--sp-5); }
+
+/* ---- the awards, as a ruled table ---------------------------------------
+   A YEAR, A THING, AND WHAT THE THING WAS. Three columns on hairlines, which
+   is what makes four prizes scannable in a glance instead of four more
+   paragraphs. The proportions are the reference's, measured off it: the year
+   takes about a sixth of the run, the name a quarter and the citation the
+   rest — so it is the NAMES that stack to a second line rather than the
+   citations, which is the right way round when the names are the shorter
+   strings and the one you are scanning for.
+
+   IT IS RULED AND NOT BOXED, like everything else in this band. The rule above
+   the whole run says "new movement"; the rules between rows are the table.
+   Nothing here is a card. */
+.cv__aw {
+  margin-top: clamp(3.5rem, 9vh, 6rem);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--line);
+}
+.cv__aws { margin: var(--sp-5) 0 0; padding: 0; list-style: none; }
+.cv__aw-r {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 0.9fr) minmax(0, 1.6fr);
+  gap: 0 clamp(0.75rem, 2vw, 1.75rem);
+  align-items: baseline;
+  padding: 0.875rem 0;
+  border-top: 1px solid var(--line-soft);
+}
+.cv__aw-r:last-child { border-bottom: 1px solid var(--line-soft); }
+.cv__aw-y {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+  transition: color 240ms var(--ease);
+}
+.cv__aw-n {
+  font-size: var(--step-0);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.008em;
+  color: var(--ink);
+  text-decoration: none;
+}
+/* ONLY THE LINKED ONES GET THE ARROW, so the arrow means "this goes
+   somewhere" rather than decorating every row alike. */
+.cv__aw-n--to::after {
+  content: '\2197';
+  display: inline-block;
+  margin-left: 0.25em;
+  font-size: 0.82em;
+  color: var(--ink-dim);
+  transition: transform 300ms var(--spring), color 240ms var(--ease);
+}
+:root:not(.hover-cold) .cv__aw-n--to:hover::after { transform: translate(2px, -2px); color: var(--ink); }
+.cv__aw-n:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.cv__aw-d { font-size: 0.8125rem; line-height: 1.45; color: var(--ink-dim); }
+/* the prize carries a shade more ink than the body that awarded it */
+.cv__aw-p { color: var(--ink-2); }
+/* the year darkens with the row, and that is the whole of the hover: this is a
+   table, and a table row that lifts off the page is a button */
+:root:not(.hover-cold) .cv__aw-r:hover .cv__aw-y { color: var(--ink-2); }
+
+/* ==========================================================================
+   45g. THE ENTRANCE
+   The site's own `.reveal` does the work; this only gives it a delay and,
+   for objects, a little rotation to settle out of. Hierarchy is deliberate:
+   the writing arrives plainly, the objects arrive with character.
+   ========================================================================== */
+
+.ab .reveal { transition-delay: var(--rv-delay, 0ms); }
+.ab .pcard.reveal { transform: rotate(calc(var(--rot, 0deg) + 5deg)) translateY(20px); }
+.ab .pcard.reveal.is-in { transform: rotate(var(--rot, 0deg)); }
+
+/* THE RÉSUMÉ ARRIVES LIKE A PRINTED PAGE COMING INTO FOCUS, which means a
+   shorter travel and a faster stagger than the rest of the page: six pixels
+   rather than fourteen, and 55ms between the parts of one entry rather than
+   90ms between the lines of a headline. The delays themselves are set in the
+   builder, one per part, in reading order — mark, name, role, description,
+   achievements, tags. Nothing here rotates: this band is a document. */
+.ab__cv .reveal { transform: translateY(6px); transition-duration: 480ms; }
+.ab__cv .reveal.is-in { transform: none; }
+
+/* ==========================================================================
+   45h. NARROWER — RECOMPOSED, NOT SHRUNK
+   The hero stacks but keeps its scale: the type stays large and the pile stays
+   a pile. The rail leaves its column and becomes a strip above the read. The
+   spreads stop being absolute compositions and become rows of prints, because
+   a hand-placed arrangement in a 350px column is a pile-up.
+   ========================================================================== */
+
+@media (max-width: 68rem) {
+  .ab__hero { min-height: 0; padding-block: clamp(4rem, 12vh, 7rem) clamp(3rem, 8vh, 5rem); row-gap: clamp(2.5rem, 7vh, 4rem); }
+  /* THE HERO'S NOTES COME IN OFF THE MARGIN. They are placed at negative
+     offsets against the pile, which is right when there is a margin to hang
+     them in and clips them off the screen when there is not. Stacked, they sit
+     under the pile as a line of asides instead. */
+  .ab__hero-vis { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+  .ab__hero-vis .ab__scrawl--set {
+    position: static;
+    max-width: none;
+    inset: auto;
+    transform: rotate(-0.6deg);
+  }
+  .ab__hero-col { grid-column: 2 / span 12; grid-row: 1; }
+  .ab__hero-vis { grid-column: 2 / span 12; grid-row: 2; margin-top: 0; }
+  .pile__stack { margin-inline: auto; max-width: 20rem; }
+
+  .ab__read-sec { row-gap: var(--sp-5); }
+  .ab__rail {
+    grid-column: 2 / span 12;
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    padding-block: 0.75rem;
+    background: var(--paper);
+    box-shadow: 0 1px 0 var(--line), 0 10px 16px -14px rgba(20, 16, 12, 0.3);
+  }
+  .ab__rail-list {
+    flex-direction: row;
+    gap: 0.375rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .ab__rail-list::-webkit-scrollbar { display: none; }
+  .ab__rl { flex: none; grid-template-columns: auto; padding: 0.4375rem 0.75rem; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); scroll-snap-align: center; }
+  .ab__rl-n, .ab__rl-s { display: none; }
+  .ab__rl::before { display: none; }
+  .ab__rl.is-active { background: var(--ink); box-shadow: none; }
+  .ab__rl.is-active .ab__rl-h { color: var(--paper); }
+  :root:not(.hover-cold) .ab__rl:hover { transform: none; }
+  .ab__read { grid-column: 2 / span 12; }
+
+  .ab__ch { grid-template-columns: minmax(0, 1fr); row-gap: var(--sp-5); }
+  .ab__ch-w,
+  .ab__ch .spread--right,
+  .ab__ch .spread--left,
+  .ab__ch:has(.spread--left) .ab__ch-w { grid-column: 1; }
+  .ab__ch .spread--left { grid-row: auto; }
+
+  .ab__creed-h, .ab__creed-b, .ab__eyebrow--creed { grid-column: 2 / span 12; }
+  .ab__creed-b { max-width: 46ch; }
+  .pcard--hung { display: none; }
+
+  /* THE RÉSUMÉ IS REORDERED, NOT STACKED IN PLACE. The work is the story, so
+     it goes first and the rail follows it as part of the document — which is
+     also why the rail stops being sticky here: a sticky strip above a long
+     column of entries would sit over the thing you came to read, and the rail
+     is metadata. Below the work it reads as the colophon it is. */
+  .ab__cv { row-gap: clamp(3rem, 9vh, 4.5rem); }
+  .ab__cv .cv__exp { grid-column: 2 / span 12; grid-row: 1; }
+  .ab__cv .cv__rail {
+    grid-column: 2 / span 12;
+    grid-row: 2;
+    position: static;
+    top: auto;
+    padding-top: clamp(2rem, 6vh, 3rem);
+    border-top: 1px solid var(--line);
+  }
+  /* the measures stay. A `max-width` in ch cannot make a 300px column wider,
+     so releasing it here only buys a 110-character line on a small laptop. */
+}
+
+@media (max-width: 48rem) {
+  /* THE SPREADS BECOME ROWS. A composition placed by percentage inside a
+     350px box is not a composition, it is an overlap — so on a phone the
+     prints leave their positions and sit in a row that scrolls, keeping their
+     tilts and their shadows. */
+  .spread {
+    aspect-ratio: auto;
+    display: flex;
+    gap: 0.875rem;
+    overflow-x: auto;
+    padding-block: 0.5rem 1rem;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .spread::-webkit-scrollbar { display: none; }
+  .spread .pcard--set {
+    position: relative;
+    inset: auto;
+    flex: none;
+    width: 56vw;
+    max-width: 15rem;
+    scroll-snap-align: center;
+  }
+  .spread .ab__scrawl--set { position: static; margin-top: 0.25rem; }
+
+  /* THE GUIDE COMES IN OFF THE MARGIN. A 36px gutter for a marker is a fifth
+     of a phone's text column, so the guide and its bricks move to the very
+     left of the band and the writing keeps the width — the structure survives,
+     the measure does too. */
+  .cv__list { padding-left: 1.375rem; }
+  .cv__node { left: -1.375rem; }
+  .cv__co { font-size: var(--step-05); }
+  .cv__win { grid-template-columns: 0.75rem minmax(0, 1fr); gap: 0 0.5rem; }
+  /* three 34px targets in a row is fine; three in a row that has to share a
+     line with a heading is not, so the rail's groups get more air instead */
+  .ab__cv .cv__rail { gap: clamp(1.75rem, 5vh, 2.5rem); }
+
+  /* THE AWARDS TABLE LOSES ITS THIRD COLUMN, not its width. A citation like
+     "Winner, Service Design · Confederation of Indian Industry" in a third of
+     a phone's column is four words a line; so the year and the name keep the
+     top line and the citation takes the one under it, still hanging off the
+     name's own left edge. Two lines of a row, and it is still a table. */
+  .cv__aw-r { grid-template-columns: 3.25rem minmax(0, 1fr); row-gap: 0.1875rem; }
+  .cv__aw-d { grid-column: 2; }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcard, .ab__rl, .ab__rl::before,
+  .cv__tag, .cv__dot, .cv__node, .cv__logo, .cv__co, .cv__co::after,
+  .cv__win-o, .cv__win > span { transition: none; }
+  .ab .pcard.reveal { transform: rotate(var(--rot, 0deg)); }
+  .ab__cv .reveal { transform: none; }
+  /* the rule under a company name is a hover flourish, not information */
+  .cv__co::after { display: none; }
 }

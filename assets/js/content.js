@@ -13,12 +13,10 @@
      <i class="it">word</i>  plain italic, no box
      <i class="chip">🜁</i> small inline round chip (emoji or single letter)
      <i class="chip" style="--chip:#22c55e">A</i>  chip with a brand colour
-     <i class="chip-badge" data-tip="Safe" style="--chip:#12b981">S</i>
-                            badge with a tooltip that springs up on hover
-     <i class="scribble"></i>  hand-drawn scribble glyph
-     <span class="stack" role="button" tabindex="0"> … </span>
-                            stack of <span class="stack__card" data-name="…">
-                            cards that cycle on hover and click
+     <mark class="rule">word</mark>  underline that draws itself in on reveal
+
+   The badge, the scribble and the card stack went with the scroll-reveal prose
+   section that was the only thing using them.
    ========================================================================== */
 
 window.SITE = {
@@ -98,19 +96,27 @@ window.SITE = {
   /* -------------------------------------------------------------------- deck
      What is underneath the site. Above 48rem the menu is not drawn over the
      page — the page slides off it — so this is the list you see once it has
-     moved. It is deliberately not the same array as `nav` below: that one is
-     the four pages, this one is everywhere you can go, pages included.
+     moved; below 48rem the same deck is what the bar's handle opens. One list,
+     both widths.
+
+     IT IS NOT THE SAME ARRAY AS `nav` BELOW, and that is the trap in it: `nav`
+     is the pages the header shows, this is everywhere you can go — pages
+     included. Adding a page to `nav` therefore does NOT put it in the menu,
+     which is exactly how About came to be reachable from the header and the
+     footer but from neither menu. EVERY PAGE IN `nav` MUST HAVE A ROW HERE.
 
      `kind` says where a link points without repeating an address that is
      already settled in `person`:
        resume   the PDF in person.resumeUrl, opened in the page's own viewer
        email    a mailto to person.email
      Anything with a plain `href` is just a link. Add a row and it appears; the
-     order here is the order down the deck. */
+     order here is the order down the deck — the pages first, then the two
+     things that are actions rather than places. */
   deck: {
     links: [
       { label: 'Home', href: 'index.html' },
       { label: 'Work', href: 'work.html' },
+      { label: 'About', href: 'about.html' },
       { label: 'Resume', kind: 'resume' },
       { label: 'Email', kind: 'email' },
     ],
@@ -127,6 +133,7 @@ window.SITE = {
   nav: [
     { label: 'Home', href: 'index.html' },
     { label: 'Work', href: 'work.html' },
+    { label: 'About', href: 'about.html' },
   ],
 
   /* ------------------------------------------------------- hero call to action */
@@ -468,51 +475,6 @@ window.SITE = {
        false drops back to Move after each one, as the spec prefers */
     continuousNotes: false,
   },
-
-  /* ------------------------------------------------------------------- story
-     Each string is one block. They reveal word-by-word as you scroll.
-     Blank-ish blocks are fine — use them for breathing room.             */
-  story: [
-    ['I build for the internet’s most online <i class="it">corners.</i>'],
-
-    ['The places where software, speculation, and',
-     'culture <mark class="blurred">blur</mark> into one another'],
-
-    ['I like interfaces with <mark class="band">consequence</mark><i class="dots">..</i>',
-     'Where every action carries weight, whether that is',
-     'capital, coordination, or attention.'],
-
-    ['My work is about making <i class="scribble"></i><b>complexity</b> feel',
-     '<i class="tag">desirable</i> without dumbing it down.'],
-
-    ['Usually for crypto natives. Always for ' +
-       '<button class="people-trigger" type="button" aria-expanded="false">' +
-         '<mark class="rule">people</mark>' +
-       '</button>.'],
-
-    ['Before this, I spent the last few years',
-     'building <span class="stack" role="button" tabindex="0" aria-label="Product logos">' +
-       '<span class="stack__card" data-name="Eido Labs" style="--card:#3b5bdb">E</span>' +
-       '<span class="stack__card" data-name="Pills Trade" style="--card:#d33f4e">P</span>' +
-       '<span class="stack__card" data-name="Tike. Social" style="--card:#6d4bd8">T</span>' +
-     '</span> <b>products</b> spanning trading, AI,',
-     'and social crypto, mostly steering product,',
-     'design, and direction.'],
-
-    /* Organisation logos. Swap the src paths in assets/img/logos/ for the real
-       marks — the badge supplies the circle and brand colour, the SVG only
-       needs to be the glyph. */
-    ['Before that, I worked with teams like <span class="badges t-avatar-group">' +
-       '<i class="chip-badge t-avatar" data-tip="Safe" style="--chip:#12ff80">' +
-         '<img src="assets/img/logos/safe.svg" alt="Safe"></i>' +
-       '<i class="chip-badge t-avatar" data-tip="OpenBlock Labs" style="--chip:#111111;--mark:1.18">' +
-         '<img src="assets/img/logos/openblock.svg" alt="OpenBlock Labs"></i>' +
-       '<i class="chip-badge t-avatar" data-tip="Cruize Finance" style="--chip:#1c2b6b">' +
-         '<img src="assets/img/logos/cruize.svg" alt="Cruize Finance"></i>' +
-     '</span>',
-     'designing products and systems for the',
-     'onchain world.'],
-  ],
 
   /* ---------------------------------------------------------- work showcase
      A two-column grid of cards. `preview` picks the live panel:
@@ -1741,26 +1703,17 @@ window.SITE = {
     ],
   },
 
-  /* ------------------------------------------------------ closing story block */
-  /* Five lines, and the count matters: each one is laid out separately, so a
-     sixth changes the block's height and a merged pair reflows it.
-
-     This used to end "while looking for the next thing", which read as
-     available — the intro chip and the Teams table both say Cypherock is
-     current, and a visitor hits all three. The invitation is kept, the
-     availability claim is not. */
-  closing: [
-    ['I’m currently at <mark class="rule" data-peek="cypherock">Cypherock</mark>, otherwise',
-     '<mark class="rule" data-peek="vibecoding">vibecoding</mark> and playing <mark class="rule" data-peek="poker">poker</mark>.',
-     'Always up for building exciting things',
-     'with people I enjoy working with.',
-     'Reach out via <a href="mailto:product@cypherock.com"><mark class="rule" data-peek="email">email</mark></a> or dm on <a href="https://x.com/"><mark class="rule" data-peek="x">X</mark></a>.'],
-  ],
-
   /* ------------------------------------------------------------------- peek
-     WHAT IS BEHIND THE UNDERLINED WORDS in the closing block. Each key here
-     matches a `data-peek` above; a word without an entry is just a word, and an
-     entry without a word is never built.
+     WHAT IS BEHIND THE UNDERLINED WORDS. Each key here matches a `data-peek`
+     attribute in a `<mark class="rule">`; a word without an entry is just a
+     word, and an entry without a word is never built.
+
+     NOTHING POINTS AT THESE RIGHT NOW. The home page's closing block was the
+     only place with `data-peek` words in it and it has been removed, so all
+     five of these are waiting rather than working — `Peek.init` finds no words
+     and returns. They are kept because the cards are the expensive part and
+     the words are the cheap part: put `data-peek="poker"` on a mark anywhere
+     in any page's copy and this one is live again.
 
      THE FIELDS
        tone    'light' (paper) or 'dark'. Dark is for the places that are dark
@@ -1930,25 +1883,323 @@ window.SITE = {
     ],
   },
 
-  /* ----------------------------------------------------- the scattered sketches
-     NOT A PAGE ANY MORE. The People page is gone, and what is left here is the
-     one thing that never belonged to it: the cards that scatter across the
-     screen when you click the word "people" in the closing block on the home
-     page. `Shell.field()` reads this. The page's own intro and its lists of
-     names went with the page.                                                */
-  people: {
-    field: [
-      { src: 'assets/img/people/sketch-01.svg', ratio: '11/13', w: 9 },
-      { src: 'assets/img/people/sketch-02.svg', ratio: '5/6', w: 7 },
-      { src: 'assets/img/people/sketch-03.svg', ratio: '1/1', w: 8 },
-      { src: 'assets/img/people/sketch-04.svg', ratio: '13/9', w: 11 },
-      { src: 'assets/img/people/sketch-05.svg', ratio: '13/9', w: 10 },
-      { src: 'assets/img/people/sketch-06.svg', ratio: '30/17', w: 12 },
-      { src: 'assets/img/people/sketch-07.svg', ratio: '1/1', w: 7.5 },
-      { src: 'assets/img/people/sketch-08.svg', ratio: '32/17', w: 11 },
-    ],
-  },
 
+
+
+  /* ======================================================================= about
+     THE ABOUT PAGE, AS DATA.
+
+     Everything on /about.html is here, and nothing on it is written in the
+     builder. The page is long and it is meant to be edited often — a paragraph
+     rewritten, a chapter reordered, a photograph finally taken — and none of
+     those should mean opening site.js.
+
+     THE PAGE IS FOUR CHAPTERS, NOT A STACK OF BLOCKS. Each one is a different
+     composition: a full screen, a rail beside a scattered spread, a wall of
+     type, and a résumé set as a document. Everything that used to sit between
+     and after them — the loose words, a tools strip, a brick timeline, a
+     drawer, a table of what I am reading, a sign-off — is gone, along with the
+     bottom navigator that named them. The footer is the page's ending; nothing
+     above it needs to be one as well.
+
+     PLACEHOLDER COPY IS MARKED, NOT DISGUISED. Where a line is a stand-in it
+     says something true about what belongs there rather than lorem, so the
+     layout is under real sentence lengths.
+
+     THE PHOTOGRAPHS DO NOT EXIST YET. Each entry carries the label, the note,
+     the tilt and — where it is part of a composition — its position in that
+     composition. Drop a `src` on any of them and the real photograph inherits
+     all of it: same box, same rotation, same shadow, same interaction. */
+  about: {
+    /* --- 01. the hero, a whole screen ------------------------------------
+       `statement` is set as separate lines because the line breaks are a
+       design decision at this size, not something to leave to the browser. */
+    hero: {
+      eyebrow: 'About',
+      hi: 'Hi, I’m Ishaan.',
+      statement: [
+        'A product designer',
+        'who likes building',
+        'things that feel',
+        'obvious.',
+      ],
+      meta: ['Product Designer', 'Delhi / India', 'Currently @ Cypherock'],
+      /* the pile in the hero's right half. Four prints, none of them square
+         to the page. */
+      pile: [
+        { label: 'Photo 01', note: 'Early days', tint: '#efeae2', rot: -3.4 },
+        { label: 'Photo 02', note: 'Something I built', tint: '#e9ebe8', rot: 2.2 },
+        { label: 'Photo 03', note: 'A random memory', tint: '#efe9e9', rot: -1.1 },
+        { label: 'Photo 04', note: 'Currently', tint: '#eae9ef', rot: 4.1 },
+      ],
+      /* annotations are placed against the pile, in percentages of the stage,
+         so they travel with it at every size */
+      notes: [
+        { text: 'this one matters', at: { top: '-4%', left: '-22%' }, arrow: 'r', kind: 'scrawl' },
+        { text: 'yes, I actually made this', at: { bottom: '-9%', right: '-2%' }, arrow: 'l', kind: 'scrawl' },
+      ],
+    },
+
+    /* --- 02. the read: a rail, and a spread beside it --------------------
+       Each chapter carries its own scattered composition rather than a
+       photograph in the flow. `at` is a position in the spread's own box, in
+       percentages, and `w` is the print's width as a fraction of it — which is
+       what lets a spread be a composition instead of a list. */
+    chaptersTitle: 'The short version',
+    chapters: [
+      {
+        id: 'ab-curiosity',
+        nav: 'Curiosity',
+        tiny: 'where it started',
+        eyebrow: 'The early days',
+        heading: ['Finding', 'the thing', 'that made', 'me curious.'],
+        body: [
+          'Placeholder. This is where the taking-things-apart paragraph goes — '
+            + 'the one that explains why interfaces felt like objects long '
+            + 'before there was a word for it.',
+        ],
+        spread: [
+          { label: 'Photo 05', note: 'The first one', tint: '#eceae4', rot: -4, at: { top: '2%', left: '4%' }, w: 46 },
+          { label: 'Photo 06', note: 'Kept the box', tint: '#e8ebec', rot: 3, at: { top: '34%', left: '48%' }, w: 40 },
+          { label: 'Photo 07', note: '', tint: '#efece6', rot: -1.5, at: { top: '66%', left: '12%' }, w: 34 },
+        ],
+        notes: [{ text: 'one of the early ones', at: { top: '26%', left: '52%' }, arrow: 'l', kind: 'scrawl' }],
+      },
+      {
+        id: 'ab-making',
+        nav: 'Making',
+        tiny: 'learning by doing',
+        eyebrow: 'Getting my hands dirty',
+        heading: ['The fastest', 'way to learn', 'is to build', 'a worse one.'],
+        body: [
+          'Placeholder. Learning by shipping — the first ugly thing that '
+            + 'worked, and what it taught that reading about it would not have.',
+        ],
+        spread: [
+          { label: 'Photo 08', note: 'An early build', tint: '#eae9ef', rot: 2.6, at: { top: '6%', left: '38%' }, w: 52 },
+          { label: 'Screenshot', note: 'Version one', tint: '#e8eaee', rot: -3.2, at: { top: '52%', left: '2%' }, w: 44, shot: true },
+        ],
+        notes: [{ text: 'this was fun', at: { bottom: '6%', right: '2%' }, arrow: 'l', kind: 'scrawl' }],
+      },
+      {
+        id: 'ab-design',
+        nav: 'Design',
+        tiny: 'turning chaos into systems',
+        eyebrow: 'Finding the discipline',
+        heading: ['Systems are', 'the shape', 'small decisions', 'make.'],
+        body: [
+          'Placeholder. Where design stopped being decoration and started '
+            + 'being the argument — the project where a choice had to be '
+            + 'defended rather than presented.',
+          'This chapter runs long on purpose: the spread beside it should be '
+            + 'tested against a column of text that actually keeps going.',
+        ],
+        spread: [
+          { label: 'Photo 09', note: 'The wall', tint: '#efe9e9', rot: -2.2, at: { top: '0%', left: '10%' }, w: 42 },
+          { label: 'Photo 10', note: '', tint: '#eceae3', rot: 4.4, at: { top: '24%', left: '54%' }, w: 36 },
+          { label: 'Screenshot', note: 'The system, eventually', tint: '#e9ebee', rot: -1.4, at: { top: '58%', left: '20%' }, w: 50, shot: true },
+        ],
+      },
+      {
+        id: 'ab-building',
+        nav: 'Building',
+        tiny: 'design and engineering',
+        eyebrow: 'Both hands',
+        heading: ['I’d rather', 'build it', 'than describe', 'it.'],
+        body: [
+          'Placeholder. What changes about a design decision when you are the '
+            + 'one who has to implement it — and why the two jobs stopped being '
+            + 'separate.',
+        ],
+        spread: [
+          { label: 'Screenshot', note: 'Mid-build', tint: '#e8eaee', rot: 2, at: { top: '8%', left: '6%' }, w: 54, shot: true },
+          { label: 'Photo 11', note: 'Desk, 2am', tint: '#eceae4', rot: -3.6, at: { top: '54%', left: '46%' }, w: 42 },
+        ],
+        notes: [{ text: 'drag this later', at: { top: '46%', left: '2%' }, arrow: 'r', kind: 'scrawl' }],
+      },
+      {
+        id: 'ab-now',
+        nav: 'Now',
+        tiny: 'what I’m doing today',
+        eyebrow: 'Today',
+        heading: ['Hardware', 'you can hold,', 'for money', 'you own.'],
+        body: [
+          'Placeholder. What Cypherock is, in your words rather than the '
+            + 'company’s — the part of it you would explain to a friend who '
+            + 'does not care about crypto.',
+        ],
+        spread: [
+          { label: 'Photo 12', note: 'The card', tint: '#e9ebe8', rot: -1.8, at: { top: '14%', left: '22%' }, w: 56 },
+        ],
+      },
+    ],
+
+    /* --- 03. a wall of type, with photographs around it ------------------ */
+    creed: {
+      eyebrow: 'How I think',
+      lines: ['I like interfaces', 'with consequence.'],
+      body: [
+        'The interesting screens are the ones where a tap costs something — '
+          + 'money, access, a signature. Those deserve more weight on the page '
+          + 'than the ones that cost nothing, and usually get less.',
+        'Placeholder. Second paragraph, in your own words.',
+      ],
+      /* HUNG IN THE EMPTY ZONES, NOT OVER THE TYPE. The statement runs the full
+         measure on its first two lines and the copy sits at the right below
+         them — which leaves the top-right corner and the lower left empty, and
+         those are the only two places a print can hang without landing on a
+         word. Placed at 2% they covered "I li" of "I like". */
+      loose: [
+        { label: 'Photo 13', note: '', tint: '#efece6', rot: -5, at: { top: '54%', left: '2%' }, w: 13 },
+        { label: 'Photo 14', note: '', tint: '#eae9ef', rot: 3.4, at: { top: '3%', right: '2%' }, w: 12 },
+      ],
+    },
+
+    /* --- 04. the record ---------------------------------------------------
+       THE RÉSUMÉ, SET AS A DOCUMENT. Two columns that do not line up: a quiet
+       rail of metadata, and the work itself.
+
+       `expertise.items` are chips and nothing else — the same object appears at
+       the foot of each job, so a skill named on its own and a skill named
+       beside the work it was used on look the same, because they are.
+
+       `reach` has no links in it, and that is deliberate: the three controls are
+       built from `footer.links` and `person.resumeUrl` the way the footer's own
+       glyphs are, so the address and the profile can only ever be in one place.
+
+       EACH JOB'S MARK. `glyph` names an entry in site.js's PILL_ICON (the
+       Cypherock mark is in there already); `logo` is a path to an image;
+       `initials` is the fallback lettermark. All three occupy the same box, so
+       replacing a placeholder with real artwork later moves nothing. */
+    resume: {
+      eyebrow: 'Experience',
+      expertise: {
+        title: 'Expertise',
+        items: [
+          'Product Experience Design',
+          'Interaction Design',
+          'Self-Custody UX',
+          'Design Systems',
+          'UI/UX',
+          'Hardware Ecosystems',
+          'Usability Testing',
+          'Accessibility',
+        ],
+      },
+      education: {
+        title: 'Education',
+        items: [
+          { what: 'Interaction Design', where: 'B.Des · UPES, Dehradun', when: '2020 – 2024' },
+          { what: 'Computer Science', where: 'Minor specialisation', when: '2021 – 2024' },
+        ],
+      },
+      reach: { title: 'Reach me' },
+      jobs: [
+        {
+          company: 'Cypherock',
+          glyph: 'cypherock',
+          role: 'Product Designer',
+          when: 'Currently',
+          body: 'Self-custody hardware for people who would rather not trust an '
+            + 'exchange with their keys. I lead the design of the X0 ecosystem — '
+            + 'the NFC card, its packaging and the wallet app that talks to it — '
+            + 'and the CySync clients behind it.',
+          wins: [
+            'Took X0 from concept to beta in four months: a mobile-first hardware '
+              + 'wallet spanning the physical NFC card, the packaging, the '
+              + 'manufacturing-ready assets and the companion app.',
+            'Architected the N45 design system — components, tokens, interaction '
+              + 'patterns and the documentation that made handoff repeatable across '
+              + 'platforms.',
+            'Designed the NFC and BLE interaction flows across CySync Desktop, '
+              + 'Mobile and the X1 Vault, with the firmware, hardware and frontend teams.',
+            'Led the CySync v2 redesign: a forecast +40% engagement, 25% fewer '
+              + 'interaction steps and +70% daily actives.',
+            'Built the affiliate ecosystem end to end — landing page, partner '
+              + 'dashboard and admin portal, with the onboarding and commission '
+              + 'workflows under them.',
+          ],
+          tags: ['Product Design', 'Interaction Design', 'Design Systems', 'Hardware', 'Crypto'],
+        },
+        {
+          company: 'Onefinnet',
+          initials: 'ON',
+          role: 'UI/UX Designer',
+          when: '2 years',
+          body: 'A B2B SaaS recruitment platform for the US market. I owned the '
+            + 'product design and the strategic direction of Onefinnet Talent, '
+            + 'directing a cross-functional team of seven.',
+          wins: [
+            'Created a new core revenue stream in Onefinnet Talent, driving 12% '
+              + 'growth in enterprise adoption inside six months.',
+            'Shipped a freemium acquisition model: +23% monthly actives and a 15% '
+              + 'improvement in lead conversion.',
+            'Designed the flagship AI assistant for job creation and interview '
+              + 'scheduling — 40% less manual recruiter effort, +18% retention.',
+            'Launched an integrated meeting scheduler MVP in a 60-day sprint; 180 '
+              + 'early adopters and a 90% positive usability score.',
+            'Built a design system from scratch with 100+ reusable components, '
+              + 'cutting handoff time 30% and inconsistencies 40%.',
+          ],
+          tags: ['Product Design', 'B2B SaaS', 'Design Systems', 'Research', 'Prototyping'],
+        },
+      ],
+
+      /* THE AWARDS, AS A TABLE RATHER THAN AS TROPHIES. A year, the thing, and
+         what the thing was — three columns on a rule at the foot of the work,
+         which is where a résumé puts them.
+
+         `url` IS OPTIONAL AND ONLY THREE ROWS HAVE ONE. A row with a link
+         renders as an anchor with the arrow after it and the rest stay plain,
+         so nothing has to be invented for the one certificate that was never
+         issued.
+
+         THESE ARE THE CERTIFICATES THEMSELVES — the Drive shares and the Badgr
+         assertion off LinkedIn, which is why they are proof rather than a
+         programme's homepage. They are only as permanent as those shares: if a
+         row stops resolving, the fix is to drop its `url`, not to hunt for a
+         mirror. */
+      awards: {
+        title: 'Awards',
+        items: [
+          {
+            year: '2023',
+            name: '24hr Design Hackathon',
+            result: '2nd Runner Up',
+            where: 'School of Design, Doon University',
+          },
+          {
+            year: '2022',
+            name: 'CII Young Designer Awards',
+            result: 'Winner, Service Design',
+            where: 'Confederation of Indian Industry',
+            url: 'https://drive.google.com/file/d/1ahByNMiM3IJy4mup0QUE6OQUBHGVCQQt/view?usp=sharing',
+          },
+          {
+            year: '2022',
+            name: 'D’Source-DIC BHU SDGs Design Challenge',
+            result: 'Merit Award',
+            where: 'IDC School of Design, IIT Bombay',
+            url: 'https://drive.google.com/file/d/1r91OBZFxG8fNR8-DEMyLDbrJWl2SyfLF/view?usp=sharing',
+          },
+          {
+            year: '2022',
+            name: 'SSDC 2022',
+            result: 'Honorable Mention',
+            where: 'Service Design College',
+            url: 'https://eu.badgr.com/public/assertions/KDCSPP0jTLCqw3v8BbVXVw?action=download',
+          },
+        ],
+      },
+    },
+
+    /* NO PERSISTENT FURNITURE. Two things used to live here: `dock`, the
+       bottom navigator's stops, and `edge`, the three words fixed at the
+       window's bottom right. Both are gone. With the page down to four bands
+       there is nothing for a navigator of movements to navigate, and the three
+       edge words were a second copy of links the footer already carries one
+       screen below. The header, the menu and the footer are the navigation. */
+  },
 
   /* ------------------------------------------------------------------- footer */
   /* --------------------------------------------------------------- the footer
