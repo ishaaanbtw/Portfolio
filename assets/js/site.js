@@ -49,6 +49,37 @@
   const url = (p) => (typeof p === 'string' && p && !/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(p)
     ? ROOT + p : p);
 
+  /* --- DOES THIS LINK LEAVE THE SITE? -------------------------------------
+
+     THE TEST WAS THE SCHEME, AND THE SCHEME IS NOT THE QUESTION. Three places
+     decide whether to add `target="_blank"`, and all three asked
+     `/^https?:/.test(href)` — which is a fine proxy for "outbound" as long as
+     the string being tested is the one written in content.js, where an internal
+     page is `about.html` and an external one carries its scheme.
+
+     `Rail.build` was testing the REBASED href instead, and `url()` turns
+     `about.html` into `<ROOT>about.html` — where ROOT is the directory
+     `site.js` was loaded from, scheme and all. Off a disk that is a `file:` URL
+     and the test says "internal", which is correct and is why nothing looked
+     wrong locally. On a real server it is `https://…/about.html`, the test says
+     "outbound", and every row of the sidebar's Site list — Work, About, Play —
+     shipped with `target="_blank"`. The deployed navigation opened a new tab
+     per click, and the only place it behaved was the one place nobody deploys
+     to. It is also what stopped the client-side router: a link that declares
+     itself a new tab is one `Route` must not intercept.
+
+     So the question is asked properly, once: is this address on some other
+     origin? Same answers for everything content.js states in the shorthand,
+     right answers for everything it states in full, and nothing left that
+     depends on how the file was served. Anything unparseable is treated as
+     outbound, which is the safe direction for a `rel` decision. */
+  const outbound = (href) => {
+    if (typeof href !== 'string' || !href) return false;
+    if (/^(?:mailto:|tel:|#)/i.test(href)) return false;
+    try { return new URL(href, location.href).origin !== location.origin; }
+    catch (e) { return true; }
+  };
+
   /* THE ROUTE A CASE STUDY LIVES AT. The shell is a real file — work/<slug>.html
      — and the link names it in full, extension included, on every protocol.
 
@@ -1239,7 +1270,7 @@
             ...(mark ? { class: 'foot__ico', 'aria-label': it.label, title: it.label } : {}),
             ...(here ? { 'aria-current': 'page' } : {}),
             /* only the outbound ones open away from the site */
-            ...(/^https?:/.test(it.href) ? { target: '_blank', rel: 'noopener' } : {}),
+            ...(outbound(it.href) ? { target: '_blank', rel: 'noopener' } : {}),
           }, mark
             /* THE WORD STAYS IN THE BOX, IT JUST STOPS BEING VISIBLE.
                Sizing the glyph row by hand does not hold: a text row here is
@@ -1534,6 +1565,28 @@
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
         const a = hit(e, 'a[href]');
         if (!a) return;
+        /* --- AND THIS IS WHERE THE RELOAD CAME FROM --------------------------
+
+           THIS HANDLER IS THE ABRUPT NAVIGATION, not a symptom of it. Its job
+           was to make LEAVING look deliberate: fade the document out over
+           240ms, then `location.href = ...`, so a click did not simply cut to
+           a white frame. Which is the right thing to do when the destination
+           genuinely is another document — a case study, the work archive — and
+           the wrong thing to do for Work, About and Play, because those three
+           are not documents any more. They are views of a shell that is
+           already on the screen, and the only way to show one is to NOT leave.
+
+           So the three sections are handed to `Route` and everything else is
+           unchanged. This is the line that stops the sidebar blinking, the
+           closing lines jumping and the pile of bricks in the column being
+           dealt again — the fade was never the problem, the `location.href`
+           two lines below it was.
+
+           Ordered first because `Shell.init` runs before `Route.init`, so this
+           listener is the one that sees the click first; a `preventDefault`
+           here would make the router's own handler skip it as already
+           answered. */
+        if (Route.of(a.getAttribute('href'), a.href)) return;
         const url = new URL(a.href, location.href);
         if (url.origin !== location.origin || a.target === '_blank') return;
         if (url.pathname === location.pathname && url.hash) return;
@@ -7070,7 +7123,18 @@
       const tall = !(host.classList && host.classList.contains('canvas--tray'));
       if ((tall && nowH < innerHeight * 0.72) || !settled) {
         this.tries = (this.tries || 0) + 1;
-        if (this.tries < 40) { requestAnimationFrame(() => this.init(host)); return; }
+        /* AND THE RETRY CANNOT OUTLIVE ITS HOST. This waits for a box to stop
+           changing size, which takes a handful of frames — and a visitor can
+           change section inside a handful of frames. `init` sets `this.host` on
+           its first line, so anything that has happened to the world since is
+           visible right here: a hand-over to another surface, or a `park` that
+           left no host at all. Either way this box is not the one the module is
+           holding any more and building sixteen pieces into it would be
+           building a second world on top of the live one. */
+        if (this.tries < 40) {
+          requestAnimationFrame(() => { if (this.host === host) this.init(host); });
+          return;
+        }
       }
 
       const r = host.getBoundingClientRect();
@@ -7183,15 +7247,7 @@
          than per piece: eighteen pairs of enter/leave handlers is eighteen
          chances for two of them to disagree about who is lit. */
       this.hoverBind(host);
-      addEventListener('keydown', (e) => {
-        if (!this.held) return;
-        if (e.key !== 'r' && e.key !== 'R') return;
-        if (e.metaKey || e.ctrlKey || e.altKey) return;
-        const t = e.target;
-        if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-        e.preventDefault();
-        this.rotate(this.held);
-      });
+      this.bindOnce();
 
       /* THE ARRIVAL. relax() has just decided where every piece belongs; rain()
          takes those positions as the destination and throws the pieces in from
@@ -7205,10 +7261,145 @@
          other load, which is the single line this has always been. */
       if (!Boot.hold(() => this.rain())) this.rain();
 
+    },
+
+    /* --- THE TWO WINDOW LISTENERS THIS MODULE OWNS, BOUND EXACTLY ONCE -----
+
+       They used to sit inline in `init`, which was correct while `init` ran
+       once per document. It does not any more: the brick world moves between
+       the sidebar's box and the play desk as the visitor moves between views
+       (see `Stage`), and every hand-over used to add another keydown and
+       another resize. Four visits to Play and back and an R press rotated the
+       piece four times, each rotation undoing part of the last.
+
+       Neither listener has anything to do with WHICH host is live — one reads
+       `this.held` and the other re-measures whatever exists — so binding them
+       per host was never right, only harmless while there was one. */
+    bindOnce() {
+      if (this._bound) return;
+      this._bound = true;
+      addEventListener('keydown', (e) => {
+        if (!this.held) return;
+        if (e.key !== 'r' && e.key !== 'R') return;
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        const t = e.target;
+        if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+        e.preventDefault();
+        this.rotate(this.held);
+      });
       /* A window that got smaller must not leave a structure stranded off the
          edge — but nothing is re-laid and nothing is re-scaled, so a build
          survives a resize exactly as it was made. */
       addEventListener('resize', () => this.reclaim(), { passive: true });
+    },
+
+    /* --- THE WORLD, SAVED AND PUT BACK ------------------------------------
+
+       WHY THIS EXISTS AT ALL: there is one `Bricks`, and there are two places
+       bricks live — the sidebar's box, which is part of the permanent shell,
+       and the play desk, which is one view of it. `recs`, `groups` and `host`
+       are module state, so the two cannot be live at the same time, and the
+       old answer was that they never were: each page loaded a fresh document
+       and whichever surface that page had got the module.
+
+       With the shell persistent (see `Stage`) the hand-over has to be
+       explicit, and this is it. `park` writes the live world out as plain data
+       and takes the pieces off the page; `unpark` builds it back, piece for
+       piece, in the positions it was saved in.
+
+       IT IS A SAVE, NOT A RESET, and that distinction is the whole point:
+       everything a visitor did to the pile — where each piece is, what angle it
+       is lying at, which pieces are welded into one structure — is in the
+       record, so coming back to a view is coming back to the desk you left
+       rather than watching it be dealt again.
+
+       THE RECORD IS DATA, NOT REFERENCES. `snapshot()` above holds the `rec`
+       objects themselves, because it is undo — same pieces, different
+       positions. This cannot: the pieces are destroyed in between, so every
+       field has to survive on its own. Which is also why each entry carries
+       its own identity (kind, tone) rather than an index into anything. */
+    park() {
+      /* the trickle first: a timer that fires into a world that no longer
+         exists is the one thing here that would throw */
+      clearTimeout(this._drip); this._drip = null;
+      /* A GESTURE IN FLIGHT IS ENDED, NOT INTERRUPTED. `endHold` is the same
+         path a release takes, so the piece in the hand is saved where the hand
+         had it rather than where it was picked up from. */
+      if (this.held) this.endHold(this.held);
+      this.heldSet = null;
+      this.flying = null;
+      /* and a fall in flight is finished rather than abandoned — `rushed` is
+         the entrance's own word for it, and it makes the loop run its settle
+         guarantees on this frame instead of the frame it would have stopped on */
+      this.rushed = true;
+
+      const world = {
+        pieces: this.recs.map((r) => ({
+          kind: r.kind, tone: r.tone, bx: r.bx, by: r.by,
+          x: r.it.x, y: r.it.y, rest: r.it.rest || 0, rot: r.rot || 0,
+          gx: r.gx || 0, gy: r.gy || 0, trued: !!r.trued, aim: r.aim,
+          g: this.groups.indexOf(r.g),
+        })),
+        U: this.U,
+      };
+
+      /* `detach` is Drag's own removal: it takes the item out of `Drag.items`,
+         takes the node off the page and calls back into `forget`, which is
+         what keeps `recs` and `groups` honest. Iterating a copy because that
+         callback splices the array underneath it. */
+      this.recs.slice().forEach((r) => Drag.detach(r.it));
+      this.recs = [];
+      this.groups = [];
+      this.host = null;
+      this.Z = null;
+      this.keep = null;
+      this.introEl = null;
+      this._wh = null;
+      this.walls = [];
+      this.wallStamp = -1;
+      this.lastH = null;
+      this.over = null;
+      this.hovg = null;
+      this.busyCells = null;
+      this.tries = 0;
+      return world;
+    },
+
+    unpark(host, world) {
+      if (!host || !world || !world.pieces) return false;
+      this.host = host;
+      this.hoverBind(host);
+      this.bindOnce();
+      /* THE LATTICE COMES BACK WITH THE WORLD. A stud is fixed at build time
+         precisely so a structure cannot be torn apart by the ground changing
+         under it, and a world restored onto a different stud size would be
+         exactly that — every weld in it measured against a number that no
+         longer holds. */
+      if (world.U) this.U = world.U;
+      const by = new Map();
+      world.pieces.forEach((e, i) => {
+        const rec = this.mk(e.kind, e.tone, e.bx, e.by);
+        if (!rec) return;
+        rec.rot = e.rot; rec.gx = e.gx; rec.gy = e.gy;
+        rec.trued = e.trued; rec.aim = e.aim;
+        rec.it.x = e.x; rec.it.y = e.y; rec.it.rest = e.rest;
+        Drag.apply(rec.it);
+        /* A piece that was welded to three others goes back into a group with
+           the same three. `-1` cannot happen from `park` and is keyed per
+           piece anyway, so a corrupt record produces loose bricks rather than
+           one impossible structure. */
+        const key = e.g < 0 ? `solo${i}` : e.g;
+        if (!by.has(key)) by.set(key, { members: [] });
+        const g = by.get(key);
+        g.members.push(rec);
+        rec.g = g;
+      });
+      /* `mk` registers a group of one for every piece it makes; the structures
+         above are the real answer and replace all of them. */
+      this.groups = [...by.values()];
+      this.dirty();
+      this.lastH = host.getBoundingClientRect().height;
+      return true;
     },
 
     /* ONE STUD, sized off the same reference the peel objects use. Fixed at
@@ -7597,6 +7788,12 @@
         idx.slice(0, few).forEach((i) => upTop.add(moving[i]));
       }
 
+      /* WHICH WAY THE PIECES COME IN. One fact about the surface, read once
+         rather than per body — the sidebar's column is dropped into from above
+         and the play desk is thrown into from the right. See the throw below,
+         and `Pages.play`, which is where the desk says so. */
+      const toss = this.entry === 'toss';
+
       bodies.forEach((b2, i) => {
         const cells = b2.r.def.cells;
         let W = 0, H = 0;
@@ -7617,6 +7814,13 @@
         b2.e = rnd(0.14, 0.42);                     /* and so does the bounce   */
         b2.fr = rnd(0.86, 0.95);                    /* and the friction         */
         b2.wait = 110 + (i / bodies.length) * 430 + rnd(-110, 110);
+        /* A HANDFUL, NOT A STREAM. The drop pours: a steady ramp with a little
+           jitter on it, which is what a room filling from above looks like.
+           A throw comes in clumps — two or three pieces leave the hand
+           together, then a gap, then the rest — so the ramp is longer and the
+           jitter is wide enough to overlap it, which is what puts pieces beside
+           each other in the air instead of in a queue. */
+        if (toss) b2.wait = 60 + (i / bodies.length) * 520 + rnd(-160, 200);
         if (only) b2.wait = rnd(0, 260);   /* a late piece is thrown, not poured */
         /* IT FALLS INTO THE REGION, not onto the page. Entry points are spread
            across the region's width rather than the canvas's, so nothing has
@@ -7647,6 +7851,45 @@
         } else {
           b2.x = rnd(Z.x0, Z.x1) * h.width - b2.w / 2;
         }
+        /* --- THROWN IN FROM THE RIGHT, NOT DROPPED FROM THE SKY ------------
+
+           THE DESK IS NOT A CEILING. Everywhere else the room is a window and
+           the pieces come down into it, which is the honest picture: a page
+           arriving is a page arriving from nowhere. The play desk is a table
+           somebody is standing at, and a handful of bricks arriving at a table
+           does not descend — it is tipped out of a box just off the edge of
+           it and skids across the surface.
+
+           So the entry is horizontal, from outside the right-hand edge, and
+           every number below is the same roll the drop already had, turned
+           ninety degrees:
+
+             x    outside the box entirely, by its own width and then some, so
+                  the first frame is behind the desk's clip and the piece
+                  ARRIVES rather than appearing
+             y    the upper-middle band — thrown at the table, not rolled
+                  along it, so there is a fall left in the throw
+             vx   600 to 1200 px/s leftward. Wide, because a handful thrown by
+                  a hand is not a magazine feed: the light pieces outrun the
+                  heavy ones and the pile builds unevenly, which is the whole
+                  look
+             vy   small and SIGNED, so some pieces are lobbed and some are
+                  skimmed downward
+             va   the full spin range for every piece, not the 40/60 split the
+                  drop uses — a thrown brick tumbles
+
+           `inbound` is what lets it start outside. The region's side walls are
+           applied every frame, and a piece spawned past the right one would be
+           snapped inside on the first frame it was live — the throw would be a
+           piece appearing at the edge of the box. The flag says "not in the
+           room yet": the left wall still holds, the right one starts holding
+           the moment the piece is inside it, and from then on it is an
+           ordinary body. */
+        if (toss) {
+          b2.x = h.width + b2.w * rnd(0.2, 0.7) + rnd(10, 80);
+          b2.y = h.height * rnd(0.04, 0.44) - b2.h / 2;
+          b2.inbound = true;
+        }
         /* WHERE IT FALLS FROM, AND WHY THE TRAY IS DIFFERENT.
 
            Everywhere else the room is the window, so a drop of 150 to 760
@@ -7664,12 +7907,19 @@
            in off the top of the screen, crosses the navigation with its spin
            already up, and arrives in the box at speed. Nothing about where it
            may come to rest changed. */
-        const drop = this.isTray() ? sky + rnd(20, 170) : rnd(150, 760);
-        b2.y = -drop - b2.h;
-        b2.vx = rnd(-90, 90);
-        b2.vy = rnd(0, 190);
-        b2.a = rnd(-180, 180);
-        b2.va = (Math.random() < 0.4 ? rnd(-560, 560) : rnd(-200, 200));
+        if (toss) {
+          b2.vx = rnd(-1200, -600);
+          b2.vy = rnd(-150, 220);
+          b2.a = rnd(-180, 180);
+          b2.va = rnd(-660, 660);
+        } else {
+          const drop = this.isTray() ? sky + rnd(20, 170) : rnd(150, 760);
+          b2.y = -drop - b2.h;
+          b2.vx = rnd(-90, 90);
+          b2.vy = rnd(0, 190);
+          b2.a = rnd(-180, 180);
+          b2.va = (Math.random() < 0.4 ? rnd(-560, 560) : rnd(-200, 200));
+        }
         /* The line it happens to stop on. Spread across the region's depth
            rather than one shelf, so the result is a scatter with a cluster or
            two in it and not a row. The ceiling is the one that belongs to the
@@ -7697,14 +7947,25 @@
       });
 
       const G = 2750;
-      const CAP = 2600;                   /* a backstop, never the plan */
+      /* A backstop, never the plan — and the throw needs a longer one than the
+         drop: a piece leaving the hand half a second in has the whole width of
+         the desk to cross before it is anywhere near the floor it settles on. */
+      const CAP = toss ? 3600 : 2600;
       this.rushed = false;                /* and the entrance's own stop */
       const t0 = performance.now();
       let ticks = 0;
 
       moving.forEach((b2) => { b2.r.auto = true; b2.r.it.node.classList.add('is-auto', 'is-settle'); });
 
+      const host0 = this.host;
       const step = (now) => {
+        /* THE LOOP BELONGS TO ONE WORLD. `park` can take the pieces off the
+           page mid-fall — a visitor clicking away while the bricks are still
+           arriving — and every line below this reads `recs`, `groups` and the
+           host box it measured at the start. One identity compare, and a
+           parked fall stops being a fall instead of integrating a room that is
+           no longer there. */
+        if (this.host !== host0) return;
         const el = now - t0;
         const dt = Math.min(0.032, (now - (this.last || now)) / 1000) || 0.016;
         this.last = now;
@@ -7849,7 +8110,15 @@
           if (!b2.live || b2.fixed) return;
           const L = lim(b2);
           if (b2.y > L.floor) { b2.y = L.floor; if (b2.vy > 0) b2.vy = 0; }
-          b2.x = Math.min(Math.max(b2.x, L.l), L.r);
+          /* THE RIGHT WALL DOES NOT EXIST UNTIL THE PIECE IS INSIDE IT — see
+             the note on `inbound` over the throw. It is cleared the frame the
+             piece crosses, and from then on this is the plain clamp it was. */
+          if (b2.inbound) {
+            if (b2.x <= L.r) b2.inbound = false;
+            else b2.x = Math.max(b2.x, L.l);
+          } else {
+            b2.x = Math.min(Math.max(b2.x, L.l), L.r);
+          }
         });
 
         bodies.forEach((b2) => {
@@ -8475,6 +8744,14 @@
     },
 
     hoverBind(host) {
+      /* ONCE PER HOST, AND THE FLAG LIVES ON THE HOST. The tray's box is
+         re-hosted every time the brick world comes back to it (see `unpark`),
+         and three pairs of pointerover/out listeners on one element is three
+         answers to "who is lit" arriving in the same frame. The node is the
+         only thing that knows how many times it has been bound, so it is what
+         carries the answer. */
+      if (host.__brkHov) return;
+      host.__brkHov = true;
       const rec = (e) => {
         const n = e.target && e.target.closest ? e.target.closest('.brk') : null;
         return n ? n.__brk || null : null;
@@ -13897,9 +14174,18 @@
           const href = row.kind === 'email' ? `mailto:${mail}` : url(row.href);
           const a = el('a', {
             class: `mast__row${here ? ' is-here' : ''}`,
+            /* WHICH SECTION THIS ROW IS, ON THE ROW. The mark used to be
+               decided once, here, from the page the document was — which was
+               the whole truth while a section was a document. `Rail.mark` moves
+               it now, and it needs the same `at` list this line reads rather
+               than a second copy of the mapping kept somewhere else. */
+            ...(row.at && row.at.length ? { 'data-at': row.at.join(' ') } : {}),
             href,
             ...(here ? { 'aria-current': 'page' } : {}),
-            ...(/^https?:/.test(href) ? { target: '_blank', rel: 'noopener' } : {}),
+            /* BY ORIGIN, NOT BY SCHEME — see `outbound`. This line tested the
+               rebased href, which is absolute and https on a server, so the
+               three rows of the Site list shipped as new-tab links. */
+            ...(outbound(href) ? { target: '_blank', rel: 'noopener' } : {}),
           }, esc(row.label));
           /* aria-hidden: the square says "current" to the eye and
              `aria-current` already says it to a screen reader. */
@@ -13934,6 +14220,28 @@
       this.el = mast;
       this.trayEl = air;
       return mast;
+    },
+
+    /* --- THE ONE THING IN THE SIDEBAR THAT MOVES -------------------------
+
+       Five pixels of ink, and the rest of the column does not so much as
+       reflow. The indicator is an `<i>` inside the row rather than a
+       background or a border precisely so that moving it is inserting and
+       removing one node — no size change, no colour transition on the
+       container, nothing that could make the navigation itself look animated.
+
+       `aria-current` moves with it, because the square is the sighted half of
+       the same statement. */
+    mark(page) {
+      $$('.mast__row[data-at]').forEach((a) => {
+        const on = (a.dataset.at || '').split(' ').indexOf(page) >= 0;
+        a.classList.toggle('is-here', on);
+        if (on) a.setAttribute('aria-current', 'page');
+        else a.removeAttribute('aria-current');
+        const dot = $('.mast__here', a);
+        if (on && !dot) a.appendChild(el('i', { class: 'mast__here', 'aria-hidden': 'true' }));
+        if (!on && dot) dot.remove();
+      });
     },
   };
 
@@ -14294,6 +14602,8 @@
       for (let i = 0; i < rows.length; i += 1) {
         const g = this.geo[i];
         if (!g) continue;
+        const hh = Math.max(1, (g.B - g.T) / 2);
+        const wcy = (g.T + g.B) / 2;
         let best = 0;
         for (let j = 0; j < boxes.length; j += 1) {
           const q = boxes[j];
@@ -14301,13 +14611,47 @@
              not a fraction, not a falloff, nothing. */
           if (q.bottom <= g.T - Z || q.top >= g.B + Z) continue;
           if (q.right <= g.L - Z || q.left >= g.R + Z) continue;
-          /* which side the brick is on decides the sign, and how far it has
-             pushed past that side's edge decides the distance */
-          const bcx = (q.left + q.right) / 2;
-          const left = bcx <= g.cx;
-          const depth = left ? (q.right + Z) - g.L : g.R - (q.left - Z);
+
+          /* --- HOW HARD, VERTICALLY -----------------------------------------
+
+             THIS IS WHAT KEEPS THE COLUMN FROM MOVING AS A BLOCK. A 2x3 is 66px
+             tall and the rows are on a 22.5px pitch, so a brick held over
+             "Email" genuinely overlaps four links — and gating on overlap alone
+             gave all four the same full displacement, which is the navigation
+             flying around rather than a word getting out of the way.
+
+             So the vertical relationship is a WEIGHT rather than a test:
+             measured centre to centre, full inside the word's own half-height
+             and falling to nothing `ZONE` past it. The row the brick is
+             actually on takes the whole push, the one above and below take
+             about half of it, and the rest of the column does not move. Which
+             is also what a soft object being leaned on looks like — the
+             deflection is largest where the contact is. */
+          const bcy = (q.top + q.bottom) / 2;
+          const wy = 1 - clamp((Math.abs(bcy - wcy) - hh) / (Z + hh * 2), 0, 1);
+          if (wy <= 0.02) continue;
+
+          /* --- WHICH WAY, AND HOW FAR ---------------------------------------
+
+             THE MINIMUM TRANSLATION, which is the same question the brick's own
+             fence asks of a wall and the same answer: of the two ways the word
+             could get clear of this piece, take the shorter one. A brick
+             arriving from the left is nearest the word's left edge, so right is
+             the cheap way out and the word goes right; from the right, left.
+             Sitting squarely over the middle the two are nearly equal and it
+             takes whichever is fractionally shorter — no special case, and no
+             constant direction anywhere in this function.
+
+             The distance is the escape itself, so it is proportional by
+             construction: a piece that has just entered the zone asks for a
+             pixel or two, one that is halfway across the word asks for the cap.
+             It only saturates when the brick is genuinely on top of it. */
+          const dR = (q.right + Z) - g.L;
+          const dL = g.R - (q.left - Z);
+          const right = dR <= dL;
+          const depth = right ? dR : dL;
           if (depth <= 0) continue;
-          const want = Math.min(depth, this.MAX) * (left ? 1 : -1);
+          const want = Math.min(depth, this.MAX) * wy * (right ? 1 : -1);
           /* THE LARGEST, NOT THE SUM. Several pieces around one word is a
              crowd, not a stack of forces, and adding them is how 14px becomes
              70. */
@@ -14351,24 +14695,11 @@
          so the physics rectangle and the visible column ARE the same rectangle,
          by construction rather than by two numbers being kept in step, and the
          boundary follows the layout at every width. */
+      if (this.went) return;
       this.host = host;
       host.classList.add('canvas--tray');
 
-      /* WHAT THE DRAG FENCES AGAINST. `Drag.edge` measures `Canvas.host`, and
-         on this page nothing has called `Canvas.setSurface` — there is no
-         drawing here and no notes to place, so the surface machinery is not
-         wanted. This is the one field of it that is, assigned directly: without
-         it `edge` finds no host, sets no bounds, and a brick can be dragged
-         across the project grid and off the page. */
-      Canvas.host = host;
-
-      /* ROLLED, NOT AUTHORED. `scatter` is what the 404 room uses: what and
-         roughly where, generated fresh, so the pile is different every visit.
-         An authored arrangement would be a composition, and a composition is
-         the thing the isometric version was — it is not what a handful of
-         bricks tipped onto a desk looks like. */
       const narrow = innerWidth <= 700;
-      Bricks.defs = Bricks.scatter(narrow ? (c.mobilePieces || 9) : (c.pieces || 16));
 
       /* AND THE THROW WAITS FOR THE ENTRANCE TO GET OFF THE PAGE.
 
@@ -14388,8 +14719,51 @@
       const body = document.body;
       const go = () => {
         if (this.went) return;
+        /* --- AND THE COLUMN DOES NOT TAKE THE WORLD BACK BY SURPRISE -------
+
+           THIS IS THE RACE THAT PUT TWO WORLDS ON THE PAGE AT ONCE. This
+           function is deferred — it waits for the entrance sheet to leave, up
+           to four seconds — and a visitor can be on the play desk long before
+           it fires. It used to run anyway: `Bricks.init` re-hosted the module
+           onto the sidebar's box while the desk was holding it, so the desk's
+           twenty-two pieces and a fresh sixteen ended up in one `recs` with two
+           different origins, and the fall never finished because half its
+           bodies were being measured against the wrong rectangle.
+
+           `went` is deliberately NOT set here. This is a decline, not a
+           completion: the column still wants its bricks, it simply cannot have
+           the module right now, and `Stage.hand` asks again the moment the
+           visitor comes back to a section the column belongs to. */
+        if (Store.lego.live && Store.lego.live !== 'tray') return;
         this.went = true;
+
+        /* WHAT THE DRAG FENCES AGAINST. `Drag.edge` measures `Canvas.host`, and
+           on this page nothing has called `Canvas.setSurface` — there is no
+           drawing here and no notes to place, so the surface machinery is not
+           wanted. This is the one field of it that is, assigned directly:
+           without it `edge` finds no host, sets no bounds, and a brick can be
+           dragged across the project grid and off the page. */
+        Canvas.host = host;
+
+        /* DROPPED, NOT THROWN, AND SIXTEEN OF THEM — both stated on this line
+           rather than at the top of `init`, because both are inputs to
+           `Bricks.init` and this is the frame it runs in. Set any earlier and
+           the desk, which sets the same two fields for its own surface, can
+           overwrite them in between: that is how the column once received
+           twenty-two pieces thrown in from the right. */
+        Bricks.entry = null;
+        /* ROLLED, NOT AUTHORED. `scatter` is what the 404 room uses: what and
+           roughly where, generated fresh, so the pile is different every
+           visit. An authored arrangement would be a composition, and a
+           composition is the thing the isometric version was — it is not what a
+           handful of bricks tipped onto a desk looks like. */
+        Bricks.defs = Bricks.scatter(narrow ? (c.mobilePieces || 9) : (c.pieces || 16));
+
         Bricks.init(host);
+        /* AND THE COLUMN OWNS THE BRICKS FROM HERE — which box they are in, so
+           the world can be put back into the same rectangle after a trip to
+           the desk. See `Stage.hand`. */
+        Stage.claim('tray', host);
         /* The work is measured once the bricks exist and never again until a
            gesture asks for it. */
         Push.arm(host);
@@ -14431,6 +14805,423 @@
     },
   };
 
+  /* ==================================================== 5f. the store =====
+
+     ONE ENVIRONMENT, NOT SIX PAGES.
+
+     WHAT THIS REPLACED, AND WHY IT HAD TO GO. Work, About and Play were three
+     documents. Clicking between them was a real navigation: the browser threw
+     the whole page away and built another one from the same script, which is
+     why the sidebar blinked, why the closing lines jumped, and — the part
+     nobody could miss — why the pile of bricks in the column was dealt again
+     from scratch every single time. Nothing was wrong with the code; the
+     architecture said "a section is a document", and a document cannot outlive
+     itself.
+
+     It is a lie the markup was already telling, too. `index.html`,
+     `about.html` and `play.html` are the SAME eleven lines of body — a `#nav`,
+     a `.sheet`, a `main#main`, a `div#hero` — differing in exactly one
+     attribute, `data-page`. Every pixel of all three is built by this script
+     from `content.js`. So there was never a document to fetch: the only thing
+     a navigation actually changed was a string.
+
+     SO A SECTION IS A VIEW NOW, and this is where what survives one lives.
+
+         Store   what persists. Data, and the two brick worlds as data.
+         Stage   the permanent shell, and the views cached inside it.
+         Route   the only thing that changes a section, and how.
+
+     THE RULE THAT MAKES IT WORK IS THAT A VIEW IS BUILT ONCE. Not torn down
+     and rebuilt on a fade — built the first time it is asked for and then
+     simply hidden. Which is worth stating plainly, because it is what buys
+     nearly all of the persistence for nothing:
+
+       · the drawings on the play desk are the same canvases, still holding
+         their pixels, because nobody cleared them
+       · `Ink.strokes` still describes them, because nobody rebuilt it
+       · the sticker stack, the notes, the dot field and the desk's own
+         geometry are the same nodes at the same size
+       · the toolbar was mounted once and is hidden, not destroyed
+       · the theme, the grid and the sky were never per-page to begin with
+       · and the scroll offset of a view is the offset it had
+
+     Nothing above is a feature that had to be written. It is what NOT
+     destroying something gets you, and it is why this is a lifecycle fix
+     rather than a save-file format.
+
+     THE ONE THING THAT DOES NOT COME FREE IS THE BRICKS, and the reason is
+     structural: there is one `Bricks` module, with one `recs`, one `groups`
+     and one `host`, and there are two surfaces that want it — the sidebar's
+     box, which belongs to the permanent shell, and the play desk, which
+     belongs to one view. They cannot both be live. So the module is handed
+     between them, and the world that is not holding it is kept here as data
+     by `Bricks.park`. See the note over that pair.
+
+     WHAT IS DELIBERATELY NOT IN HERE. Not a frame of the simulation. The
+     physics keeps its own live bodies at sixty frames a second and this is
+     written at the four moments that mean something — a hand-over, a release,
+     a settle, a departure — because a store updated per frame is not a store,
+     it is a second copy of the simulation, running at the same cost and
+     always one frame behind. The live world is the source of truth while it
+     is live; this is the source of truth while it is not. One of the two is
+     always authoritative and it is never both.
+     ===================================================================== */
+
+  const Store = {
+    /* --- navigation ---------------------------------------------------- */
+    nav: {
+      route: null,        /* the section on screen */
+      scroll: {},         /* where each section was left, in page pixels */
+    },
+
+    /* --- the play desk -------------------------------------------------- */
+    /* `thrown` is the one-time entrance, recorded so it cannot happen twice;
+       `tool` is what was in the visitor's hand when they walked away. The
+       drawings, the notes and the stickers are not listed because they are
+       not copied anywhere — they are still on the desk. */
+    play: {
+      thrown: false,
+      tool: null,
+    },
+
+    /* --- the brick worlds, while they are not live ---------------------- */
+    /* `live` names the one `Bricks` is holding, or null. `hosts` is the box
+       each one lives in, remembered so a world can be put back into the same
+       rectangle it came out of. */
+    lego: {
+      live: null,
+      hosts: { tray: null, desk: null },
+      worlds: { tray: null, desk: null },
+    },
+
+    /* --- and the things that were never per-page ------------------------ */
+    /* Read-through rather than copied. The theme is a class on the root and
+       the grid is a class on the root; storing a second copy of either would
+       create a second answer to a question that already has one, which is the
+       failure mode this whole module exists to avoid. */
+    get theme() { return Theme.mode(); },
+    get grid() { return document.documentElement.classList.contains('is-grid'); },
+  };
+
+  /* --- the permanent shell, and the views cached inside it --------------- */
+
+  const Stage = {
+    /* which brick world each section wants. Work and About want the same one —
+       they are the same shell with a different document in the canvas, and the
+       sidebar's box is part of that shell, so moving between them hands
+       nothing over and touches nothing. That is why those two are seamless
+       rather than merely fast. */
+    OWNER: { home: 'tray', about: 'tray', play: 'desk' },
+
+    wrap: null,     /* the persistent `.home` — the two-column shell */
+    stack: null,    /* the persistent second column, which the views sit in */
+    built: {},      /* section -> its view node, once it has ever been shown */
+
+    /* Built on the first section that asks for it and never again. The rail
+       inside it is `Rail.build()` called exactly once in the life of the tab,
+       which is the whole of "the sidebar never unmounts". */
+    mount() {
+      if (this.wrap) return this.wrap;
+      const hero = $('#hero');
+      if (!hero) return null;
+      const wrap = el('div', { class: 'home' });
+      const mast = Rail.build();
+      if (mast) wrap.appendChild(mast);
+      /* THE VIEW STACK IS A REAL ELEMENT, not the views being swapped in and
+         out of the grid directly. `.home` is a two-track grid and the second
+         track is the content column; making that track one permanent box means
+         the column's width, its left edge and its grid placement are stated
+         once and cannot change with the section. A view is then just a child
+         that is displayed or not, and `display: none` costs nothing and
+         occupies nothing. */
+      const stack = el('div', { class: 'home__views' });
+      wrap.appendChild(stack);
+      hero.appendChild(wrap);
+      this.wrap = wrap;
+      this.stack = stack;
+      return wrap;
+    },
+
+    /* A section's builder calls this instead of making its own wrapper. It
+       returns the node to build into on the first visit and NULL on every
+       visit after, which is how "only initialise once" is expressed at the
+       one place it matters: the builder's own first line. */
+    view(page, cls) {
+      this.mount();
+      if (!this.stack) return null;
+      if (this.built[page]) return null;
+      const node = el('div', { class: `home__view ${cls}`, 'data-view': page });
+      this.stack.appendChild(node);
+      this.built[page] = node;
+      return node;
+    },
+
+    /* A surface says the brick world is now its. Called by `Tray.init` for the
+       sidebar's box and by the play desk for the desk, so the two never have to
+       agree about anything except the name. */
+    claim(name, host) {
+      Store.lego.live = name;
+      Store.lego.hosts[name] = host;
+      Canvas.host = host;
+    },
+
+    /* --- THE HAND-OVER ----------------------------------------------------
+
+       Called before a section is shown, and it is the only place either brick
+       world is created or destroyed. Three cases, in the order they are
+       tested:
+
+         the same world      nothing at all happens. Work to About.
+         a different world   the live one is written out as data and taken off
+                             the page; the target is built back from its own
+                             data, in the box it came from.
+         no data yet         the world is left empty and the section's builder
+                             fills it — the first visit, and the only time an
+                             entrance runs.
+
+       WHICH IS WHY THE THROW CANNOT REPLAY. It lives in the builder, the
+       builder runs once, and every visit after this reaches the middle case. */
+    hand(page) {
+      const want = this.OWNER[page] || null;
+      const L = Store.lego;
+      if (L.live === want) return;
+
+      if (L.live) {
+        /* the tool is put down at the door, and remembered. A pen still armed
+           on the About page is a pen over somebody's biography — `Ink` listens
+           on the window and draws onto whatever surface is live. */
+        if (L.live === 'desk' && Rack.rack) {
+          Store.play.tool = Rack.tool || null;
+          /* silent: a navigation is not a tool press, and it should not
+             click */
+          if (Rack.tool && Rack.tool !== 'select') Rack.pick('select', true);
+        }
+        L.worlds[L.live] = Bricks.park();
+        L.live = null;
+      }
+      if (!want) return;
+
+      const host = L.hosts[want];
+      const world = L.worlds[want];
+      if (!host || !world) {
+        /* NOTHING SAVED AND NOTHING CLAIMED — this world has never been built.
+           Normally the section's own builder does that, on its first visit. The
+           exception is the sidebar's column, whose builder is deferred behind
+           the entrance and can have declined the module because the desk was
+           holding it (see `Tray.init`). So it is asked again here, which is the
+           only place that knows the module is now free. */
+        if (want === 'tray' && Rail.trayEl) Tray.init(Rail.trayEl);
+        return;
+      }
+      if (!Bricks.unpark(host, world)) return;
+      L.worlds[want] = null;
+      L.live = want;
+      Canvas.host = host;
+      /* THE ENTRY BELONGS TO THE SURFACE, not to the module. The desk is
+         thrown into from the right and the sidebar is dropped into from above,
+         and `rain` reads this to know which — so a late arrival in the column
+         cannot come in sideways because the desk was live an hour ago. */
+      Bricks.entry = want === 'desk' ? 'toss' : null;
+      /* and the column's own trickle starts again with its world */
+      if (want === 'tray') Bricks.drip(S.tray && S.tray.drip);
+      /* THE PEN GOES BACK IN THE HAND ON THE WAY IN. Which tool was armed is
+         a thing the visitor chose, so it belongs to them and survives the trip
+         — the toolbar itself does not own it, `Store.play` does. */
+      if (want === 'desk' && Rack.rack && Store.play.tool
+          && Store.play.tool !== Rack.tool) Rack.pick(Store.play.tool, true);
+    },
+  };
+
+  /* --- and the only thing that changes a section ------------------------- */
+
+  const Route = {
+    /* the three sections that are views of this shell. Everything else — a
+       case study, the work archive, the 404 — is a real page with a different
+       layout and no rail, and is left to the browser exactly as it was. */
+    PAGES: { 'index.html': 'home', 'about.html': 'about', 'play.html': 'play' },
+    OUT: 120,
+    IN: 190,
+
+    init() {
+      Store.nav.route = Shell.page;
+      /* THE ENTRY IN THE HISTORY IS OURS FROM THE FIRST FRAME, so a back
+         button pressed after one navigation has something to come back TO
+         rather than reloading the document it started on. */
+      try { history.replaceState({ page: Shell.page, scroll: 0 }, ''); } catch (e) { /* file:// */ }
+
+      /* ONE DELEGATED LISTENER, on the document, for the life of the tab. Not
+         one per link: the rail is built once but its rows are not the only way
+         into a section, and a listener per anchor is a listener to remove. */
+      document.addEventListener('click', (e) => {
+        if (e.defaultPrevented || e.button !== 0) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+        if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
+        const page = this.of(a.getAttribute('href'), a.href);
+        if (!page) return;
+        e.preventDefault();
+        this.go(page, true);
+      });
+
+      addEventListener('popstate', (e) => {
+        const st = e.state;
+        const page = (st && st.page) || this.of(location.pathname, location.href);
+        if (!page || page === Store.nav.route) return;
+        this.go(page, false, st && st.scroll);
+      });
+    },
+
+    /* A section, or null. The comparison is on the last path segment because
+       that is the only part that identifies the file: `cleanUrls` is off (see
+       the note over `projectHref`), the site is served from a root that is not
+       always `/`, and the same three names have to be recognised off a disk. */
+    of(raw, abs) {
+      if (!raw || /^(?:[a-z][a-z0-9+.-]*:(?!\/)|#|mailto:|tel:)/i.test(raw)) return null;
+      let path;
+      try {
+        const u = new URL(abs || raw, location.href);
+        if (u.origin !== location.origin) return null;
+        if (u.hash && u.pathname === location.pathname) return null;
+        path = u.pathname;
+      } catch (err) { return null; }
+      const file = path.slice(path.lastIndexOf('/') + 1) || 'index.html';
+      return this.PAGES[file] || null;
+    },
+
+    href(page) {
+      const name = Object.keys(this.PAGES).find((k) => this.PAGES[k] === page);
+      return url(name || 'index.html');
+    },
+
+    /* --- THE SWAP ---------------------------------------------------------
+
+       Two beats and a hard cut between them, which is deliberate: a crossfade
+       — both views on the page at once, one over the other — needs them
+       stacked and absolutely positioned, and an absolutely positioned view
+       cannot be measured by the layout grid or scrolled by the document. So
+       the outgoing view fades to nothing, the swap happens in the frame after
+       it is invisible, and the incoming one fades up from six pixels below.
+       Nothing is ever on screen at half opacity over something else, and there
+       is no frame with neither.
+
+       310ms end to end, and it reads as about two hundred because the eye
+       stops paying attention to the outgoing content well before it is gone.
+       Reduced motion gets the cut without either fade. */
+    go(page, push, restore) {
+      if (!Stage.OWNER[page] || page === Store.nav.route) return;
+      /* --- A CLICK DURING A FADE IS NOT DROPPED --------------------------
+
+         RAPID NAVIGATION IS THE CASE THAT BREAKS THIS KIND OF THING. Two
+         clicks 60ms apart, inside one 120ms fade, and the obvious guard — a
+         `busy` flag that returns early — loses the second click: the visitor
+         asked for Play and got About, and the only clue is that the mark they
+         watched move was right and the content was not.
+
+         So the swap in flight is FINISHED instead, on this line, synchronously.
+         Its outgoing view is hidden and its incoming one is shown, which takes
+         no frames because both are already built, and this navigation then
+         starts from a settled shell exactly as if the visitor had waited. No
+         flag, no queue, nothing to leave stuck if a timer never fires. */
+      if (this.pend) { clearTimeout(this.t); const f = this.pend; this.pend = null; this.t = null; f(); }
+
+      const from = Store.nav.route;
+      Store.nav.scroll[from] = scrollY;
+      if (push) {
+        try {
+          history.replaceState({ page: from, scroll: scrollY }, '');
+          history.pushState({ page, scroll: Store.nav.scroll[page] || 0 }, '', this.href(page));
+        } catch (e) { /* file:// — the swap still happens, the URL does not */ }
+      }
+      /* THE ACTIVE MARK MOVES NOW, NOT AFTER THE FADE. It is the answer to
+         "did my click land", and an answer that arrives 300ms later is a
+         button that feels broken. */
+      Rail.mark(page);
+
+      const prev = Stage.built[from] || null;
+      const swap = () => {
+        this.pend = null;
+        this.t = null;
+        if (prev) { prev.hidden = true; prev.classList.remove('is-out'); }
+        this.enter(page, restore);
+      };
+
+      if (REDUCED || !prev) { swap(); return; }
+      prev.classList.add('is-out');
+      this.pend = swap;
+      this.t = setTimeout(swap, this.OUT);
+    },
+
+    enter(page, restore) {
+      /* EVERY MODULE THAT ASKS "WHICH PAGE IS THIS" READS ONE OF THESE TWO, so
+         both move before anything is built or handed over: `Shell.page` for
+         the script — `Bricks.zone`, `Rack.init`, `Rail.build` all branch on it
+         — and `data-page` for the stylesheet, which hides the header nav and
+         the phone bar on exactly these three sections. */
+      Shell.page = page;
+      document.body.dataset.page = page;
+      document.title = `${S.person.name} — ${page === 'home' ? 'Portfolio' : page[0].toUpperCase() + page.slice(1)}`;
+      if (Stage.wrap) Stage.wrap.classList.toggle('home--play', page === 'play');
+
+      /* the bricks, before the view is built or shown — a first build needs an
+         empty module to claim, and a return needs its world already back */
+      Stage.hand(page);
+
+      const first = !Stage.built[page];
+      if (first) {
+        (Pages[page] || Pages.home).call(Pages);
+        /* the reveals of a section that has just been made for the first time.
+           A section that has been shown before has already played them and
+           must not play them again — which is the same rule the throw obeys. */
+        observeReveals();
+      }
+      const node = Stage.built[page];
+      if (node) node.hidden = false;
+
+      /* THE TOOLBAR IS SHELL FURNITURE WITH A SECTION'S NAME ON IT. It is
+         fixed to the window and mounted in the HUD layer, so it is not inside
+         any view and cannot be hidden by one — it is shown and hidden here,
+         and built the first time a section that has one is reached. */
+      this.rack(page);
+
+      Store.nav.route = page;
+
+      /* --- and the four things that measure the page ---------------------- */
+      /* `Push` and `Shove` hold node lists: the project cards for one and the
+         rail's links for the other. The cards belong to a view, so the list
+         has to be taken again for the view that is now on screen — an old list
+         is not a crash, it is a spring pulling on a card that is no longer
+         displayed. */
+      if (Rail.trayEl) { Push.arm(Rail.trayEl); Shove.arm(Rail.trayEl); }
+      /* the layout grid is drawn from the page's own edges, and the page just
+         changed shape. `schedule`, not `init` — one is a redraw and the other
+         would bind a second resize listener. */
+      Grid.schedule();
+      if (typeof wakeLoop === 'function') wakeLoop();
+
+      /* SCROLL IS RESTORED, NEVER RESET. A section remembers where it was left
+         and comes back to it; a section being seen for the first time keeps
+         whatever offset the page already had, which on a site with almost
+         nothing to scroll is nearly always the top. Nothing here scrolls a
+         visitor who did not scroll. */
+      const y = restore != null ? restore : Store.nav.scroll[page];
+      if (y != null && Math.abs(y - scrollY) > 1) scrollTo({ top: y, behavior: 'auto' });
+
+      if (REDUCED || !node) return;
+      /* the fade up: set the start state, let one frame paint it, then release
+         it so the transition has two ends to run between */
+      node.classList.add('is-in');
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        node.classList.remove('is-in');
+      }));
+    },
+
+    rack(page) {
+      const on = Rack.HOMES && Rack.HOMES.indexOf(page) >= 0;
+      if (on && !Rack.rack) Rack.init();
+      if (Rack.rack) Rack.rack.hidden = !on;
+    },
+  };
+
   const Pages = {
     /* --- THE HOME PAGE IS THE WORK -----------------------------------------
 
@@ -14463,19 +15254,16 @@
        rail is sticky rather than fixed precisely so that they get the whole
        width when the work runs out. */
     home() {
-      const main = $('#main');
-      const hero = $('#hero');
-
-      const wrap = el('div', { class: 'home' });
-      const mast = Rail.build();
-      if (mast) wrap.appendChild(mast);
-
-      const work = el('div', { class: 'home__work' });
-      wrap.appendChild(work);
-      /* `#hero` is the div index.html gives us. It is now the two-column
-         wrapper's parent rather than a canvas, so it keeps its id (the skip
-         link and the entrance both name it) and loses everything else. */
-      hero.appendChild(wrap);
+      /* THE SHELL IS NOT THIS METHOD'S ANY MORE, and that is the whole of the
+         change here. It used to make the two-column wrapper, call
+         `Rail.build()` and append both to `#hero` — which meant the sidebar and
+         its brick box were part of the WORK section, and leaving the work took
+         them with it. `Stage.view` hands back the right-hand column of a shell
+         that already exists, and returns null if this section has been built
+         before, so everything below runs exactly once in the life of the tab.
+         See the note over `Store`. */
+      const work = Stage.view('home', 'home__work');
+      if (!work) return;
 
       /* THE WORK GOES IN THE RIGHT COLUMN, not after it. `Showcase.init`
          appends a `<section class="showcase">` to whatever it is handed, so
@@ -14496,7 +15284,12 @@
 
       /* AND THE TRAY LAST, because the brick engine sizes a stud off the box
          and the box is whatever height the rail has left once everything above
-         it has been laid out. One frame, so that layout has happened. */
+         it has been laid out. One frame, so that layout has happened.
+
+         ONLY EVER FROM A FIRST BUILD. `Tray.init` throws sixteen pieces into
+         the column; every visit to this section after the first reaches it
+         through `Stage.hand`, which puts the world back exactly as it was
+         instead. */
       if (Rail.trayEl) requestAnimationFrame(() => Tray.init(Rail.trayEl));
 
       /* AND NO FOOTER. `index.html` no longer has the `#foot` element, so
@@ -14530,16 +15323,15 @@
        a name and an address you can send to somebody. */
     play() {
       const c = S.play || {};
-      const main = $('#main');
-      const hero = $('#hero');
-
-      const wrap = el('div', { class: 'home home--play' });
-      const mast = Rail.build();
-      if (mast) wrap.appendChild(mast);
-
-      const desk = el('div', { class: 'home__work home__work--desk' });
-      wrap.appendChild(desk);
-      hero.appendChild(wrap);
+      /* ONE DESK, FOR THE LIFE OF THE TAB. Everything below — the dot field,
+         the ink layers, the sticker stack, the twenty-two bricks — is built on
+         the first visit to this section and then left alone. A second visit
+         does not reach this line: `Stage.view` returns null, the cached desk
+         is un-hidden, and `Stage.hand` puts the brick world back on it. Which
+         is why the drawings are still there, and why the throw does not
+         happen twice. */
+      const desk = Stage.view('play', 'home__work home__work--desk');
+      if (!desk) return;
 
       /* the one line of copy on the page, above the desk */
       if (c.lead || c.note) {
@@ -14558,6 +15350,12 @@
          it is a supply of parts. */
       const narrow = innerWidth <= 768;
       Bricks.defs = Bricks.scatter(narrow ? (c.mobilePieces || 12) : (c.pieces || 22));
+      /* THROWN IN FROM THE RIGHT, NOT DROPPED FROM ABOVE. Stated here, beside
+         the count, because both are facts about THIS surface rather than about
+         the engine — the sidebar's column sets neither and gets the drop. See
+         the throw in `rain`. */
+      Bricks.entry = 'toss';
+      Store.play.thrown = true;
 
       /* THE DESK. `Canvas.init` brings the dot field, the eighteen-brick
          engine, the sticker stack, the surface the notes and drawings are
@@ -14566,6 +15364,11 @@
       const floor = el('div', { class: 'play__floor' });
       desk.appendChild(floor);
       Canvas.init(floor, { column: false });
+      /* AND THE DESK OWNS THE BRICKS FROM HERE. `Canvas.init` has just called
+         `Bricks.init` on the floor, so this only records what already
+         happened — which world is live, and the box to put it back into when
+         the visitor comes back to this section. */
+      Stage.claim('desk', floor);
 
       /* AND THE HERO'S SENTENCE IS NEVER PUT ON IT. The statement is in the rail on
          this page as it is on the home page, so the draggable headline and the
@@ -14848,17 +15651,13 @@
        which is the opposite of a page whose whole job is to be scanned. */
     about() {
       const c = S.about;
-      const main = $('#main');
-      const hero = $('#hero');
-      if (!c || !main || !hero) return;
-
-      const wrap = el('div', { class: 'home' });
-      const mast = Rail.build();
-      if (mast) wrap.appendChild(mast);
-
-      const page = el('div', { class: 'about' });
-      wrap.appendChild(page);
-      hero.appendChild(wrap);
+      if (!c) return;
+      /* Same shell, same sidebar, same brick box — a different document in the
+         canvas beside it, which is all this section has ever been. Moving
+         between this and the work hands nothing over and rebuilds nothing;
+         see `Stage.OWNER`. */
+      const page = Stage.view('about', 'about');
+      if (!page) return;
 
       /* THE ONE PIECE OF GRAMMAR THIS PAGE ADDS, and it is borrowed: a small
          mono label with a stud in front of it, which is the mark the work page
@@ -14919,7 +15718,7 @@
           const a = el('a', {
             href: url(l.href),
             ...(l.action ? { 'data-action': l.action } : {}),
-            ...(/^https?:/.test(l.href) ? { target: '_blank', rel: 'noopener' } : {}),
+            ...(outbound(l.href) ? { target: '_blank', rel: 'noopener' } : {}),
           }, esc(l.label === 'Resume' ? 'CV' : l.label));
           row.appendChild(a);
         });
@@ -15577,6 +16376,16 @@
 
     const page = Shell.page;
     (Pages[page] || Pages.home).call(Pages);
+
+    /* AFTER THE FIRST SECTION IS ON THE PAGE, AND NOT BEFORE. The router's job
+       is to change sections, and it cannot change one that does not exist yet
+       — `Route.init` also records the section it started on as the history's
+       own first entry, which has to be the section that was actually built.
+
+       It is a no-op on every page that is not one of the three: a case study,
+       the work archive and the 404 have no rail, no shell to persist and
+       nothing to swap, and their links fall straight through to the browser. */
+    Route.init();
 
     Ink.init();
     Ghost.init();
