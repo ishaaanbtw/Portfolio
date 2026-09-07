@@ -128,13 +128,20 @@
      it and nothing at all when you are reading. `--grid-ink` is the only knob;
      the dark theme turns it over and leaves the geometry alone.
 
+     ELEVEN PIXELS, WHICH IS HALF A STUD. It was 24, measured off a reference
+     that had no bricks in it — and a 24px cell beside a 22px LEGO stud is the
+     worst of both: near enough to look like it should line up, far enough that
+     it never does. Half a stud puts a brick's every stud on every second line
+     and its edges on the grid at any size, which is the relationship the two
+     things should have had from the start.
+
      `background-size` takes one pair for both layers, so `--dots-step` still
      describes the whole cell and both gradients tile to it. */
-  --grid-ink: rgba(20, 16, 12, 0.05);
+  --grid-ink: rgba(20, 16, 12, 0.035);
   --dots:
     linear-gradient(to right, var(--grid-ink) 1px, transparent 1px),
     linear-gradient(to bottom, var(--grid-ink) 1px, transparent 1px);
-  --dots-step: 24px 24px;
+  --dots-step: 11px 11px;
 
   /* --- the safe area --------------------------------------------------------
      Read once, here, so nothing downstream has to remember the env() syntax or
@@ -245,11 +252,16 @@
    first paint, so a visitor arriving after six in the evening never sees a
    white frame. Everything below is what that class means.
 
-   NOT AN INVERSION. The ground is a warm near-black rather than the light
-   ground's complement, the primary ink is an off-white with the same warmth in
-   it, and the tiers are spaced for a dark ground rather than mirrored from a
-   light one — secondary sits closer to primary here than it does in the light,
-   because a dark page needs less separation to read as separated.
+   NOT AN INVERSION, AND NOT A BROWN ONE EITHER. The first version of this
+   palette mirrored the light theme's warmth into the dark — a ground eight
+   levels redder than it was blue — on the reasoning that one warmth across
+   both themes is one design. It is not: warmth in a light ground reads as
+   paper, and the same warmth in a dark one reads as a stain. The ground is a
+   near-black with a whisper of cool in it now (R-B of −2 rather than +8), and
+   the ink is a neutral off-white that keeps the barest trace of warmth so it
+   is not clinical. The tiers are spaced for a dark ground rather than mirrored
+   from a light one — secondary sits closer to primary here than it does in the
+   light, because a dark page needs less separation to read as separated.
 
    ONLY COLOURS AND THE THREE LIGHTING NUMBERS ARE HERE. Type, spacing, the dot
    grid and the safe area belong to `:root` and are the same in both themes; an
@@ -259,20 +271,20 @@
    bug waiting for exactly that. */
 :root.is-dark {
   --tone: dark;
-  --text-1: #f2efe9;
-  --text-2: #bdb7ae;
-  --text-3: #8b857c;
-  --text-4: #5c5750;
-  --surface: #171614;
-  --surface-2: #201e1c;
-  --border: #302c28;
-  --border-soft: #242220;
-  --accent: #cf9a55;
+  --text-1: #f1f1ef;
+  --text-2: #b8b8b6;
+  --text-3: #878785;
+  --text-4: #575759;
+  --surface: #0f0f11;
+  --surface-2: #18181b;
+  --border: #272729;
+  --border-soft: #1d1d20;
+  --accent: #c9a06a;
 
-  --sky-1: #0e0d0c;
-  --sky-2: #15130f;
-  --sky-3: #201e1a;
-  --mat-ink: #efece6;
+  --sky-1: #08080a;
+  --sky-2: #101013;
+  --sky-3: #1a1a1d;
+  --mat-ink: #eeeeec;
   --mat-ink-strong: #ffffff;
   --mat-scrim: rgba(0, 0, 0, 0.34);
 
@@ -981,9 +993,39 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
    page is stacked. One host at every width, so nothing has to be re-hosted on
    a resize, and the engine only ever sees a rectangle.
 
-   `inset: 0` of the sidebar, which is `position: sticky` and therefore the
-   containing block — so the physics rectangle and the visible column are the
-   same rectangle by construction.
+   IT IS THE SPACE BETWEEN THE TYPE, NOT THE WHOLE COLUMN.
+
+   It was `inset: 0` of the sidebar — the physics rectangle and the visible
+   column were the same rectangle — and that one decision is what every
+   complaint about this playground came out of. The navigation, the buttons and
+   the statement were INSIDE the box, so they had to be declared to the solver
+   as obstacles, and `trayClear` had to resolve two conflicting constraints
+   every time a piece was released: get off the words, and get off the other
+   bricks. It says out loud that it settles that conflict in the words' favour
+   and accepts "a little brick overlap" as the price. That price is the
+   overlapping pieces; the pieces resting beside the navigation are the same
+   cause seen from the other end.
+
+   So the box is the space that is actually free. `.mast` is already a flex
+   column of three things — the type block, this, and the closing lines — and
+   this one takes the slack: `flex: 1` between two auto-height siblings is the
+   region below the last link and above the first closing line, at every width,
+   with no number written down anywhere and nothing to keep in step on a
+   resize. The type is not in the box, so it is not an obstacle, so there is no
+   conflict left to resolve.
+
+   `position: relative` because the bricks are absolutely positioned and this
+   is their containing block — it was the abspos layer before and it has to go
+   on being a containing block now that it is in the flow.
+
+   AND THE TOP EDGE IS THE ONE CLIPPED EDGE. Pieces are thrown in from just
+   above the box, and "just above" is now the middle of the column rather than
+   off the top of the page — so without this the first frames of every fall are
+   a brick crossing the navigation. `inset(0 -50vw -50vw -50vw)` cuts at the
+   top and opens the other three sides by half a viewport, which is what lets a
+   held piece reach out to the right and touch the work while nothing ever
+   shows above the box. `overflow: clip` would have done the top and taken the
+   reach with it.
 
    `pointer-events: none` and NOT because the layer is decorative. The bricks
    inside it set `auto` on their own painted cells (see `.brk__hit`), so a press
@@ -991,11 +1033,18 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
    bricks reaches the page. Without this the layer would be a 300 by 900 sheet
    of glass over the whole sidebar. */
 .mast__air {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
   z-index: 0;
   pointer-events: none;
+  clip-path: inset(0 -50vw -50vw -50vw);
 }
+
+/* The closing lines took the column's slack with an auto margin; the
+   playground takes it now, and two things claiming the same free space is one
+   of them getting none of it. */
+.mast .mast__air ~ .mast__foot { margin-top: 0; }
 
 
 .mast__say { margin: 0 0 0.75rem; }
@@ -4719,20 +4768,18 @@ body.past-hero .sel { opacity: 0; }
   touch-action: pan-y;
 }
 
-/* the infinite dotted grid — one tiled gradient, offset by a parallax variable */
+/* the field — two tiled gradients, and it does not move */
 .canvas__dots {
   position: absolute;
-  /* Oversized so the parallax never exposes an edge — and a whole number of
-     cells (8 x 24px) rather than `-12vmax`, so this grid and the one `body`
-     paints behind it are in the same phase. Off phase, the moment the canvas
-     mounted over the body every dot jumped a few pixels: not a flash, but the
-     one thing that gave away that there were two of them. */
-  inset: -192px;
+  /* Oversized so nothing can expose an edge, and a whole number of cells
+     (18 x 11px) rather than `-12vmax`, so this grid and the one `body` paints
+     behind it are in the same phase. Off phase, the moment the canvas mounted
+     over the body every line jumped a few pixels: not a flash, but the one
+     thing that gave away that there were two of them. */
+  inset: -198px;
   z-index: 0;
   background-image: var(--dots);
   background-size: var(--dots-step);
-  transform: translate3d(var(--px, 0px), var(--py, 0px), 0);
-  will-change: transform;
   pointer-events: none;
 }
 
@@ -10218,9 +10265,14 @@ body.waking.awake .rv { opacity: 1; transform: none; }
   --ab-side: clamp(9.5rem, 13.5vw, 13rem);
   --ab-read: 42rem;
 
-  /* the canvas's own gutters, matched to `.home__work` so the two pages start
-     their content on the same vertical line */
-  padding: var(--mast-pad) var(--mast-pad) clamp(2.5rem, 6vh, 4rem)
+  /* THE DOCUMENT DOES NOT START AT THE WINDOW'S EDGE. The canvas took the
+     work grid's own 16px gutter, which is right for a wall of cards — they are
+     the page, and they should reach it. A document is not: set hard against
+     the top edge it reads as having been pushed there rather than placed, and
+     it lands a hair above the sidebar's first line instead of below it. A real
+     top margin, scaled to the window, is the whole of the fix; the metadata
+     column beside it is centred in the viewport and does not move. */
+  padding: clamp(3.25rem, 13vh, 8.5rem) var(--mast-pad) clamp(2.5rem, 6vh, 4rem)
            clamp(0.75rem, 1vw, 1.125rem);
 
   display: grid;
@@ -10583,6 +10635,9 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
   .about {
     grid-template-columns: minmax(0, 1fr);
     row-gap: clamp(2.5rem, 6vh, 3.5rem);
+    /* in one column the canvas follows the statement rather than the window,
+       so the desktop's top margin is somebody else's spacing */
+    padding-top: 0;
   }
   .ab__side {
     position: static;
@@ -10729,15 +10784,15 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
       a dark one, at the alpha a dark ground needs to make the same amount of
       almost-nothing. */
 .is-dark {
-  --grid-major: rgba(228, 233, 240, 0.075);
-  --grid-minor: rgba(228, 233, 240, 0.036);
+  --grid-major: rgba(232, 232, 236, 0.075);
+  --grid-minor: rgba(232, 232, 236, 0.036);
 }
 
 /* 2. THE FIELD is drawn in an ink chosen for white paper. On a dark ground the
       same ink is invisible and its inverse is the brightest thing on the
       screen, so it takes a light hairline at a lower alpha. Only the colour
       changes; the geometry is `:root`'s. */
-.is-dark { --grid-ink: rgba(216, 222, 234, 0.058); }
+.is-dark { --grid-ink: rgba(226, 226, 230, 0.04); }
 
 /* 3. THE STATEMENT WAS PURE BLACK. `.canvas__headline` sets `color: #000`, and
       the note at that rule is careful to say the black is measured and
@@ -10787,8 +10842,8 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
 /* 6. THE CHIPS WERE ALREADY DARK. A near-black toast on a light page is a
       chip; on a dark page it is a hole. */
 .is-dark .toast,
-.is-dark .tip { background: #2b2f36; color: #f2f1ee; }
-.is-dark .tab-menu { background: #21252b; }
+.is-dark .tip { background: #26262a; color: #f2f1ee; }
+.is-dark .tab-menu { background: #1e1e21; }
 
 /* 7. THE CARDS KEEP THEIR ARTWORK AND GAIN AN EDGE. A bright preview on a dark
       page is a bright rectangle, and dimming it was ruled out — the imagery is
@@ -10863,7 +10918,7 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
 .is-dark .inks,
 .is-dark .drawerpad,
 .is-dark .nfp,
-.is-dark .nfs { background: #1f2227; color: var(--text-1); }
+.is-dark .nfs { background: #1c1c1f; color: var(--text-1); }
 
 .is-dark .tools__panel,
 .is-dark .inks,

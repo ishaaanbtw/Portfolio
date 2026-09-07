@@ -3696,6 +3696,8 @@
       const h = host.getBoundingClientRect();
       if (!r.width || !h.width) return;
       const { kx, ky } = this.keep(host, r.width, r.height);
+      /* the one edge that is not the host's — see `Bricks.trayReach` */
+      const xMax = Bricks.isTray(host) ? Bricks.trayReach(h) : h.right;
       /* `ox/oy` are canvas coordinates and everything derived from the two
          rects is screen distance, so the screen part is divided before it is
          added. The bounds are what stops an object being dragged off the paper;
@@ -3703,7 +3705,7 @@
          6.5% short, depending on which edge you pushed against. */
       const s = host.offsetWidth ? h.width / host.offsetWidth : Space.k();
       let x0 = ox + ((h.left + kx) - r.right) / s;
-      let x1 = ox + ((h.right - kx) - r.left) / s;
+      let x1 = ox + ((xMax - kx) - r.left) / s;
       let y0 = oy + ((h.top + ky) - r.bottom) / s;
       let y1 = oy + ((h.bottom - ky) - r.top) / s;
       if (x0 > x1) { const m = (x0 + x1) / 2; x0 = x1 = m; }
@@ -5565,26 +5567,21 @@
       this.setSurface(host);
       this.placement();
 
-      /* very slow cursor parallax on the dot grid */
-      if (!REDUCED) {
-        const dots = $('.canvas__dots', host);
-        let tx = 0, ty = 0;
-        host.addEventListener('pointermove', (e) => {
-          const r = host.getBoundingClientRect();
-          tx = ((e.clientX - r.left) / r.width - 0.5) * -18;
-          ty = ((e.clientY - r.top) / r.height - 0.5) * -18;
-        }, { passive: true });
-        this.parallax = (dt) => {
-          const cx = parseFloat(dots.style.getPropertyValue('--px')) || 0;
-          const cy = parseFloat(dots.style.getPropertyValue('--py')) || 0;
-          const nx = lerp(cx, tx, Math.min(1, dt * 2.2));
-          const ny = lerp(cy, ty, Math.min(1, dt * 2.2));
-          if (Math.abs(nx - cx) < 0.02 && Math.abs(ny - cy) < 0.02) return false;
-          dots.style.setProperty('--px', `${nx.toFixed(2)}px`);
-          dots.style.setProperty('--py', `${ny.toFixed(2)}px`);
-          return true;
-        };
-      }
+      /* --- THE FIELD USED TO FOLLOW THE CURSOR, AND IT DOES NOT ANY MORE.
+
+         There was a parallax here: a pointermove listener on the host and a
+         per-frame lerp that slid the field up to 18px against the pointer. It
+         was written for a field of dots, where a slow drift reads as depth and
+         nothing has an edge to give it away.
+
+         The field is ruled now, and a ruled field has edges — every line is a
+         straight reference the eye can lock onto, so the same 18px is not
+         depth, it is the grid sliding under the work. A layout grid that moves
+         when you move the mouse is not a layout grid.
+
+         Removed rather than damped. `Canvas.parallax` stays undefined, the
+         frame loop already tests for it (`Canvas.parallax ? … : false`), and
+         the listener and the per-frame work go with it. */
     },
 
     note(x, y) {
@@ -6000,26 +5997,29 @@
          read as a handful somebody tipped into the column rather than as a row
          along the bottom of it. */
       if (host.classList && host.classList.contains('canvas--tray')) {
-        z.x0 = 0.025; z.x1 = 0.975;
+        /* THE REGION IS THE BOX, AND THAT IS THE WHOLE OF IT.
+
+           This branch used to do arithmetic — find the closing lines, work out
+           where they start as a fraction of a column that also contained the
+           navigation, build an island around the type, ramp a ceiling in and
+           out of it. All of that existed because the host was the entire
+           sidebar and most of the sidebar was words.
+
+           The host is the free space now (see `.mast__air`), so every one of
+           those numbers is either 0 or 1. A piece may rest anywhere in it: the
+           floor is the box's floor, the ceiling is the box's ceiling, there is
+           no island because there is nothing in here to build one around, and
+           the two studs of inset at each edge are so a piece at rest against a
+           wall does not read as cut off by it.
+
+           `pack` still weights the fall toward the lower half, which is what
+           keeps the arrangement looking dropped rather than sprinkled. */
+        z.x0 = 0.02; z.x1 = 0.98;
         z.pad = 0;
-        z.edgeTop = 0.03;
-
-        /* THE FLOOR IS THE TOP OF THE CLOSING LINES. Pieces still FALL past
-           it — they are falling — they simply cannot come to rest below it,
-           which is the same rule the 404's sign uses. It was briefly measured
-           to the time control that sat between the two; that control is gone
-           and the closing lines are the last thing in the column again. */
-        const foot = $('.mast__foot', host) || (par ? $('.mast__foot', par) : null);
-        z.y1 = foot && H
-          ? clamp((foot.offsetTop - 12) / H, 0.3, 0.985)
-          : 0.95;
-
-        if (k) {
-          z.island = { x0: 0, x1: 1, y1: Math.min(z.y1 - 0.02, k.y1 + 0.014) };
-        } else {
-          z.lo = 0.06; z.hi = 0.06; z.ramp = [0, 1];
-          z.island = null;
-        }
+        z.edgeTop = 0.015;
+        z.y1 = 0.985;
+        z.lo = 0.02; z.hi = 0.02; z.ramp = [0, 1];
+        z.island = null;
         z.pack = { share: 0.56, low: 0.42, high: 0.3 };
         return z;
       }
@@ -6239,10 +6239,20 @@
          parent-height test there — and this is that lookup, for the walls. */
       if (!intro && tray && par) intro = $('.canvas__intro', par);
       this.introEl = intro;
-      /* Walls are gathered from the whole column on the tray, because the
-         closing lines sit OUTSIDE `.canvas__intro` as a sibling of it, and
-         "solid" has nothing to do with which wrapper a thing happens to be in. */
-      const scope = (tray && par) || intro;
+      /* THE TRAY HAS NO WALLS, BECAUSE THE TRAY HAS NO TYPE IN IT.
+
+         This used to gather from the whole column — the statement, the
+         buttons, both navigation lists and the closing lines were all inside
+         the physics box and all had to be declared solid. They are outside it
+         now, so the honest answer to "what is solid in here" is nothing, and
+         the scope is the host rather than its parent.
+
+         It is not a micro-optimisation. With the type in the list, `trayClear`
+         ran two conflicting passes on every release and resolved them in the
+         words' favour by design, accepting brick-on-brick overlap as the
+         price. Removing the conflict is what removes the overlap; capping the
+         list is only how it is expressed. */
+      const scope = (tray && host) || intro;
       if (!scope) return (this._wh = []);
       const list = intro
         ? $$('.drg', intro).filter((n) => !n.classList.contains('brk'))
@@ -6662,6 +6672,48 @@
        as a fraction of the canvas. */
     /* THE HIGHEST A PIECE MAY COME TO REST AT THIS x, as a fraction of the
        canvas. Smaller is higher up the page. */
+    /* --- HOW FAR RIGHT A HELD PIECE MAY GO --------------------------------
+
+       AND IT IS NOT THE BOX'S EDGE, WHICH IS WHERE THE "INVISIBLE GAP" CAME
+       FROM. `Drag.keep` fences a held piece fully inside its host, and on this
+       page the host stops at the sidebar's right edge — about eighteen pixels
+       short of the first card. So a brick pushed at the work stopped in empty
+       paper with a gap you could see, and the card started moving anyway
+       because `Push` reached across the gap for it. Two wrongs that looked
+       almost right: the card responded, but never to contact.
+
+       The reach is the nearest card's own left edge instead — its UNDISPLACED
+       one, `r.left - c.x`, so a card that has already been shoved does not let
+       the brick follow it and ratchet — plus the twelve pixels that card is
+       allowed to travel. Which means: at zero push the brick's right edge is
+       exactly on the card's left edge, and every pixel past that is a pixel
+       the card moves, so the two stay in contact all the way to the stop. The
+       visual contact point and the physical one are the same point because
+       there is only one number now.
+
+       Only cards beside the box are considered. There is nothing to touch
+       above or below it, and letting the brick out of the column to reach one
+       is how a brick ends up parked on the work. */
+    /* the one question three places ask, asked once */
+    isTray(host) {
+      const n = host || this.host;
+      return !!(n && n.classList && n.classList.contains('canvas--tray'));
+    },
+
+    trayReach(h) {
+      const cards = Push.cards;
+      if (!cards || !cards.length) return h.right;
+      let best = Infinity;
+      cards.forEach((c) => {
+        const r = c.node.getBoundingClientRect();
+        if (!r.width) return;
+        if (r.bottom <= h.top || r.top >= h.bottom) return;
+        const L = r.left - c.x;
+        if (L >= h.right && L < best) best = L;
+      });
+      return isFinite(best) ? best + Push.MAX : h.right;
+    },
+
     ceil(fx) {
       const z = this.Z || this.ZONE;
       /* The island's shadow: inside the column's own width a piece may not
@@ -7525,7 +7577,18 @@
         } else {
           b2.x = rnd(Z.x0, Z.x1) * h.width - b2.w / 2;
         }
-        b2.y = -rnd(150, 760) - b2.h;
+        /* WHERE IT FALLS FROM, AND WHY THE TRAY IS DIFFERENT.
+
+           Everywhere else the room is the window, so a drop of 150 to 760
+           pixels happens above the fold and nobody sees the first half of it.
+           The tray's box is a few hundred pixels in the middle of a column
+           with the navigation directly over it: the same drop would be a brick
+           travelling through the word "Twitter" on its way in. The clip on
+           `.mast__air` hides anything above the box, so the only thing left to
+           fix is the distance — enough that a piece arrives with speed and a
+           spin rather than appearing, short enough that it is behind the clip
+           for a few frames and not a fifth of a second. */
+        b2.y = -(this.isTray() ? rnd(24, 140) : rnd(150, 760)) - b2.h;
         b2.vx = rnd(-90, 90);
         b2.vy = rnd(0, 190);
         b2.a = rnd(-180, 180);
@@ -13841,14 +13904,19 @@
      nothing at all, which is the difference between physics and jitter. */
   const Push = {
     MAX: 12,          // px a card may be displaced, before the viewport cap
-    /* REACH IS CALIBRATED, NOT CHOSEN. The fence stops the held piece with its
-       right edge about 18px from the nearest card — the column's own edge, plus
-       whatever the piece's painted box gives up to its rotation. So a reach of
-       20 produced 1.4px of travel: correct, and invisible. At 34 the shove
-       saturates the cap the moment the brick is pressed against the edge, and
-       the grid starts to feel it about two studs out, which is close enough to
-       read as contact rather than as the page moving on its own. */
-    REACH: 34,        // how close the brick has to come to be felt
+    /* REACH IS ZERO, AND THAT IS THE FIX RATHER THAN A TUNING.
+
+       It was 34: the card began moving while the brick was still 34px away,
+       because the fence stopped the brick about 18px short of the card and
+       something had to close the distance. The card moved and the brick never
+       arrived — the gap was visible and the response was to proximity, not to
+       touch.
+
+       The fence reaches the card's own edge now (see `Bricks.trayReach`), so
+       the honest number is nothing: `want` is the depth the brick has pushed
+       PAST the card's resting edge, the card moves exactly that far, and the
+       two surfaces stay in contact for the whole of the shove. */
+    REACH: 0,         // the card moves when it is touched, and not before
     DECAY: 0.4,       // what a touching neighbour inherits
     K: 0.2,           // spring stiffness
     D: 0.7,           // damping
