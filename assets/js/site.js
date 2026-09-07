@@ -430,8 +430,12 @@
        edges. That is the whole of how the grid learns each page's structure —
        the home page's rail and showcase columns, About's two document
        columns, the work index's own measure. */
+    /* `.foot__said` was in this list and is gone with the full-width footer —
+       see the note where `Shell.foot` was. An edge that is never on the page
+       contributes nothing, so it cost only the lookup, but a selector list is
+       a statement about what the layout IS. */
     SEL: '.mast, .home__work, .about, .ab__side, .ab__main, .showcase__grid,'
-       + ' .showcase__col, .col, .proj__col, .proj__rail, .foot__said,'
+       + ' .showcase__col, .col, .proj__col, .proj__rail,'
        + ' .canvas__intro',
 
     /* below this, two majors are close enough that a line between them is
@@ -501,19 +505,67 @@
       }
 
       const frag = document.createDocumentFragment();
-      majors.forEach((x) => frag.appendChild(el('i', { style: `left:${x}px` })));
-      minors.forEach((x) => frag.appendChild(el('i', { class: 'is-sub', style: `left:${x.toFixed(1)}px` })));
+
+      /* --- THE GRID IS DRAWN, AND EVERY LINE IS DRAWN AT ITS OWN SPEED -----
+
+         Switching the layer's opacity from 0 to 1 is the whole grid arriving as
+         one object, which is not what a grid is. A drafting grid is RULED: each
+         line is pulled down the page, and no two are pulled at the same rate.
+
+         So the movement is per line and it is rolled here rather than written
+         in the stylesheet, because the stylesheet cannot know how many lines
+         this page has. Two numbers per line:
+
+           --gl-dur    how long that line takes to reach the bottom. A wide
+                       spread, 460 to 820ms, because the spread IS the effect:
+                       lines that all take the same time are one line drawn
+                       sixteen times, and the eye reads that as a wipe.
+           --gl-delay  when it starts. Sixteen milliseconds per line left to
+                       right, plus up to ninety of jitter — enough of a cascade
+                       that the page fills from one side, not enough to read as
+                       a sweep with an obvious direction.
+
+         The MINORS trail the majors: a hundred and twenty milliseconds behind
+         and slower, so the structure lands first and the subdivisions fill in
+         after it. That ordering is the only part of this that is not random,
+         and it is the part that makes it look like a decision.
+
+         `span` is the longest line's finish, which `set` uses to know when the
+         sweep is over and take the animation back off — see the note there. */
+      const rnd = (a2, b2) => a2 + Math.random() * (b2 - a2);
+      let span = 0;
+      const motion = (node, i, sub2) => {
+        const dur = sub2 ? rnd(680, 1040) : rnd(460, 820);
+        const delay = i * 16 + rnd(0, 90) + (sub2 ? 120 : 0);
+        node.style.setProperty('--gl-dur', `${Math.round(dur)}ms`);
+        node.style.setProperty('--gl-delay', `${Math.round(delay)}ms`);
+        if (dur + delay > span) span = dur + delay;
+        return node;
+      };
+      majors.forEach((x, i) => frag.appendChild(motion(el('i', { style: `left:${x}px` }), i, false)));
+      minors.forEach((x, i) => frag.appendChild(motion(el('i', { class: 'is-sub', style: `left:${x.toFixed(1)}px` }), i, true)));
       /* ONE HORIZONTAL, AND ONLY ONE. The page's top gutter, which is the line
          everything in both columns is set from. More than that and the thing
          stops being a drafting system and starts being graph paper. */
       const top = $('.mast') || $('.home__work') || $('.col');
       if (top) {
         const y = top.getBoundingClientRect().top - host.top;
-        if (y > 2) frag.appendChild(el('b', { class: 'is-sub', style: `top:${Math.round(y)}px` }));
+        /* IT ARRIVES FIRST, AND IT ARRIVES SIDEWAYS. It is the topmost line on
+           the page, so in a grid that fills downward it is the one already
+           there — no delay. And it cannot be pulled DOWN the page, because it
+           has no length in that direction: it is ruled left to right instead,
+           which is how you would actually draw it. */
+        if (y > 2) {
+          const h = el('b', { class: 'is-sub', style: `top:${Math.round(y)}px` });
+          h.style.setProperty('--gl-dur', '460ms');
+          h.style.setProperty('--gl-delay', '0ms');
+          frag.appendChild(h);
+        }
       }
 
       lay.textContent = '';
       lay.appendChild(frag);
+      this.span = Math.round(span) + 60;
     },
 
     set(on) {
@@ -522,7 +574,34 @@
       document.documentElement.classList.toggle('is-grid', this.on);
       /* measured lazily: a grid switched on after a resize it never saw would
          be drawn to the old layout */
+      if (this.el) this.el.classList.remove('is-draw');
       this.draw();
+
+      /* --- THE SWEEP IS A PRESS, NOT A STATE ------------------------------
+
+         `is-draw` is what turns the per-line numbers above into movement, and
+         it is added AFTER `draw()` on purpose: the children it animates were
+         created a line ago, so they take the animation on their first style
+         resolution and play from its first frame. No forced reflow, and no
+         `requestAnimationFrame` dance.
+
+         AND IT IS TAKEN BACK OFF AGAIN, which is the part that matters. The
+         same `draw()` runs on every resize and on every section change —
+         `Grid.schedule` and `Route.enter` both call it — and a grid that
+         re-ruled itself down the page every frame of a window drag would be
+         unbearable. The animation exists for exactly as long as one press
+         needs it and then the lines are simply lines.
+
+         Only on the way IN. Turning the grid off is the layer's own fade (see
+         the stylesheet): sixteen lines retracting upward to close a grid is a
+         performance, and nobody pressing "off" is asking to watch one. */
+      if (this.on && this.el && !REDUCED) {
+        clearTimeout(this._dt);
+        this.el.classList.add('is-draw');
+        this._dt = setTimeout(() => {
+          if (this.el) this.el.classList.remove('is-draw');
+        }, this.span || 1200);
+      }
       this.paint();
       Sound.tick();
     },
@@ -597,8 +676,11 @@
       while (document.body.firstChild) this.app.appendChild(document.body.firstChild);
       document.body.append(this.pane, this.app, this.free, this.hud, this.tips);
 
-      const nav = $('.nav', this.app);
-      if (nav) this.hud.appendChild(nav);
+      /* The header row of links used to be lifted out of `.app` and into the
+         HUD here, because it was the one fixed thing in the document's own
+         markup. It no longer exists — see the note where `Shell.nav` was — so
+         there is nothing to lift and the HUD is built by the modules that
+         mount into it. */
 
       /* the two writes in shell() are only live while the deck is out; this
          keeps them right if you scroll or resize while it is */
@@ -1126,8 +1208,10 @@
 
     init() {
       document.title = `${S.person.name} — ${this.page === 'home' ? 'Portfolio' : this.page[0].toUpperCase() + this.page.slice(1)}`;
-      this.nav();
-      this.foot();
+      /* `nav()` used to be here and is gone — see the note where it was. The
+         phone's bar was its tail call and is its own line now. `foot()` is
+         gone too: the page it built into went with work.html. */
+      this.menu();
       this.controls();
       this.hoverCold();
       this.toast();
@@ -1138,22 +1222,26 @@
       this.buttons();
     },
 
-    nav() {
-      const nav = $('#nav');
-      if (!nav) return;
-      S.nav.forEach((item, i) => {
-        const current = item.href.startsWith(this.page === 'home' ? 'index' : this.page);
-        const a = el('a', { href: url(item.href), ...(current ? { 'aria-current': 'page' } : {}) }, esc(item.label));
-        if (this.page === 'home') {
-          const rv = (S.canvas && S.canvas.reveal) || {};
-          a.classList.add('rv');
-          a.style.setProperty('--rv-delay', `${(rv.navAt || 2300) + i * (rv.navStagger || 70)}ms`);
-          a.style.setProperty('--rv-blur', `${rv.blur || 14}px`);
-        }
-        nav.appendChild(a);
-      });
-      this.menu();
-    },
+    /* --- THE HEADER ROW OF LINKS IS GONE, AND THIS IS WHERE IT WAS -------
+
+       `Shell.nav()` built four links into `#nav`, a fixed row in the top-left
+       corner, and it had already been decided out of existence in the
+       stylesheet: `body[data-page] .nav { display: none }`, stated at top level
+       with the reasoning beside it — "the handle is the navigation now, and two
+       of them on one screen is the second one explaining that the first is
+       decoration". So the row was hidden on every page, at every width, and
+       had been for some time.
+
+       What was left was the cost of building it anyway: four anchors and a
+       reveal per page load, an `<a aria-current>` a screen reader could still
+       reach, a whole module (`Nav`) sampling what was behind it every 4px of
+       scroll, and ~90 lines of stylesheet for a colour nobody saw. All of it
+       is now removed rather than hidden.
+
+       `S.nav` IS STILL THE LIST, and it stays: `Shell.foot()` builds the
+       footer's Pages column from it, so the one array still decides where the
+       site says you can go. `menu()` — the phone's bar — used to be called
+       from the end of this function and is called straight from `init` now. */
 
     /* --- the phone's navigation -----------------------------------------------
        A row of six links is a desktop pattern: it assumes a cursor and a page
@@ -1207,93 +1295,21 @@
        column is built from S.nav rather than listed again, so it cannot fall out
        of step with the links at the top of the page. The email takes the place the
        name takes in the hero: the largest thing on the surface. */
-    foot() {
-      const f = $('#foot');
-      if (!f) return;
-      const c = S.footer || {};
-      f.className = 'foot';
-      f.appendChild(el('div', { class: 'foot__dots', 'aria-hidden': 'true' }));
+    /* --- THE BIG FOOTER IS GONE, AND THIS IS WHERE IT WAS ----------------
 
-      const said = el('div', { class: 'foot__said' });
-      const mail = c.email || S.person.email;
-      said.appendChild(el('a', { class: 'foot__mail', href: `mailto:${mail}` }, esc(mail)));
-      if (c.note) said.appendChild(el('p', { class: 'foot__note' }, esc(c.note)));
-      said.appendChild(el('p', { class: 'foot__fine' },
-        esc(String(c.fine || '').replace('{year}', new Date().getFullYear()))));
-      f.appendChild(said);
+       `Shell.foot()` built a full-width closing block — a said-line, a Pages
+       column generated from `S.nav`, the social glyphs and a dot field — into
+       `#foot`. Exactly one page in the site had that element, `work.html`, and
+       work.html has been removed: the three sections all end with the
+       sidebar's own closing block instead, which is why `index.html` dropped
+       its `#foot` a while ago with a comment saying so.
 
-      /* --- the Links column speaks in glyphs --------------------------------
-         Four stacked words that all mean "elsewhere" are four things to read
-         before you can pick one; the marks are recognised without reading. The
-         column keeps its rhythm — same row pitch as Pages beside it, only the
-         label becomes a glyph — so the two columns still scan as one pair.
-
-         MATCHED ON THE HREF, NOT THE LABEL, because the href is the fact.
-         `S.footer.links` is content and its labels are free text: the first
-         entry is called Twitter and points at x.com, and somebody will
-         eventually write "𝕏" or "Twitter/X" or their own name for it. The
-         destination cannot drift.
-
-         AND IT FALLS BACK TO THE WORD. A link this does not recognise keeps its
-         label rather than rendering an empty 18px box — adding a fifth link to
-         content should never make it disappear from the page. */
-      const GLYPH = [
-        [/^mailto:/, 'mail'],
-        [/(^|\/\/|\.)(x|twitter)\.com/, 'x'],
-        [/linkedin\.com/, 'linkedin'],
-        [/github\.com/, 'github'],
-        [/dribbble\.com/, 'dribbble'],
-      ];
-      const glyph = (href) => {
-        const hit = GLYPH.find(([re]) => re.test(href));
-        return hit ? ICON[hit[1]] : '';
-      };
-
-      const column = (title, items, asGlyphs) => {
-        /* named rather than counted: the phone hides one of these two and lays
-           the other one out sideways, and `:nth-of-type` would be pointing at
-           the dot field and the address, which are divs in the same grid */
-        const col = el('div', {
-          class: `foot__col foot__col--${title.toLowerCase()}`,
-        });
-        col.appendChild(el('h2', { class: 'foot__colt' }, esc(title)));
-        const list = el('ul', {});
-        items.forEach((it) => {
-          const here = it.href.startsWith(this.page === 'home' ? 'index' : this.page);
-          const mark = asGlyphs ? glyph(it.href) : '';
-          const a = el('a', {
-            href: url(it.href),
-            /* The label does not disappear when the word does — it moves to the
-               accessible name, so a screen reader still says "Twitter" and a
-               cursor still gets a tooltip. An icon-only link with no name is
-               announced as its own URL. */
-            ...(mark ? { class: 'foot__ico', 'aria-label': it.label, title: it.label } : {}),
-            ...(here ? { 'aria-current': 'page' } : {}),
-            /* only the outbound ones open away from the site */
-            ...(outbound(it.href) ? { target: '_blank', rel: 'noopener' } : {}),
-          }, mark
-            /* THE WORD STAYS IN THE BOX, IT JUST STOPS BEING VISIBLE.
-               Sizing the glyph row by hand does not hold: a text row here is
-               the line box of a 15px label at `line-height: normal`, which is
-               17px, and an 18px mark set to `1.5em` came out at 22.5 — five
-               and a half pixels of drift per row, so by the fourth link the
-               column was 10px out of step with Pages beside it and the whole
-               pair stopped reading as one thing.
-               So the label is still laid out and still measured; it is only
-               hidden, and the mark is positioned over it. The pitch is then
-               identical BY CONSTRUCTION, at every width and whatever the type
-               scale does — and the box keeps the width of the word, which on a
-               desktop is a far better target than 18 square pixels. */
-            ? `<span class="foot__ico__w">${esc(it.label)}</span>${mark}`
-            : esc(it.label));
-          list.appendChild(el('li', {}, '')).appendChild(a);
-        });
-        col.appendChild(list);
-        return col;
-      };
-      f.appendChild(column('Pages', S.nav));
-      f.appendChild(column('Links', c.links || [], true));
-    },
+       So this had nothing left to build into. `S.footer` in content.js is NOT
+       dead with it — `Pages._links()` still reads `footer.links` and
+       `footer.email` for the resume's "Reach me" row, so the addresses stay
+       where they are and are still stated once. `S.nav` is now unused, and is
+       left alone deliberately: it is the canonical list of the site's three
+       sections and costs six lines. */
 
     controls() {
       /* --- THE TWO POD BUTTONS -------------------------------------------
@@ -1713,129 +1729,20 @@
     },
   };
 
-  /* ======================================================== 4. words ===== */
+  /* --- 4. THE CHARACTER REVEAL IS GONE, AND THIS IS WHERE IT WAS ---------
 
-  const Words = {
-    blocks: [],
+     `Words` split every text node into `<span class="w">` per word and
+     `<span class="c">` per character, then lit them one at a time as the
+     scroll passed — the four-step `b1`-`b4` ramp in the stylesheet. It was the
+     hero's reveal before `headline()` replaced it, and `headline()` works the
+     other way round: whole words, each its own `.rw .rv`, animated by CSS with
+     a per-word delay and no frame loop at all.
 
-    /* Wrap every word so it can't break apart, then every character inside it
-       so the reveal boundary can cut mid-word — "ca|pital" — the way the
-       reference does. Inline markup (em, mark, u, a, chip) is left intact. */
-    split(root) {
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-      const nodes = [];
-      while (walker.nextNode()) nodes.push(walker.currentNode);
-
-      nodes.forEach((node) => {
-        if (!node.nodeValue.trim()) return;
-        /* these are glyphs and widgets, not prose — leave their text alone */
-        if (node.parentElement.closest('.chip')) return;
-        const frag = document.createDocumentFragment();
-
-        node.nodeValue.split(/(\s+)/).forEach((tok) => {
-          if (!tok) return;
-          if (/^\s+$/.test(tok)) { frag.appendChild(document.createTextNode(tok)); return; }
-          const word = el('span', { class: 'w' });
-          /* Intl.Segmenter keeps emoji and accents as single characters */
-          for (const ch of chars(tok)) word.appendChild(el('span', { class: 'c' }, esc(ch)));
-          frag.appendChild(word);
-        });
-
-        node.replaceWith(frag);
-      });
-    },
-
-    /* groups is an array of blocks; each block is an array of authored lines.
-       Line breaks are deliberate, not left to the browser, which is how the
-       reference keeps its ragged right edge identical at every width. */
-    mount(container, groups) {
-      groups.forEach((lines) => {
-        const b = el('section', { class: 'block' });
-        (Array.isArray(lines) ? lines : [lines]).forEach((line) => {
-          b.appendChild(el('span', { class: 'line' }, line));
-        });
-        container.appendChild(b);
-        this.split(b);
-        this.blocks.push({
-          el: b,
-          /* Badges and the logo stack are NOT reveal units — in the reference
-             they sit at full colour while the text around them is still grey. */
-          units: $$('.c, .chip', b),
-          lit: -1,
-          band: [],
-          /* spring that chases raw scroll progress — the boundary decelerates
-             into place rather than tracking the scrollbar rigidly */
-          sp: null,
-        });
-      });
-    },
-
-    tick(vh, dt) {
-      let animating = false;
-
-      this.blocks.forEach((b) => {
-        const r = b.el.getBoundingClientRect();
-        let target;
-
-        if (r.bottom < -400) target = 1;
-        else if (r.top > vh + 400) target = 0;
-        else {
-          /* a block starts lighting as it crosses the lower third and is fully
-             lit a little past the middle of the viewport */
-          const start = vh * 0.92;
-          const end = vh * 0.42;
-          const span = Math.max(1, start - end + r.height * 0.55);
-          target = clamp((start - r.top) / span);
-        }
-
-        if (!b.sp) b.sp = Spring(target, 190, 26);
-        b.sp.target = target;
-        if (b.sp.step(dt)) animating = true;
-
-        this.paint(b, easeOut(b.sp.v) * b.units.length);
-      });
-
-      return animating;
-    },
-
-    /* pos is fractional: the whole number is the lit prefix, the remainder
-       positions a four-character gradient band just past the boundary */
-    paint(b, pos) {
-      const u = b.units;
-      const n = Math.floor(pos);
-
-      if (n !== b.lit) {
-        const from = Math.max(0, Math.min(b.lit < 0 ? 0 : b.lit, n));
-        const to = Math.min(u.length, Math.max(b.lit < 0 ? u.length : b.lit, n));
-        for (let i = from; i < to; i++) u[i].classList.toggle('is-lit', i < n);
-        b.lit = n;
-      }
-
-      /* the band is only ever a handful of nodes, so rebuilding it is cheap */
-      for (const { el: node, cls } of b.band) node.classList.remove(cls);
-      b.band.length = 0;
-
-      const BAND = ['b4', 'b3', 'b2', 'b1'];
-      for (let k = 0; k < BAND.length; k++) {
-        const i = n + k;
-        if (i >= u.length) break;
-        const node = u[i];
-        if (node.classList.contains('is-lit')) continue;
-        const cls = BAND[k];
-        node.classList.add(cls);
-        b.band.push({ el: node, cls });
-      }
-    },
-  };
-
-  /* graceful character splitting: emoji and combining marks stay whole */
-  const seg = typeof Intl !== 'undefined' && Intl.Segmenter
-    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
-    : null;
-  function chars(str) {
-    if (seg) return [...seg.segment(str)].map((s) => s.segment);
-    return [...str];
-  }
+     Nothing had called `Words.split` since. What was left was `Words.tick`
+     being invoked sixty times a second from `boot`'s frame loop to iterate an
+     array that was always empty, and its `.w` / `.c` rules sitting in the
+     stylesheet with nothing to match. Both are gone; `chars()`, the grapheme
+     splitter, went with it, since Words was its only caller. */
 
   /* =================================================== 5. showcase ====== */
 
@@ -3119,7 +3026,13 @@
         rail.className = 'rail';
         rail.setAttribute('aria-label', 'Case study sections');
         rail.appendChild(el('a', {
-          class: 'rail__back', href: url(p.back?.href || 'work.html'),
+          /* BACK GOES TO THE WORK, AND THE WORK IS THE HOME PAGE. The
+             fallback used to be `work.html`, a separate archive page that has
+             been removed — clicking a project and pressing BACK landed you on
+             the old layout with the old menu, which is exactly what it looked
+             like. Every case study states its own `back` in content.js; this
+             is only what applies if one forgets to. */
+          class: 'rail__back', href: url(p.back?.href || 'index.html'),
         }, esc(p.back?.label || 'BACK')));
         const list = el('nav', { class: 'rail__list' });
         p.sections.forEach((sec) => {
@@ -3300,7 +3213,8 @@
       };
 
       nav.innerHTML =
-        `<a class="onward__all" href="${url('work.html')}">`
+        /* the index is the home page's grid now, not a page of its own */
+        `<a class="onward__all" href="${url('index.html')}">`
         + '<span class="onward__k">Index</span>'
         + '<span class="onward__t">All work</span></a>'
         + door('prev', prev) + door('next', next);
@@ -13046,91 +12960,11 @@
     },
   };
 
-  /* ======================================================== 6. tabs ===== */
+  /* --- THE TABBED PANEL IS GONE, AND THIS IS WHERE IT WAS ----------------
 
-  const Tabs = {
-    /* ONE TABLE, TWO PAGES. `tabs` defaults to the index in content.js, which
-       is what the home page wants; the work page passes its own set so the
-       credits render as this component rather than as a second list that
-       looks almost like it. Everything below reads `this.tabs`, so the two
-       pages differ only in the data handed in. Only one instance is ever
-       alive at a time — each page builds its own. */
-    init(mount, tabs) {
-      this.tabs = tabs || S.index.tabs;
-      const wrap = el('div', { class: 'index' });
-      const col = el('div', { class: 'col' });
-      const bar = el('div', { class: 'tabs', role: 'tablist' });
-      const rows = el('div', { class: 'rows' });
+     `Tabs` was one component with one caller: the teams table on work.html,
+     which has been removed. See the note where `Pages.work` was. */
 
-      this.tabs.forEach((tab, i) => {
-        if (i) bar.appendChild(el('span', { class: 'tabs__dot' }, '·'));
-        const b = el('button', {
-          class: 'tab', role: 'tab', id: `tab-${tab.id}`,
-          'aria-selected': String(i === 0),
-        }, esc(tab.label));
-        b.addEventListener('click', () => this.show(tab.id));
-        bar.appendChild(b);
-      });
-
-      col.appendChild(bar);
-      col.appendChild(rows);
-      wrap.appendChild(col);
-      mount.appendChild(wrap);
-
-      this.bar = bar;
-      this.rows = rows;
-      this.show(this.tabs[0].id);
-      return wrap;
-    },
-
-    show(id) {
-      $$('.tab', this.bar).forEach((b) => b.setAttribute('aria-selected', String(b.id === `tab-${id}`)));
-      const tab = this.tabs.find((t) => t.id === id);
-      this.rows.innerHTML = '';
-      tab.rows.forEach((r, i) => {
-        /* A row with an `href` becomes an anchor; the rest stay divs. Two
-           reasons not to make every row a link and leave the empty ones
-           inert: an <a> with no href is not focusable or announced as a link,
-           so the markup would lie about half the rows, and the hover
-           affordance below keys off the element type — which means a row that
-           looks clickable is one, always.
-
-           rel is not decoration here. These point at Google Drive and Badgr,
-           and target=_blank without noopener hands the opened page a
-           reference back to this window. */
-        const props = {
-          class: `row${r.href ? ' row--link' : ''}`,
-          style: `animation-delay:${Math.min(i * 32, 380)}ms`,
-        };
-        if (r.href) {
-          props.href = r.href;
-          props.target = '_blank';
-          props.rel = 'noopener noreferrer';
-        }
-        this.rows.appendChild(
-          el(r.href ? 'a' : 'div', props,
-            `<span class="row__year">${esc(r.year || '')}</span>` +
-            /* The trailing em dash in "2025—" is doing this job today, and it is
-               doing it quietly enough that you have to already know what it
-               means. `now: true` says it out loud. */
-            `<span class="row__name">${esc(r.name)}` +
-              (r.now ? '<span class="row__now"><i></i>Now</span>' : '') +
-            `</span>` +
-            `<span class="row__meta">${esc(r.meta)}</span>`)
-        );
-      });
-    },
-  };
-
-  /* ================================================= 5e. lightbox + reveal ==
-
-     Two behaviours the Research section needs, both generic enough to use
-     anywhere a study renders.                                              */
-
-  /* Click any framed artifact to blow it up. The backdrop blurs rather than
-     going black, so the page stays present behind it. Escape, a double-click,
-     or a click on the backdrop all close — three exits because a lightbox that
-     traps you is worse than no lightbox. */
   const Lightbox = {
     init() {
       if (this.el) return;
@@ -13910,187 +13744,40 @@
     },
   };
 
-  /* ==================================================== 6b. adaptive nav ==
+  /* --- 6b. THE ADAPTIVE NAV IS GONE, AND THIS IS WHERE IT WAS -------------
 
-     The nav floats over the page, and two of the work previews are near-black
-     or saturated. The obvious fix — a soft scrim across the top — turned out to
-     be wrong: a veil wide enough to back the links also veils the card beneath
-     them, so a black preview got a grey band across its full width and lost its
-     own content. Softening it never helps, because the veil is the problem.
+     `Nav` existed for one reason: the header row of links floated over the
+     work, two of the previews are near-black, and a scrim wide enough to back
+     the links also veiled the card under them. So the links sampled `--tone`
+     from whatever surface was beneath them and flipped their own ink instead.
+     It was a good answer to a real problem.
 
-     So the nav adapts and the page is left alone. Dark surfaces declare
-     `--tone: dark` in CSS. Custom properties inherit, which is the whole trick:
-     a caption nested three levels inside a dark preview still reports dark, so
-     sampling a single element under the nav is enough. No colour maths, no
-     canvas readback, and adding a dark surface later is one CSS line.        */
+     The row it coloured has been removed — see the note where `Shell.nav` was —
+     so there is nothing left to sample for. The module was already inert:
+     `tick` returned on its first line every frame, because `offsetParent` is
+     null for a `display: none` element. Removed with the row, along with the
+     `.nav[data-ink]` rules in the stylesheet.
 
-  const Nav = {
-    init() {
-      this.el = $('.nav');
-      this.ink = '';
-      this.lastY = null;
-      if (this.el) this.set('light');   /* dark ink on light paper, at rest */
-    },
-
-    /* Which surface is under the nav. elementsFromPoint follows hit-testing
-       rules, so it already skips the pointer-events: none overlays (the ink
-       canvas, the tool ghost) — only the nav itself has to be stepped over. */
-    surface() {
-      const r = this.el.getBoundingClientRect();
-      const x = r.left + r.width / 2;
-      const y = r.top + r.height / 2;
-      if (!document.elementsFromPoint) return 'light';
-      const stack = document.elementsFromPoint(x, y) || [];
-      for (const node of stack) {
-        if (this.el === node || this.el.contains(node)) continue;
-        const tone = getComputedStyle(node).getPropertyValue('--tone').trim();
-        return tone === 'dark' ? 'dark' : 'light';
-      }
-      return 'light';
-    },
-
-    /* `surface` is what's behind; the ink is the opposite of it */
-    set(surface) {
-      const ink = surface === 'dark' ? 'light' : 'dark';
-      if (ink === this.ink) return false;
-      this.ink = ink;
-      this.el.dataset.ink = ink;
-      return true;
-    },
-
-    tick() {
-      if (!this.el || this.el.offsetParent === null) return false;
-      /* Sampling is a hit test plus one getComputedStyle, so it is cheap but
-         not free. Once every 4px of scroll is imperceptible and bounds it. */
-      const y = App.y();
-      if (this.lastY !== null && Math.abs(y - this.lastY) < 4) return false;
-      this.lastY = y;
-      return this.set(this.surface());
-    },
-  };
+     THE MECHANISM IT USED IS WORTH KEEPING IN MIND. `--tone: dark` on a
+     surface, inherited by everything inside it, is still declared throughout
+     the stylesheet and still read by the theme — see `:root.is-dark`. If
+     anything ever floats over the work again, this is how it should decide its
+     own colour: one hit test and one `getComputedStyle`, no colour maths and
+     no canvas readback. */
 
   /* ======================================================== 7. pages ==== */
 
-  /* ===================================================== 6d. the desk =====
+  /* --- 6d. THE DESK IS GONE, AND THIS IS WHERE IT WAS --------------------
 
-     TWO INTERACTIONS FOR THE ABOUT PAGE. One of them behaves like an object;
-     the other behaves like ink.
+     `Desk` was the photograph stack on the resume: a pile of `.pcard` prints
+     you could click through, each one lifted out and put on top. Nothing had
+     called `Desk.stack` in a long time — the resume is a document viewer now
+     (see `Paper`) and the `.pcard` markup it read is generated by `BLOCK` for
+     a case study, where the cards are a list and were never meant to stack.
 
-     THE PHOTOGRAPH STACK IS NOT A CAROUSEL, and the difference is where the
-     state lives. A carousel has an index and slides everything past a window;
-     this has a pile, and clicking a photograph brings that one to the front
-     while the others fall back a place. Nothing travels sideways, nothing
-     leaves the pile, and the order is the state — which is what makes it read
-     as a stack of prints on a desk rather than as a control.
-
-     Each card's resting pose is written as three custom properties — depth,
-     tilt, offset — and CSS composes them into one transform with a spring on
-     it. That is deliberate: a transform assembled in JS cannot be overridden
-     by a hover rule without the two fighting, and the hover here needs to add
-     to the pose rather than replace it.
-
-     AND THE RÉSUMÉ'S CURRENT ENTRY IS NOT AN OBJECT AT ALL. It is a document,
-     so the only thing that marks where you are in it is weight of ink — the
-     marker fills, the company name darkens, and nothing moves. See `track`. */
-  const Desk = {
-    /* --- the photograph stack ------------------------------------------- */
-    stack(host) {
-      const cards = $$('.pcard', host);
-      if (cards.length < 2) return;
-
-      /* the pile, front first. Splicing rather than rotating: the clicked card
-         is lifted out and put on top, and everything else keeps its relative
-         order — which is what happens when you pull a print out of a pile. */
-      let order = cards.map((_, i) => i);
-
-      const pose = () => {
-        order.forEach((card, depth) => {
-          const n = cards[card];
-          n.style.setProperty('--depth', String(depth));
-          n.style.zIndex = String(order.length - depth);
-          n.classList.toggle('is-front', depth === 0);
-          /* the front one is the only one that answers the pointer; the rest
-             are still clickable, but they are not the hover subject */
-          n.setAttribute('aria-current', depth === 0 ? 'true' : 'false');
-        });
-        host.style.setProperty('--lifted', String(order[0]));
-      };
-
-      const bring = (i) => {
-        const at = order.indexOf(i);
-        if (at <= 0) return;
-        order.splice(at, 1);
-        order.unshift(i);
-        pose();
-        Sound.tap();
-      };
-
-      cards.forEach((n, i) => {
-        n.addEventListener('click', () => bring(i));
-        n.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bring(i); }
-        });
-      });
-
-      /* hovering the pile separates it a little — the neighbours fan, the
-         front one lifts. Done with a class on the host rather than per-card
-         hover, so the whole pile responds as one object. */
-      host.addEventListener('pointerenter', () => host.classList.add('is-held'), { passive: true });
-      host.addEventListener('pointerleave', () => host.classList.remove('is-held'), { passive: true });
-
-      pose();
-    },
-
-    /* --- WHICH JOB YOU ARE READING ---------------------------------------
-       The résumé's entries are typeset on the page rather than boxed, so the
-       only thing that can say "this one" is ink: the current entry's marker
-       fills in, its company name darkens, and the rest stay legible but
-       quieter. That is the whole effect — no movement, nothing on the page
-       animating while you scroll past it.
-
-       IT IS THE SAME READING BAND `SectionNav` USES, and deliberately so: a
-       band under the header, the topmost entry that touches it wins, and an
-       empty band keeps the last answer. That last rule is what stops the
-       highlight dropping off between two entries and what holds the final job
-       lit while its tags scroll by.
-
-       AN OBSERVER, NOT A SCROLL HANDLER. Two entries produce four callbacks in
-       the life of the page; a scroll handler would do this work on every frame
-       for the same answer. */
-    track(jobs, anchor) {
-      if (jobs.length < 2 || typeof IntersectionObserver !== 'function') {
-        if (jobs[0]) jobs[0].classList.add('is-current');
-        return;
-      }
-      /* THE ALLOWANCE IS READ, NOT HELD. `--nav-land` is a calc(), so asking
-         the root element for the custom property hands back the expression
-         rather than a length — but `scroll-margin-top` on a `.sec__anchor` is
-         that same token already resolved into pixels by the layout. Which is
-         also where `SectionNav` gets it, so the two navigators and this
-         highlight all flip on one line. */
-      const land = () => {
-        const v = anchor ? parseFloat(getComputedStyle(anchor).scrollMarginTop) : NaN;
-        return Number.isFinite(v) ? v : 56;
-      };
-      const inBand = new Set();
-      let at = -1;
-      const choose = () => {
-        for (let i = 0; i < jobs.length; i++) {
-          if (!inBand.has(jobs[i])) continue;
-          if (i === at) return;
-          if (at >= 0) jobs[at].classList.remove('is-current');
-          jobs[i].classList.add('is-current');
-          at = i;
-          return;
-        }
-      };
-      const io = new IntersectionObserver((rows) => {
-        rows.forEach((r) => (r.isIntersecting ? inBand.add(r.target) : inBand.delete(r.target)));
-        choose();
-      }, { rootMargin: `-${Math.round(land())}px 0px -45% 0px`, threshold: 0 });
-      jobs.forEach((j) => io.observe(j));
-    },
-  };
+     Removed rather than left unreferenced: 120 lines of interaction for a
+     gesture no page offers, on a selector that now means something else. The
+     `.pcard` STYLES are untouched, because that markup is still built. */
 
   /* ==================================================== 5d. the rail =====
 
@@ -14687,6 +14374,553 @@
     },
   };
 
+  /* ================================================= 5g. IshaanLLM ========
+
+     A SMALL ANSWERING MACHINE, BUILT INTO THE SIDEBAR.
+
+     WHAT IT IS AND IS NOT. It is not a language model and it does not pretend
+     to be one: there is no API, no key, no request, and nothing about the
+     visitor leaves the page. It reads one document — `IshaanLLM_Knowledge_Base.md`
+     — matches a question to a section of it, and shows what that section says.
+
+     WHICH IS THE POINT, NOT A COMPROMISE. The brief asked for two things that
+     are hard to have at once: answers with real substance, and no invention.
+     A model gives you the first and can never quite promise the second. This
+     gives you the second absolutely — every sentence it says is a sentence
+     Ishaan wrote — and gets the first from the author rather than from a
+     summariser. When it has nothing, it says so, because saying so is the only
+     other thing it can do.
+
+     THE THREE LAYERS ARE SEPARATE ON PURPOSE, and the seam between the middle
+     and the top is where a real model would be plugged in later:
+
+         KB       parses the Markdown into entries. Knows nothing about
+                  questions, scoring or the interface.
+         Engine   `answer(question, thread) -> { text, source, followups }`.
+                  Knows nothing about the DOM. This is the swappable one: an
+                  API-backed version implements the same one method and
+                  nothing above it changes.
+         Panel    the surface. Knows nothing about how an answer was reached,
+                  only how to show one.
+
+     NO ANSWER IS WRITTEN IN THIS FILE. Every string a visitor reads comes from
+     the document, except the two the interface owns: the description under the
+     title, and what it says when it does not know. That is the separation the
+     brief asked for and it is worth keeping strictly — the moment one answer
+     is convenient to hardcode here, the document stops being the truth.
+     ===================================================================== */
+
+  const Llm = {
+    /* --- the document ------------------------------------------------------
+
+       ONE FETCH, ON FIRST OPEN, AND NEVER AGAIN. Not at boot: the whole
+       feature is a thing you have to press, and a visitor who never presses it
+       should not pay for it. Not per open either — the panel keeps its
+       conversation, so re-opening is re-showing.
+
+       AND IT WILL NOT LOAD OFF A DISK, which is worth stating plainly rather
+       than failing quietly. Chrome refuses `fetch` between two `file://` URLs
+       — every file is its own opaque origin — so previewing the site by
+       double-clicking `index.html` reaches the panel but not the document. The
+       panel says so, with the one command that fixes it. Over http, which is
+       every deployment and any local server, it simply works. */
+    SRC: 'IshaanLLM_Knowledge_Base.md',
+
+    kb: null,
+    state: 'idle',       /* idle | loading | ready | nodoc | error */
+
+    async load() {
+      if (this.state === 'ready' || this.state === 'loading') return this.state;
+      this.state = 'loading';
+      this.paint();
+      try {
+        const res = await fetch(url(this.SRC), { cache: 'no-cache' });
+        if (!res.ok) throw new Error(String(res.status));
+        const text = await res.text();
+        this.kb = KB.parse(text);
+        this.state = this.kb.entries.length ? 'ready' : 'nodoc';
+      } catch (e) {
+        /* a fetch that never left the machine and one that came back 404 are
+           different problems for whoever is reading this, so they are told
+           apart by whether we are on a file: URL rather than by the message */
+        this.state = location.protocol === 'file:' ? 'nodoc' : 'error';
+      }
+      this.paint();
+      return this.state;
+    },
+
+    /* --- the conversation --------------------------------------------------
+
+       It lives here, on the module, which is the whole of requirement nine and
+       ten: the panel is furniture in the HUD layer, so closing it hides a node
+       and changes nothing, and moving between Work, About and Play does not
+       touch this object either. `last` is what makes a follow-up work — ask
+       "what was the hardest part" with nothing else in it and the engine reads
+       the subject from here.
+
+       AND IT SURVIVES A REAL PAGE LOAD, because one navigation on this site
+       still is one: a case study is its own document. `sessionStorage` is the
+       same lifetime the theme uses — it follows you through the site and dies
+       with the tab, which is the right lifetime for a conversation. */
+    KEY: 'site:llm',
+    thread: null,
+
+    threadInit() {
+      if (this.thread) return this.thread;
+      let saved = null;
+      try { saved = JSON.parse(sessionStorage.getItem(this.KEY) || 'null'); } catch (e) { /* private mode */ }
+      this.thread = (saved && Array.isArray(saved.turns))
+        ? { turns: saved.turns, last: saved.last || null, asked: saved.asked || [] }
+        : { turns: [], last: null, asked: [] };
+      return this.thread;
+    },
+
+    threadSave() {
+      try { sessionStorage.setItem(this.KEY, JSON.stringify(this.thread)); } catch (e) { /* as above */ }
+    },
+
+    threadClear() {
+      this.thread = { turns: [], last: null, asked: [] };
+      this.threadSave();
+      this.paint();
+    },
+
+    /* --- the panel --------------------------------------------------------- */
+
+    build() {
+      if (this.el) return this.el;
+      const wrap = el('div', { class: 'llm', role: 'dialog', 'aria-modal': 'false',
+        'aria-label': 'IshaanLLM', 'aria-hidden': 'true' });
+
+      const head = el('div', { class: 'llm__head' });
+      head.appendChild(el('p', { class: 'llm__name' },
+        `IshaanLLM<span class="llm__beta">BETA</span>`));
+      head.appendChild(el('p', { class: 'llm__say' },
+        'Ask me anything about my work, process or experience.'));
+      const close = el('button', { class: 'llm__x', type: 'button', 'aria-label': 'Close IshaanLLM' },
+        '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>');
+      close.addEventListener('click', () => this.shut());
+      head.appendChild(close);
+      wrap.appendChild(head);
+
+      this.log = el('div', { class: 'llm__log', role: 'log', 'aria-live': 'polite' });
+      wrap.appendChild(this.log);
+
+      const foot = el('form', { class: 'llm__foot' });
+      this.input = el('input', { class: 'llm__in', type: 'text', autocomplete: 'off',
+        placeholder: 'Ask something…', 'aria-label': 'Ask IshaanLLM a question' });
+      const send = el('button', { class: 'llm__go', type: 'submit', 'aria-label': 'Send' },
+        '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10M8.6 4l4 4-4 4"/></svg>');
+      foot.append(this.input, send);
+      foot.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const q = this.input.value.trim();
+        if (!q) return;
+        this.input.value = '';
+        this.ask(q);
+      });
+      wrap.appendChild(foot);
+
+      App.mount(wrap);
+      this.el = wrap;
+      return wrap;
+    },
+
+    open() {
+      this.build();
+      this.threadInit();
+      document.body.classList.add('llm-open');
+      this.el.setAttribute('aria-hidden', 'false');
+      this.el.classList.add('is-up');
+      if (this.trig) this.trig.setAttribute('aria-expanded', 'true');
+      this.load();
+      this.paint();
+      /* the keyboard should be where the cursor already is, but not on a phone
+         — an input focused as a sheet springs in fights the animation with the
+         viewport resize the keyboard causes */
+      if (!matchMedia('(pointer: coarse)').matches) {
+        setTimeout(() => this.input && this.input.focus(), 340);
+      }
+      Sound.tick();
+    },
+
+    shut() {
+      if (!this.el) return;
+      document.body.classList.remove('llm-open');
+      this.el.classList.remove('is-up');
+      this.el.setAttribute('aria-hidden', 'true');
+      if (this.trig) this.trig.setAttribute('aria-expanded', 'false');
+      if (this.trig) this.trig.focus();
+      Sound.tick();
+    },
+
+    toggle() { if (this.el && this.el.classList.contains('is-up')) this.shut(); else this.open(); },
+
+    /* --- asking ------------------------------------------------------------ */
+
+    async ask(q) {
+      const t = this.threadInit();
+      t.turns.push({ q, a: null });
+      if (t.asked.indexOf(q.toLowerCase()) < 0) t.asked.push(q.toLowerCase());
+      this.paint();
+      this.thinking = true;
+      this.paint();
+
+      await this.load();
+      /* A BEAT, AND IT IS NOT A FAKE ONE. The lookup is synchronous and takes
+         about a millisecond, and an answer that appears in the same frame as
+         the question reads as a lookup table rather than as an answer. This is
+         the shortest pause that reads as considered — and it is also what
+         gives the "Thinking" line time to exist, which is the state the brief
+         asked for. */
+      await new Promise((r) => setTimeout(r, 260 + Math.random() * 220));
+      this.thinking = false;
+
+      const turn = t.turns[t.turns.length - 1];
+      if (this.state !== 'ready') {
+        turn.a = { text: null, state: this.state };
+      } else {
+        const res = Engine.answer(q, t, this.kb);
+        turn.a = res;
+        if (res.source) t.last = res.source;
+      }
+      this.threadSave();
+      this.paint();
+    },
+
+    /* --- and the surface, redrawn from the thread --------------------------
+
+       ONE RENDER PATH, FROM STATE, EVERY TIME. Not appending to the log as
+       things happen: the panel is drawn from `thread` and `state` and nothing
+       else, so a conversation restored from `sessionStorage` on a fresh
+       document produces exactly the same DOM as the one that was there before
+       the navigation. There is no second code path for "restore". */
+    paint() {
+      if (!this.log) return;
+      const t = this.thread || { turns: [] };
+      this.log.textContent = '';
+
+      const chips = (list, kind) => {
+        if (!list || !list.length) return null;
+        const box = el('div', { class: `llm__chips llm__chips--${kind}` });
+        if (kind === 'more') box.appendChild(el('p', { class: 'llm__chips-lb' }, 'You might also ask'));
+        list.forEach((q) => {
+          const b = el('button', { class: 'llm__chip', type: 'button' }, esc(q));
+          b.addEventListener('click', () => this.ask(q));
+          box.appendChild(b);
+        });
+        return box;
+      };
+
+      /* nothing asked yet: the document's own opening questions */
+      if (!t.turns.length) {
+        if (this.state === 'ready') {
+          const open = Engine.openers(this.kb);
+          const c = chips(open, 'open');
+          if (c) this.log.appendChild(c);
+        } else if (this.state === 'loading') {
+          this.log.appendChild(el('p', { class: 'llm__note' }, 'Reading the notes…'));
+        } else if (this.state === 'nodoc') {
+          this.log.appendChild(el('p', { class: 'llm__note' },
+            'The knowledge base only loads over http. Serve the folder — '
+            + '<code>python3 -m http.server</code> — and this works.'));
+        } else if (this.state === 'error') {
+          this.log.appendChild(el('p', { class: 'llm__note' },
+            'I could not read my knowledge base just now.'));
+        }
+      }
+
+      t.turns.forEach((turn, i) => {
+        this.log.appendChild(el('p', { class: 'llm__q' }, esc(turn.q)));
+        if (!turn.a) {
+          if (this.thinking && i === t.turns.length - 1) {
+            this.log.appendChild(el('p', { class: 'llm__think' },
+              'Thinking<i></i><i></i><i></i>'));
+          }
+          return;
+        }
+        if (turn.a.text === null) {
+          this.log.appendChild(el('p', { class: 'llm__note' },
+            turn.a.state === 'nodoc'
+              ? 'The knowledge base only loads over http. Serve the folder — <code>python3 -m http.server</code> — and this works.'
+              : 'I could not read my knowledge base just now.'));
+          return;
+        }
+        const a = el('div', { class: 'llm__a' });
+        turn.a.text.split('\n\n').forEach((para) => {
+          if (para.trim()) a.appendChild(el('p', {}, MD.inline(para.trim())));
+        });
+        this.log.appendChild(a);
+        if (turn.a.unknown && turn.a.followups.length) {
+          const c = chips(turn.a.followups, 'open');
+          if (c) this.log.appendChild(c);
+        } else {
+          const c = chips(turn.a.followups, 'more');
+          if (c) this.log.appendChild(c);
+        }
+      });
+
+      this.log.scrollTop = this.log.scrollHeight;
+    },
+
+    /* --- the way in -------------------------------------------------------- */
+
+    /* A ROW IN THE SIDEBAR'S OWN LIST, and a button rather than a link because
+       it does not go anywhere — it opens a layer over whatever you are looking
+       at. It borrows `.mast__row` outright so it is the same 14px, the same
+       ink and the same hover as Work, About and Play, and it carries no
+       `data-at`, so `Rail.mark` never treats it as a section and the router
+       never sees it as a destination.
+
+       It also gets pushed around by the bricks, because `Shove` collects
+       `.mast__row` and this is one. That was not planned and it is right: it
+       is a row in the column like any other. */
+    trigger() {
+      const b = el('button', {
+        class: 'mast__row mast__row--llm', type: 'button',
+        'aria-expanded': 'false', 'data-tip': 'Ask about my work',
+      }, `IshaanLLM<span class="llm__beta">BETA</span>`);
+      b.addEventListener('click', () => this.toggle());
+      this.trig = b;
+      return b;
+    },
+
+    init() {
+      /* Escape closes it, like every other layer on this site. Bound once, on
+         the window, and it defers to anything that is more modal than this. */
+      addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (!this.el || !this.el.classList.contains('is-up')) return;
+        e.preventDefault();
+        this.shut();
+      });
+    },
+  };
+
+  /* --- the document, parsed ----------------------------------------------- */
+
+  const KB = {
+    /* `## Title` opens an entry, `### Title` a detail inside it, and the four
+       directive lines are `key: value` on their own line before the prose.
+       Everything else is the answer. The HTML comment at the top of the file is
+       the format guide and is dropped whole. */
+    parse(md) {
+      const src = String(md).replace(/<!--[\s\S]*?-->/g, '');
+      const list = (v) => String(v).split(',').map((s) => s.trim()).filter(Boolean);
+      const entries = [];
+      let e = null, d = null;
+
+      src.split('\n').forEach((raw) => {
+        const line = raw.replace(/\s+$/, '');
+        let m = line.match(/^##\s+(?!#)(.+)$/);
+        if (m) {
+          e = { title: m[1].trim(), tags: [], asks: [], see: [], open: false, body: '', details: [] };
+          d = null;
+          entries.push(e);
+          return;
+        }
+        m = line.match(/^###\s+(.+)$/);
+        if (m && e) {
+          d = { title: m[1].trim(), when: [], body: '' };
+          e.details.push(d);
+          return;
+        }
+        if (!e) return;
+        m = line.match(/^(tags|ask|see|when|open)\s*:\s*(.*)$/i);
+        if (m) {
+          const k = m[1].toLowerCase(), v = m[2];
+          if (k === 'ask') { if (!d) e.asks.push(v.trim()); return; }
+          if (k === 'tags') { e.tags.push(...list(v)); return; }
+          if (k === 'see') { e.see.push(...list(v)); return; }
+          if (k === 'open') { e.open = /^(true|yes|1)$/i.test(v.trim()); return; }
+          if (k === 'when') { if (d) d.when.push(...list(v)); return; }
+        }
+        if (d) d.body += line + '\n';
+        else e.body += line + '\n';
+      });
+
+      entries.forEach((x) => {
+        x.body = x.body.trim();
+        x.details.forEach((y) => { y.body = y.body.trim(); });
+        /* the first paragraph is the answer — see rule two in the document */
+        x.lead = x.body.split(/\n\s*\n/)[0] || '';
+      });
+      const byTitle = new Map();
+      entries.forEach((x) => byTitle.set(x.title.toLowerCase(), x));
+      return { entries, byTitle };
+    },
+  };
+
+  /* --- the answering layer ------------------------------------------------
+
+     THIS IS THE SWAPPABLE ONE. `answer(question, thread, kb)` is the entire
+     contract: in a question and what has been said so far, out some text, which
+     entry it came from, and what to offer next. An API-backed version
+     implements exactly this and the panel above does not change by a line.  */
+
+  const Engine = {
+    STOP: new Set(('a an and are as at be but by can did do does for from had has have how i if in'
+      + ' is it its me my of on or that the their there this to told was were what when where which'
+      + ' who why will with you your about tell').split(' ')),
+    /* below this the best match is not a match. Tuned against the placeholder
+       document: a real question about a covered subject scores 6 and up, and
+       a question about something absent tops out around 2. */
+    FLOOR: 3.2,
+
+    words(s) {
+      return String(s).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+        .filter((w) => w.length > 1 && !this.STOP.has(w));
+    },
+
+    openers(kb) {
+      const out = [];
+      kb.entries.forEach((e) => { if (e.open && e.asks.length) out.push(e.asks[0]); });
+      /* the document decides; if it has said nothing, the first few entries do */
+      if (!out.length) kb.entries.slice(0, 4).forEach((e) => { if (e.asks[0]) out.push(e.asks[0]); });
+      return out.slice(0, 4);
+    },
+
+    score(q, e) {
+      const qw = this.words(q);
+      if (!qw.length) return 0;
+      const has = (set, w) => set.indexOf(w) >= 0;
+      let s = 0;
+
+      /* an authored question, matched: the strongest signal there is, and it is
+         a ratio rather than a count so a long `ask` line is not rewarded for
+         its length */
+      e.asks.forEach((ask) => {
+        const aw = this.words(ask);
+        if (!aw.length) return;
+        const hit = aw.filter((w) => has(qw, w)).length;
+        s = Math.max(s, (hit / aw.length) * 7);
+      });
+
+      const tw = this.words(e.title);
+      s += tw.filter((w) => has(qw, w)).length * 4;
+      s += e.tags.filter((t) => {
+        const twx = this.words(t);
+        return twx.length && twx.every((w) => has(qw, w));
+      }).length * 3;
+
+      /* the prose counts, but barely — it is long, so it would otherwise win
+         every question by accident */
+      const bw = new Set(this.words(e.body));
+      s += Math.min(2, qw.filter((w) => bw.has(w)).length * 0.4);
+      return s;
+    },
+
+    /* WHICH PART OF THE ENTRY IS BEING ASKED FOR. A `###` block wins over the
+       entry's own answer only if the question uses one of its `when:` words —
+       which is how one entry answers "tell me about X" and "what was the
+       hardest part of X" with two different paragraphs. */
+    detail(q, e) {
+      const qw = this.words(q);
+      let best = null, hi = 0;
+      e.details.forEach((d) => {
+        const n = d.when.filter((w) => {
+          const ww = this.words(w);
+          return ww.length && ww.every((x) => qw.indexOf(x) >= 0);
+        }).length;
+        if (n > hi) { hi = n; best = d; }
+      });
+      return best;
+    },
+
+    /* WHAT TO OFFER NEXT, AND IT IS AUTHORED RATHER THAN GENERATED. `see:` on
+       the entry names the entries worth going to next, and each of those
+       contributes its own first `ask:`. So the path through a conversation is
+       something Ishaan wrote, not something guessed — which is why there is no
+       "tell me more" anywhere in this function. Anything already asked is
+       dropped, so a conversation cannot offer you a question you have had. */
+    next(e, thread, kb, exclude) {
+      const asked = new Set((thread.asked || []).map((x) => x.toLowerCase()));
+      const out = [];
+      const take = (q) => {
+        if (!q) return;
+        if (asked.has(q.toLowerCase())) return;
+        if (exclude && exclude.toLowerCase() === q.toLowerCase()) return;
+        if (out.indexOf(q) >= 0) return;
+        out.push(q);
+      };
+      (e.see || []).forEach((name) => {
+        const r = kb.byTitle.get(String(name).toLowerCase());
+        if (r) take(r.asks[0]);
+      });
+      /* the entry's own other questions, if it pointed nowhere */
+      e.asks.slice(1).forEach(take);
+      if (out.length < 2) {
+        kb.entries.forEach((o) => {
+          if (o === e || out.length >= 3) return;
+          if (o.tags.some((t) => e.tags.indexOf(t) >= 0)) take(o.asks[0]);
+        });
+      }
+      return out.slice(0, 3);
+    },
+
+    answer(q, thread, kb) {
+      let best = null, hi = 0;
+      kb.entries.forEach((e) => {
+        const s = this.score(q, e);
+        if (s > hi) { hi = s; best = e; }
+      });
+
+      /* --- THE FOLLOW-UP CASE, WHICH IS REQUIREMENT NINE -------------------
+
+         "What was the hardest part?" names no subject. On its own it scores
+         nothing anywhere, which is correct — and answering "I don't know" to it
+         is wrong, because the previous turn said what the subject was. So when
+         a question is under the floor AND the thread has a subject, it is
+         re-asked against that subject alone: the words still have to reach one
+         of its `###` blocks, so an unrelated question does not get dragged
+         into the last topic just for being vague. */
+      if (hi < this.FLOOR && thread.last) {
+        const prev = kb.byTitle.get(String(thread.last).toLowerCase());
+        const d = prev && this.detail(q, prev);
+        if (d) {
+          return { text: d.body, source: prev.title, unknown: false,
+            followups: this.next(prev, thread, kb, q) };
+        }
+      }
+
+      if (!best || hi < this.FLOOR) {
+        /* NOT AN APOLOGY AND NOT A GUESS. It says what it does not have, and
+           then offers something it does — drawn from the document's own
+           opening questions, minus anything already asked. */
+        const open = this.openers(kb).filter((x) =>
+          (thread.asked || []).indexOf(x.toLowerCase()) < 0);
+        return {
+          text: "I don't have that in my knowledge base yet.",
+          source: null, unknown: true, followups: open.slice(0, 3),
+        };
+      }
+
+      const d = this.detail(q, best);
+      return {
+        text: d ? d.body : (best.lead || best.body),
+        source: best.title,
+        unknown: false,
+        followups: this.next(best, thread, kb, q),
+      };
+    },
+  };
+
+  /* --- the two pieces of Markdown that reach the reader -------------------
+
+     Only inside a paragraph, and only three things: bold, italic and code. Not
+     a Markdown renderer — the document's prose is prose, and anything more
+     structural than emphasis in an answer wants to be a separate entry. The
+     text is escaped FIRST, so a document that contains a `<script>` is a
+     document that says "<script>". */
+  const MD = {
+    inline(s) {
+      return esc(String(s).replace(/\s*\n\s*/g, ' '))
+        .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+        .replace(/(^|[\s(])\*([^*]+)\*/g, '$1<em>$2</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+    },
+  };
+
   const Tray = {
     init(host) {
       const c = S.tray;
@@ -14996,7 +15230,27 @@
              click */
           if (Rack.tool && Rack.tool !== 'select') Rack.pick('select', true);
         }
-        L.worlds[L.live] = Bricks.park();
+        /* --- AN EMPTY PARK IS NOT A WORLD, IT IS AN UNFINISHED ONE -------
+
+           `Bricks.init` waits for its box to stop changing size before it
+           makes anything, so there is a window — a few frames on a cold load,
+           four seconds on the sidebar's column, which waits for the entrance
+           to leave — where a surface is claimed and still has no pieces on it.
+           A visitor navigating inside that window parks nothing, and storing
+           nothing as though it were the saved state is how a column ends up
+           permanently empty: the record says "restore zero bricks" and the
+           builder, having already run, never offers again.
+
+           So an empty park is discarded rather than saved, and the surface is
+           marked as never having been built. The next visit reaches the
+           first-visit path and throws its pieces in properly. */
+        const parked = Bricks.park();
+        if (parked.pieces.length) {
+          L.worlds[L.live] = parked;
+        } else {
+          L.worlds[L.live] = null;
+          if (L.live === 'tray') Tray.went = false;
+        }
         L.live = null;
       }
       if (!want) return;
@@ -15108,7 +15362,8 @@
        stops paying attention to the outgoing content well before it is gone.
        Reduced motion gets the cut without either fade. */
     go(page, push, restore) {
-      if (!Stage.OWNER[page] || page === Store.nav.route) return;
+      if (!Stage.OWNER[page]) return;
+
       /* --- A CLICK DURING A FADE IS NOT DROPPED --------------------------
 
          RAPID NAVIGATION IS THE CASE THAT BREAKS THIS KIND OF THING. Two
@@ -15121,8 +15376,18 @@
          Its outgoing view is hidden and its incoming one is shown, which takes
          no frames because both are already built, and this navigation then
          starts from a settled shell exactly as if the visitor had waited. No
-         flag, no queue, nothing to leave stuck if a timer never fires. */
+         flag, no queue, nothing to leave stuck if a timer never fires.
+
+         AND IT HAPPENS BEFORE THE "ALREADY THERE" TEST, WHICH IS THE WHOLE
+         POINT OF THE ORDERING. `Store.nav.route` is written at the END of a
+         swap, so while one is in flight it names the section the visitor is
+         LEAVING, not the one they are on their way to. Testing against it
+         first drops the very clicks this block exists to keep: measured on the
+         sequence About → Play → Work at 70ms apart, the middle click was
+         discarded as "already on Play" while the pending swap was still headed
+         for About. Settle first, then ask. */
       if (this.pend) { clearTimeout(this.t); const f = this.pend; this.pend = null; this.t = null; f(); }
+      if (page === Store.nav.route) return;
 
       const from = Store.nav.route;
       Store.nav.scroll[from] = scrollY;
@@ -15303,9 +15568,10 @@
          Every other page keeps its footer. It is the right ending for a case
          study, which has no rail beside it.
 
-         Kept for the reader: `Words`, `Peek` and `Tabs` are all still in the
-         file and all still unreached from here. See the note in `Pages.work`,
-         which is where the teams table lives now. */
+         Kept for the reader: of the three modules this note used to point at,
+         `Words` and `Tabs` have since been removed as unreachable and `Peek`
+         is live — it is the closing block's underlined words, mounted from
+         `boot`. The teams table went with `Pages.work`. */
     },
 
     /* --- THE PLAY PAGE IS THE OLD HERO, GIVEN ITS OWN ADDRESS -------------
@@ -15494,161 +15760,26 @@
        grid's entrance without a second scroll animation being written for them.
        It used to be what the drawer bound its clicks to as well; the tiles are
        links to real pages now and nothing is bound to them at all. */
-    work() {
-      const items = (S.showcase && S.showcase.items) || [];
-      const main = $('#main');
+    /* --- THE WORK PAGE IS GONE, AND THIS IS WHERE IT WAS ------------------
 
-      const sec = el('section', { class: 'wk canvas canvas--archive' });
-      sec.appendChild(el('div', { class: 'canvas__dots', 'aria-hidden': 'true' }));
+       `Pages.work` built work.html: a second showcase of the same projects, a
+       "what the work has taught so far" band, a teams table, and the old menu
+       and full-width footer around all of it. It was the archive, from before
+       the home page became the work — and once the home page WAS the grid, the
+       archive was the same projects a second time, in a layout with no sidebar
+       and its own navigation.
 
-      /* --- the opening. Editorial, not a hero. --------------------------- */
-      const head = el('div', { class: 'wk__head' });
-      head.appendChild(el('p', { class: 'wk__eyebrow rv' }, 'Selected work'));
-      const lede = el('h1', { class: 'wk__lede rv' }, esc(S.work.intro));
-      lede.style.setProperty('--rv-delay', '90ms');
-      head.appendChild(lede);
+       Which is what a visitor actually hit: click a project, press BACK, and
+       you left the portfolio and arrived on the old design. That is the bug
+       this removal fixes, not a tidy-up. Every route that pointed here now
+       points at `index.html` — the case studies' BACK, the Next/Previous
+       strip's "All work", the deck menu, the 404's ways out — and each of
+       those is a single entry in content.js rather than a link written out
+       somewhere, which is why there was nothing else to find.
 
-      /* CATEGORIES ARE READ, NOT AUTHORED. Every item's `meta` already starts
-         with what the piece is — "Product identity", "B2B SaaS", "Design" — so
-         the filter is derived from the data rather than being a second list
-         that has to be kept in step with it. A category with one project in it
-         is still a category; a filter that hides everything is not offered. */
-      /* NO FILTER CHIPS. There were four — All, and one per discipline — and
-         they dimmed the tiles that did not match. Four pieces do not need
-         filtering: every one of them is already on the screen, so the control
-         could only ever take things away, and the row of chips was the first
-         thing under the headline. The disciplines are still on each tile, in
-         the metadata line. */
-      sec.appendChild(head);
-
-      /* --- the archive ---------------------------------------------------
-         Two columns, because there are four pieces and each one is meant to be
-         large. The reference's four-column mosaic is right for forty small
-         experiments and wrong for four case studies. */
-      const cols = el('div', { class: 'wk__cols' });
-      const COLN = 2;
-      const colEls = [];
-      for (let i = 0; i < COLN; i += 1) {
-        const c = el('div', { class: 'wk__col', 'data-col': String(i) });
-        colEls.push(c); cols.appendChild(c);
-      }
-
-      const made = [];
-      items.forEach((item, i) => {
-        const a = el('a', {
-          class: 'wkt', href: item.study ? projectHref(item.study.slug) : (item.href || '#'),
-          'aria-label': `${item.title} — ${item.meta || ''}`,
-        });
-        const media = el('div', { class: 'wkt__media' },
-          (PREVIEW[item.preview] || PREVIEW.bloom)(item));
-        /* the same artwork the home page paints over the same panel */
-        mountThumb(item, media);
-        a.appendChild(media);
-
-        const capn = el('div', { class: 'wkt__cap' });
-        capn.innerHTML =
-          `<span class="wkt__no">${String(i + 1).padStart(2, '0')}</span>` +
-          `<span class="wkt__lines">` +
-            `<span class="wkt__title">${esc(item.title)}</span>` +
-            `<span class="wkt__meta">${esc(item.meta || '')}</span>` +
-          `</span>`;
-        a.appendChild(capn);
-
-        /* THE AFFORDANCE GOES ON THE ARTWORK, so it is a child of the media
-           and not of the tile. It was on the tile, which is also positioned —
-           so `bottom: 0.9rem` measured from the bottom of the whole anchor,
-           caption included, and the pill hovered on top of the title. */
-        if (item.study) {
-          media.appendChild(el('span', { class: 'wkt__go', 'aria-hidden': 'true' }, 'Case study'));
-        } else {
-          a.classList.add('is-quiet');
-        }
-
-        colEls[i % COLN].appendChild(a);
-        made.push({ el: a, sp: null, last: -1 });
-      });
-      sec.appendChild(cols);
-
-      /* --- the record ----------------------------------------------------
-         THE HOME PAGE'S TABLE, NOT A SECOND ONE. This was a hand-rolled list
-         of the five credits with its own heading, its own row grid and its
-         own type — five lines that said the same kind of thing as the home
-         page's index and looked nothing like it. It is the `Tabs` component
-         now, with the home page's own two tabs: same markup, same hairlines,
-         same hover, same Now chip, same tab bar.
-
-         The credits are not here. They were a third tab for one revision and
-         came off: this page is already an archive of the work, so listing
-         five more places under it said the same thing twice. They still live
-         in content.js under `work.projects`.
-
-         It goes INSIDE the archive section, not after it. Appended to #main
-         it landed on the sheet's paper, and the dot grid stopping in a hard
-         line straight across the page above it was the loudest edge on the
-         page. Inside, the canvas simply continues behind it. */
-      Tabs.init(sec).classList.add('index--work');
-
-      main.appendChild(sec);
-
-      Showcase.cards = made;
-
-      /* --- the column drift ----------------------------------------------
-         The reference's columns travel at slightly different rates, which is
-         what stops a two-column archive reading as a table. Six pixels of
-         offset per hundred scrolled, on the second column only, written as one
-         custom property and applied with a transform — no layout, no reflow,
-         one write per frame and only while the section is on screen. */
-      let raf = 0;
-      const drift = () => {
-        raf = 0;
-        const r = sec.getBoundingClientRect();
-        if (r.bottom < 0 || r.top > innerHeight) return;
-        sec.style.setProperty('--wk-drift', `${(-r.top * 0.055).toFixed(1)}px`);
-      };
-      if (!REDUCED) {
-        App.onScroll(() => { if (!raf) raf = requestAnimationFrame(drift); });
-        requestAnimationFrame(drift);
-      }
-    },
-
-    /* --- THE ABOUT PAGE ---------------------------------------------------
-
-       THE SAME PAGE AS THE HOME PAGE, WITH DIFFERENT CONTENT IN THE CANVAS.
-
-       It used to be a separate site. Eight chapters, a full-screen hero with a
-       name set at 56px, a pile of photographs, a scrawled-note layer, a wall of
-       type, its own top navigation, its own footer with the email address set
-       as a headline, and a résumé band at the bottom that was the only part
-       anybody was actually reading. Nine hundred lines of stylesheet and four
-       hundred of builder for a page whose job is to say what somebody has done.
-
-       So it is built out of the two things the rest of the portfolio is built
-       out of. `Rail.build()` is the sidebar the home and play pages already
-       use — the statement, the buttons, the Site and Links lists, the brick
-       playground and the closing lines — which is what makes this feel like
-       moving further into the same canvas rather than arriving somewhere else.
-       There is one navigation on this site and this page does not add a
-       second; `body[data-page='about']` joins the two pages that hide the
-       header and the menu tab, because the rail is already both.
-
-       AND THE CANVAS IS TWO COLUMNS OF DOCUMENT. A narrow one that holds the
-       things you look up — what he can do, where he studied, how to reach him
-       — and a wide one that holds the things you read. The narrow one is
-       sticky against its own column, so the metadata stays with you while the
-       experience scrolls past it; that is the same relationship the rail has
-       with the work on the home page, one level in.
-
-       NOTHING HERE IS A CARD. Two entries of experience and four awards, set
-       as a document: a node on a hairline guide, a company, a role, three
-       lines of prose, the wins under circle bullets and the tags under those.
-       The whole page is one screen and a half at 1280 rather than the five it
-       was.
-
-       AND NOTHING REVEALS ON SCROLL. Every other page on this site fades its
-       blocks in as they arrive, and this one deliberately does not: it is
-       short enough that the awards sit a few hundred pixels below the fold, so
-       a reveal there is a section that is blank until you go looking for it —
-       which is the opposite of a page whose whole job is to be scanned. */
+       `Tabs` went with it: the tabbed panel it used was built for the teams
+       table and had no other caller. `Showcase`, `PREVIEW` and `BLOCK` are
+       untouched and are what the home page and the case studies are made of. */
     about() {
       const c = S.about;
       if (!c) return;
@@ -15843,14 +15974,10 @@
 
     },
 
-    head(intro, title) {
-      const h = el('header', { class: 'page-head' });
-      const c = el('div', { class: 'col--wide' });
-      c.appendChild(el('h1', {}, esc(title)));
-      c.appendChild(el('p', {}, esc(intro)));
-      h.appendChild(c);
-      $('#main').appendChild(h);
-    },
+    /* `head()` was here: the page header — an oversized `<h1>` and a lede —
+       that `Pages.work` put at the top of work.html. It had no other caller,
+       and work.html has been removed. Its `.page-head` styles are gone from
+       the stylesheet with it. */
   };
 
   /* ======================================================== 8. loop ===== */
@@ -16367,7 +16494,6 @@
     Theme.init();
     Sky.init();
     Shell.init();
-    Nav.init();
 
     /* Before the page builds: the body class this sets is what holds the
        hero's type back and pushes the page down, and both have to be true
@@ -16414,12 +16540,12 @@
 
       /* every scroll-driven value is integrated with the same timestep, so they
          stay in sync regardless of display refresh rate */
-      const a = Words.tick(vh, dt);
+      /* `Words.tick` used to be the first line here. See section 4 for why it
+         is not: it drove an array nothing filled. */
       const b = Showcase.tick(vh, dt);
       Project.tick(vh);
       Ink.tick();
       Rack.applyScope();
-      Nav.tick();
       const dr = Drag.tick(dt);
       const pr = Canvas.parallax ? Canvas.parallax(dt) : false;
       const gh = Ghost.tick(dt);
@@ -16433,7 +16559,7 @@
          then on a brick moves only inside a drag, and `Drag.tick` above is
          already what drives that. So there is nothing for this loop to ask,
          and at rest the tray costs it nothing. */
-      if (a || b || dr || pr || gh || pk || dk) idleFrames = 0;
+      if (b || dr || pr || gh || pk || dk) idleFrames = 0;
       else idleFrames++;
 
       if (idleFrames > 6) { live = false; return; }
@@ -16450,7 +16576,7 @@
 
     wakeLoop = wake;
     App.onScroll(wake);
-    addEventListener('resize', () => { vh = innerHeight; Nav.lastY = null; wake(); });
+    addEventListener('resize', () => { vh = innerHeight; wake(); });
     wake();
 
     /* `is-holding` is what turns the sticker tool's open hand into a closed
@@ -16748,8 +16874,6 @@
     window.__pointer = (x, y) => { Pointer.x = x; Pointer.y = y; Pointer.seen = true; };
     window.__rackMode = () => Rack.mode;
     window.__rackSet = (m) => Rack.setMode(m, 'test');
-    window.__navInk = () => Nav.ink;
-    window.__navSet = (surface) => Nav.set(surface);
 
     /* release the compositor layers once each reveal has played */
     $$('.rv').forEach((n) => n.addEventListener('animationend', () => n.classList.add('rv-done'), { once: true }));

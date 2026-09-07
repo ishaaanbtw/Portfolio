@@ -114,8 +114,12 @@ window.SITE = {
      things that are actions rather than places. */
   deck: {
     links: [
-      { label: 'Home', href: 'index.html' },
-      { label: 'Work', href: 'work.html' },
+      /* WORK IS THE HOME PAGE, so it is one row and not two. There used to be
+         a `Home` pointing at index.html and a `Work` pointing at work.html —
+         a separate archive page, now removed — and the grid of projects on
+         index.html is the work index. The three rows here are the same three
+         the sidebar's Site list offers, in the same order. */
+      { label: 'Work', href: 'index.html' },
       { label: 'About', href: 'about.html' },
       { label: 'Play', href: 'play.html' },
       { label: 'Resume', kind: 'resume' },
@@ -131,9 +135,11 @@ window.SITE = {
     scrollEase: 0.115,
   },
 
+  /* THE THREE SECTIONS, AND THEY ARE THE ONLY THREE. Work is index.html —
+     the grid of projects IS the work index — so there is no separate `Home`
+     row and no `work.html` any more. */
   nav: [
-    { label: 'Home', href: 'index.html' },
-    { label: 'Work', href: 'work.html' },
+    { label: 'Work', href: 'index.html' },
     { label: 'About', href: 'about.html' },
     { label: 'Play', href: 'play.html' },
   ],
@@ -160,7 +166,10 @@ window.SITE = {
       { label: 'Play', href: 'play.html', at: ['play'] },
     ],
     /* the one link under the grid, to the archive and the teams table */
-    more: { label: 'All work', href: 'work.html' },
+    /* `more` was one row of caption type under the grid — "All work →" —
+       and the only thing it reached was work.html, the separate archive page.
+       The grid it sat under is the archive now, so the row said "here" and
+       has been removed rather than pointed at the page it is already on. */
     links: [
       { label: 'Github', href: 'https://github.com/' },
       { label: 'Email', kind: 'email' },
@@ -252,8 +261,8 @@ window.SITE = {
        mistyped" is a sentence about the site's internals; nobody who has just
        hit a dead end needs the taxonomy of how. */
     links: [
-      { label: 'Home', href: 'index.html', primary: true },
-      { label: 'Work', href: 'work.html' },
+      { label: 'Work', href: 'index.html', primary: true },
+      { label: 'About', href: 'about.html' },
       { label: 'Resume', kind: 'resume' },
     ],
     /* the quiet invitation. One line, no tutorial. */
@@ -682,7 +691,7 @@ window.SITE = {
           /* The dock opens with the study, as it does on a project page and as
              Onefinnet does. `reading: true` collapses it to its tab instead. */
           reading: false,
-          back: { label: 'BACK', href: 'work.html' },
+          back: { label: 'BACK', href: 'index.html' },
           sections: [
             /* The opening stretch runs on a dark band — the framing, then the
                strategy — so it reads as premise rather than argument, the same
@@ -1191,7 +1200,7 @@ window.SITE = {
              `reading: true` to have it collapse to its tab instead — the
              machinery for that is still in Rack.applyScope. */
           reading: false,
-          back: { label: 'BACK', href: 'work.html' },
+          back: { label: 'BACK', href: 'index.html' },
           sections: [
             /* The opening stretch runs on a dark band — overview first, then the
                highlights — so it reads as summary rather than argument. Both
@@ -1705,7 +1714,7 @@ window.SITE = {
   project: {
     eyebrow: 'Exa · Product Design',
     title: 'Websets',
-    back: { label: 'BACK', href: 'work.html' },
+    back: { label: 'BACK', href: 'index.html' },
 
     sections: [
       { id: 'overview', nav: 'Overview', eyebrow: 'Overview',

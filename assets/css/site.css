@@ -521,75 +521,19 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
    (see Nav.tick). Nothing is covered, and the links stay legible on both. */
 
 
-.nav {
-  position: fixed;
-  /* The inset is ADDED to the measured offset rather than replacing it, so on
-     any screen without a notch this resolves to exactly the value it had. */
-  top: calc(clamp(1.25rem, 3vh, 2rem) + var(--sa-top));
-  /* The paper insets 32px at the footer, so anything closer to the edge than
-     that ends up hanging over the sky once the page detaches. Deliberately a
-     flat value, not a vw one: at ~900px wide, 3vw is only 27px and the nav
-     would overhang again. The reference measures 40px, which leaves only 8px
-     of paper to its left and still looks pinned to the edge — so this sits a
-     little further in at 56px, for 24px of clearance. */
-  left: 3.5rem;
-  z-index: 40;
-  /* was serif italic; the sans needs a touch more weight to hold the same
-     presence at this size */
-  font-family: var(--sans);
-  font-weight: 500;
-  font-size: 1rem;
-  letter-spacing: -0.006em;
-  line-height: 1.55;
-}
+/* --- THE HEADER ROW OF LINKS IS GONE, AND SO ARE ITS ~90 LINES -----------
 
-.nav a {
-  display: block;
-  color: var(--ink-dim);
-  transition: color 260ms var(--ease), transform 520ms var(--spring);
-  transform-origin: left center;
-  width: max-content;
-}
+   `.nav` was a fixed row of four links in the top-left corner, with an
+   adaptive-ink variant (`[data-ink]`) for the frames it floated over. It was
+   already switched off site-wide by `body[data-page] .nav { display: none }`
+   — a decision stated further down this file with its reasoning: the sidebar's
+   Site list is the navigation now, and a second row of the same links is the
+   second one explaining that the first is decoration.
 
-.nav a:hover { color: var(--ink-2); transform: translateX(3px); }
-.nav a[aria-current='page'] { color: var(--ink); }
-
-.nav a[aria-current='page']::after {
-  content: '';
-  display: block;
-  height: 1px;
-  background: var(--ink);
-  transform-origin: left;
-  animation: rule 600ms var(--ease) both;
-}
-
-@keyframes rule { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-
-/* On the hero the introduction owns the top-left, so the nav moves to the
-   top-right — it was overlapping the headline. */
-body[data-page='home'] .nav {
-  left: auto;
-  right: 3.5rem;                   /* was 2.5rem — matches the left inset */
-  display: flex;
-  gap: 1.1rem;
-  line-height: 1;
-}
-body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
-
-/* Over a dark surface the links flip to light ink. Only the colour changes, so
-   the existing 260ms colour transition carries it — nothing snaps as a card
-   edge passes under the nav. (This is also why .nav no longer uses
-   mix-blend-mode: multiply: white multiplied by near-black is near-black, which
-   would erase the text outright.) */
-.nav[data-ink='light'] a { color: rgba(255, 255, 255, 0.66); }
-.nav[data-ink='light'] a:hover { color: #fff; }
-.nav[data-ink='light'] a[aria-current='page'] { color: #fff; }
-.nav[data-ink='light'] a[aria-current='page']::after { background: #fff; }
-
-/* A whisper of shade under the glyphs, so a mid-tone or busy photo can never
-   land the text at zero contrast. Invisible on flat colour. */
-.nav[data-ink='light'] a { text-shadow: 0 1px 12px rgba(0, 0, 0, 0.55); }
-.nav[data-ink='dark'] a { text-shadow: 0 1px 12px rgba(255, 255, 255, 0.6); }
+   So the rules are removed rather than left unmatched, together with the
+   builder (`Shell.nav`) and the module that coloured them (`Nav`). The list
+   itself, `S.nav` in content.js, is untouched: the footer's Pages column is
+   still generated from it. */
 
 /* ==========================================================================
    5. HERO SHELL
@@ -727,45 +671,17 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   .line::after { content: ' '; }
 }
 
-/* words stay atomic so the per-character spans can't break mid-word */
-.w { white-space: nowrap; }
+/* THE PER-CHARACTER REVEAL'S STYLES WERE HERE, AND THEY ARE GONE WITH IT.
 
-/* One span per character. The boundary is not a hard edge — four characters
-   ahead of it carry intermediate ink, which is what makes "co|rners" read as a
-   gradient rather than a cut. */
-/* THE RAMP, MEASURED OFF THE REFERENCE RATHER THAN CHOSEN.
+   `.w` (one span per word) and `.c` with its four-step `b1`-`b4` ink ramp were
+   the only things `Words` produced, and `Words` has been removed — see section
+   4 of site.js for what replaced it and why. Nothing in the document carries
+   either class any more, so these rules could not match: the reveal on the page
+   today is `headline()`'s, one span per WORD, styled as `.canvas__headline .rw`
+   further down this file.
 
-   Sampling the recording frame by frame — the darkest pixel of every glyph
-   along a line that straddles the boundary — gives a ladder that was nothing
-   like the one here. Read as ink coverage over the paper, so the recording's
-   own colour profile drops out of it:
-
-     reference   unlit 0.35   ...   0.55   0.80   0.87   lit 0.94
-     was         unlit 0.14   0.17  0.28   0.43   0.60   lit 0.78
-
-   Two things were wrong and both of them mattered. Unlit text was a pale ghost
-   at a seventh of full ink where the reference sets it at a third — the
-   difference between text you can read ahead of the boundary and text you
-   cannot, which is what makes the reveal feel like a light being drawn across
-   a page rather than words appearing out of nothing. And lit text stopped at
-   `--ink-2`, four fifths of the way, where the reference goes to full ink.
-
-   The values below are those coverages blended over this site's own paper, so
-   the ladder is the reference's and the hue is still ours. */
-.c {
-  color: #a8a6a3;
-  transition: color 240ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.c.b1 { color: #989592; }
-.c.b2 { color: #76736f; }
-.c.b3 { color: #4d4a46; }
-.c.b4 { color: #312e2a; }
-.c.is-lit { color: var(--ink); }
-
-/* words that carry emphasis sit at full ink the moment they're reached */
-.block b .c.is-lit,
-.block strong .c.is-lit { color: var(--ink); }
+   `.block b` / `.block strong` keep their weight, which was never part of the
+   reveal — see the rule immediately below. */
 .block b, .block strong { font-weight: 500; }
 
 .block b, .block strong { font-weight: 600; }
@@ -1185,7 +1101,27 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   line-height: 1.42;
   color: var(--ink-dim);
 }
+/* THE ONE LINE IN THE CLOSING BLOCK THAT IS NOT THE SAME GREY.
+
+   The two lines above it are status — where he is, what he is doing — and they
+   sit at `--ink-dim` with the rest of the quiet type. The byline is not status,
+   it is the signature at the bottom of the page, and at the same grey it read
+   as a third line of the same sentence.
+
+   So it takes the full extent of the ink instead: pure black on paper, pure
+   white in the dark. Deliberately the literals rather than `--ink`, which stops
+   short of both ends (#14100c and #f1f1ef) — the point is that this line is the
+   BRIGHTEST thing in the block, and a token that is 6% off white cannot be. It
+   is the only weight change in the column, and it is a colour, so nothing
+   moves: same size, same leading, same position. */
+/* SCOPED TO THE BLOCK, AND THAT IS NOT DECORATION. `.mast__foot p` above sets
+   the quiet grey and carries an element selector, so a bare `.mast__fine`
+   loses to it — the dark rule below happened to win on its own extra class and
+   the light one did not, which is exactly the kind of half-working that only
+   shows up in one theme. Both are stated at the same weight now. */
 .mast__fine { margin-top: 0.7rem !important; }
+.mast__foot .mast__fine { color: #000; }
+.is-dark .mast__foot .mast__fine { color: #fff; }
 
 /* --- the playground -----------------------------------------------------
    THERE IS NO RULE FOR IT, AND THAT IS THE FEATURE.
@@ -2070,25 +2006,6 @@ body[data-page='about'] .tab-menu { display: none; }
    10. SECTION HEADS (inner pages)
    ========================================================================== */
 
-.page-head { padding: clamp(6rem, 18vh, 11rem) 0 clamp(2rem, 6vh, 3.5rem); }
-
-.page-head h1 {
-  font-family: var(--sans);
-  font-weight: 600;
-  font-size: var(--step-3);
-  letter-spacing: -0.03em;
-  line-height: 1.04;
-  letter-spacing: -0.015em;
-}
-
-.page-head p {
-  margin-top: 1.1rem;
-  max-width: 32rem;
-  color: var(--ink-dim);
-  font-size: var(--step-1);
-  line-height: 1.35;
-  letter-spacing: -0.017em;
-}
 
 .reveal {
   opacity: 0;
@@ -2102,132 +2019,21 @@ body[data-page='about'] .tab-menu { display: none; }
    ========================================================================== */
 
 
-/* --- the footer -----------------------------------------------------------
-   Written to answer the header rather than to close the page off.
+/* --- THE FULL-WIDTH FOOTER IS GONE, AND SO ARE ITS ~120 LINES ------------
 
-   Three things make the two ends read as one system, and none of them is a
-   coincidence: the dotted field is the SAME --dots token the hero canvas uses,
-   the Pages column is generated from the same `nav` array the header is built
-   from, and the links take the header's exact type and hover behaviour. What was
-   here before — a signature, an inline dot-separated nav and three social glyphs
-   — shared nothing with the top of the page except a border.
+   `.foot` was the closing surface: a dotted field, the email set as a
+   headline, a Pages column, a Links column and the social glyphs. Exactly one
+   page in the site ever had the `#foot` element it was built into —
+   `work.html` — and work.html has been removed, along with the builder
+   (`Shell.foot`). The three sections end with the sidebar's own closing block
+   instead, which is the ending they were designed for.
 
-   The email is the headline, the way the name is in the hero. It is the largest
-   thing on the surface because it is the only thing the page is asking for. */
-.foot {
-  position: relative;
-  overflow: hidden;                /* the oversized dot field is clipped to it */
-  isolation: isolate;
-  border-top: 1px solid var(--line);
-  background: var(--paper-2);
-  padding: clamp(2.75rem, 8vw, 4.75rem) var(--gut)
-           calc(clamp(1.75rem, 4vw, 2.5rem) + var(--sa-bottom));
-  display: grid;
-  /* the said column takes what it needs; the two link columns hug their content
-     and sit together on the right, as in the reference */
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: clamp(1.75rem, 6vw, 5rem);
-  align-items: start;
-}
+   So none of these selectors could match anything. Removed rather than left
+   in the file: `.foot`, `.foot__dots`, `.foot__said`, `.foot__mail`,
+   `.foot__note`, `.foot__fine`, `.foot__colt`, `.foot__col`, `.foot__ico`
+   and their responsive and reduced-motion variants. `.mast__foot` is a
+   DIFFERENT class — the sidebar's closing lines — and is untouched. */
 
-.foot__dots {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image: var(--dots);
-  background-size: var(--dots-step);
-  pointer-events: none;
-}
-
-.foot__said { display: grid; justify-items: start; }
-.foot__mail {
-  font-size: clamp(1.375rem, 0.85rem + 1.9vw, 2.25rem);
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  line-height: 1.05;
-  color: var(--ink);
-  /* the underline only on hover: at this size a permanent rule competes with the
-     address itself, and the mailto is obvious from the shape of the text */
-  text-decoration: none;
-  transition: opacity 240ms var(--ease);
-  word-break: break-word;          /* it must not overflow on a narrow screen */
-}
-.foot__mail:hover { text-decoration: underline; text-underline-offset: 0.14em; }
-
-.foot__note {
-  margin: 0.9rem 0 0;
-  max-width: 30ch;                 /* two lines, as in the reference */
-  font-size: var(--step-0);
-  line-height: 1.5;
-  color: var(--ink-2);
-}
-.foot__fine {
-  margin: clamp(1.5rem, 4vw, 2.5rem) 0 0;
-  font-size: var(--step--1);
-  color: var(--ink-dim);
-}
-
-.foot__colt {
-  margin: 0 0 0.85rem;
-  font-size: var(--step-0);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-}
-.foot__col ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.55rem; }
-/* the header's own link treatment, so a link reads the same at either end */
-.foot__col a {
-  display: block;
-  width: max-content;
-  font-size: var(--step-0);
-  color: var(--ink-dim);
-  transition: color 260ms var(--ease), transform 520ms var(--spring);
-  transform-origin: left center;
-}
-.foot__col a:hover { color: var(--ink-2); transform: translateX(3px); }
-.foot__col a[aria-current='page'] { color: var(--ink); }
-
-/* --- and the same link with a glyph in place of the word -------------------
-   The word is still there, still laid out, still setting the height of the row —
-   it is only invisible, with the mark placed over it. That is what keeps this
-   column in step with Pages beside it without a single hand-set dimension: the
-   pitch is whatever the type scale says a label row is, at every width.
-   `visibility` rather than `opacity` or a clip: it takes the word out of the
-   accessibility tree as well as off the screen, and the anchor's aria-label —
-   the same string — is what gets announced instead. */
-.foot__ico { position: relative; }
-.foot__ico__w { visibility: hidden; }
-.foot__ico svg {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  /* 16 rather than 18: three of these four marks are solid fills, and at 18 the
-     column carried visibly more ink than the words beside it. 16 is also the
-     cap height of the label it replaced, so the two columns share a baseline
-     rhythm as well as a pitch. */
-  width: 16px;
-  height: 16px;
-  transform: translateY(-50%);
-  /* A glyph carries less ink than a word, so at --ink-dim it reads lighter than
-     the labels next to it AND sits under 2:1 against the paper. This is the
-     tone that puts it at 3:1 — the floor for something that is not text — and
-     lands it at about the apparent weight of the words in the other column. */
-  color: #8f8a82;
-}
-.foot__ico:hover svg { color: var(--ink-2); }
-
-@media (max-width: 52rem) {
-  .foot {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: clamp(2rem, 7vw, 3rem);
-  }
-  /* the address spans both columns rather than being squeezed into one */
-  .foot__said { grid-column: 1 / -1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .foot__col a:hover { transform: none; }
-}
 
 /* THE HAZE ON THE MAT. A legibility device, and the only thing it now serves
    is the deck: the menu's links sit directly on the mat, and at dawn and dusk
@@ -2280,10 +2086,35 @@ body[data-page='about'] .tab-menu { display: none; }
 .gridtog:hover { transform: scale(1.09); }
 .mute svg, .tmode svg, .gridtog svg { width: 0.9rem; height: 0.9rem; }
 
-/* the bars sit at half strength until the grid is on, which is the same thing
-   the mute's slash does: the control shows its own state */
+/* --- THE GRID POD SHOWS WHETHER THE GRID IS ON --------------------------
+
+   IT ALREADY TRIED TO, AND THE ATTEMPT WAS TOO QUIET TO COUNT. The bars went
+   from 62% to 100% opacity — white glyph on a translucent dark chip either way
+   — which is a difference you can measure and cannot see, least of all at 14px
+   with nothing beside it to compare against. Three identical grey circles in
+   the corner, one of which happened to be on.
+
+   So the CHIP changes, not just the glyph. The glass fills in: the same colour
+   it always was, at more than twice the opacity, with a hairline picked out
+   along its edge. A translucent control reads as available; a solid one reads
+   as engaged, and that is the whole vocabulary — no second accent colour
+   introduced into a corner that has none, and no new glyph to learn.
+
+   The other two pods say their state the same way, each in the terms of its
+   own object: the mute crosses itself out, the theme turns its half-circle
+   over. This one fills. `aria-pressed` was already correct — `Grid.paint`
+   writes it — so this is the sighted half of a statement the pod was already
+   making. */
+.gridtog { transition: background-color 220ms var(--ease), box-shadow 220ms var(--ease); }
 .gridtog svg { opacity: 0.62; transition: opacity 260ms var(--ease); }
 .gridtog[aria-pressed='true'] svg { opacity: 1; }
+.gridtog[aria-pressed='true'] {
+  background: rgba(8, 6, 4, 0.82);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 1px 2px rgba(8, 6, 4, 0.2),
+    0 8px 22px -10px rgba(8, 6, 4, 0.5);
+}
 
 /* THE HALF-FILLED CIRCLE TURNS OVER RATHER THAN SWAPPING. Same glyph, rotated
    180 degrees, so the light half and the dark half trade places — one object
@@ -2477,18 +2308,6 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
    ========================================================================== */
 
 @media (max-width: 46rem) {
-  .nav {
-    top: 0; left: 0; right: 0;
-    padding: 0.7rem clamp(1rem, 4vw, 1.5rem);
-    display: flex;
-    gap: 0.9rem;
-    background: rgba(247, 246, 243, 0.82);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--line-soft);
-    font-size: 1rem;
-  }
-  .nav a[aria-current='page']::after { display: none; }
   .hero { padding-top: 5rem; }
   /* the footer is a grid now and stacks in its own 52rem block — a leftover
      `flex-direction: column` here would have fought that silently */
@@ -2505,9 +2324,6 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  /* the reveal never runs here, so every character sits at the ink it would
-     have finished on */
-  .c { color: var(--ink); }
   .chip { opacity: 1; transform: none; }
   .block u { background-size: 100% 1.5px; }
   .block mark { background: rgba(20, 16, 12, 0.09); }
@@ -2521,7 +2337,6 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
    ~13px type. The rail replaces the global nav on this page.
    ========================================================================== */
 
-body[data-page='project'] .nav { display: none; }
 
 .proj {
   /* named, because the hero below has to subtract it to be exactly one screen */
@@ -6653,27 +6468,132 @@ body.past-hero .sel { opacity: 0; }
     background: transparent;   /* a surface, never a mark */
   }
 
-  /* Links that own a whole row get the whole row, width included — a footer
-     link occupying a line should be tappable across that line, not just across
-     its word. Height alone left them at 37x44. */
-  .foot li > a {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    min-height: 44px;
-  }
   .row { min-height: 44px; }
-
-  /* the email is the largest thing in the footer and was a 23px target */
-  .foot__mail {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-  }
 
   /* and the buttons get it outright, since they have room */
   .btn { min-height: 44px; }
 }
+
+/* ==========================================================================
+   29b. THE CASE STUDY IS SET IN THE PORTFOLIO'S TYPE, NOT ITS OWN
+
+   MEASURED, BECAUSE THE COMPLAINT WAS MEASURABLE. Every text size on the work
+   page and on About, largest first:
+
+     22px/450   the rail's statement — the biggest thing in the portfolio
+     17px/560   a company name in About's experience list
+     15px       the phone bar's name
+     14px       the rail's rows, a project card's title
+     13px       body copy, the closing lines, About's prose
+     12px       a preview's caption
+
+   And on a case study:
+
+     56px/500   .phero__title
+     38px/600   .sec__heading, .blk-head__t
+     29px/500   .blk__sub, .blk__sub2, .onward__t
+     17px/600   emphasis inside prose
+     15px       body copy, metadata, eyebrows
+
+   So the case study ran between 1.7 and 2.5 times the portfolio at every
+   level. That is not a page with its own art direction; it is a different type
+   system, and it is the whole of why opening a project felt like leaving the
+   site. Nothing else about it had to change to fix that.
+
+   AND THE FIX IS FOUR TOKENS, WHICH IS THE POINT. The case-study components
+   already read the shared scale — `--step-3` for the title, `--step-2` for
+   headings, `--step-1` for sub-heads, `--step-0` for prose — so the ladder can
+   be re-pitched for this page without touching a single component rule. Every
+   heading, quote, stat and caption on every case study follows, and the
+   relative hierarchy between them is exactly the one that was authored: the
+   steps stay in the same order, the range between them just closes.
+
+   The new pitch lands on the portfolio's own ladder. The title sits one step
+   above the rail's statement, because it is what the page is about; the two
+   heading levels land at 17-19 and 15-16, where About's own headings are; and
+   prose drops to 13-14 to match About's, which is the other long-form reading
+   surface on the site.
+
+   Weight and tracking come with it. 600 was drawn for 38px and reads as bold
+   at 19; -0.024em of tracking was drawn for the same and reads as cramped.
+   Both are relaxed one notch, which is what the portfolio does everywhere
+   else: hierarchy out of spacing and weight rather than size.
+
+   SCOPED TO `[data-page='project']` and nothing else. The 404's own headline
+   and the resume viewer read the same tokens at their own pitch, and neither
+   is a case study.
+   ========================================================================== */
+
+body[data-page='project'] {
+  /* the title: one step above the rail's 22px statement */
+  --step-3: clamp(1.375rem, 1.2rem + 0.75vw, 1.625rem);
+  /* section and block headings */
+  --step-2: clamp(1.0625rem, 1rem + 0.32vw, 1.1875rem);
+  /* sub-heads, pull quotes, stat values, the next-project title */
+  --step-1: clamp(0.9375rem, 0.9rem + 0.22vw, 1rem);
+  /* prose, metadata, eyebrows — About's own body size */
+  --step-0: clamp(0.8125rem, 0.79rem + 0.11vw, 0.875rem);
+  /* the half step, between prose and a sub-head: pull quotes and the
+     comparison block's statements read at it */
+  --step-05: clamp(0.875rem, 0.85rem + 0.14vw, 0.9375rem);
+}
+
+/* AND THE THREE PROPERTIES THAT WERE DRAWN FOR THE OLD SIZES. A weight and a
+   tracking chosen for 38px are not the same decision at 19px — the first reads
+   as bold, the second as cramped. One notch back on each, and the line height
+   opens because a shorter line at a smaller size needs the leading. */
+body[data-page='project'] .sec__heading,
+body[data-page='project'] .blk-head__t {
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  line-height: 1.3;
+}
+
+body[data-page='project'] .phero__title {
+  letter-spacing: -0.014em;
+  line-height: 1.18;
+  font-weight: 450;
+  max-width: 30ch;
+}
+
+body[data-page='project'] .proj__title {
+  letter-spacing: -0.014em;
+  line-height: 1.18;
+  font-weight: 450;
+}
+
+/* --- AND THE PHONE, WHICH IS NOT JUST THE DESKTOP PITCH SCALED -----------
+
+   The portfolio re-states the whole scale below 48rem, and one of its values
+   carries a reason worth keeping: body copy goes UP to 16px there, not down.
+   A phone is held closer and read for longer, and 16px is also the floor below
+   which iOS zooms the viewport on an input focus.
+
+   The block above would have overridden that — `body[data-page='project']` is
+   one class and one attribute, so it outweighs the `:root` the mobile block
+   re-declares, at every width. Case studies would have read their desktop
+   clamps on a phone and set long-form prose at 13px.
+
+   So the pitch is stated again here, over a 16px body: a compressed ladder
+   with real steps in it rather than the desktop's ratios shrunk. */
+@media (max-width: 48rem) {
+  body[data-page='project'] {
+    --step-3: 1.625rem;      /* 26px — the title */
+    --step-2: 1.1875rem;     /* 19px — section and block headings */
+    --step-1: 1.0625rem;     /* 17px — sub-heads and quotes */
+    --step-05: 1rem;         /* 16px */
+    --step-0: 1rem;          /* 16px — body, the iOS zoom floor */
+  }
+}
+
+/* emphasis inside prose was 600 against a 400 body, which at this size is a
+   different weight class rather than emphasis */
+/* EVERY `b` ON THE PAGE, not just the ones inside prose blocks. 600 against a
+   400 body is a different weight class rather than emphasis, and the
+   comparison block sets its own size so a rule scoped to `.sec__body` missed
+   its bold text entirely. */
+body[data-page='project'] b,
+body[data-page='project'] strong { font-weight: 550; }
 
 /* --- 30c. the phone's navigation ------------------------------------------
    A bar with the name at one end and one control at the other. The control is
@@ -6683,12 +6603,6 @@ body.past-hero .sel { opacity: 0; }
 .mbar { display: none; }
 
 @media (max-width: 48rem) {
-  /* `body[data-page='home'] .nav` sets display on the hero, so hiding the row
-     needs a selector of the same weight — a bare `.nav` loses and the links
-     stay on screen underneath the sheet. */
-  .nav,
-  body[data-page] .nav { display: none; }
-
   .mbar {
     display: flex;
     justify-content: space-between;
@@ -6822,21 +6736,6 @@ body.past-hero .sel { opacity: 0; }
    The footer is the exception: a three-column grid built for a wide screen,
    which at 390px becomes two 161px columns with the email spanning them. */
 @media (max-width: 48rem) {
-  /* Line length. Prose that runs the full width of a phone is uncomfortable
-     to read at any size; the gutter does most of the work, this caps the rest. */
-  .foot__note { max-width: 34ch; }
-
-  /* one column, in reading order, with the email first as it is on desktop */
-  .foot {
-    grid-template-columns: 1fr;
-    gap: var(--sp-5, 1.75rem);
-  }
-  .foot__col { min-width: 0; }
-
-  /* the two link columns still sit side by side — they are short lists, and
-     stacking them would push the page down for no gain */
-  .foot > .foot__col { break-inside: avoid; }
-
   /* Generous, consistent breathing room. One value, from the spacing scale,
      rather than each section carrying its own guess. */
   .showcase { padding-block: var(--sp-6, 2.25rem); }
@@ -7311,31 +7210,6 @@ body.past-hero .sel { opacity: 0; }
   .shotimg { max-width: 100% !important; height: auto; }
 }
 
-/* --- 34. the phone's footer ------------------------------------------------
-   Shorter by a whole column, and the links lie down.
-
-   PAGES GOES, and not because it is in the way. 48rem is the width at which the
-   header's row of links is replaced by the hamburger, so below it every page in
-   that column is already one tap away in the menu — the footer list is a second
-   copy of the same array on the same screen. It is hidden rather than removed:
-   the markup is what proves the header and the footer are generated from one
-   source, and a harness checks exactly that.
-
-   LINKS GOES TOO, for the same reason Pages does. Every mark in it is already
-   on the screen: the address above it is the mail link written out in full, and
-   the rest are in the menu behind the hamburger. Laid down as a row of four
-   squares under a heading it read as a toolbar rather than as a footer — a
-   second navigation, at the end of a page whose whole job by then is to hand
-   you the sky.
-
-   Both are hidden rather than removed: the markup is what proves the header and
-   the footer are generated from one source, and a harness checks exactly that.
-
-   What is left is the address, the note and the copyright. */
-@media (max-width: 48rem) {
-  .foot__col--pages,
-  .foot__col--links { display: none; }
-}
 
 /* --- 36. the phone's floating control --------------------------------------
    One button, bottom right, clear of the safe area — and at 44px rather than
@@ -8141,12 +8015,9 @@ body.deck-shut .tab-menu { display: none; }
 body.deck-shut .deck__close { display: none; }
 
 
-/* The row of links is gone: the handle is the navigation now, and two of them
-   on one screen is the second one explaining that the first is decoration. The
-   markup stays, because the phone's sheet is generated from the same array and
-   a harness checks that they match. Later than the rule that shows it on the
-   hero, and at the same weight, so it wins on order. */
-body[data-page] .nav { display: none; }
+/* The rule that hid the header row of links used to be here. The row is gone
+   now — element, builder, styles and all — so there is nothing left to hide.
+   See the note where `.nav` was defined. */
 
 /* --- 38b. the same reveal, turned ninety degrees ---------------------------
    THE PHONE GETS THE INTERACTION, NOT A MENU.
@@ -9217,175 +9088,20 @@ body[data-game] .shelf { display: none; }
 }
 
 /* ==========================================================================
-   42. WORK — THE ARCHIVE
-   The same canvas as the home page and the 404: dotted paper, the same type,
-   the same radius, the same restraint. What is different is the rhythm — four
-   pieces of work at a size where you can actually read them, in two columns
-   that do not travel at quite the same rate.
+   42. WORK — THE ARCHIVE, AND IT IS GONE
+
+   This section styled work.html: a canvas of its own with the dotted paper,
+   four pieces of work in two columns travelling at slightly different rates,
+   and the index table under them. It was the archive from before the home
+   page became the work, and once the home page WAS the grid it was the same
+   projects a second time in a layout with no sidebar and its own navigation.
+
+   The page has been removed — see the notes where `Pages.work` and `Tabs`
+   were, in site.js. Nothing emits `.wk`, `.wk__*` or `.wkt__*` any more, in
+   the script or in any HTML file, so every rule that was here could only ever
+   have matched nothing. The home page's project cards are `.wcard`, a
+   different component in section 41, and are untouched.
    ========================================================================== */
-
-.wk {
-  position: relative;
-  min-height: 100svh;
-  padding: clamp(5rem, 12vh, 8.5rem) clamp(1.25rem, 4vw, 3.5rem) clamp(4rem, 9vh, 7rem);
-  overflow: clip;                       /* the drift must not open a scrollbar */
-}
-
-/* --- the opening ---------------------------------------------------------
-   An editorial line, not a hero. The page says what it is and gets out of the
-   way; the work is the thing that is supposed to be large here. */
-.wk__head { max-width: 46rem; margin: 0 0 clamp(3rem, 7vh, 5rem); }
-
-.wk__eyebrow {
-  margin: 0 0 0.9rem;
-  font-family: var(--mono, ui-monospace, monospace);
-  font-size: 0.75rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--ink-dim, #b9b4ad);
-}
-
-.wk__lede {
-  margin: 0;
-  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.125rem);
-  line-height: 1.22;
-  font-weight: 620;
-  letter-spacing: -0.018em;
-  color: var(--ink, #14100c);
-  max-width: 30ch;
-}
-
-/* --- the filter ----------------------------------------------------------
-   Removed. There was a row of pills under the headline — All, and one per
-   discipline — that dimmed the tiles outside the set. With four pieces on the
-   page there is nothing to find: every one of them is already visible, so the
-   control could only take things away, and it was the first thing the eye hit
-   under the sentence. The disciplines still read on each tile's metadata
-   line. */
-
-/* --- the columns ---------------------------------------------------------
-   Two, because there are four pieces and each is meant to be read. The second
-   one carries the drift; the first does not, so the offset between them is the
-   thing you feel rather than the movement itself. */
-.wk__cols {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(1.25rem, 3vw, 2.75rem);
-  align-items: start;
-}
-.wk__col { display: flex; flex-direction: column; gap: clamp(2.5rem, 6vh, 4.5rem); }
-.wk__col[data-col='1'] {
-  transform: translate3d(0, var(--wk-drift, 0px), 0);
-  will-change: transform;
-}
-/* the second column starts lower, so the two read as a mosaic rather than a
-   pair of stacks that happen to be side by side */
-@media (min-width: 48.0625rem) {
-  .wk__col[data-col='1'] { margin-top: clamp(3rem, 8vh, 6rem); }
-}
-
-/* --- a piece of work -----------------------------------------------------
-   No card. The visual sits on the paper and the caption sits under it, which
-   is the whole difference between an archive and a grid of tiles. */
-.wkt {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  position: relative;
-  transition: transform 320ms var(--spring-soft, cubic-bezier(0.16, 1, 0.3, 1));
-}
-
-.wkt__media {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--paper-2, #fffefc);
-  box-shadow:
-    0 0 0 1px rgba(20, 16, 12, 0.055),
-    0 10px 30px -18px rgba(20, 16, 12, 0.28);
-  transition: box-shadow 320ms var(--ease), transform 420ms var(--spring-soft, cubic-bezier(0.16, 1, 0.3, 1));
-}
-/* the artwork fills the frame — everything except the pill, which is furniture
-   sitting on top of it rather than another layer of the picture */
-.wkt__media > *:not(.wkt__go) { width: 100%; height: 100%; }
-
-/* THE HOVER IS THE DOCK'S HOVER, NOT A CARD'S. Two or three pixels of lift, a
-   shadow that deepens rather than spreads, and the artwork easing a fraction
-   further than the frame it sits in — the parallax you get from picking a
-   photograph up off a table. No scaling of the whole tile: at this size a 1.03
-   makes the type under it visibly resample. */
-:root:not(.hover-cold) .wkt:hover { transform: translateY(-3px); }
-:root:not(.hover-cold) .wkt:hover .wkt__media {
-  box-shadow:
-    0 0 0 1px rgba(20, 16, 12, 0.08),
-    0 18px 44px -22px rgba(20, 16, 12, 0.36);
-}
-:root:not(.hover-cold) .wkt:hover .wkt__media > *:not(.wkt__go) { transform: scale(1.018); }
-.wkt__media > *:not(.wkt__go) { transition: transform 620ms var(--spring-soft, cubic-bezier(0.16, 1, 0.3, 1)); }
-.wkt:active { transform: translateY(-1px) scale(0.996); }
-
-/* --- the caption ---------------------------------------------------------
-   Number, title, and the metadata line the home page already writes — set in
-   the mono face and uppercased, which is the one borrowing from the reference
-   that belongs here: it separates the fact from the name without a rule. */
-.wkt__cap {
-  display: flex;
-  gap: 0.85rem;
-  margin-top: 1.05rem;
-  align-items: baseline;
-}
-.wkt__no {
-  flex: none;
-  font-family: var(--mono, ui-monospace, monospace);
-  font-size: 0.75rem;
-  color: var(--ink-dim, #b9b4ad);
-  padding-top: 0.12rem;
-}
-.wkt__lines { display: flex; flex-direction: column; gap: 0.22rem; min-width: 0; }
-.wkt__title {
-  font-size: clamp(1.0625rem, 0.95rem + 0.4vw, 1.25rem);
-  font-weight: 600;
-  letter-spacing: -0.012em;
-  line-height: 1.28;
-  color: var(--ink, #14100c);
-  transition: opacity 200ms var(--ease);
-}
-.wkt__meta {
-  font-family: var(--mono, ui-monospace, monospace);
-  font-size: 0.6875rem;
-  letter-spacing: 0.075em;
-  text-transform: uppercase;
-  color: var(--ink-dim, #b9b4ad);
-  transition: color 220ms var(--ease);
-}
-:root:not(.hover-cold) .wkt:hover .wkt__meta { color: var(--ink-2, #3a352f); }
-
-/* THE AFFORDANCE, ON THE ARTWORK, only where a case study exists. It is a
-   child of `.wkt__media`, so this is the bottom-left of the picture. Parented
-   to the tile — which is also positioned — `bottom` measured from under the
-   caption instead, and the pill covered the title on hover. */
-.wkt__go {
-  position: absolute;
-  z-index: 2;
-  left: 0.9rem;
-  bottom: 0.9rem;
-  padding: 0.34rem 0.7rem;
-  border-radius: 999px;
-  background: var(--ink, #14100c);
-  color: var(--paper, #f7f6f3);
-  font-family: var(--mono, ui-monospace, monospace);
-  font-size: 0.6875rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  opacity: 0;
-  transform: translateY(6px);
-  pointer-events: none;
-  transition: opacity 220ms var(--ease), transform 360ms var(--spring-soft, cubic-bezier(0.16, 1, 0.3, 1));
-}
-:root:not(.hover-cold) .wkt:hover .wkt__go { opacity: 1; transform: none; }
-/* a piece with nothing behind it does not pretend otherwise */
-.wkt.is-quiet { cursor: default; }
 
 /* --- the credits ---------------------------------------------------------
    There is deliberately no CSS here. The five credits used to be a `.wk__also`
@@ -9412,23 +9128,6 @@ body[data-game] .shelf { display: none; }
   /* the second column hangs lower than the first, so the archive's last
      caption ends much closer to this than the grid's own bottom suggests */
   padding-top: clamp(5rem, 13vh, 9rem);
-}
-
-/* --- the phone -----------------------------------------------------------
-   One column, and the drift comes off with it: on a narrow screen the second
-   column is underneath the first, so offsetting it is offsetting the whole
-   page. The work stays the same size relative to the screen. */
-@media (max-width: 48rem) {
-  .wk { padding-top: clamp(4rem, 10vh, 5.5rem); }
-  .wk__cols { grid-template-columns: minmax(0, 1fr); gap: clamp(2.5rem, 7vh, 3.5rem); }
-  .wk__col[data-col='1'] { transform: none; margin-top: 0; }
-  .wkt__media { aspect-ratio: 5 / 4; border-radius: 14px; }
-  .wkt__go { opacity: 1; transform: none; }   /* no hover on a phone */
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wkt, .wkt__media, .wkt__media > *, .wkt__go { transition-duration: 1ms; }
-  .wk__col[data-col='1'] { transform: none; }
 }
 
 /* ==========================================================================
@@ -11033,6 +10732,25 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
   color: var(--text-1);
 }
 
+/* AND THE GRID POD STILL SAYS WHETHER THE GRID IS ON.
+
+   The light build fills the chip in to mean "engaged" — see the note there —
+   and this rule is why that needed a second half rather than being left to
+   inherit: the three-pod rule above lands on the same element with the same
+   weight and later in the file, so it took the fill straight back off and the
+   pod was identical in both states on every dark page.
+
+   Same statement, inverted like the pod itself. The film goes from 9% to 24%
+   and its hairline from 14% to 34%, so the chip reads as filled against its
+   two neighbours rather than as brighter in isolation — which is the only
+   comparison a visitor actually makes. */
+.is-dark .gridtog[aria-pressed='true'] {
+  background: rgba(240, 240, 238, 0.24);
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 240, 238, 0.34),
+    0 6px 18px -10px rgba(0, 0, 0, 0.7);
+}
+
 /* 10. THE CHROME THAT WAS WRITTEN IN LITERALS. Everything above this point
        reads tokens and inverted on its own. These are the surfaces that were
        typed as `#fff` or a near-white because there was one theme to type them
@@ -11051,6 +10769,37 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
     inset 0 0 0 1px rgba(240, 240, 238, 0.1),
     0 12px 30px -10px rgba(0, 0, 0, 0.62);
 }
+
+/* 10c. THE THREE CASE-STUDY FRAMES THAT WERE WRITTEN IN LIGHT LITERALS.
+
+   The same oversight the drawing dock had, in the one place left with it: a
+   surface typed as `rgba(255, 255, 255, 0.72)` because there was one theme to
+   type it for. Inverted here rather than at the definition, so the light build
+   stays exactly the value it was measured at.
+
+   WHAT IS DELIBERATELY NOT IN THIS LIST, and the distinction matters. The
+   card media plate (`.wcard__media`, #ECEAE6) and the CSS previews inside it
+   (`.pv-search__sheet`, `.pv-fan`, `.pv-words`) are light in the dark on the
+   HOME page too — that is the established art direction, a light plate holding
+   artwork, and the case-study hero reading the same way is the two surfaces
+   agreeing rather than one of them being wrong. Only chrome is inverted:
+   a comparison frame, a placeholder box and its caption chip are UI. */
+.is-dark .cmp {
+  background: rgba(240, 240, 238, 0.05);
+  box-shadow: inset 0 0 0 1.5px rgba(240, 240, 238, 0.12);
+}
+
+.is-dark .phbox {
+  background: rgba(240, 240, 238, 0.05);
+  box-shadow: inset 0 0 0 1.5px rgba(240, 240, 238, 0.12);
+}
+
+.is-dark .phbox__p { background: rgba(240, 240, 238, 0.09); }
+
+/* and the poster's own holding colour, which is only ever seen for the frame
+   or two before the video decodes — but a white flash in a dark room is the
+   most visible frame there is */
+.is-dark .shotvid { background: #1b1b1f; }
 
 /* the label on the 404's panel is a dark chip with a light legend, and `--ink`
    is the light end here — so the legend has to follow the ground, not stay
@@ -11403,10 +11152,19 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
   z-index: -1;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 320ms var(--ease);
+  transition: opacity 260ms var(--ease);
 }
 
-:root.is-grid .gridlay { opacity: 1; }
+/* ON IS INSTANT AND OFF IS A FADE, WHICH IS NOT AN INCONSISTENCY.
+
+   The layer's opacity used to do the whole reveal, and a 320ms cross-fade is
+   the grid arriving as one object — which is not what a grid is. Each line is
+   ruled down the page now, at its own rate (see `.gridlay.is-draw` below and
+   `Grid.draw` for where the rates come from), so the layer has to be at full
+   strength from the first frame or the fade would be a veil over the drawing.
+
+   Off keeps the fade. There is nothing to watch a grid being un-drawn for. */
+:root.is-grid .gridlay { opacity: 1; transition-duration: 0ms; }
 
 .gridlay i {
   position: absolute;
@@ -11414,6 +11172,9 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
   bottom: 0;
   width: 1px;
   background: var(--grid-major);
+  /* pulled DOWN from the top of the page, which is the direction a ruled line
+     is actually drawn in — see the animation below */
+  transform-origin: 50% 0;
 }
 
 .gridlay b {
@@ -11422,12 +11183,51 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
   right: 0;
   height: 1px;
   background: var(--grid-major);
+  /* and this one sideways, because it has no length in the other direction */
+  transform-origin: 0 50%;
 }
 
 .gridlay .is-sub { background: var(--grid-minor); }
 
+/* --- RULED, ONE LINE AT A TIME ------------------------------------------
+
+   AN ANIMATION AND NOT A TRANSITION, and the reason is mechanical: `Grid.draw`
+   rebuilds every line as a new element, and a transition on a freshly inserted
+   node has no previous value to run from — the lines would simply be there. An
+   animation with `both` plays on first paint and holds its end state after, so
+   the lines are drawn on the frame they are created and stay drawn.
+
+   `--gl-dur` and `--gl-delay` are written per line by `Grid.draw`: a wide
+   spread of durations so no two lines arrive together, and a small left-to-
+   right cascade of delays so the page fills rather than wipes. The values are
+   rolled fresh on every press, so the same grid is never ruled the same way
+   twice. Defaults here are only what applies if something skipped that step.
+
+   IT IS SCOPED TO `.is-draw`, WHICH IS ON THE LAYER FOR ONE PRESS ONLY. See
+   `Grid.set` — the same `draw()` runs on every resize and every section
+   change, and a grid that re-ruled itself down the page during a window drag
+   would be intolerable. */
+.gridlay.is-draw i {
+  animation: gridRuleY var(--gl-dur, 640ms) var(--ease) var(--gl-delay, 0ms) both;
+}
+.gridlay.is-draw b {
+  animation: gridRuleX var(--gl-dur, 460ms) var(--ease) var(--gl-delay, 0ms) both;
+}
+
+@keyframes gridRuleY {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+@keyframes gridRuleX {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gridlay { transition: none; }
+  /* the grid is a reading aid before it is a flourish: it appears */
+  .gridlay.is-draw i,
+  .gridlay.is-draw b { animation: none; }
 }
 
 /* --- 6. the crossfade ----------------------------------------------------
