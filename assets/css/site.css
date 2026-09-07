@@ -1018,14 +1018,26 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
    is their containing block — it was the abspos layer before and it has to go
    on being a containing block now that it is in the flow.
 
-   AND THE TOP EDGE IS THE ONE CLIPPED EDGE. Pieces are thrown in from just
-   above the box, and "just above" is now the middle of the column rather than
-   off the top of the page — so without this the first frames of every fall are
-   a brick crossing the navigation. `inset(0 -50vw -50vw -50vw)` cuts at the
-   top and opens the other three sides by half a viewport, which is what lets a
-   held piece reach out to the right and touch the work while nothing ever
-   shows above the box. `overflow: clip` would have done the top and taken the
-   reach with it.
+   AND THE TOP EDGE OPENS BY EXACTLY AS FAR AS THE SCENE REACHES.
+
+   It was `inset(0 ...)` — a hard cut on the top edge — and that one number is
+   what made the pieces look emitted. The fall was kept short so it would
+   happen behind this cut, so the first thing anybody saw of a brick was it
+   emerging from a line halfway down the column, a few pixels above the pile.
+   There was never an emitter; the clip was drawing one.
+
+   `--air-sky` is the distance from the top of the WINDOW to the top of this
+   box, written by `Bricks.sky()` because that is the one place that knows it.
+   Opening the top by that much means the visible scene starts at the top of
+   the viewport: a piece enters off the top of the screen, crosses the
+   navigation, and arrives in the box. Above the window `.sheet`'s own clip
+   takes over, so nothing is ever painted off the page — and the default of 0
+   keeps the old hard cut for the stacked layout, where the space above this
+   strip belongs to the work rather than to the sky.
+
+   The other three sides are unchanged and still open by half a viewport, which
+   is what lets a held piece reach out to the right and touch the work.
+   `overflow: clip` would have done the top and taken the reach with it.
 
    `pointer-events: none` and NOT because the layer is decorative. The bricks
    inside it set `auto` on their own painted cells (see `.brk__hit`), so a press
@@ -1038,8 +1050,27 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   min-height: 0;
   z-index: 0;
   pointer-events: none;
-  clip-path: inset(0 -50vw -50vw -50vw);
+  clip-path: inset(calc(-1 * var(--air-sky, 0px)) -50vw -50vw -50vw);
 }
+
+/* AND IT COMES FORWARD WHILE SOMETHING IS ACTUALLY MOVING.
+
+   `.mast__keep` sits at `z-index: 5` and the bricks at 4, which is the right
+   RESTING order and the wrong one for a piece in transit: a brick falling
+   through the navigation, or held over it, was painted behind the words. The
+   pile lives below the navigation, so raising the whole layer costs nothing at
+   rest — there is nothing up there to obscure — and for the length of a fall
+   or a drag the moving piece is in front of the type it is pushing aside,
+   which is the way round the interaction has to read.
+
+   `:has()` rather than a class, because the two states are already on the
+   bricks: `is-auto` is what `rain` puts on a piece in flight and takes off
+   when it lands, `is-hold`/`is-drag` are what the gesture puts on the piece in
+   your hand. Nothing to set, nothing to clear, and no counter to get wrong
+   when a late arrival lands while you are holding something else. */
+.mast__air:has(.brk.is-auto),
+.mast__air:has(.brk.is-hold),
+.mast__air:has(.brk.is-drag) { z-index: 6; }
 
 /* The closing lines took the column's slack with an auto margin; the
    playground takes it now, and two things claiming the same free space is one
@@ -1107,6 +1138,24 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 }
 :root:not(.hover-cold) .mast__row:hover { color: var(--ink-2); }
 .mast__row.is-here { color: var(--ink); }
+
+/* `--shove-x` IS THE WORD GETTING OUT OF A BRICK'S WAY — see `Shove`.
+
+   A transform and not `margin`, `left` or `padding`, which is the whole of why
+   this cannot disturb the layout: the row is displaced on the compositor and
+   the column it sits in never re-flows, so "Work" sliding sideways moves
+   nothing else in the sidebar and nothing at all on the page. It carries its
+   own hit area with it, so the link is still exactly where it looks like it
+   is and a press lands on it wherever the spring has it.
+
+   Horizontal only, by construction rather than by restraint — there is no
+   second channel here to write a Y into. The row keeps its baseline, its
+   leading and its 22.5px pitch no matter what a brick does to it.
+
+   A row that has never been near a brick has no `--shove-x` at all: `Shove`
+   removes the property rather than setting it to zero, so the default is
+   `translate3d(0, 0, 0)` and the navigation renders exactly as it did. */
+.mast__row { transform: translate3d(var(--shove-x, 0px), 0, 0); }
 
 /* THE ENTIRE ACTIVE INDICATOR. Five pixels of ink, square, on the row.
    An underline moves the row, a background makes it a button, and a colour
@@ -10910,19 +10959,15 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
 /* 10. THE CHROME THAT WAS WRITTEN IN LITERALS. Everything above this point
        reads tokens and inverted on its own. These are the surfaces that were
        typed as `#fff` or a near-white because there was one theme to type them
-       for — the drawing dock and its two drawers, the 404's panel and sign,
-       and the hero's three fact pills. Same objects, same shapes, same
-       shadows; only the film they are made of changes side. */
-.is-dark .tools__panel,
-.is-dark .tools__tab,
-.is-dark .inks,
-.is-dark .drawerpad,
+       for — the 404's panel and sign. Same objects, same shapes, same shadows;
+       only the film they are made of changes side.
+
+       THE DRAWING DOCK USED TO BE IN THIS LIST AND IS NOT ANY MORE. One
+       surface swap was never going to be enough for it — see 10b, which is
+       the whole of the dark dock and nothing else. */
 .is-dark .nfp,
 .is-dark .nfs { background: #1c1c1f; color: var(--text-1); }
 
-.is-dark .tools__panel,
-.is-dark .inks,
-.is-dark .drawerpad,
 .is-dark .nfp,
 .is-dark .nfs {
   box-shadow:
@@ -10930,26 +10975,324 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
     0 12px 30px -10px rgba(0, 0, 0, 0.62);
 }
 
-.is-dark .tools__tab {
-  box-shadow:
-    inset 0 0 0 1px rgba(240, 240, 238, 0.1),
-    -4px 4px 18px rgba(0, 0, 0, 0.5);
-}
-.is-dark .tools__tab:hover { box-shadow: inset 0 0 0 1px rgba(240, 240, 238, 0.16), -8px 6px 30px rgba(0, 0, 0, 0.6); }
-
 /* the label on the 404's panel is a dark chip with a light legend, and `--ink`
    is the light end here — so the legend has to follow the ground, not stay
    white on white */
 .is-dark .nfp__tip { color: var(--surface); }
 
-/* and the dock's own glyphs, which are `#1c1c1e` on the panel's white — the
-   panel moved and they did not, so every chip in the lower group was drawn in
-   near-black on near-black. The two illustrated tools (the pencil and the
-   marker) carry their own colours and are untouched. */
-.is-dark .tools__tab,
+/* ==========================================================================
+   10b. THE DOCK IN THE DARK
+
+   THE OLD VERSION WAS ONE DECLARATION: `background: #1c1c1f`, with the rest
+   inherited from the light build. On paper that build is right — a white
+   panel, a near-black glyph, an #e6e6e6 hairline, a 5.5%-black hover wash.
+   Swap the surface and each of those four decisions lands somewhere it was
+   never aimed:
+
+     · #1c1c1f against a page whose sky runs #08080a–#1a1a1d is not a panel on
+       a page. It is the same film twice, so the dock read as a hole in the
+       page rather than as an object resting on it.
+
+     · The #e6e6e6 hairlines went from the faintest mark in the dock to the
+       brightest thing in it — two rules shouting between quiet groups.
+
+     · rgba(20, 16, 12, 0.055) is a hover wash made of black, and black is not
+       a highlight on a dark surface. There was effectively no hover.
+
+     · And one colour, `--text-1`, for every glyph in the column: no
+       difference between the tool in your hand, the tools you could pick up,
+       and the two controls that only ever act once.
+
+   So the dark dock is tuned here instead of inherited. Everything is scoped
+   `.is-dark` and the light build above is untouched; the rules that answer a
+   `:root:not(.hover-cold)` rule carry that guard too, so a touch device still
+   gets no hover state and the weights still land in the intended order.
+
+   NOTHING IN THIS SECTION IS BEHAVIOUR. No selector here is new to the DOM, no
+   tool changes state on a different condition, and the two illustrated objects
+   — the pencil and the note — keep their own art, their own slide and their
+   own drop shadows. Surface, contrast, spacing, states.
+   ========================================================================== */
+
+.is-dark .tools {
+  /* THE FACE. Two stops, not one: about 4% of lift across the panel's height
+     reads as a face catching the room's single light, which is the whole of
+     the "tactile" brief — no bevel, no gloss, no noise. Both stops sit above
+     the page's lightest sky (#1a1a1d), so the dock is a lighter object on a
+     darker ground from any scroll position. */
+  --dk-face-1: #26262b;
+  --dk-face-2: #1d1d21;
+
+  /* THE EDGES. A hairline at 11%, and a brighter one along the top edge only,
+     because the light is above. Neither is a border you would call bright:
+     the separation is meant to come from the face and the shadow, with these
+     two only closing the outline. */
+  --dk-edge: rgba(244, 244, 242, 0.11);
+  --dk-edge-lit: rgba(255, 255, 255, 0.15);
+
+  /* THE FOUR TIERS, measured against --dk-face-2 (the darker end of the face,
+     which is where the lower group sits):
+
+         on    #ffffff   19.6:1    the tool in your hand
+         idle  #ececea   16.3:1    a tool you can pick up
+         2nd   #a9a9a7    7.4:1    Builds and Undo — controls, not tools
+         off   #5b5b5f    2.2:1    nothing is disabled today; the tier exists
+                                   so that anything which becomes disabled
+                                   reads as disabled rather than as merely
+                                   darker than its neighbour
+
+     `idle` is a light grey and not white deliberately. At 16:1 it is well
+     past legible, and it leaves the armed glyph somewhere brighter to go —
+     which is the difference the old single `--text-1` could not draw. */
+  --dk-ink-on: #ffffff;
+  --dk-ink: #ececea;
+  --dk-ink-2: #a9a9a7;
+  --dk-ink-off: #5b5b5f;
+
+  /* THE WASHES, made of light rather than of black. 7% white lifts a chip
+     about as far as the light build's 5.5% black drops one. The press wash is
+     SMALLER than the hover it replaces, so a held chip settles back into the
+     panel instead of brightening — the press is felt as a loss of lift. */
+  --dk-wash: rgba(255, 255, 255, 0.07);
+  --dk-wash-press: rgba(255, 255, 255, 0.035);
+
+  /* THE RULES. 8.5% white over the face is about #2c2c30 — 1.3:1 against the
+     panel. It is meant to be found, not read: the groups are already spaced
+     apart, and the line only confirms where one of them ends. */
+  --dk-rule: rgba(255, 255, 255, 0.085);
+
+  /* THE ACCENT, AND ONLY THIS ACCENT. The same #7c3aed the light build arms
+     Move with, given a top-lit pair of stops and a rim, so the chip reads as a
+     switch that is down rather than as a swatch someone left on. No second
+     hue enters the dock. */
+  --dk-acc-1: #8449f2;
+  --dk-acc-2: #6c2ddb;
+  --dk-acc-rim: rgba(190, 162, 255, 0.34);
+  --dk-acc-cast: rgba(85, 30, 200, 0.55);
+}
+
+/* --- the panel ----------------------------------------------------------- */
+
+/* The lit top line is listed FIRST so it paints over the ring rather than
+   under it; the ring is still an inset shadow rather than a border, so the
+   panel's measured 48px width is untouched. Two drop shadows: a wide soft one
+   that separates the dock from the page, and a tight dark one directly under
+   it that keeps the bottom edge from dissolving. */
+.is-dark .tools__panel {
+  background: linear-gradient(180deg, var(--dk-face-1), var(--dk-face-2));
+  color: var(--dk-ink);
+  box-shadow:
+    inset 0 1px 0 0 var(--dk-edge-lit),
+    inset 0 0 0 1px var(--dk-edge),
+    0 18px 40px -16px rgba(0, 0, 0, 0.85),
+    0 2px 6px -2px rgba(0, 0, 0, 0.6);
+}
+
+/* AIR, WITHOUT REDRAWING THE COLUMN. Every offset in the light build was
+   measured off a reference and none of them is touched above 160px: the
+   cursor, both hairlines' logic, the pencil and the note stay exactly where
+   they were measured. What moves is the lower group, down by 9–12px on the
+   same 43px pitch it already used, and the panel grows by the same amount —
+   so the added air is real air and not a re-spacing. The two hairlines move to
+   the middle of the gaps they sit in (the first was 10.5px under the cursor
+   and 23.7px over the pencil, which read as belonging to the pencil), and they
+   shorten from 32.5px to 26px, because a group boundary does not need to be
+   two thirds of the panel wide to be understood. */
+.is-dark .tools__panel {
+  --y-div1: 55px;
+  --y-div2: 200px;
+  --y-sticker: 230px;
+  --y-preset: 273px;
+  --y-undo: 316px;
+  --p-h: 340.6px;
+  --div-w: 26px;
+}
+
+.is-dark .tools__div { background: var(--dk-rule); }
+
+/* --- the chips ----------------------------------------------------------- */
+
+/* ONE BOX FOR ALL FOUR, AND IT FIXES A ONE-PIXEL LIE. The light build has Move
+   at 32px and the three round chips at 30px, while the placement rule offsets
+   every one of them by `margin-top: -16px` — half of 32. So the three 30px
+   chips have been sitting one pixel above their own measured centres. At 32px
+   they are centred, the four hit areas match, and because each chip is placed
+   from its centre, growing them moves nothing else: the two pixels go into the
+   clickable area rather than into the layout.
+
+   THE GLYPHS ARE NOT UNIFIED. 17.5, 19.5 and 21.1 are three different drawings
+   filling their viewBoxes by three different amounts — equal boxes were the
+   point, not equal art. */
+.is-dark [data-tool-btn='select'],
+.is-dark [data-tool-btn='sticker'],
+.is-dark .tool--preset,
+.is-dark .tool--undo { width: 32px; height: 32px; }
+
+/* the tiers, in cascade order: every chip, then the two controls, then
+   anything disabled */
 .is-dark .tool,
 .is-dark .tool__plate,
-.is-dark .tool__slot { color: var(--text-1); }
+.is-dark .tool__slot { color: var(--dk-ink); }
+
+.is-dark .tool--preset,
+.is-dark .tool--undo { color: var(--dk-ink-2); }
+
+.is-dark .tool:disabled,
+.is-dark .tool[aria-disabled='true'] { color: var(--dk-ink-off); }
+:root.is-dark:not(.hover-cold) .tool:disabled:hover,
+:root.is-dark:not(.hover-cold) .tool[aria-disabled='true']:hover {
+  background: transparent;
+  color: var(--dk-ink-off);
+}
+
+/* --- hover and press ----------------------------------------------------- */
+
+/* A wash and a brightening, and nothing else: no scale, no lift, no glow. The
+   two controls brighten to `idle` rather than to white, so hovering a
+   secondary control never makes it louder than an armed tool. */
+:root.is-dark:not(.hover-cold) .tool:hover {
+  background: var(--dk-wash);
+  color: var(--dk-ink-on);
+}
+:root.is-dark:not(.hover-cold) .tool--preset:hover,
+:root.is-dark:not(.hover-cold) .tool--undo:hover {
+  background: var(--dk-wash);
+  color: var(--dk-ink);
+}
+
+/* THE OBJECT TOOLS TAKE NO WASH. A button in that row is not a chip — it is a
+   full-width strip as tall as the object — so `.tool:hover` would paint a band
+   the whole way across the panel. The pencil and the note answer the pointer
+   by sliding out of their slot, which is the light build's decision and it
+   still reads here. */
+:root.is-dark:not(.hover-cold) .tool--obj:hover { background: transparent; }
+
+.is-dark .tool.is-press,
+:root.is-dark:not(.hover-cold) .tool.is-press:hover { background: var(--dk-wash-press); }
+
+/* --- armed: Move --------------------------------------------------------- */
+
+/* Filled, top-lit, rimmed, and casting a little of its own colour onto the
+   panel under it. The rim is what the old flat #7c3aed was missing: without an
+   edge the chip was a purple rectangle floating in a dark rectangle, which is
+   the "disconnected" reading. With one it is a control seated in a surface. */
+.is-dark [data-tool-btn='select'].is-on {
+  background: linear-gradient(180deg, var(--dk-acc-1), var(--dk-acc-2));
+  color: var(--dk-ink-on);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px var(--dk-acc-rim),
+    0 4px 12px -4px var(--dk-acc-cast);
+}
+:root.is-dark:not(.hover-cold) [data-tool-btn='select'].is-on:hover {
+  background: linear-gradient(180deg, #8f57f5, #7434e4);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.26),
+    inset 0 0 0 1px var(--dk-acc-rim),
+    0 6px 16px -5px var(--dk-acc-cast);
+}
+/* pressed: the cast shortens and the top light dims — the chip sits down */
+.is-dark [data-tool-btn='select'].is-on.is-press,
+:root.is-dark:not(.hover-cold) [data-tool-btn='select'].is-on.is-press:hover {
+  background: linear-gradient(180deg, #7a3fe8, #6427cf);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px var(--dk-acc-rim),
+    0 2px 6px -3px var(--dk-acc-cast);
+}
+
+/* --- armed: the two objects --------------------------------------------- */
+
+/* #F4E8FD is a pale lavender plate, which is correct behind a pencil lying on
+   white paper and is a lit window in the dark. The dark plate is the same
+   accent held at 20% over the face, with the same rim the armed chip wears —
+   so "this tool is the live one" is said the same way twice, once as a filled
+   chip and once as a tinted plate. */
+.is-dark .tool--obj.is-on .tool__plate {
+  background: rgba(124, 58, 237, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(190, 162, 255, 0.26);
+}
+
+/* --- Add, and Builds ---------------------------------------------------- */
+
+/* Add fills with the accent under the pointer and stays filled while its
+   drawer is open — the light build's behaviour, given the same seated
+   treatment as Move so the dock has one armed look rather than two. */
+:root.is-dark:not(.hover-cold) [data-tool-btn='sticker']:hover {
+  background: linear-gradient(180deg, var(--dk-acc-1), var(--dk-acc-2));
+  color: var(--dk-ink-on);
+  box-shadow: inset 0 0 0 1px var(--dk-acc-rim);
+}
+.is-dark .tools.has-pad [data-tool-btn='sticker'] {
+  background: linear-gradient(180deg, var(--dk-acc-1), var(--dk-acc-2));
+  color: var(--dk-ink-on);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px var(--dk-acc-rim),
+    0 4px 14px -5px var(--dk-acc-cast);
+}
+
+/* Builds is a drawer, not a pointer, so it takes the tinted plate rather than
+   the filled chip — the same distinction the light build draws with #f0ebfd. */
+.is-dark .tool--preset.is-on {
+  background: rgba(124, 58, 237, 0.22);
+  color: var(--dk-ink-on);
+  box-shadow: inset 0 0 0 1px rgba(190, 162, 255, 0.26);
+}
+:root.is-dark:not(.hover-cold) .tool--preset.is-on:hover {
+  background: rgba(124, 58, 237, 0.3);
+  color: var(--dk-ink-on);
+}
+
+/* --- the collapsed handle ------------------------------------------------ */
+
+/* Same face and same edges as the panel it opens, because it is the panel's
+   own edge showing. Its shadow throws left, away from the frame, which is what
+   makes 28px of a 48px object read as something tucked behind the screen edge
+   rather than as a small button glued to it. */
+.is-dark .tools__tab {
+  background: linear-gradient(180deg, var(--dk-face-1), var(--dk-face-2));
+  color: var(--dk-ink);
+  box-shadow:
+    inset 0 1px 0 0 var(--dk-edge-lit),
+    inset 0 0 0 1px var(--dk-edge),
+    -6px 5px 22px rgba(0, 0, 0, 0.7);
+}
+:root.is-dark:not(.hover-cold) .tools.is-tab .tools__tab:hover {
+  background: linear-gradient(180deg, #2d2d33, #232328);
+  color: var(--dk-ink-on);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    inset 0 0 0 1px rgba(244, 244, 242, 0.15),
+    -10px 7px 34px rgba(0, 0, 0, 0.78);
+}
+
+/* --- the dock's own two drawers ----------------------------------------- */
+
+/* THESE ARE NOT A SECOND COMPONENT. The ink swatches and the sticker pad hang
+   off the dock's left edge and are made of the dock's material — the same
+   radius, the same stroke, the same shadow — so a face tuned on the panel and
+   not on them would have opened a drawer in a different colour. Their
+   contents get the same treatment for the same reason: an inset hairline made
+   of black is invisible here, and the selected swatch's ring was drawing its
+   2px gap in #fdfdfd, a white line on a charcoal drawer. */
+.is-dark .inks,
+.is-dark .drawerpad {
+  background: linear-gradient(180deg, var(--dk-face-1), var(--dk-face-2));
+  box-shadow:
+    inset 0 1px 0 0 var(--dk-edge-lit),
+    inset 0 0 0 1px var(--dk-edge),
+    0 18px 40px -16px rgba(0, 0, 0, 0.85);
+}
+.is-dark .inks button { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); }
+.is-dark .inks button[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--dk-face-1), 0 0 0 3.5px var(--dk-acc-1);
+}
+.is-dark .drawerpad button:hover { background: var(--dk-wash); }
+.is-dark .drawerpad button[aria-pressed='true'] {
+  background: rgba(124, 58, 237, 0.22);
+  box-shadow: inset 0 0 0 1.5px var(--dk-acc-1);
+}
 
 .is-dark .pill {
   background: rgba(240, 240, 238, 0.07);
