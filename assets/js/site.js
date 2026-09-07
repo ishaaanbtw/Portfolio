@@ -4,8 +4,8 @@
    Modules, in order:
      0  utils
      1  sound        synthesized UI audio (no files)
-     2  sky          time-of-day gradient behind the sheet
-     3  shell        nav, footer, outro, controls, click spark, tooltip, toast
+     2  mat          the gradient behind the paper, and the hour that moves it
+     3  shell        nav, footer, controls, click spark, tooltip, toast
      4  words        scroll-driven word-by-word reveal
      5  showcase     work grid with live CSS previews, scroll-scaled
      6  tabs         Teams / Awards index
@@ -251,237 +251,259 @@
     },
   };
 
-  /* ======================================================== 2. sky ======= */
+  /* ======================================================== 2. the mat ==== */
 
-  /* hour, [top, mid, low], text ink, star opacity, orb, orb glow */
-  const SKY = [
-    { h: 0,  c: ['#05070f', '#0a1128', '#16204a'], stars: 1,    clouds: 0,    name: 'midnight' },
-    { h: 4,  c: ['#0c1229', '#1b2450', '#3d3f6b'], stars: 0.7,  clouds: 0.08, name: 'late' },
-    { h: 6,  c: ['#2a3466', '#7a6a92', '#e0a087'], stars: 0.18, clouds: 0.45,  name: 'dawn' },
-    { h: 8,  c: ['#5c8fd6', '#9fc4e8', '#f4d9bd'], stars: 0,    clouds: 0.8,   name: 'morning' },
-    { h: 12, c: ['#3d84d1', '#7fb5e6', '#cfe4f5'], stars: 0,    clouds: 0.95, name: 'noon' },
-    { h: 16, c: ['#4a8ec9', '#8fbde0', '#e8d9b8'], stars: 0,    clouds: 0.85, name: 'afternoon' },
-    { h: 18, c: ['#3b5c8f', '#b06a5c', '#f2a45c'], stars: 0,    clouds: 0.6,    name: 'golden' },
-    { h: 20, c: ['#1d2447', '#7a3a4a', '#d1573a'], stars: 0.25, clouds: 0.3,   name: 'dusk' },
-    { h: 22, c: ['#080b1c', '#131c3d', '#2c2f5c'], stars: 0.85, clouds: 0.05,  name: 'night' },
-    { h: 24, c: ['#05070f', '#0a1128', '#16204a'], stars: 1,    clouds: 0,    name: 'midnight' },
-  ];
+  /* WHAT IS BEHIND THE PAPER, AND HOW LITTLE OF IT THERE IS.
 
-  /* the three states of the little orb on the time pod */
-  const ORB = {
-    sun:
-      '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">' +
-      '<circle cx="10" cy="10" r="3.4" fill="currentColor" stroke="none"/>' +
-      '<path d="M10 1.6v2M10 16.4v2M1.6 10h2M16.4 10h2M4.1 4.1l1.4 1.4M14.5 14.5l1.4 1.4M15.9 4.1l-1.4 1.4M5.5 14.5l-1.4 1.4"/></svg>',
-    horizon:
-      '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">' +
-      '<path d="M6.3 12.6a3.7 3.7 0 0 1 7.4 0" fill="currentColor" stroke="none"/>' +
-      '<path d="M1.8 12.6h3M15.2 12.6h3M10 3.4v2.2M4.6 5.9l1.5 1.5M15.4 5.9l-1.5 1.5"/>' +
-      '<path d="M2.4 16.1h15.2"/></svg>',
-    moon:
-      '<svg viewBox="0 0 20 20" fill="none">' +
-      '<path d="M14.6 12.4A6.2 6.2 0 0 1 7.6 3a6.6 6.6 0 1 0 7 9.4Z" fill="currentColor"/></svg>',
-  };
+     `.pane` is a fixed back plate carrying one gradient. On screen it is the
+     few pixels of frame around the rounded window, and the surface the menu
+     slides off onto — nothing else. The page does not open into a second scene
+     at the bottom, so there is no sky to fill and nothing here draws stars,
+     clouds or rain.
 
-  const hex2rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-  const rgb2css = (r) => `rgb(${r.map((v) => Math.round(v)).join(',')})`;
-  const mixRgb = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
-  const mixHex = (a, b, t) => rgb2css(mixRgb(hex2rgb(a), hex2rgb(b), t));
-  const cssRgb = (str) => str.match(/\d+/g).map(Number);
-
-  /* WCAG relative luminance — used to decide whether the footer copy needs
-     dark ink or light ink against whatever the sky is currently doing. */
-  function luminance([r, g, b]) {
-    const f = (c) => {
-      c /= 255;
-      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    };
-    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
-  }
-
-  const INK_DARK = [25, 23, 20];
-  const INK_LIGHT = [244, 247, 255];
-  const INK_DARK_STRONG = [10, 9, 8];
-  const INK_LIGHT_STRONG = [255, 255, 255];
-  const contrast = (a, b) => {
-    const l1 = luminance(a), l2 = luminance(b);
-    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
-  };
-
+     IT HAS NO JAVASCRIPT LEFT. Its two colours and the ink the deck reads over
+     them are four custom properties in the stylesheet, declared once for each
+     theme. There used to be a luminance solver here that chose that ink from
+     whatever colour the hour had left on the mat; with two fixed mats there
+     are two right answers and they are written down. */
   const Sky = {
-    hour: null,
+    init() {
+      App.mountSky(el('div', { class: 'sky-root', 'aria-hidden': 'true' }));
+    },
+  };
+
+  /* ==================================================== 2a. the theme =====
+
+     TWO MODES, ONE SWITCH, AND A CLOCK THAT ONLY SPEAKS ONCE.
+
+     The whole palette — nine colours and three lighting numbers, twice — lives
+     in the stylesheet under `:root` and `:root.is-dark`. This module owns one
+     boolean and the two questions around it:
+
+       WHICH ONE DO YOU GET IF YOU SAY NOTHING?  The one that suits the hour
+       you arrived at. Six in the morning to six in the evening is light;
+       the rest of the day is dark. It is read ONCE, at load, and never again.
+
+       AND WHAT IF YOU SAY SOMETHING?  Then that, for as long as the tab is
+       open, across every page of the site.
+
+     THE CLOCK IS NOT WATCHED, DELIBERATELY. A `setInterval` here would mean a
+     visitor reading a case study at 17:59 has the page go dark underneath them
+     a minute later, which is a change nobody asked for and cannot undo without
+     finding the control. The time is an input to the first frame and nothing
+     after it: open the site in the evening and it is dark; keep reading past
+     midnight and it stays exactly as it was.
+
+     AND THE AUTOMATIC CHOICE IS NEVER SAVED. Only a deliberate press is, and
+     only into `sessionStorage` — which is precisely the lifetime asked for: it
+     survives every link within the site and dies with the tab, so the next
+     visit asks the clock again rather than replaying a choice made at a
+     different time of day. `localStorage` would make one evening's press the
+     answer for every morning after it. */
+  const Theme = {
+    KEY: 'site:theme',
+    /* has this session made a choice, as opposed to inheriting the clock's */
+    chosen: false,
+
+    /* 06:00–18:00 is light; everything else is dark. Local time, from the
+       browser — the same rule, in four lines, sits inline in each page's head
+       so the first painted frame is already right. */
+    fromClock() {
+      const h = new Date().getHours();
+      return (h >= 6 && h < 18) ? 'light' : 'dark';
+    },
+
+    mode() {
+      return document.documentElement.classList.contains('is-dark') ? 'dark' : 'light';
+    },
+
+    apply(mode) {
+      document.documentElement.classList.toggle('is-dark', mode === 'dark');
+      this.paint();
+    },
+
+    /* A DELIBERATE PRESS. It is remembered, and it crossfades rather than
+       cuts — see `.is-shifting` in the stylesheet for how a few hundred
+       elements change colour together without any of them being animated the
+       rest of the time. */
+    set(mode) {
+      this.chosen = true;
+      try { sessionStorage.setItem(this.KEY, mode); } catch (e) { /* private mode */ }
+      this.shift();
+      this.apply(mode);
+      Sound.tick();
+    },
+    toggle() { this.set(this.mode() === 'dark' ? 'light' : 'dark'); },
+
+    shift() {
+      const root = document.documentElement;
+      root.classList.add('is-shifting');
+      clearTimeout(this._shift);
+      this._shift = setTimeout(() => root.classList.remove('is-shifting'), 520);
+    },
+
+    paint() {
+      const btn = this.btn;
+      if (!btn) return;
+      const dark = this.mode() === 'dark';
+      btn.setAttribute('aria-pressed', String(dark));
+      btn.setAttribute('aria-label', dark ? 'Switch to light' : 'Switch to dark');
+    },
 
     init() {
-      const root = el('div', { class: 'sky-root', 'aria-hidden': 'true' });
-      root.appendChild(this.starfield());
-      root.appendChild(this.clouds());
-      this.shoot = el('span', { class: 'shoot' });
-      root.appendChild(this.shoot);
-      App.mountSky(root);
-
-      const now = new Date();
-      this.set(now.getHours() + now.getMinutes() / 60, false);
-      this.scheduleShoot();
-    },
-
-    /* My first starfield used radii of 0.3–1.4px, which is invisible on any
-       real display. These are sized in px against the viewport and given three
-       brightness tiers so the sky has depth rather than uniform speckle. */
-    starfield() {
-      const stars = [];
-      const tiers = [
-        { n: 70, r: [0.5, 0.9], o: [0.28, 0.5] },   // faint dust
-        { n: 34, r: [0.9, 1.5], o: [0.5, 0.78] },   // mid
-        { n: 10, r: [1.5, 2.2], o: [0.8, 1.0] },    // the few bright ones
-      ];
-
-      /* The paper covers the top ~60% of the viewport at the footer, so stars
-         spread evenly over the full height are mostly invisible — that's why
-         only three were showing. Two thirds now sit in the band below the
-         paper; the rest go up top, where they show in the 32px side strips. */
-      /* Split each tier deterministically rather than rolling a die per star —
-         a random 68% chance can land well under half on an unlucky page, and
-         "most of the stars are where you can see them" should be guaranteed. */
-      const LOW_SHARE = 0.68;
-      for (const t of tiers) {
-        const inLowBand = Math.round(t.n * LOW_SHARE);
-        for (let i = 0; i < t.n; i++) {
-          const x = Math.random() * 100;
-          const y = i < inLowBand
-            ? 58 + Math.random() * 42     // below the paper's bottom edge
-            : Math.random() * 58;         // visible down the inset side strips
-          const r = t.r[0] + Math.random() * (t.r[1] - t.r[0]);
-          const o = t.o[0] + Math.random() * (t.o[1] - t.o[0]);
-          const dur = (4 + Math.random() * 6).toFixed(1);
-          const begin = (Math.random() * 8).toFixed(1);
-          stars.push(
-            `<circle cx="${x.toFixed(2)}%" cy="${y.toFixed(2)}%" r="${r.toFixed(2)}" fill="#fff" opacity="${o.toFixed(2)}">` +
-            `<animate attributeName="opacity" values="${o.toFixed(2)};${(o * 0.35).toFixed(2)};${o.toFixed(2)}" ` +
-            `dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/></circle>`
-          );
-        }
-      }
-
-      const holder = el('div');
-      holder.innerHTML = `<svg class="stars" preserveAspectRatio="none">${stars.join('')}</svg>`;
-      return holder.firstElementChild;
-    },
-
-    clouds() {
-      const holder = el('div', { class: 'clouds' });
-      /* a handful at different sizes, heights, blurs and speeds — the variety
-         is what stops it reading as a repeating pattern */
-      /* Weighted to the lower half, where the sky is actually visible past the
-         paper. Nearer clouds are bigger, sharper, faster and more opaque; the
-         far ones are small, soft and slow, which gives the band some depth. */
-      const spec = [
-        { w: 30, h: 11, t: 58, o: 0.82, dur: 96,  bob: 22, y: 9 },
-        { w: 20, h: 8,  t: 70, b: 14, o: 0.7,  dur: 74,  bob: 18, y: 7 },
-        { w: 42, h: 15, t: 78, o: 0.88, dur: 128, bob: 30, y: 12 },
-        { w: 16, h: 6,  t: 48, b: 13, o: 0.42, dur: 150, bob: 26, y: 6 },
-        { w: 26, h: 10, t: 86, o: 0.78, dur: 108, bob: 24, y: 10 },
-        { w: 13, h: 5,  t: 34, b: 12, o: 0.28, dur: 190, bob: 34, y: 5 },
-        { w: 34, h: 12, t: 64, o: 0.58, dur: 118, bob: 28, y: 11 },
-      ];
-      spec.forEach((c, i) => {
-        const cloud = el('i', {
-          style:
-            `--w:${c.w}rem;--h:${c.h}rem;--t:${c.t}%;--o:${c.o};` +
-            `--dur:${c.dur}s;--bob:${c.bob}s;--bob-y:${c.y}px;` +
-            /* negative delay so they start already spread across the sky */
-            `--delay:-${((c.dur / spec.length) * i).toFixed(1)}s`,
-        });
-        cloud.appendChild(el('span'));
-        holder.appendChild(cloud);
-      });
-      return holder;
-    },
-
-    /* one shooting star every 30–60s, and only while it's actually dark */
-    scheduleShoot() {
-      const next = 30000 + Math.random() * 30000;
-      setTimeout(() => {
-        const dark = parseFloat(getComputedStyle(document.documentElement)
-          .getPropertyValue('--star-opacity') || 0);
-        if (dark > 0.55 && this.shoot && !document.hidden) {
-          this.shoot.style.top = `${6 + Math.random() * 22}%`;
-          this.shoot.style.left = `${2 + Math.random() * 30}%`;
-          this.shoot.classList.remove('go');
-          void this.shoot.offsetWidth;   // restart the animation
-          this.shoot.classList.add('go');
-        }
-        this.scheduleShoot();
-      }, next);
-    },
-
-    /* interpolate the palette at an arbitrary hour */
-    at(h) {
-      h = ((h % 24) + 24) % 24;
-      let a = SKY[0], b = SKY[SKY.length - 1];
-      for (let i = 0; i < SKY.length - 1; i++) {
-        if (h >= SKY[i].h && h <= SKY[i + 1].h) { a = SKY[i]; b = SKY[i + 1]; break; }
-      }
-      const t = b.h === a.h ? 0 : (h - a.h) / (b.h - a.h);
-      return {
-        c: a.c.map((c, i) => mixHex(c, b.c[i], t)),
-        stars: lerp(a.stars, b.stars, t),
-        clouds: lerp(a.clouds, b.clouds, t),
-        name: t < 0.5 ? a.name : b.name,
-      };
-    },
-
-    set(h, announce = true) {
-      this.hour = h;
-      const p = this.at(h);
-      const r = document.documentElement.style;
-      r.setProperty('--sky-1', p.c[0]);
-      r.setProperty('--sky-2', p.c[1]);
-      r.setProperty('--sky-3', p.c[2]);
-      r.setProperty('--star-opacity', p.stars.toFixed(2));
-      r.setProperty('--cloud-opacity', p.clouds.toFixed(2));
-
-      /* Footer legibility.
-         Blending ink from dark to light passes through mid-grey, which at dusk
-         (a mid-luminance sky) drops contrast to ~1.3:1 — worse than the night
-         bug it was meant to fix. So the ink is *chosen*, not blended: whichever
-         of dark/light contrasts better wins. A soft haze behind the text pushes
-         the local background away from mid-luminance, which is what actually
-         guarantees the ratio at dawn and dusk. */
-      const low = cssRgb(p.c[2]);
-      const SCRIM = 0.34;
-      const darkBg = mixRgb(low, [255, 255, 255], SCRIM);   // light haze
-      const lightBg = mixRgb(low, [0, 0, 0], SCRIM);        // dark haze
-      const useLight = contrast(INK_LIGHT, lightBg) > contrast(INK_DARK, darkBg);
-
-      r.setProperty('--outro-ink', rgb2css(useLight ? INK_LIGHT : INK_DARK));
-      r.setProperty('--outro-ink-strong', rgb2css(useLight ? INK_LIGHT_STRONG : INK_DARK_STRONG));
-      r.setProperty('--outro-scrim', useLight
-        ? `rgba(0, 0, 0, ${SCRIM})`
-        : `rgba(255, 255, 255, ${SCRIM})`);
-
-      const pod = $('.timepod');
-      if (pod) {
-        const lbl = $('.timepod__label', pod);
-        if (lbl) lbl.textContent = `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60)).padStart(2, '0')}`;
-        const ticks = $$('.timepod__ticks i', pod);
-        const on = Math.round((h / 24) * (ticks.length - 1));
-        ticks.forEach((t, i) => t.classList.toggle('on', i === on));
-
-        /* the glyph tells you which part of the day you're in, matching the
-           reference: full sun by day, sun-over-horizon at dawn and dusk, moon
-           at night */
-        const orb = $('.timepod__orb', pod);
-        const phase = p.stars > 0.4 ? 'moon' : (h < 7.5 || h > 17 ? 'horizon' : 'sun');
-        if (orb && orb.dataset.phase !== phase) {
-          orb.dataset.phase = phase;
-          orb.innerHTML = ORB[phase];
-        }
-      }
-      const fine = $('.outro .fine');
-      if (fine && announce) fine.dataset.sky = p.name;
+      let saved = null;
+      try { saved = sessionStorage.getItem(this.KEY); } catch (e) { /* as above */ }
+      this.chosen = (saved === 'light' || saved === 'dark');
+      /* The head script has already put the class on for the first paint, and
+         it read the same two sources in the same order. This agrees with it
+         rather than second-guessing it — but it is written out in full, so the
+         module is correct on its own if that script ever fails to run. */
+      this.apply(this.chosen ? saved : this.fromClock());
     },
   };
 
+  /* ==================================================== 2b. the grid ======
+
+     THE LAYOUT, DRAWN ON THE PAPER.
+
+     A toggle that reveals the structure the page is already built on: one
+     hairline down every edge the layout actually has, plus a fainter one
+     halfway between any two that are far enough apart to want subdividing.
+
+     IT IS MEASURED, NOT ASSUMED. The obvious implementation is a repeating
+     gradient at some round number of pixels, and it is wrong for the one
+     reason that matters here — a 96px rule ladder has nothing to do with this
+     page, so turning it on reveals a grid the portfolio is not on. Every line
+     below comes from `getBoundingClientRect` on something the page actually
+     laid out: the rail's edges, the canvas column's, each showcase column's,
+     the document's two columns on About. Change `--mast-w` and the grid
+     follows without being told, because it never knew the number in the first
+     place.
+
+     WHERE IT SITS. First child of `.sheet` at `z-index: -1`, which inside a
+     stacking context means above the paper's own background and below every
+     piece of content in it — so it is never over type, never over a card,
+     never over a brick, and needs no masking to stay out of the way. It is
+     `pointer-events: none` and it is out of flow, so it cannot be clicked,
+     cannot be collided with and cannot move anything: the brick engine reads
+     `[data-wall]` and `Bricks.zone`, neither of which this exists in.
+
+     IT IS TWENTY-ODD DIVS. No canvas, no SVG, no per-frame work — the lines
+     are positioned once and re-measured only on resize. */
+  const Grid = {
+    KEY: 'site:grid',
+    on: false,
+
+    /* THE EDGES WORTH DRAWING, in one list. Anything in it that is not on this
+       page is simply not found; anything that is contributes its two vertical
+       edges. That is the whole of how the grid learns each page's structure —
+       the home page's rail and showcase columns, About's two document
+       columns, the work index's own measure. */
+    SEL: '.mast, .home__work, .about, .ab__side, .ab__main, .showcase__grid,'
+       + ' .showcase__col, .col, .proj__col, .proj__rail, .foot__said,'
+       + ' .canvas__intro',
+
+    /* below this, two majors are close enough that a line between them is
+       clutter rather than a subdivision */
+    SPLIT: 150,
+
+    init() {
+      const sheet = $('.sheet');
+      if (!sheet) return;
+      let saved = null;
+      try { saved = sessionStorage.getItem(this.KEY); } catch (e) { /* private mode */ }
+      this.on = saved === '1';
+      document.documentElement.classList.toggle('is-grid', this.on);
+
+      this.el = el('div', { class: 'gridlay', 'aria-hidden': 'true' });
+      sheet.insertBefore(this.el, sheet.firstChild);
+
+      /* Twice, and both are needed: once on the next frame, when the page has
+         been built and laid out, and once after the webfont has had time to
+         land — a metric change moves a column edge and the grid has to follow
+         it. After that only a resize can change the answer. */
+      requestAnimationFrame(() => this.draw());
+      setTimeout(() => this.draw(), 1200);
+      addEventListener('resize', () => this.schedule(), { passive: true });
+    },
+
+    schedule() {
+      cancelAnimationFrame(this._r);
+      this._r = requestAnimationFrame(() => this.draw());
+    },
+
+    draw() {
+      const lay = this.el;
+      if (!lay) return;
+      const host = lay.parentElement.getBoundingClientRect();
+      const w = host.width;
+      if (!w) return;
+
+      /* every edge, deduped to the pixel and sorted left to right */
+      const seen = new Set();
+      const majors = [];
+      /* A GUTTER IS TWO LINES AND A ROUNDING ERROR IS ONE. Both edges of a real
+         gap belong on the grid — the 15px between the two showcase columns is
+         the layout saying something — but two elements whose edges agree to
+         within a few pixels are one edge measured twice, and drawing it twice
+         is a thick line pretending to be a thin one. Six pixels is the floor. */
+      const add = (x) => {
+        const k = Math.round(x);
+        if (k < 1 || k > w - 1 || seen.has(k)) return;
+        for (const q of seen) if (Math.abs(q - k) < 6) return;
+        seen.add(k);
+        majors.push(k);
+      };
+      $$(this.SEL).forEach((n) => {
+        const r = n.getBoundingClientRect();
+        if (r.width < 24) return;
+        add(r.left - host.left);
+        add(r.right - host.left);
+      });
+      majors.sort((a, b) => a - b);
+
+      /* and a fainter one down the middle of every gap wide enough to take it */
+      const minors = [];
+      for (let i = 0; i < majors.length - 1; i += 1) {
+        const gap = majors[i + 1] - majors[i];
+        if (gap >= this.SPLIT) minors.push(majors[i] + gap / 2);
+      }
+
+      const frag = document.createDocumentFragment();
+      majors.forEach((x) => frag.appendChild(el('i', { style: `left:${x}px` })));
+      minors.forEach((x) => frag.appendChild(el('i', { class: 'is-sub', style: `left:${x.toFixed(1)}px` })));
+      /* ONE HORIZONTAL, AND ONLY ONE. The page's top gutter, which is the line
+         everything in both columns is set from. More than that and the thing
+         stops being a drafting system and starts being graph paper. */
+      const top = $('.mast') || $('.home__work') || $('.col');
+      if (top) {
+        const y = top.getBoundingClientRect().top - host.top;
+        if (y > 2) frag.appendChild(el('b', { class: 'is-sub', style: `top:${Math.round(y)}px` }));
+      }
+
+      lay.textContent = '';
+      lay.appendChild(frag);
+    },
+
+    set(on) {
+      this.on = !!on;
+      try { sessionStorage.setItem(this.KEY, this.on ? '1' : '0'); } catch (e) { /* as above */ }
+      document.documentElement.classList.toggle('is-grid', this.on);
+      /* measured lazily: a grid switched on after a resize it never saw would
+         be drawn to the old layout */
+      this.draw();
+      this.paint();
+      Sound.tick();
+    },
+    toggle() { this.set(!this.on); },
+
+    paint() {
+      const b = this.btn;
+      if (!b) return;
+      b.setAttribute('aria-pressed', String(this.on));
+      b.setAttribute('aria-label', this.on ? 'Hide the layout grid' : 'Show the layout grid');
+    },
+  };
   /* ==================================================== 2b. the shell ====
      THE PAGE IS A SHEET OF PAPER LYING ON A DESK, AND THE DESK IS THE SKY.
 
@@ -510,10 +532,10 @@
        .app    the document flow. Not fixed, so it is clipped per-open to the
                viewport rectangle in document coordinates — which is a constant,
                because the scroll is locked while the menu is out.
-       .free   fixed, and the one layer that never takes the transform. The two
-               weather pods live here: they have to stay put when the shell
-               slides, and they have to sit ABOVE the page rather than behind
-               it, which is the one thing the deck could not offer them.
+       .free   fixed, and the one layer that never takes the transform. The
+               mute lives here: it has to stay put when the shell slides, and
+               it has to sit ABOVE the page rather than behind it, which is the
+               one thing the deck could not offer it.
        .hud    fixed. Every overlay the modules mount: nav, dock, menu
                sheet, toasts. Its box is the viewport, so its fixed children
                keep measuring from the viewport exactly as before.
@@ -538,9 +560,9 @@
       this.hud = el('div', { class: 'hud', id: 'hud' });
       this.tips = el('div', { class: 'tips', id: 'tips', 'aria-hidden': 'false' });
 
-      /* Everything already in the document is flow — the nav, the sheet, the
-         outro. It goes into .app wholesale, and then the one fixed thing among
-         them is lifted back out. */
+      /* Everything already in the document is flow — the nav and the sheet.
+         It goes into .app wholesale, and then the one fixed thing among them
+         is lifted back out. */
       while (document.body.firstChild) this.app.appendChild(document.body.firstChild);
       document.body.append(this.pane, this.app, this.free, this.hud, this.tips);
 
@@ -714,13 +736,12 @@
      once, at the bottom of the stack, and the shell sliding off it is the whole
      of the reveal.
 
-     IT HAS NO SKY OF ITS OWN, AND THAT IS THE POINT. It used to build a second
-     `.sky-root` — the same engine at the same hour, but its own clouds at its
-     own offsets — while the shell carried a first one along with it. Two
-     weathers, and the seam between them fell exactly where the footer meets the
-     menu. There is one sky now, in `.pane`, fixed and untransformed at the back
-     of everything: the paper floats on it, the footer is where the paper stops
-     covering it, and this is more of the same sky with the paper moved aside. */
+     IT HAS NO MAT OF ITS OWN, AND THAT IS THE POINT. It used to build a second
+     `.sky-root` — the same engine at the same hour, but at its own offsets —
+     while the shell carried a first one along with it, and the seam between
+     them fell exactly where the two met. There is one mat now, in `.pane`,
+     fixed and untransformed at the back of everything: the paper covers it, and
+     this is that same mat with the paper moved aside. */
   const Deck = {
     built: false,
 
@@ -812,7 +833,7 @@
 
          So there is one layout. They are re-parented once, here, at boot, into
          the layer that never moves, and from then on the only thing that ever
-         changes is a transform — see `body.deck-open .controls` in the
+         changes is a transform — see `body.deck-open .mute` in the
          stylesheet, where the distance is written in viewport units and eased
          on the shell's own curve. Same nodes, same listeners, same slider
          value; no second parent to argue with. */
@@ -851,9 +872,6 @@
       }, '<span>Menu</span>');
       tab.addEventListener('click', () => this.toggle());
       App.mount(tab);
-      /* it reads --end like the pods do, and Sheet collected them before this
-         existed */
-      Sheet.collect();
 
       /* Escape, and a click anywhere on the pushed-aside canvas. The canvas is
          not disabled while it is out — it is still a page, you can still read
@@ -876,14 +894,13 @@
       /* Segment count follows the list's real height, so the rail always spans
          it whatever is in `deck.links`. Re-measured on resize because the type
          is clamped to the viewport. */
-      /* NOT INTO THE DECK — INTO `.free`. They were put in the deck because it
-         is the layer that does not move, which was right, and it cost them
-         their clicks: the deck paints at z-index 1 and the page at 2, so at the
-         footer the outro was lying on top of both pods and `elementFromPoint`
-         over the slider returned `div.outro`. They looked fine and did nothing.
-         `.free` is the same idea one layer up — stationary, but above the page
-         rather than under it. */
-      [$('.controls'), $('.mute')].forEach((n) => n && App.free.appendChild(n));
+      /* NOT INTO THE DECK — INTO `.free`. They were put in the deck because
+         it is the layer that does not move, which was right, and it cost them
+         their clicks: the deck paints at z-index 1 and the page at 2, so
+         anything lying over them took the press instead. `.free` is the same
+         idea one layer up — stationary, but above the page rather than under
+         it. */
+      [$('.gridtog'), $('.tmode'), $('.mute')].forEach((n) => n && App.free.appendChild(n));
 
       this.railFit();
       this.podFit();
@@ -903,14 +920,19 @@
        and at boot, and never during the animation. */
     podFit() {
       const root = document.documentElement;
-      const pod = $('.controls');
+      /* THE MUTE, BECAUSE IT IS THE ONLY POD LEFT. This used to measure the
+         slider beside it; the hour moved into the sidebar and took that pod
+         with it, and a measurement of an element that no longer exists returns
+         early and leaves the remaining pod sitting at the bottom of the deck's
+         strip instead of in it. */
+      const pod = $('.mute');
       if (!pod) return;
       if (!this.mob()) { root.style.removeProperty('--deck-podup'); return; }
-      /* The pod is already carrying a transform of its own — the `--end` rise —
-         so its rect is not where CSS put it. Lift it for one read and put it
-         straight back. `--deck-h` cannot be read instead: an unregistered custom
-         property comes back as the literal `clamp(...)` it was written as, so
-         the strip is measured off the element that resolves it. */
+      /* The pod may be carrying a transform of its own, so its rect is not
+         where CSS put it. Lift it for one read and put it straight back.
+         `--deck-h` cannot be read instead: an unregistered custom property
+         comes back as the literal `clamp(...)` it was written as, so the strip
+         is measured off the element that resolves it. */
       const prev = pod.style.transform;
       pod.style.transform = 'none';
       const r = pod.getBoundingClientRect();
@@ -1075,7 +1097,6 @@
       document.title = `${S.person.name} — ${this.page === 'home' ? 'Portfolio' : this.page[0].toUpperCase() + this.page.slice(1)}`;
       this.nav();
       this.foot();
-      this.outro();
       this.controls();
       this.hoverCold();
       this.toast();
@@ -1243,43 +1264,51 @@
       f.appendChild(column('Links', c.links || [], true));
     },
 
-    outro() {
-      const o = $('#outro');
-      if (!o) return;
-      o.className = 'outro';
-      /* its own line, not the footer's — the footer above already signs the page,
-         and this one names the sky instead */
-      const fine = String(S.footer.outroFine || '').replace('{year}', new Date().getFullYear());
-      /* deliberately one flowing sentence — the fine print sits inline */
-      o.innerHTML =
-        `<p><strong>${esc(S.footer.lead)}</strong> — ${esc(S.footer.body)} ` +
-        `<span class="fine">${esc(fine)}</span></p>`;
-    },
-
     controls() {
-      /* time-of-day pod */
-      const pod = el('div', { class: 'timepod', title: 'Drag to change the sky' });
-      pod.appendChild(el('span', { class: 'timepod__orb' }));
-      const track = el('div', { class: 'timepod__track' });
-      track.appendChild(el('div', { class: 'timepod__ticks' }, '<i></i>'.repeat(7)));
-      const range = el('input', {
-        type: 'range', min: '0', max: '1435', step: '5',
-        value: String(Math.round(Sky.hour * 60)),
-        'aria-label': 'Time of day',
-      });
-      let lastTick = -1;
-      range.addEventListener('input', () => {
-        const h = +range.value / 60;
-        Sky.set(h);
-        const t = Math.round(h * 2);
-        if (t !== lastTick) { lastTick = t; Sound.tick(); }
-      });
-      track.appendChild(range);
-      pod.appendChild(track);
-      pod.appendChild(el('span', { class: 'timepod__label' }));
-      App.mount(el('div', { class: 'controls' })).appendChild(pod);
+      /* --- THE TWO POD BUTTONS -------------------------------------------
 
-      /* mute */
+         Bottom right, in `.free`, on every page — which is the point of them
+         being here rather than in the sidebar: the sidebar is the home and
+         play pages only, and the theme has to be switchable from a case study
+         too. They are the only fixed furniture the site has, and there are two
+         of them because there are exactly two things a visitor might want to
+         change about the page as a whole. */
+
+      /* THEME. One button, two states, and no third one on screen. The stored
+         preference has three values — the default is `system`, which follows
+         the machine live — but a control that cycles light → dark → auto is a
+         control nobody can read the current state of. Pressing it says "I want
+         this one", which is an answer, and the site keeps it.
+
+         The glyph is a circle half-filled: the standard mark for contrast, and
+         deliberately not a sun or a moon. It rotates rather than swapping, so
+         the change reads as the same object turning over. */
+      const theme = el('button', {
+        class: 'tmode', type: 'button', 'aria-pressed': 'false',
+        'aria-label': 'Switch to dark',
+      }, '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">'
+       + '<circle cx="8" cy="8" r="5.6" stroke="currentColor" stroke-width="1.35"/>'
+       + '<path d="M8 2.4a5.6 5.6 0 0 1 0 11.2z" fill="currentColor"/></svg>');
+      theme.addEventListener('click', () => Theme.toggle());
+      Theme.btn = theme;
+      App.mount(theme);
+      Theme.paint();
+
+      /* THE GRID. Same object again, and it is last in the row because it is
+         the one a visitor is least likely to want — the theme is a preference,
+         the sound is an interruption, and this is a thing you look at once. */
+      const grid = el('button', {
+        class: 'gridtog', type: 'button', 'aria-pressed': 'false',
+        'aria-label': 'Show the layout grid',
+      }, '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">'
+       + '<path d="M3.5 2.6v10.8M6.5 2.6v10.8M9.5 2.6v10.8M12.5 2.6v10.8"'
+       + ' stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>');
+      grid.addEventListener('click', () => Grid.toggle());
+      Grid.btn = grid;
+      App.mount(grid);
+      Grid.paint();
+
+      /* SOUND. */
       const mute = el(
         'button',
         { class: 'mute', 'aria-pressed': String(Sound.muted), 'aria-label': 'Toggle sound' },
@@ -1290,8 +1319,6 @@
         mute.setAttribute('aria-pressed', String(m));
       });
       App.mount(mute);
-
-      Sky.set(Sky.hour);
     },
 
     /* Whatever sits under the cursor at first paint shouldn't light up before
@@ -5977,7 +6004,11 @@
         z.pad = 0;
         z.edgeTop = 0.03;
 
-        /* the closing lines, looked up the same way and for the same reason */
+        /* THE FLOOR IS THE TOP OF THE CLOSING LINES. Pieces still FALL past
+           it — they are falling — they simply cannot come to rest below it,
+           which is the same rule the 404's sign uses. It was briefly measured
+           to the time control that sat between the two; that control is gone
+           and the closing lines are the last thing in the column again. */
         const foot = $('.mast__foot', host) || (par ? $('.mast__foot', par) : null);
         z.y1 = foot && H
           ? clamp((foot.offsetTop - 12) / H, 0.3, 0.985)
@@ -13299,8 +13330,10 @@
          It used to live on `this`, which made a second call to `bind` on the
          same page disconnect the first one's observer — so a page with two
          navigators had one working navigator and one that never moved. The
-         About page has two (a rail for its chapters and a dock for its
-         movements) and that is how the fault surfaced.
+         old About page had two — a rail for its chapters and a dock for its
+         movements — and that is how the fault surfaced. That page is gone and
+         the case study is the only caller left, but the fix is the correct
+         shape and stays.
          Everything else about a bind was already closure-local; only the
          handle was shared. It is local now, and still published below so
          `stop()` and the debug hooks behave exactly as they did for the
@@ -14089,8 +14122,9 @@
          `Shell.foot()` finds nothing and returns — the closing lines are the
          last block of the rail, and a second copy of the email address, the
          same four social links and a Pages list that repeats the Site list is
-         three duplications of a column that is already on the screen. The sky
-         still closes the page: `#outro` is untouched.
+         three duplications of a column that is already on the screen. The
+         page simply ends after the closing lines; there is no closing scene
+         for it to open into any more.
 
          Every other page keeps its footer. It is the right ending for a case
          study, which has no rail beside it.
@@ -14395,465 +14429,191 @@
 
     /* --- THE ABOUT PAGE ---------------------------------------------------
 
-       Four chapters, and no two of them composed the same way. That is the
-       point of the page rather than a flourish on it: a personal page whose
-       sections all share a layout reads as a template no matter how good the
-       parts are, and the thing being communicated here is that somebody made
-       it on purpose.
+       THE SAME PAGE AS THE HOME PAGE, WITH DIFFERENT CONTENT IN THE CANVAS.
 
-       IT IS FOUR AND NOT EIGHT BECAUSE THE EXTRAS CAME OUT. A tools strip, a
-       brick timeline, a drawer of things I like, a field of loose words, a
-       table of what I am reading and a sign-off were all here and all gone:
-       every one of them was a section that existed to fill a scroll rather
-       than to say something. What is left is the introduction, the story, the
-       argument and the work — and then the footer, which is the site's own
-       ending and does not need one written above it.
+       It used to be a separate site. Eight chapters, a full-screen hero with a
+       name set at 56px, a pile of photographs, a scrawled-note layer, a wall of
+       type, its own top navigation, its own footer with the email address set
+       as a headline, and a résumé band at the bottom that was the only part
+       anybody was actually reading. Nine hundred lines of stylesheet and four
+       hundred of builder for a page whose job is to say what somebody has done.
 
-       THE GRID IS REAL AND IT IS NOT CENTRED. Measured off the reference at a
-       1470px viewport: the writing starts at 17% of the width and ends at 46%,
-       the visual runs 57% to 84%, and the remaining 16% on the right is left
-       empty. Nothing is centred and the two columns are not the same width —
-       so the page is laid out on a fourteen-track grid (an edge, twelve
-       columns, an edge) and everything is placed on it by column number. A few
-       things deliberately hang outside their column, which is what stops a
-       grid from looking like a table.
+       So it is built out of the two things the rest of the portfolio is built
+       out of. `Rail.build()` is the sidebar the home and play pages already
+       use — the statement, the buttons, the Site and Links lists, the brick
+       playground and the closing lines — which is what makes this feel like
+       moving further into the same canvas rather than arriving somewhere else.
+       There is one navigation on this site and this page does not add a
+       second; `body[data-page='about']` joins the two pages that hide the
+       header and the menu tab, because the rail is already both.
 
-       WHAT IS BORROWED. The dot field, the pill row, the annotation artifacts,
-       the reveal-on-scroll, the sticky rail's active-section detection, the
-       footer and its sky are all the site's own. What is new is the
-       composition, the pile, the spreads, the résumé and the edge utilities.
+       AND THE CANVAS IS TWO COLUMNS OF DOCUMENT. A narrow one that holds the
+       things you look up — what he can do, where he studied, how to reach him
+       — and a wide one that holds the things you read. The narrow one is
+       sticky against its own column, so the metadata stays with you while the
+       experience scrolls past it; that is the same relationship the rail has
+       with the work on the home page, one level in.
 
-       THERE IS ONE NAVIGATOR, AND IT IS THE READ'S. It walks the five chapters
-       of the story and nothing else. A second one used to sit fixed at the
-       foot of the window naming the page's movements; with the page down to
-       four bands it was a table of contents for a document you can see the
-       whole of, so it went. What remains is driven by `SectionNav`, which
-       computes the active chapter from where the sections actually are —
-       there is not an offset in this file. */
+       NOTHING HERE IS A CARD. Two entries of experience and four awards, set
+       as a document: a node on a hairline guide, a company, a role, three
+       lines of prose, the wins under circle bullets and the tags under those.
+       The whole page is one screen and a half at 1280 rather than the five it
+       was.
+
+       AND NOTHING REVEALS ON SCROLL. Every other page on this site fades its
+       blocks in as they arrive, and this one deliberately does not: it is
+       short enough that the awards sit a few hundred pixels below the fold, so
+       a reveal there is a section that is blank until you go looking for it —
+       which is the opposite of a page whose whole job is to be scanned. */
     about() {
       const c = S.about;
       const main = $('#main');
-      if (!c || !main) return;
+      const hero = $('#hero');
+      if (!c || !main || !hero) return;
 
-      const wrap = el('div', { class: 'ab' });
-      wrap.appendChild(el('div', { class: 'canvas__dots', 'aria-hidden': 'true' }));
+      const wrap = el('div', { class: 'home' });
+      const mast = Rail.build();
+      if (mast) wrap.appendChild(mast);
 
-      /* ---- this page's grammar ------------------------------------------ */
-      const eyebrow = (t, cls = '') => el('p', { class: `ab__eyebrow reveal ${cls}`.trim() },
+      const page = el('div', { class: 'about' });
+      wrap.appendChild(page);
+      hero.appendChild(wrap);
+
+      /* THE ONE PIECE OF GRAMMAR THIS PAGE ADDS, and it is borrowed: a small
+         mono label with a stud in front of it, which is the mark the work page
+         already uses over its own bands. Four of them on the page, and they
+         are the only thing that says a new section has started — no rule, no
+         heading, no space the size of a paragraph. */
+      const label = (t) => el('p', { class: 'ab__label' },
         `<i class="ab__stud" aria-hidden="true"></i>${esc(t)}`);
 
-      /* type set as authored lines. At this size the line breaks are a design
-         decision, so they are written in the content rather than left to the
-         measure — and each line reveals on its own, a beat after the one
-         above it. */
-      const lines = (arr, tag, cls) => {
-        const h = el(tag, { class: cls });
-        (arr || []).forEach((ln, i) => {
-          const s = el('span', { class: 'ab__ln reveal' }, esc(ln));
-          s.style.setProperty('--rv-delay', `${i * 90}ms`);
-          h.appendChild(s);
-        });
-        return h;
+      const chips = (items) => {
+        const ul = el('ul', { class: 'ab__tags' });
+        (items || []).forEach((t) => ul.appendChild(el('li', { class: 'ab__tag' }, esc(t))));
+        return ul;
       };
 
-      /* A photograph that does not exist yet. `p.w` and `p.at`, when present,
-         place it inside a composition; without them it sits in the flow. Give
-         the entry a `src` and the real image takes the same box. */
-      const photo = (p, extra = '') => {
-        const st = [`--rot:${p.rot || 0}deg`, `--tint:${p.tint || '#eceae4'}`];
-        if (p.w) st.push(`--w:${p.w}%`);
-        if (p.at) for (const [k, v] of Object.entries(p.at)) st.push(`${k}:${v}`);
-        const fig = el('figure', {
-          class: `pcard${p.shot ? ' pcard--shot' : ''}${p.at ? ' pcard--set' : ''}${extra ? ` ${extra}` : ''}`,
-          style: st.join(';'),
-          tabindex: '0',
-          role: 'button',
-          'aria-label': `${p.label}${p.note ? ` — ${p.note}` : ''}`,
-        });
-        const win = el('div', { class: 'pcard__win' });
-        if (p.src) win.appendChild(el('img', { class: 'pcard__img', src: p.src, alt: p.note || '', loading: 'lazy' }));
-        else win.appendChild(el('span', { class: 'pcard__label' }, esc(p.label)));
-        fig.appendChild(win);
-        fig.appendChild(el('figcaption', { class: 'pcard__cap' }, esc(p.note || '')));
-        return fig;
-      };
+      /* ---- the narrow column: what you look up ------------------------- */
+      const side = el('aside', { class: 'ab__side' });
 
-      /* a note in the margin, placed against the composition it refers to */
-      const scrawl = (n) => {
-        const st = [];
-        if (n.at) for (const [k, v] of Object.entries(n.at)) st.push(`${k}:${v}`);
-        if (n.rot) st.push(`--rot:${n.rot}deg`);
-        const p = el('p', {
-          class: `ab__scrawl${n.at ? ' ab__scrawl--set' : ''} reveal`,
-          style: st.join(';'),
-        });
-        if (n.arrow === 'l') p.appendChild(el('i', { class: 'ab__arrow ab__arrow--l', 'aria-hidden': 'true' }));
-        p.appendChild(el('span', {}, esc(n.text)));
-        if (n.arrow === 'r') p.appendChild(el('i', { class: 'ab__arrow', 'aria-hidden': 'true' }));
-        return p;
-      };
-
-      const stage = (items, notes, cls) => {
-        const st = el('div', { class: `spread ${cls}`.trim() });
-        (items || []).forEach((p, i) => {
-          const f = photo(p);
-          f.classList.add('reveal');
-          f.style.setProperty('--rv-delay', `${i * 110}ms`);
-          st.appendChild(f);
-        });
-        (notes || []).forEach((n) => st.appendChild(scrawl(n)));
-        return st;
-      };
-
-      /* ================================================ 01. a whole screen */
-      {
-        const h = c.hero;
-        const s = el('section', { class: 'ab__hero', id: 'ab-top' });
-        s.appendChild(el('i', { class: 'sec__anchor', 'aria-hidden': 'true' }));
-
-        const col = el('div', { class: 'ab__hero-col' });
-        col.appendChild(eyebrow(h.eyebrow));
-        col.appendChild(el('h1', { class: 'ab__hi reveal' }, esc(h.hi)));
-        col.appendChild(lines(h.statement, 'p', 'ab__say'));
-        const meta = el('div', { class: 'ab__meta reveal' });
-        meta.style.setProperty('--rv-delay', '420ms');
-        (h.meta || []).forEach((m) => meta.appendChild(el('span', { class: 'pill' }, esc(m))));
-        col.appendChild(meta);
-        s.appendChild(col);
-
-        /* the pile, and the notes that point at it */
-        const vis = el('div', { class: 'ab__hero-vis' });
-        const stack = el('div', { class: 'pile__stack' });
-        (h.pile || []).forEach((p) => stack.appendChild(photo(p)));
-        vis.appendChild(stack);
-        (h.notes || []).forEach((n) => vis.appendChild(scrawl(n)));
-        s.appendChild(vis);
-
-        /* NO SCROLL CUE. "The longer version" used to sit at the foot of this
-           screen on the writing's own column, linking down to the story. A
-           full-height first screen with the type running off the bottom of it
-           already says there is more; a label saying so is a caption on an
-           affordance nobody needed explained. */
-        wrap.appendChild(s);
-        this._pile = stack;
+      const ex = c.expertise || {};
+      if ((ex.items || []).length) {
+        const g = el('section', { class: 'ab__grp' });
+        g.appendChild(label(ex.title || 'Expertise'));
+        g.appendChild(chips(ex.items));
+        side.appendChild(g);
       }
 
-      /* ============================================ 02. the rail, and the read */
-      {
-        const s = el('section', { class: 'ab__read-sec', id: 'ab-story' });
-        s.appendChild(el('i', { class: 'sec__anchor', 'aria-hidden': 'true' }));
-
-        const rail = el('aside', { class: 'ab__rail' });
-        rail.appendChild(el('p', { class: 'ab__rail-t' }, esc(c.chaptersTitle || 'Contents')));
-        const list = el('nav', { class: 'ab__rail-list', 'aria-label': 'Chapters' });
-        const links = [];
-        const sections = [];
-
-        (c.chapters || []).forEach((ch, i) => {
-          const a = el('a', { class: 'ab__rl', href: `#${ch.id}` });
-          a.appendChild(el('span', { class: 'ab__rl-n' }, String(i + 1).padStart(2, '0')));
-          const txt = el('span', { class: 'ab__rl-x' });
-          txt.appendChild(el('span', { class: 'ab__rl-h' }, esc(ch.nav)));
-          txt.appendChild(el('span', { class: 'ab__rl-s' }, esc(ch.tiny || '')));
-          a.appendChild(txt);
-          list.appendChild(a);
-          links.push(a);
-        });
-        rail.appendChild(list);
-        s.appendChild(rail);
-
-        const read = el('div', { class: 'ab__read' });
-        (c.chapters || []).forEach((ch, i) => {
-          const sec = el('article', { class: 'ab__ch sec', id: ch.id });
-          sec.appendChild(el('i', { class: 'sec__anchor', 'aria-hidden': 'true' }));
-
-          const words = el('div', { class: 'ab__ch-w' });
-          words.appendChild(el('p', { class: 'ab__ch-e reveal' }, esc(ch.eyebrow)));
-          words.appendChild(lines(ch.heading, 'h2', 'ab__ch-h'));
-          const body = el('div', { class: 'ab__ch-b' });
-          (ch.body || []).forEach((para, k) => {
-            const pEl = el('p', { class: 'reveal' }, esc(para));
-            pEl.style.setProperty('--rv-delay', `${120 + k * 70}ms`);
-            body.appendChild(pEl);
-          });
-          words.appendChild(body);
-          sec.appendChild(words);
-
-          /* the spread. It alternates side so the read does not become a
-             column of text with a column of pictures beside it. */
-          if (ch.spread) {
-            const sp = stage(ch.spread, ch.notes, i % 2 ? 'spread--left' : 'spread--right');
-            sec.appendChild(sp);
-          }
-          read.appendChild(sec);
-          sections.push(sec);
-        });
-        s.appendChild(read);
-        wrap.appendChild(s);
-        this._rail = { sections, links };
-      }
-
-      /* ============================================== 03. a wall of type */
-      {
-        const cr = c.creed;
-        const s = el('section', { class: 'ab__creed', id: 'ab-creed' });
-        s.appendChild(el('i', { class: 'sec__anchor', 'aria-hidden': 'true' }));
-        s.appendChild(eyebrow(cr.eyebrow, 'ab__eyebrow--creed'));
-        s.appendChild(lines(cr.lines, 'h2', 'ab__creed-h'));
-        const body = el('div', { class: 'ab__creed-b' });
-        (cr.body || []).forEach((para, k) => {
-          const p = el('p', { class: 'reveal' }, esc(para));
-          p.style.setProperty('--rv-delay', `${200 + k * 80}ms`);
-          body.appendChild(p);
-        });
-        s.appendChild(body);
-        /* two prints hung in the corners of the type, not beside it */
-        (cr.loose || []).forEach((p, i) => {
-          const f = photo(p, 'pcard--hung reveal');
-          f.style.setProperty('--rv-delay', `${300 + i * 120}ms`);
-          s.appendChild(f);
-        });
-        wrap.appendChild(s);
-      }
-
-      /* ============================================= 04. the record ---------
-
-         An editorial résumé, not a résumé component. Two columns that do not
-         line up: a quiet rail of metadata on the left, the work itself on the
-         right, and no card around any of it.
-
-         IT IS ON THE READ'S OWN COLUMNS. The rail sits on 2–4 and the work on
-         6–13, which is exactly where `.ab__rail` and `.ab__read` sit two bands
-         above — so the page's widest editorial spread happens twice and lands
-         on the same two edges both times. Measured off the reference at 2940px:
-         its rail runs 1.9%–28% of the canvas and its experience column 35%–98%,
-         which on this page's twelve tracks is those two placements to within
-         half a track. The proportion was borrowed; the grid was already here.
-
-         NOTHING IS IN A BOX. The entries are separated by space and by a
-         hairline guide, which is what makes it read as a typeset document
-         rather than a list of cards — and it is why the guide is a gradient
-         that fades out at both ends instead of a border with two hard stops. */
-      {
-        const rs = c.resume;
-        const s = el('section', { class: 'ab__cv', id: 'ab-cv' });
-        s.appendChild(el('i', { class: 'sec__anchor', 'aria-hidden': 'true' }));
-
-        /* a heading in the rail's voice: small, set solid, and stronger than
-           the mono eyebrows so the rail has a hierarchy of its own */
-        const grp = (title) => {
-          const g = el('div', { class: 'cv__grp reveal' });
-          g.appendChild(el('h3', { class: 'cv__grp-t' }, esc(title)));
-          return g;
-        };
-
-        /* one metadata chip. The same object in the rail and at the foot of an
-           entry — a skill named beside a job and a skill named on its own are
-           the same kind of thing, so they are the same piece. */
-        const tag = (t) => el('li', { class: 'cv__tag' }, esc(t));
-
-        /* ---- the rail ---------------------------------------------------- */
-        const rail = el('aside', { class: 'cv__rail' });
-        {
-          const ex = rs.expertise || {};
-          const g = grp(ex.title || 'Expertise');
-          const list = el('ul', { class: 'cv__tags' });
-          (ex.items || []).forEach((t) => list.appendChild(tag(t)));
-          g.appendChild(list);
-          rail.appendChild(g);
-        }
-        {
-          const ed = rs.education || {};
-          const g = grp(ed.title || 'Education');
-          const list = el('ul', { class: 'cv__edu' });
-          (ed.items || []).forEach((e) => {
-            const li = el('li', { class: 'cv__ed' });
-            li.appendChild(el('span', { class: 'cv__ed-w' }, esc(e.what)));
-            li.appendChild(el('span', { class: 'cv__ed-s' }, esc(e.where)));
-            if (e.when) li.appendChild(el('span', { class: 'cv__ed-y' }, esc(e.when)));
-            list.appendChild(li);
-          });
-          g.appendChild(list);
-          rail.appendChild(g);
-        }
-        {
-          /* THE THREE CONTROLS ARE NOT NEW LINKS. They are the page's own
-             `_links()` — the same address, the same profile found by its href,
-             the same resume that carries `data-action` so it opens in the
-             site's viewer rather than the browser's. Change the address in
-             content.js and it changes here, in the sign-off and in the footer
-             together, because all three ask the same function.
-
-             THE ORDER IS A READING ORDER, not the order `_links()` happens to
-             build them in: the profile, the address, the file. Anything that is
-             not one of the three is left out rather than rendered as a circle
-             with no mark in it. */
-          const g = grp((rs.reach || {}).title || 'Reach me');
-          const row = el('div', { class: 'cv__reach' });
-          const MARK = { LinkedIn: ICON.linkedin, Email: ICON.mail, Resume: 'CV' };
-          const ORDER = Object.keys(MARK);
-          const three = this._links()
-            .filter((l) => ORDER.includes(l.label))
-            .sort((a, z) => ORDER.indexOf(a.label) - ORDER.indexOf(z.label));
-          three.forEach((l) => {
-            const out = /^https?:/.test(l.href);
-            const a = el('a', {
-              class: 'cv__dot',
-              href: url(l.href),
-              'aria-label': l.label,
-              ...(l.action ? { 'data-action': l.action } : {}),
-              ...(out ? { target: '_blank', rel: 'noopener' } : {}),
-            });
-            /* a glyph where there is one, the word where there is not — the
-               resume has no mark of its own, and "CV" is shorter than any
-               drawing of a document */
-            const m = MARK[l.label];
-            if (m.charAt(0) === '<') a.appendChild(el('i', { class: 'cv__dot-i', 'aria-hidden': 'true' }, m));
-            else a.appendChild(el('span', { class: 'cv__dot-t', 'aria-hidden': 'true' }, m));
-            row.appendChild(a);
-          });
-          g.appendChild(row);
-          rail.appendChild(g);
-        }
-        s.appendChild(rail);
-
-        /* ---- the work ---------------------------------------------------- */
-        const exp = el('div', { class: 'cv__exp' });
-        exp.appendChild(eyebrow(rs.eyebrow || 'Experience'));
-
-        const list = el('ol', { class: 'cv__list' });
-        const jobs = [];
-        (rs.jobs || []).forEach((j) => {
-          const li = el('li', { class: 'cv__job' });
-
-          /* the marker: a two-stud brick on the guide. It is the one place in
-             this band the home page is quoted, and it is four pixels of it. */
-          li.appendChild(el('i', { class: 'cv__node', 'aria-hidden': 'true' }, '<i></i><i></i>'));
-
-          /* THE MARK AND THE NAME REVEAL SEPARATELY, one beat apart, because
-             they are the first two things in the entry's reading order and the
-             stagger is what makes the rest of it feel like it follows rather
-             than appears. The head itself is not a reveal unit — a container
-             that fades carries its children with it and there is no order
-             inside it. */
-          const head = el('div', { class: 'cv__head' });
-          const logo = el('span', { class: 'cv__logo reveal', 'aria-hidden': 'true' });
-          /* THE MARK'S BOX IS THE SAME WHETHER THERE IS ARTWORK IN IT OR NOT,
-             so dropping a real logo in later moves nothing on the page. */
-          if (j.glyph && PILL_ICON[j.glyph]) {
-            logo.classList.add(`cv__logo--${j.glyph}`);
-            logo.innerHTML = PILL_ICON[j.glyph];
-          } else if (j.logo) {
-            logo.appendChild(el('img', { src: url(j.logo), alt: '', loading: 'lazy' }));
-          } else {
-            logo.classList.add('cv__logo--letters');
-            logo.textContent = j.initials || (j.company || '?').slice(0, 2).toUpperCase();
-          }
-          head.appendChild(logo);
-          const co = el('h3', { class: 'cv__co reveal' }, esc(j.company));
-          co.style.setProperty('--rv-delay', '55ms');
-          head.appendChild(co);
-          li.appendChild(head);
-
-          const meta = el('p', { class: 'cv__meta reveal' });
-          meta.style.setProperty('--rv-delay', '110ms');
-          meta.appendChild(el('span', { class: 'cv__role' }, esc(j.role || '')));
-          if (j.when) meta.appendChild(el('span', { class: 'cv__when' }, esc(j.when)));
-          li.appendChild(meta);
-
-          if (j.body) {
-            const p = el('p', { class: 'cv__body reveal' }, esc(j.body));
-            p.style.setProperty('--rv-delay', '165ms');
-            li.appendChild(p);
-          }
-
-          /* the achievements carry on the same 55ms beat rather than starting a
-             new one, so an entry arrives as one movement and not as four */
-          let beat = 4;
-          if ((j.wins || []).length) {
-            const wins = el('ul', { class: 'cv__wins' });
-            j.wins.forEach((w) => {
-              const wi = el('li', { class: 'cv__win reveal' }, `<i class="cv__win-o" aria-hidden="true"></i><span>${esc(w)}</span>`);
-              wi.style.setProperty('--rv-delay', `${beat++ * 55}ms`);
-              wins.appendChild(wi);
-            });
-            li.appendChild(wins);
-          }
-
-          if ((j.tags || []).length) {
-            const tl = el('ul', { class: 'cv__tags cv__tags--job reveal' });
-            tl.style.setProperty('--rv-delay', `${beat * 55}ms`);
-            j.tags.forEach((t) => tl.appendChild(tag(t)));
-            li.appendChild(tl);
-          }
-
+      const ed = c.education || {};
+      if ((ed.items || []).length) {
+        const g = el('section', { class: 'ab__grp' });
+        g.appendChild(label(ed.title || 'Education'));
+        const list = el('ul', { class: 'ab__edu' });
+        ed.items.forEach((it) => {
+          const li = el('li', { class: 'ab__ed' });
+          li.appendChild(el('b', {}, esc(it.what)));
+          li.appendChild(el('span', {}, esc(it.where)));
+          /* the years in mono, tabular, so two rows of dates line up as a
+             column without a column being drawn */
+          li.appendChild(el('i', {}, esc(it.when)));
           list.appendChild(li);
-          jobs.push(li);
         });
-        exp.appendChild(list);
-
-        /* ---- the awards ---------------------------------------------------
-           A RULED LIST, NOT A ROW OF TROPHY CARDS. Four prizes is a table's
-           worth of information — a year, a thing, and what the thing was —
-           and the three-column rule is what makes it scannable at a glance
-           instead of four more paragraphs to read. It sits at the foot of the
-           work column rather than in its own band, because it IS résumé
-           content: the same document, one run further down.
-
-           A NAME IS A LINK ONLY WHEN THERE IS SOMEWHERE TO GO. Give a row a
-           `url` in content.js and it becomes an anchor with the arrow after
-           it; without one it is plain type. No placeholder href, because a
-           link that goes nowhere is worse than no link. */
-        if (((rs.awards || {}).items || []).length) {
-          const aw = rs.awards;
-          const box = el('div', { class: 'cv__aw' });
-          box.appendChild(eyebrow(aw.title || 'Awards'));
-
-          const ol = el('ol', { class: 'cv__aws' });
-          aw.items.forEach((a, i) => {
-            const li = el('li', { class: 'cv__aw-r reveal' });
-            li.style.setProperty('--rv-delay', `${i * 55}ms`);
-            li.appendChild(el('span', { class: 'cv__aw-y' }, esc(a.year || '')));
-            li.appendChild(a.url
-              ? el('a', {
-                class: 'cv__aw-n cv__aw-n--to',
-                href: url(a.url),
-                ...(/^https?:/.test(a.url) ? { target: '_blank', rel: 'noopener' } : {}),
-              }, esc(a.name))
-              : el('span', { class: 'cv__aw-n' }, esc(a.name)));
-
-            const d = el('span', { class: 'cv__aw-d' });
-            d.appendChild(el('span', { class: 'cv__aw-p' }, esc(a.result || '')));
-            if (a.where) d.appendChild(el('span', {}, ` · ${esc(a.where)}`));
-            li.appendChild(d);
-            ol.appendChild(li);
-          });
-          box.appendChild(ol);
-          exp.appendChild(box);
-        }
-
-        s.appendChild(exp);
-
-        wrap.appendChild(s);
-        this._jobs = jobs;
-        this._jobLand = $('.sec__anchor', s);
+        g.appendChild(list);
+        side.appendChild(g);
       }
 
-      /* THE PAGE ENDS ON THE RÉSUMÉ, and it ends there deliberately rather
-         than by attrition. The table of what I am currently reading and the
-         "Let's make something." sign-off both came out: the footer below is
-         already an end-of-page — the address is its headline, "Get in touch"
-         is its lead, and every link the sign-off offered is in its Links
-         column. Two closings in a row is one closing and then a repeat. */
-
-      main.appendChild(wrap);
-
-      /* ---- and the interactions ----------------------------------------- */
-      if (this._pile) Desk.stack(this._pile);
-      if (this._jobs && this._jobs.length) Desk.track(this._jobs, this._jobLand);
-      if (this._rail && this._rail.sections.length) {
-        SectionNav.bind(null, this._rail.sections, this._rail.links);
+      /* THE THREE WAYS IN, taken from `_links()` rather than typed here: the
+         address is the footer's and the profile is found by its href, so this
+         row cannot drift from the ones in the rail below it. The CV keeps its
+         `data-action`, which is what opens it in the page's own viewer instead
+         of a new tab. */
+      const reach = this._links();
+      const want = ['LinkedIn', 'Email', 'Resume'];
+      const rows = want.map((w) => reach.find((l) => l.label === w)).filter(Boolean);
+      if (rows.length) {
+        const g = el('section', { class: 'ab__grp' });
+        g.appendChild(label((c.reach && c.reach.title) || 'Reach me'));
+        const row = el('p', { class: 'ab__reach' });
+        rows.forEach((l) => {
+          const a = el('a', {
+            href: url(l.href),
+            ...(l.action ? { 'data-action': l.action } : {}),
+            ...(/^https?:/.test(l.href) ? { target: '_blank', rel: 'noopener' } : {}),
+          }, esc(l.label === 'Resume' ? 'CV' : l.label));
+          row.appendChild(a);
+        });
+        g.appendChild(row);
+        side.appendChild(g);
       }
+
+      /* ---- the wide column: what you read ------------------------------ */
+      const body = el('div', { class: 'ab__main' });
+
+      if ((c.jobs || []).length) {
+        const g = el('section', { class: 'ab__grp' });
+        g.appendChild(label(c.eyebrow || 'Experience'));
+        const list = el('ol', { class: 'ab__jobs' });
+        c.jobs.forEach((j) => {
+          /* `is-current` is the filled node and the darker company name. It is
+             read off the content rather than hardcoded to the first entry, so
+             a future job at the top does not silently inherit it. */
+          const now = /current/i.test(j.when || '');
+          const item = el('li', { class: `ab__job${now ? ' is-current' : ''}` });
+          item.appendChild(el('i', { class: 'ab__node', 'aria-hidden': 'true' }));
+          const head = el('div', { class: 'ab__head' });
+          head.appendChild(el('h2', { class: 'ab__co' }, esc(j.company)));
+          head.appendChild(el('p', { class: 'ab__role' },
+            `${esc(j.role)}<span aria-hidden="true"> · </span>${esc(j.when)}`));
+          item.appendChild(head);
+          if (j.body) item.appendChild(el('p', { class: 'ab__body' }, esc(j.body)));
+          if ((j.wins || []).length) {
+            const ul = el('ul', { class: 'ab__wins' });
+            j.wins.forEach((w) => ul.appendChild(el('li', {},
+              `<i class="ab__o" aria-hidden="true"></i><span>${esc(w)}</span>`)));
+            item.appendChild(ul);
+          }
+          if ((j.tags || []).length) item.appendChild(chips(j.tags));
+          list.appendChild(item);
+        });
+        g.appendChild(list);
+        body.appendChild(g);
+      }
+
+      /* THE AWARDS AS A TABLE, WHICH IS WHAT THEY ARE. A year, the thing, and
+         what the thing was. Three of the four rows carry a certificate and get
+         an arrow; the fourth was never issued one and stays plain rather than
+         having a link invented for it. Separated by one hairline each, because
+         four rows of two lines need a horizon to scan along and nothing more
+         than that. */
+      const aw = c.awards || {};
+      if ((aw.items || []).length) {
+        const g = el('section', { class: 'ab__grp' });
+        g.appendChild(label(aw.title || 'Awards'));
+        const list = el('ul', { class: 'ab__awards' });
+        aw.items.forEach((a) => {
+          const li = el('li', { class: 'ab__award' });
+          li.appendChild(el('span', { class: 'ab__yr' }, esc(a.year)));
+          const what = el('div', { class: 'ab__what' });
+          const name = esc(a.name)
+            + (a.url ? '<span class="ab__ext" aria-hidden="true">↗</span>' : '');
+          what.appendChild(a.url
+            ? el('a', { class: 'ab__aw-n', href: a.url, target: '_blank', rel: 'noopener' }, name)
+            : el('span', { class: 'ab__aw-n' }, name));
+          what.appendChild(el('span', { class: 'ab__aw-s' },
+            `${esc(a.result)}<span aria-hidden="true"> · </span>${esc(a.where)}`));
+          li.appendChild(what);
+          list.appendChild(li);
+        });
+        g.appendChild(list);
+        body.appendChild(g);
+      }
+
+      page.append(side, body);
+
+      /* AND THE TRAY LAST, for the reason the home page gives: the brick
+         engine sizes a stud off the box, and the box is whatever height the
+         rail has left once everything above it has been laid out. */
+      if (Rail.trayEl) requestAnimationFrame(() => Tray.init(Rail.trayEl));
     },
 
     /* THE WAYS TO REACH ME, resolved from the data the rest of the site
@@ -15051,119 +14811,6 @@
       const back = $('[data-action="resume"]');
       if (back) back.focus({ preventScroll: true });
       setTimeout(() => { if (!this.open_) this.el.hidden = true; }, REDUCED ? 1 : 420);
-    },
-  };
-
-  const Sheet = {
-    init() {
-      this.el = $('.sheet');
-      this.outro = $('.outro');
-      /* The floating pods, collected once — the first two are built by
-         Shell.controls() and the dock by Rack.init(), both before this runs.
-         The dock and the deck's handle are in the list because they read the
-         same --end backwards: the dock leaves the phone's corner as the slider
-         and the mute arrive in it, and the handle leaves the desktop's edge as
-         the footer's own Pages column comes into view. */
-      this.collect();
-      this.last = -1;
-      this.lastEnd = -1;
-      this.measure();
-    },
-
-    /* Re-runnable, because one of these is built after this module starts: the
-       deck mounts its handle later and calls back here. A pod missed at boot
-       simply never receives --end and never leaves. */
-    collect() { this.pods = $$('.controls, .mute, .tools, .tab-menu'); },
-
-    /* The travel distance is the outro's own height, not a fraction of the
-       viewport. At max scroll the sheet's bottom edge sits exactly one outro
-       above the fold, which is the state the reference screenshot shows — so
-       tying it to the outro makes "fully detached" land precisely at the end,
-       at any viewport size. */
-    measure() {
-      this.travel = Math.max(120, this.outro ? this.outro.offsetHeight : 340);
-      /* Below 48rem the paper is trimmed by `clip-path` rather than by its
-         margin, and the shadow the clip removes is redrawn by the outro. Both
-         read the same three properties, and the outro is a sibling of the
-         sheet, so it cannot inherit them — it has to be written to as well.
-         Read here rather than in the tick: this runs on resize, which is the
-         only thing that can change the answer. */
-      this.narrow = matchMedia('(max-width: 48rem)').matches;
-    },
-
-    /* WRITTEN ON THE ELEMENTS THAT READ THEM, NOT ON THE ROOT.
-       These five properties used to be set on documentElement, which is the
-       expensive place to put anything that changes while you scroll: a custom
-       property on the root invalidates the computed style of every element that
-       inherits it, and every element inherits it. Measured over a scroll from
-       just above the footer to the end of the page — 1,450ms of style
-       recalculation, against 318ms with the same properties held still.
-
-       The sheet's three are read only by `.sheet`, and the two that raise the
-       pods are read only by the pods, so each write now dirties one subtree
-       instead of the document. */
-    tick(vh) {
-      if (!this.el) return;
-      const r = this.el.getBoundingClientRect();
-      /* 32px inset, 24px corner radius — both measured off the reference */
-      const p = clamp((vh - r.bottom) / this.travel);
-
-      /* CHANGING THIS MARGIN RE-LAYS-OUT THE WHOLE PAGE, because `.sheet` is
-         the paper and the paper contains everything. Measured with Chromium's
-         layout counters over a scroll from just above the footer to the end:
-         48 layout passes costing 74ms, against 3 costing 1ms with the margin
-         held still.
-         The fix is in the stylesheet rather than here — below 48rem the margin
-         simply does not move, so none of those passes happen. Above it the
-         desktop keeps the composition it was measured against, and this stays
-         at one write per whole pixel. Quantising it coarsely was tried and
-         reverted: rounding to three pixels puts full detachment at 33 rather
-         than 32, and the desktop is the reference. */
-      const px = Math.round(p * 32);
-      if (px !== this.last) {
-        this.last = px;
-        const round = `${Math.round(p * 24)}px`;
-        const lift = p.toFixed(3);
-        const s = this.el.style;
-        s.setProperty('--sheet-inset', `${px}px`);
-        s.setProperty('--sheet-round', round);
-        s.setProperty('--sheet-lift', lift);
-        /* The shell's own frame reads this too, and fades out as the paper
-           lifts — at the footer the only edge on screen should be the sheet's.
-           Written on the two layers that draw the frame rather than on the root,
-           for the reason in the comment above. */
-        if (App.app) App.app.style.setProperty('--sheet-lift', lift);
-        if (App.pane) App.pane.style.setProperty('--sheet-lift', lift);
-        if (App.hud) App.hud.style.setProperty('--sheet-lift', lift);
-        /* the phone's second reader — see measure(). Two subtrees dirtied
-           instead of one, and neither write touches layout. */
-        if (this.narrow && this.outro) {
-          const o = this.outro.style;
-          o.setProperty('--sheet-inset', `${px}px`);
-          o.setProperty('--sheet-round', round);
-          o.setProperty('--sheet-lift', lift);
-        }
-      }
-
-      /* the controls only exist at the end of the page. They start appearing a
-         little before the paper detaches so they're settled by the time you
-         land, and they only accept input once actually visible. */
-      const end = clamp((vh - r.bottom) / (this.travel * 0.5));
-      const q = Math.round(end * 50) / 50;
-      if (q !== this.lastEnd) {
-        this.lastEnd = q;
-        const v = q.toFixed(2);
-        const e = q > 0.5 ? 'auto' : 'none';
-        /* `pointer-events` takes a keyword, not a number, so the dock cannot
-           derive its own state from --end the way it derives its opacity. It
-           gets the opposite keyword written for it instead. */
-        const inv = q > 0.5 ? 'none' : 'auto';
-        for (const n of this.pods) {
-          n.style.setProperty('--end', v);
-          n.style.setProperty('--end-events', e);
-          n.style.setProperty('--end-events-inv', inv);
-        }
-      }
     },
   };
 
@@ -15533,6 +15180,11 @@
     /* First, before anything mounts: the three layers exist, and every module
        after this lands in one of them rather than on the body. */
     App.init();
+    /* BEFORE THE PAGES BUILD. Every surface they create reads the palette,
+       so the theme has to be settled before any of them exist rather than
+       corrected into place a frame later. The class is already on the root by
+       then — the head script put it there — and this only agrees with it. */
+    Theme.init();
     Sky.init();
     Shell.init();
     Nav.init();
@@ -15548,13 +15200,16 @@
     Ink.init();
     Ghost.init();
     Rack.init();
-    Sheet.init();
     /* last, so the handle mounts above the furniture it sits beside */
     Deck.init();
     Peek.init();
     /* after the page has built, because it asks whether this one has a canvas */
     Pinch.init();
     observeReveals();
+    /* AFTER THE PAGE IS BUILT, because it measures the page. It draws again on
+       the next frame and once more when the webfont has landed — see the
+       module. */
+    Grid.init();
 
     /* One frame loop. It keeps running while the reveal is still easing toward
        its target, then parks itself until the next scroll. */
@@ -15580,7 +15235,6 @@
       const gh = Ghost.tick(dt);
       const pk = Peek.tick(dt);
       const dk = Deck.tick(dt);
-      Sheet.tick(vh);
 
       /* NO LINE FOR THE TRAY, AND THAT IS THE POINT. It used to have one: the
          isometric version ran its own clock off this loop. `Bricks` does not —
@@ -15606,7 +15260,7 @@
 
     wakeLoop = wake;
     App.onScroll(wake);
-    addEventListener('resize', () => { vh = innerHeight; Sheet.measure(); Nav.lastY = null; wake(); });
+    addEventListener('resize', () => { vh = innerHeight; Nav.lastY = null; wake(); });
     wake();
 
     /* `is-holding` is what turns the sticker tool's open hand into a closed
@@ -15676,6 +15330,8 @@
     window.__brkEj = () => Bricks._ej || null;
     window.__brkFend = () => Bricks._fend || null;
     window.__brkTC = () => Bricks._tc || null;
+    window.__theme = () => Theme;
+    window.__grid = () => Grid;
     /* EVERY STANDING STRUCTURE, AS A PAINTED BOX, next to the box it has to fit
        inside. `fenceIn` declines to move a structure that is larger than the
        host on an axis, so "how big has this pile welded itself into" is the

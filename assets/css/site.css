@@ -8,22 +8,79 @@
   /* the surface tone under the nav; dark surfaces override it */
   --tone: light;
 
-  /* ink */
-  --ink: #14100c;
-  --ink-2: #3a352f;
-  --ink-dim: #b9b4ad;
-  --ink-ghost: #d8d4ce;
+  /* --- THE PALETTE ---------------------------------------------------------
 
-  /* paper */
-  --paper: #f7f6f3;
-  --paper-2: #fffefc;
-  --line: #e7e4de;
-  --line-soft: #efece6;
+     NINE COLOURS, TWICE. Every colour on the site comes from one of them, and
+     the only thing that decides which set is in force is one class on the root.
+     There is no interpolation, no clock and no third state.
 
-  /* sky — overwritten live by the time-of-day slider */
-  --sky-1: #0b1533;
-  --sky-2: #1c2c5c;
-  --sky-3: #43578f;
+       --text-1   primary. Headlines, titles, the current row.
+       --text-2   secondary. Body prose, meta, hover states.
+       --text-3   tertiary. Quiet rows, captions, the closing lines.
+       --text-4   marks and hairlines. NOT for text — separators, dots, ticks.
+       --surface  the page's own ground
+       --surface-2 the raised one: cards, keycaps, the hero's paper
+       --border   rules and outlines
+       --border-soft the same, one step quieter
+       --accent   the one saturated colour the chrome is allowed
+
+     THE INK TIERS ARE MEASURED. Primary clears 15:1 in both themes, secondary
+     9:1, tertiary 4.8:1 — which is where an earlier palette was failing badly:
+     its tertiary measured 1.9:1 against its own ground, so every quiet line on
+     the page read as disabled rather than as quiet. Nothing that carries text
+     is below 4.5:1 in either theme. */
+  --text-1: #14100c;
+  --text-2: #454039;
+  --text-3: #716e63;
+  --text-4: #b5b1a7;
+  --surface: #f8f7f3;
+  --surface-2: #fdfcf9;
+  --border: #e4e0d8;
+  --border-soft: #f0ece5;
+  --accent: #a8722c;
+
+  /* --- AND THE NAMES THE REST OF THE FILE ALREADY USES ----------------------
+     Three hundred rules were written against `--ink` and `--paper` before there
+     was a semantic set, and rewriting all of them would be three hundred
+     chances to change something by accident. They are aliases: one
+     indirection, resolved by the browser, and both spellings stay correct. New
+     rules should use the semantic names above. */
+  --ink: var(--text-1);
+  --ink-2: var(--text-2);
+  --ink-dim: var(--text-3);
+  --ink-ghost: var(--text-4);
+  --paper: var(--surface);
+  --paper-2: var(--surface-2);
+  --line: var(--border);
+  --line-soft: var(--border-soft);
+
+  /* THE MAT behind the paper, and the ink the deck's menu wears on top of it.
+     Only the open menu ever shows either. */
+  --sky-1: #dcd7cd;
+  --sky-2: #e8e3d9;
+  --sky-3: #f2eee6;
+  --mat-ink: #2a251f;
+  --mat-ink-strong: #14100c;
+  --mat-scrim: rgba(255, 255, 255, 0.3);
+
+  /* --- THE LIGHT ON THE BRICKS ---------------------------------------------
+     Colourless quantities, so there is no length here that layout could read
+     even if a rule tried to.
+
+       --amb-shade  how dark a contact shadow is; daylight is 1
+       --amb-blur   how far it spreads
+       --amb-glow   the cool rim a brick catches in the dark; 0 in the light */
+  --amb-shade: 1;
+  --amb-blur: 1;
+  --amb-glow: 0;
+
+  /* THE LAYOUT GRID, and it is off until it is asked for. Two weights of the
+     page's own ink at an alpha low enough to read as pencil construction lines
+     rather than as a rule: a major at every real edge of the layout, a minor
+     halfway between the wide ones. No accent, no second hue — the same ink the
+     type is set in, brought down to almost nothing. */
+  --grid-major: rgba(20, 16, 12, 0.07);
+  --grid-minor: rgba(20, 16, 12, 0.034);
 
   /* type */
   /* ONE family across the whole project; hierarchy comes from weight, size and
@@ -59,10 +116,24 @@
      (e.g. 46rem) to bring the measure back in. */
   --measure: 100%;
 
-  /* The dotted field. One definition, read by the hero canvas AND the footer, so
-     the two surfaces are the same grid rather than two grids that happen to look
-     alike — change it once and both follow. Measured off the reference at 24px. */
-  --dots: radial-gradient(circle at 1px 1px, rgb(205, 203, 204) 1px, transparent 0);
+  /* THE FIELD. One definition, read by the page, the hero canvas, the desk and
+     the footer, so every surface is the same grid rather than four grids that
+     happen to look alike — change it once and all of them follow. 24px, which
+     is the reference's own cell.
+
+     RULED, NOT DOTTED. It was a dot at every intersection, which at this
+     spacing reads as a texture — a field of speckle you notice before you
+     notice what is on it. Two hairlines instead: one set down, one across, at
+     an alpha low enough that the grid is a thing you can see when you look for
+     it and nothing at all when you are reading. `--grid-ink` is the only knob;
+     the dark theme turns it over and leaves the geometry alone.
+
+     `background-size` takes one pair for both layers, so `--dots-step` still
+     describes the whole cell and both gradients tile to it. */
+  --grid-ink: rgba(20, 16, 12, 0.05);
+  --dots:
+    linear-gradient(to right, var(--grid-ink) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-ink) 1px, transparent 1px);
   --dots-step: 24px 24px;
 
   /* --- the safe area --------------------------------------------------------
@@ -158,8 +229,6 @@
   /* rhythm */
   --col: 38.5rem;
   --gut: clamp(1.25rem, 4vw, 2.5rem);
-  --sheet-inset: 0px;
-  --sheet-round: 0px;
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
@@ -168,6 +237,50 @@
   --spring-soft: cubic-bezier(0.22, 1.18, 0.36, 1);
   --spring-snap: cubic-bezier(0.16, 1.32, 0.3, 1);
 
+}
+
+/* THE DARK THEME'S PALETTE, and it is the whole of the theme.
+
+   Four lines inline in every page's head put `.is-dark` on the root before the
+   first paint, so a visitor arriving after six in the evening never sees a
+   white frame. Everything below is what that class means.
+
+   NOT AN INVERSION. The ground is a warm near-black rather than the light
+   ground's complement, the primary ink is an off-white with the same warmth in
+   it, and the tiers are spaced for a dark ground rather than mirrored from a
+   light one — secondary sits closer to primary here than it does in the light,
+   because a dark page needs less separation to read as separated.
+
+   ONLY COLOURS AND THE THREE LIGHTING NUMBERS ARE HERE. Type, spacing, the dot
+   grid and the safe area belong to `:root` and are the same in both themes; an
+   earlier version of this block opened before them and swallowed the lot,
+   which left the light theme with no `--sans` and every card title set in
+   Times New Roman. A theme override that redeclares anything structural is a
+   bug waiting for exactly that. */
+:root.is-dark {
+  --tone: dark;
+  --text-1: #f2efe9;
+  --text-2: #bdb7ae;
+  --text-3: #8b857c;
+  --text-4: #5c5750;
+  --surface: #171614;
+  --surface-2: #201e1c;
+  --border: #302c28;
+  --border-soft: #242220;
+  --accent: #cf9a55;
+
+  --sky-1: #0e0d0c;
+  --sky-2: #15130f;
+  --sky-3: #201e1a;
+  --mat-ink: #efece6;
+  --mat-ink-strong: #ffffff;
+  --mat-scrim: rgba(0, 0, 0, 0.34);
+
+  /* A dark room has one light in it: shadows are tighter and blacker, and a
+     brick's top-left edge catches a cool rim that does not exist by day. */
+  --amb-shade: 0.92;
+  --amb-blur: 1.12;
+  --amb-glow: 0.45;
 }
 
 /* ==========================================================================
@@ -298,7 +411,7 @@ body {
      Nothing sees it otherwise: `.sky-root` is fixed to the viewport with the
      sky's own gradient, and that is what the deck reveals when the page
      scales away. */
-  background-color: #fbfafa;
+  background-color: var(--surface-2);
   background-image: var(--dots);
   background-size: var(--dots-step);
   background-position: 0 var(--grid-y, 0px);
@@ -343,100 +456,6 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
   background:
     radial-gradient(120% 80% at 50% 100%, var(--sky-3) 0%, transparent 60%),
     linear-gradient(to bottom, var(--sky-1) 0%, var(--sky-2) 55%, var(--sky-3) 100%);
-  transition: background 900ms linear;
-}
-
-.sky-root .stars {
-  position: absolute;
-  /* oversized so the slow drift never exposes an empty edge */
-  top: -4%; left: -6%;
-  width: 112%; height: 108%;
-  opacity: var(--star-opacity, 0);
-  transition: opacity 1400ms linear;
-  animation: starDrift 240s linear infinite alternate;
-  will-change: transform;
-}
-
-/* barely perceptible — about 40px of travel over four minutes */
-@keyframes starDrift {
-  from { transform: translate3d(0, 0, 0); }
-  to   { transform: translate3d(2.4%, -1.4%, 0); }
-}
-
-/* a slow, rare shooting star — one every ~40s, only at night */
-.sky-root .shoot {
-  position: absolute;
-  top: 12%; left: 8%;
-  width: 88px; height: 1.4px;
-  border-radius: 2px;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.85));
-  opacity: 0;
-  filter: blur(0.3px);
-}
-.sky-root .shoot.go {
-  animation: shoot 1500ms cubic-bezier(0.3, 0.1, 0.5, 1) forwards;
-}
-@keyframes shoot {
-  0%   { opacity: 0;   transform: translate3d(0, 0, 0) rotate(18deg) scaleX(0.2); }
-  12%  { opacity: 0.9; }
-  70%  { opacity: 0.7; }
-  100% { opacity: 0;   transform: translate3d(46vw, 30vh, 0) rotate(18deg) scaleX(1); }
-}
-
-/* Daytime clouds. Soft blurred blobs drifting at different speeds so the
-   footer feels like weather rather than a gradient. */
-.sky-root .clouds {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  opacity: var(--cloud-opacity, 0);
-  transition: opacity 1400ms linear;
-}
-
-.sky-root .clouds i {
-  position: absolute;
-  display: block;
-  left: 0;
-  width: var(--w, 30rem);
-  height: var(--h, 9rem);
-  top: var(--t, 40%);
-  will-change: transform;
-  animation: drift var(--dur, 120s) linear var(--delay, 0s) infinite;
-}
-
-/* the lobed silhouette — a flat base with stacked billows on top */
-.sky-root .clouds i span {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 100% 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 104'%3E%3Cg fill='%23ffffff'%3E%3Crect x='24' y='60' width='188' height='30' rx='15'/%3E%3Ccircle cx='70' cy='54' r='30'/%3E%3Ccircle cx='110' cy='42' r='36'/%3E%3Ccircle cx='152' cy='54' r='26'/%3E%3Ccircle cx='188' cy='64' r='20'/%3E%3Ccircle cx='44' cy='66' r='21'/%3E%3C/g%3E%3C/svg%3E");
-  /* Blur derives from the cloud's own width. Measured by eye against renders:
-     ~2.6% keeps the lobed silhouette while still looking soft — 1.6% reads as
-     a sticker, 4% turns it to mush. */
-  filter: blur(calc(var(--w, 30rem) * 0.026));
-  opacity: var(--o, 0.85);
-  /* a slow vertical breath, so they don't slide in a dead straight line */
-  animation: bob var(--bob, 26s) ease-in-out var(--delay, 0s) infinite alternate;
-}
-
-@keyframes drift {
-  from { transform: translate3d(-45vw, 0, 0); }
-  to   { transform: translate3d(135vw, 0, 0); }
-}
-
-@keyframes bob {
-  from { transform: translate3d(0, calc(var(--bob-y, 8px) * -1), 0) scale(1); }
-  to   { transform: translate3d(0, var(--bob-y, 8px), 0) scale(1.05); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sky-root .clouds i { animation: none; transform: translate3d(30vw, 0, 0); }
-  .sky-root .clouds i span { animation: none; }
-  .sky-root .stars { animation: none; }
-  .sky-root .shoot { display: none; }
 }
 
 /* the same reason the document clips its own x-overflow: a 128vw strip must
@@ -447,15 +466,20 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
   position: relative;
   z-index: 1;
   background: var(--paper);
-  border-radius: 0 0 var(--sheet-round) var(--sheet-round);
-  margin: 0 var(--sheet-inset);
+  /* AND NO FIELD ON THE PAPER. `body` paints one and the paper covers it, which
+     is correct and deliberate: the grid belongs to the surfaces you can put
+     something on — the desk, the 404 room, the footer's band — and not behind
+     the work or the writing. It was briefly painted here as well, on the
+     reasoning that one field across the whole site is more coherent; it is
+     not, it is a texture behind everything you are trying to read. */
   overflow: clip;
   transition: none;
-  /* the paper lifts off the sky as it detaches — measured 32px inset, 24px radius */
-  box-shadow:
-    0 0 0 1px rgba(20, 16, 12, 0.04),
-    0 calc(var(--sheet-lift, 0) * 18px) calc(var(--sheet-lift, 0) * 46px)
-      calc(var(--sheet-lift, 0) * -18px) rgba(20, 16, 12, calc(var(--sheet-lift, 0) * 0.28));
+  /* IT NO LONGER LIFTS. The paper used to inset, round its bottom corners and
+     rise off the sky as you reached the end, opening a second scene under it.
+     There is no second scene now — the document simply ends — so the sheet is
+     the page from edge to edge, with the hairline it always had and nothing
+     that moves. */
+  box-shadow: 0 0 0 1px rgba(20, 16, 12, 0.04);
 }
 
 .col {
@@ -594,14 +618,10 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 }
 .canvas__cta .btn--ghost:hover { --btn-fg: var(--ink); }
 
-/* THIS SHADOWS THE @keyframes bob ABOVE, AND THE SKY IS CURRENTLY USING IT.
-   Two @keyframes can share a name and the LAST one wins, so `.sky-root
-   .clouds i span` — which asks for `bob` to breathe vertically and scale —
-   resolves to this instead and is being translated 50% to its own left. That
-   is a real bug and it is visible: it is why the clouds sit where they do.
-   It is left exactly as it is because this pass is not allowed to change what
-   the site looks like, and removing or renaming either one WOULD. Fixing it
-   is a one-line rename, and it needs its own before/after check. */
+/* THIS SHADOWS THE @keyframes bob ABOVE, and now it is the only one that is
+   read: the sky's drifting clouds were the other caller and they are gone.
+   Two @keyframes can share a name and the LAST one wins, so this is what
+   resolves — which is what the one remaining caller wants. */
 @keyframes bob {
   0%, 100% { opacity: 0.4; transform: translate(-50%, 0); }
   50%      { opacity: 1;   transform: translate(-50%, 4px); }
@@ -1189,15 +1209,19 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 }
 :root:not(.hover-cold) .home__more a:hover { color: var(--ink); }
 
-/* THE SIDEBAR IS THE NAVIGATION ON THESE TWO PAGES, so the MENU tab and the
+/* THE SIDEBAR IS THE NAVIGATION ON THESE THREE PAGES, so the MENU tab and the
    header links are not. Both are edge furniture that would land on top of the
    sidebar — the tab at the left edge, in the same 16px the sidebar's own
    padding occupies — and both say what the sidebar already says, in one more
-   place. Every other page keeps them exactly as they were. */
+   place. About joined the list when it stopped being a site of its own and
+   became the same layout with a document in the canvas; the case studies and
+   the work index keep them exactly as they were, because they have no rail. */
 body[data-page='home'] #nav,
 body[data-page='play'] #nav,
+body[data-page='about'] #nav,
 body[data-page='home'] .tab-menu,
-body[data-page='play'] .tab-menu { display: none; }
+body[data-page='play'] .tab-menu,
+body[data-page='about'] .tab-menu { display: none; }
 
 /* AND SO IS THE PHONE'S BAR. Below 48rem the header collapses into `.mbar` —
    the name at one end, a hamburger at the other — and on these two pages both
@@ -1207,7 +1231,8 @@ body[data-page='play'] .tab-menu { display: none; }
    weight has to be matched deliberately rather than by accident. */
 @media (max-width: 48rem) {
   body[data-page='home'] .mbar,
-  body[data-page='play'] .mbar { display: none; }
+  body[data-page='play'] .mbar,
+  body[data-page='about'] .mbar { display: none; }
 }
 
 /* --- NARROWER: RECOMPOSED, NOT SHRUNK ------------------------------------
@@ -1253,12 +1278,31 @@ body[data-page='play'] .tab-menu { display: none; }
   .mast__say { order: 1; grid-column: 1 / -1; margin-bottom: 0.75rem; }
   .mast__cta { order: 2; grid-column: 1 / -1; margin-bottom: clamp(1.75rem, 5vh, 2.5rem); }
   .home__work { order: 3; grid-column: 1 / -1; padding: 0; }
+  /* the about page's canvas takes the same slot the work does, for the same
+     reason: `.mast` is `display: contents` here, so this is a grid item in the
+     rail's own two-track grid and has to be told to span both */
+  .about { order: 3; grid-column: 1 / -1; padding: 0; }
   /* both lists, one per column of the same row */
   /* the two lists share row 4 side by side, and the tray comes after them —
      the DOM has the tray between them, so this is the one place the stacked
      layout's reading order differs from the sidebar's, and `order` is what
      says so */
   .mast__set { order: 4; margin: 0 0 clamp(1.25rem, 3.5vh, 2rem); }
+
+  /* THE WEATHER LINE HAS TO BE ORDERED TOO, and forgetting it was not a
+     cosmetic slip: `.mast` is `display: contents` here, so every one of its
+     children becomes a grid item in its own right, and a child with no `order`
+     takes the default of 0 — ahead of the statement at 1. The line sat at the
+     very top of the page, above his name, at every width below 60rem.
+
+     It belongs where it belongs in the column: after the playground, before
+     the closing lines. And `margin-top` goes back to nothing, because the auto
+     margin that pins it to the bottom of a flex column would claim the row's
+     free space in a grid.
+
+     The playground keeps order 5, which its own rule further down already
+     sets — the bricks above the closing lines, which is also the column's
+     order on a wide screen. */
   .mast__foot { order: 6; grid-column: 1 / -1; margin-top: 0; }
 
   /* THE STATEMENT IS NOT RE-CAPPED HERE, DELIBERATELY. In the sidebar the
@@ -1329,8 +1373,19 @@ body[data-page='play'] .tab-menu { display: none; }
    surface, so the only thing it has to do is get out of the way.
    ========================================================================== */
 
+/* THE COPY LIES ON THE DESK. Absolute, so it costs the floor no height, and
+   `pointer-events: none` so it is a label on a surface rather than an object in
+   the way of one — a press that lands on these words is a press on the desk,
+   which is what you want from an instruction printed on the thing it is
+   instructing you about. It is inset by the page's own gutter so it lines up
+   with the rail's type across the seam. */
 .play__head {
-  padding: 0 0 clamp(0.75rem, 2vh, 1.25rem);
+  position: absolute;
+  z-index: 3;
+  top: var(--mast-pad);
+  left: clamp(0.75rem, 1vw, 1.125rem);
+  right: var(--mast-pad);
+  pointer-events: none;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -1339,15 +1394,32 @@ body[data-page='play'] .tab-menu { display: none; }
 .play__lead { margin: 0; font-size: var(--step-0); font-weight: 450; color: var(--ink); }
 .play__note { margin: 0; font-size: var(--step--1); color: var(--ink-dim); }
 
-/* THE DESK IS A CANVAS AND NOT THE WINDOW. `.canvas` sets `min-height: 100svh`
-   because until now it always was the window; inside a column it has to be told
-   its own height instead. Tall enough that `Bricks.init`'s "is the host laid
-   out yet" test passes on the first frame, and short enough that the page does
-   not scroll for no reason. */
+/* THE DESK IS THE WHOLE OF WHAT IS NOT THE RAIL.
+
+   It used to sit in the canvas column's own gutters with the two lines of copy
+   above it — 16px of paper down the right and across the top, a rounded corner,
+   and a floor short enough to leave room for the copy. On a page that IS a
+   surface every one of those is an edge saying "the drawing stops here", and
+   the reference does not have any of them.
+
+   So the column loses its padding on this page and the floor takes the full
+   viewport height: it meets the rail on the left and the window on the other
+   three sides. The copy moves ONTO the desk rather than above it — see
+   `.play__head` — which is what buys back the height. */
+.home--play .home__work--desk { position: relative; padding: 0; }
+
 .home--play .play__floor {
-  min-height: calc(100svh - 5.5rem);
-  border-radius: 3px;
+  min-height: 100svh;
+  border-radius: 0;
 }
+
+/* AND THE LEGEND CLEARS THE TWO POD BUTTONS. They are fixed to the window's
+   bottom right and the desk now reaches that corner, so the shortcut row —
+   which used to stop 28px short of a column that stopped 16px short of the
+   window — was running underneath them. 5.5rem is the pair plus their inset
+   plus a gap; the hint on the other side is clear already, because nothing is
+   fixed to that corner. */
+.home--play .canvas__keys { right: 9rem; }
 
 /* ==========================================================================
    8. WORK SHOWCASE
@@ -1982,162 +2054,40 @@ body[data-page='play'] .tab-menu { display: none; }
   .foot__col a:hover { transform: none; }
 }
 
-/* the bit that floats on the sky, below the sheet */
-.outro {
-  position: relative;
-  z-index: 1;
-  /* measured: ~107px above the text, ~186px below it */
-  padding: clamp(3.5rem, 13vh, 6.7rem) var(--gut) clamp(5rem, 22vh, 11.6rem);
-  text-align: center;
-  /* Written by the sky module: dark ink on a light sky, light ink on a dark
-     one. Hard-coding this dark made the footer unreadable at night. */
-  color: var(--outro-ink, #33302c);
-  transition: color 900ms linear;
-}
-
-/* THE HAZE MOVED TO THE SKY. It is a legibility device — it keeps the local
-   background off mid-luminance at dawn and dusk, where neither dark nor light
-   ink clears 4.5:1 — and it used to be painted by the outro, inside the moving
-   shell.
-
-   That was fine while the shell was the whole screen. With the deck out it was
-   the thing that gave the game away: measured across the window's edge at the
-   footer, the sky inside was twenty levels lighter than the sky six pixels to
-   its left. One environment, painted two ways, with a hard step down the seam —
-   which is exactly the "two identities" it is supposed not to be.
-
-   So it is painted once, on the sky, at viewport coordinates. Both sides of the
-   window's edge get the same wash because there is only one wash, and the outro
-   still sits in the middle of it. */
+/* THE HAZE ON THE MAT. A legibility device, and the only thing it now serves
+   is the deck: the menu's links sit directly on the mat, and at dawn and dusk
+   the mat lands on a mid-luminance where neither dark nor light ink clears
+   4.5:1. One wash, painted once at viewport coordinates, so both sides of the
+   window's edge get the same colour and there is no step down the seam. */
 .pane::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(78% 46% at 50% 86%, var(--outro-scrim, transparent) 0%, transparent 74%);
+  background: radial-gradient(78% 46% at 50% 86%, var(--mat-scrim, transparent) 0%, transparent 74%);
   transition: background 900ms linear;
   pointer-events: none;
 }
 
-.outro p { position: relative; }
-
-.outro p {
-  width: min(34rem, 100%);
-  margin-inline: auto;
-  font-size: var(--step-0);
-  line-height: 1.62;
-}
-.outro strong { font-weight: 600; color: var(--outro-ink-strong, #1c1a17); }
-/* one flowing sentence — the fine print is part of it, not a separate line */
-.outro .fine { opacity: 0.72; }
-
 /* ==========================================================================
-   15. CONTROLS  (time slider + mute)
+   15. CONTROLS  (mute)
    ========================================================================== */
 
-.controls,
-.mute {
-  /* Both pods are hidden until the paper starts detaching from the sky, then
-     they rise into place. --end is written by the scroll loop, 0 → 1. */
-  opacity: var(--end, 0);
-  transform: translateY(calc((1 - var(--end, 0)) * 14px)) scale(calc(0.9 + var(--end, 0) * 0.1));
-  pointer-events: var(--end-events, none);
-  transition: opacity 420ms var(--ease), transform 620ms var(--spring);
-}
+/* THE POD USED TO ARRIVE AT THE END OF THE PAGE, riding the same number that
+   detached the paper. There is no end scene to arrive into any more, and a
+   control that fades in on scroll is a scroll effect — so it is simply here,
+   the whole way down, like every other piece of furniture. */
 
-.controls {
+/* TWO OF THEM, SIDE BY SIDE, and they are the same object twice: same size,
+   same film, same corner. The theme sits inboard of the sound because it is
+   the one a visitor is more likely to want, and 40px apart is the pod's own
+   width plus a gap — a number the deck-open transform below depends on, since
+   both pods travel on one expression. */
+.mute,
+.tmode,
+.gridtog {
   position: fixed;
   z-index: 50;
   bottom: 20px;                     /* measured */
-  left: 20px;
-}
-
-.timepod {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  height: 2rem;                     /* measured 32px */
-  padding: 0 0.6rem 0 0.5rem;
-  border-radius: 999px;
-  /* measured: a flat black scrim at 37% over whatever the sky is doing */
-  background: rgba(8, 6, 4, 0.37);
-  backdrop-filter: blur(10px) saturate(1.15);
-  -webkit-backdrop-filter: blur(10px) saturate(1.15);
-  box-shadow: 0 1px 2px rgba(8, 6, 4, 0.18), 0 8px 22px -10px rgba(8, 6, 4, 0.45);
-  color: #fff;
-  transition: background 700ms linear;
-}
-
-.timepod__orb {
-  width: 0.95rem; height: 0.95rem;
-  flex: none;
-  display: grid;
-  place-items: center;
-  color: #fff;
-}
-.timepod__orb svg { width: 100%; height: 100%; display: block; }
-
-.timepod__track {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 5.75rem;                   /* measured pod 146px total */
-}
-
-.timepod__ticks {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  height: 0.9rem;
-  pointer-events: none;
-}
-.timepod__ticks i {
-  display: block;
-  width: 1px;
-  height: 0.34rem;
-  background: rgba(255, 255, 255, 0.45);
-  border-radius: 1px;
-  transition: height 420ms var(--spring), background 300ms ease, width 300ms ease;
-}
-.timepod__ticks i.on {
-  height: 0.85rem;
-  width: 2px;
-  background: #fff;
-}
-
-.timepod input[type='range'] {
-  position: absolute;
-  inset: -0.55rem -0.4rem;
-  width: calc(100% + 0.8rem);
-  margin: 0;
-  opacity: 0;
-  /* `grab` rather than `ew-resize`: resize is what you do to a window's edge,
-     and this is a thing you pick up and pull. It is the only cursor in the pod,
-     so it is also the pod's whole explanation of itself. */
-  cursor: grab;
-}
-.timepod input[type='range']:active { cursor: grabbing; }
-.timepod:active { cursor: grabbing; }
-
-.timepod__label {
-  font-size: 0.625rem;
-  letter-spacing: 0.09em;
-  color: rgba(255, 255, 255, 0.9);
-  font-variant-numeric: tabular-nums;
-  opacity: 0;
-  max-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  transition: opacity 300ms ease, max-width 460ms var(--spring);
-}
-.timepod:hover .timepod__label,
-.timepod:focus-within .timepod__label { opacity: 1; max-width: 3.2rem; }
-
-.mute {
-  position: fixed;
-  z-index: 50;
-  bottom: 20px;                     /* measured */
-  right: 20px;
   width: 2rem; height: 2rem;        /* measured 32px */
   display: grid; place-items: center;
   border-radius: 50%;
@@ -2147,8 +2097,24 @@ body[data-page='play'] .tab-menu { display: none; }
   box-shadow: 0 1px 2px rgba(8, 6, 4, 0.18), 0 8px 22px -10px rgba(8, 6, 4, 0.45);
   color: #fff;
 }
-.mute:hover { transform: translateY(calc((1 - var(--end, 0)) * 14px)) scale(1.09); }
-.mute svg { width: 0.9rem; height: 0.9rem; }
+.mute { right: 20px; }
+.tmode { right: 60px; }
+.gridtog { right: 100px; }
+.mute:hover,
+.tmode:hover,
+.gridtog:hover { transform: scale(1.09); }
+.mute svg, .tmode svg, .gridtog svg { width: 0.9rem; height: 0.9rem; }
+
+/* the bars sit at half strength until the grid is on, which is the same thing
+   the mute's slash does: the control shows its own state */
+.gridtog svg { opacity: 0.62; transition: opacity 260ms var(--ease); }
+.gridtog[aria-pressed='true'] svg { opacity: 1; }
+
+/* THE HALF-FILLED CIRCLE TURNS OVER RATHER THAN SWAPPING. Same glyph, rotated
+   180 degrees, so the light half and the dark half trade places — one object
+   changing state, which is what a theme switch is. */
+.tmode svg { transition: transform 460ms var(--spring); }
+.tmode[aria-pressed='true'] svg { transform: rotate(180deg); }
 .mute .slash { transition: opacity 200ms ease, transform 320ms var(--spring); transform-origin: center; }
 .mute[aria-pressed='false'] .slash { opacity: 0; transform: scale(0.4); }
 
@@ -2372,24 +2338,6 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
   .block mark { background: rgba(20, 16, 12, 0.09); }
   .reveal { opacity: 1; transform: none; }
 }
-
-/* THE 900ms COLOUR EASE ON `.outro` HAS NEVER RUN, AND THIS IS WHAT WAS
-   STOPPING IT. `.outro` asks for `transition: color 900ms linear` at its own
-   rule, so its ink would ease as the sky changes hour — that is what the note
-   up there means by "written by the sky module".
-
-   The people field used to declare `transition: filter …, transform …` on
-   `.sheet, .outro` here, further down the file. `transition` is a SHORTHAND: it
-   replaces the whole property rather than adding to it, so the colour ease was
-   overwritten and the footer ink has always snapped between hours instead.
-
-   The field is gone. These two lines are all that is left of it, and they are
-   kept ON PURPOSE: they reproduce the suppression exactly, because removing
-   them lets the ease run for the first time — a visible change, which the pass
-   that removed the section was not allowed to make. Deleting them is the fix,
-   and it wants its own before/after check. */
-.sheet,
-.outro { transition: filter 0ms linear, transform 0ms linear; }
 
 /* ==========================================================================
    23. PROJECT PAGE  (case study)
@@ -7216,162 +7164,35 @@ body.past-hero .sel { opacity: 0; }
   .foot__col--links { display: none; }
 }
 
-/* --- 35. the phone's end of the page --------------------------------------
-   The paper detaches from the sky at the end: it insets 32px each side, rounds
-   its bottom corners and lifts a shadow. Three properties, and one of them is
-   ruinous here.
-
-   `.sheet` IS THE PAPER, AND THE PAPER CONTAINS THE ENTIRE PAGE. Changing its
-   horizontal margin re-lays-out every box in the document, and it was being
-   changed continuously while you scrolled into the footer. Measured with
-   Chromium's own layout counters, over a scroll from just above the footer to
-   the end: 48 layout passes costing 74ms, against 3 costing 1ms with the margin
-   held still. It is worse than one pass per write, because the frame loop reads
-   geometry from several modules and a write between two reads makes the second
-   one force its own pass. That stretch is exactly where the scrolling felt like
-   it was dragging.
-
-   So on a phone the margin still does not animate. The gap comes from
-   `clip-path` instead, which trims the painted paper back from the screen edge
-   without moving a single box — it is a paint operation, so the 48 layout
-   passes stay at zero and the horizontal travel comes back.
-
-   Two things follow from trimming rather than re-laying-out. The content does
-   not re-centre, so the gutter has to be wide enough to give the gap away —
-   see below. And `clip-path` cuts the box-shadow off with everything else,
-   because a shadow is painted outside the border box and the border box is
-   exactly what was just clipped away — so the lift is redrawn below, by the
-   outro.
-
-   THE GUTTER PAYS FOR THE GAP. On a desktop the paper can inset 32px without
-   crowding anything, because `.col` is a fixed 38.5rem sitting in 1384px of
-   paper — there is slack on both sides, and the text does not move at all as
-   the edge comes in. A phone has no slack: `.col` is `100% - 2×gut`, so every
-   pixel the paper trims is a pixel off the gutter.
-
-   Giving that slack back by narrowing the sheet for real was measured and
-   rejected. At 390px the footer's lead paragraph rewraps to a third line past
-   a 24px inset, and the document height wanders 44px over the range — and the
-   height is the input to the detachment itself, so it feeds back into the
-   scroll and shakes. Instead the gutter is widened by the full trim up front,
-   once, statically. The content is then laid out exactly where it will stand
-   at the end, and holds that position for the whole scroll: the edge travels,
-   the words never move, nothing rewraps, and at full detachment the paper sits
-   the ordinary gutter away from the text.
-
-   Above 48rem nothing changes at all: that is the composition the desktop was
-   measured against, and it is not the one that was dragging. */
+/* --- 36. the phone's floating control --------------------------------------
+   One button, bottom right, clear of the safe area — and at 44px rather than
+   the desktop's 32, which is a size for a cursor. A pointer lands where it is
+   pointed; a finger does not, and 44 is the number the rest of this phone
+   already uses. */
 @media (max-width: 48rem) {
-  :root {
-    /* the one number to turn — how far the paper leaves the screen edge, and
-       therefore how much wider the resting gutter has to be */
-    --sheet-trim-max: 18px;
-    --gut: calc(clamp(1.25rem, 4vw, 2.5rem) + var(--sheet-trim-max));
-  }
+  .mute { right: calc(20px + var(--sa-right)); }
+  .tmode { right: calc(60px + var(--sa-right)); }
+  .gridtog { right: calc(100px + var(--sa-right)); }
+  .mute, .tmode, .gridtog { bottom: calc(20px + var(--sa-bottom)); }
 
-  /* Driven off --sheet-lift rather than --sheet-inset: lift is unitless, so the
-     trim can be a fraction of its own maximum instead of a fraction of the
-     desktop's 32px. Declared on both because the outro is a sibling of the
-     sheet, not a descendant — it cannot inherit the value, so the scroll loop
-     writes the same three properties to each of them. */
-  .sheet,
-  .outro { --sheet-trim: calc(var(--sheet-lift, 0) * var(--sheet-trim-max)); }
+  /* AND IT STACKS ABOVE THE DRAWING DOCK ON THE ONE PAGE THAT HAS ONE. Both
+     controls are declared into the same corner at the same inset, which used
+     to be safe by accident: the mute rode the number that detached the paper
+     and only existed at the end of the page, and the dock left on the same
+     number read backwards, so the two were never on screen together. Nothing
+     fades in on scroll any more, so on `play` they were landing on top of each
+     other — 48px of dock under 44px of mute. The mute goes up by the dock's
+     height and a gap; the corner reads as one column of two controls, which is
+     what it always looked like it was going to be. */
+  body[data-page='play'] .mute,
+  body[data-page='play'] .tmode,
+  body[data-page='play'] .gridtog { bottom: calc(20px + 3.75rem + var(--sa-bottom)); }
 
-  .sheet {
-    margin: 0;
-    clip-path: inset(
-      0 var(--sheet-trim, 0px)
-      round 0 0 var(--sheet-round, 0px) var(--sheet-round, 0px)
-    );
-  }
-
-  /* The outro floats on the sky, not on the paper. Nothing trims it, so it is
-     held at the plain gutter — the widened one would rewrap its sentence for a
-     gap that never reaches it. */
-  .outro {
-    --outro-pad: calc(var(--gut) - var(--sheet-trim-max));
-    padding-inline: var(--outro-pad);
-  }
-
-  /* The shadow the trim costs, given back. An empty box standing exactly where
-     the sheet's last viewport is — same inset, same bottom radius — carrying
-     nothing but the shadow the sheet can no longer paint. It is not clipped by
-     anything, and a non-inset shadow never paints over its own box, so the only
-     part of it that lands anywhere is the part on the sky: down the two gaps
-     and out under the bottom edge. */
-  .outro::after {
-    content: '';
-    position: absolute;
-    /* An absolutely positioned box is offset from its containing block's
-       PADDING box, so the outro's own gutter has to come back off before this
-       lines up with the paper's edge. */
-    left: calc(var(--sheet-trim, 0px) - var(--outro-pad));
-    right: calc(var(--sheet-trim, 0px) - var(--outro-pad));
-    bottom: 100%;
-    height: 100vh;
-    border-radius: 0 0 var(--sheet-round, 0px) var(--sheet-round, 0px);
-    pointer-events: none;
-    box-shadow:
-      0 calc(var(--sheet-lift, 0) * 18px) calc(var(--sheet-lift, 0) * 46px)
-        calc(var(--sheet-lift, 0) * -18px) rgba(20, 16, 12, calc(var(--sheet-lift, 0) * 0.28));
-  }
-}
-
-/* --- 36. the phone's floating controls -------------------------------------
-   `.mute` is declared bottom right, 20px in, which on a phone is underneath the
-   toolbar's button to the pixel: two round controls of different sizes stacked
-   on one corner. It used to be moved up by a dock's height to clear it.
-
-   IT NO LONGER HAS TO CLEAR ANYTHING, because the dock is not there when the
-   mute is. The mute only exists at the end of the page — its opacity IS --end —
-   and by then the drawing surface has been taken away by `body.past-hero`
-   anyway, so the dock is a button for a tool that cannot be used. It leaves on
-   the same number the mute arrives on, read backwards, which puts a crossfade
-   in the corner rather than a disappearance: the dock goes as the mute comes,
-   in the same place, and the sky ends up with one control on each side.
-
-   Above 48rem the dock stays where it is — the sheet detaches there too, but it
-   detaches into a window with room for both. */
-@media (max-width: 48rem) {
-  .mute {
-    right: calc(20px + var(--sa-right));
-    bottom: calc(20px + var(--sa-bottom));
-  }
-
-  .tools {
-    opacity: calc(1 - var(--end, 0));
-    /* `pointer-events` is a keyword, so it cannot be derived from --end here —
-       the scroll loop writes the opposite one. */
-    pointer-events: var(--end-events-inv, auto);
-    transition: opacity 420ms var(--ease);
-  }
-
-  /* and the slider clears the safe area on the other side */
-  .controls {
-    left: calc(20px + var(--sa-left));
-    bottom: calc(20px + var(--sa-bottom));
-  }
-
-  /* BOTH PODS GO TO 44px. 32 is the measured desktop size and it is a size for
-     a cursor: a pointer lands where it is pointed, so the pod only has to be as
-     big as it looks. A finger does not, and 44px is the number the rest of this
-     phone already uses — the footer's marks were squares of exactly this, and
-     the dock's button was 48. Two 32px pods alone on the sky read as leftovers
-     from a bigger screen. Everything inside scales with them so the pod does
-     not just get taller around the same small parts. */
-  .timepod {
-    height: 2.75rem;
-    gap: 0.7rem;
-    padding: 0 0.85rem 0 0.7rem;
-  }
-  .timepod__orb { width: 1.15rem; height: 1.15rem; }
-  .timepod__track { width: 6.5rem; }
-  .timepod__ticks { height: 1.15rem; }
-  .timepod__ticks i { height: 0.44rem; }
-  .timepod__ticks i.on { height: 1.1rem; }
-
-  .mute { width: 2.75rem; height: 2.75rem; }
-  .mute svg { width: 1.15rem; height: 1.15rem; }
+  .mute, .tmode, .gridtog { width: 2.75rem; height: 2.75rem; }
+  .mute svg, .tmode svg, .gridtog svg { width: 1.15rem; height: 1.15rem; }
+  /* the gaps grow with them: 44px of pod plus 12 */
+  .tmode { right: calc(76px + var(--sa-right)); }
+  .gridtog { right: calc(132px + var(--sa-right)); }
 }
 
 /* --- 36a. the phone's hero, upside down ------------------------------------
@@ -7675,9 +7496,9 @@ body.deck-open {
    Opening the menu at the bottom of the page showed you two weathers.
 
    There is one now, and it is here: fixed, untransformed, at the very back of
-   everything. The page's paper floats on it, the footer is where the paper stops
-   covering it, and the menu is more of the same sky with the shell moved off it.
-   Nothing is revealed but more of one continuous thing. */
+   everything. The page's paper covers it, and the menu is that same mat with
+   the shell moved off it. Nothing is revealed but more of one continuous
+   thing. */
 .pane {
   position: fixed;
   inset: 0;
@@ -7700,21 +7521,12 @@ body.deck-open {
 .app {
   position: relative;
   z-index: 2;
-  /* THE FRAME HANDS OVER TO THE PAPER AT THE FOOTER.
-
-     This layer is the viewport, and framing the viewport is right at the top of
-     the page, where the paper fills it — the frame and the paper are the same
-     rectangle. At the end of the page they are not: the sheet has lifted off
-     and half of what is inside this frame is sky. Drawing a rounded, shadowed
-     box around sky, with the same sky continuing outside it, is what made the
-     bottom read as two environments no matter how well the colours matched.
-
-     So the frame fades out as the sheet detaches. --sheet-lift is the number the
-     scroll loop already computes for that detachment — 0 up top, 1 when the
-     paper is fully off the desk — and the frame is its inverse. By the time you
-     are at the footer the only edge on screen is the sheet's own, which is the
-     right one: the paper is the canvas, the weather is the desk, and there is
-     one of each. */
+  /* THE FRAME IS CONSTANT NOW. It used to fade out towards the end of the
+     page, because the paper lifted off and half of what was inside the frame
+     became sky — a rounded, shadowed box drawn around sky with the same sky
+     continuing outside it, which is what made the bottom read as two
+     environments. The paper no longer lifts, so the frame and the page are the
+     same rectangle the whole way down and there is nothing to hand over. */
   transform: none;
   transition: transform var(--deck-move);
 }
@@ -7737,17 +7549,13 @@ body.deck-shut .app {
    no surface of its own, so the cast still falls across the menu rather than
    behind it.
 
-   THE FRAME HANDS OVER TO THE PAPER AT THE FOOTER. --sheet-lift is the number
-   the scroll loop already computes for that detachment — 0 up top, 1 when the
-   paper is fully off the desk — and the frame is its inverse, because drawing a
-   rounded, shadowed box around sky with the same sky continuing outside it is
-   what made the bottom of the page read as two environments. */
+   It is the same rectangle for the whole document — see the note above. */
 .pane::after {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
-  --frame: calc(1 - var(--sheet-lift, 0));
+  --frame: 1;
   border-radius: calc(var(--app-r) * var(--frame));
   /* Cast mostly sideways, off the leading edge, because that is the only edge
      that is on screen. The old chain threw 180px of blur downward from a card
@@ -7772,11 +7580,11 @@ body.is-locked {
   overflow: hidden;
 }
 
-/* THE LAYER THAT STAYS PUT AND STILL PAINTS ON TOP. Only the two weather pods
-   are in here. They cannot be in `.hud`, because that rides the shell and would
-   carry them off the screen with it; they cannot be in `.deck`, because the
-   deck is behind the page and the page was swallowing their clicks. Above the
-   canvas, below the furniture, and never transformed. */
+/* THE LAYER THAT STAYS PUT AND STILL PAINTS ON TOP. Only the mute is in here.
+   It cannot be in `.hud`, because that rides the shell and would carry it off
+   the screen with it; it cannot be in `.deck`, because the deck is behind the
+   page and the page was swallowing its clicks. Above the canvas, below the
+   furniture, and never transformed. */
 .free {
   position: fixed;
   inset: 0;
@@ -7829,7 +7637,7 @@ body.is-locked {
    a radius that is zero when closed, it interpolates with everything else. */
 .hud {
   transform: translate3d(var(--app-x), var(--app-y), 0) scale(var(--app-s));
-  clip-path: inset(0 round calc(var(--app-r) * (1 - var(--sheet-lift, 0))));
+  clip-path: inset(0 round var(--app-r));
   transition: transform var(--deck-move), clip-path var(--deck-move);
 }
 
@@ -7845,13 +7653,13 @@ body.is-locked {
   inset: 0;
   z-index: 40;
   pointer-events: none;
-  border-radius: calc(var(--app-r) * (1 - var(--sheet-lift, 0)));
+  border-radius: var(--app-r);
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.32),
     inset -1px 0 0 rgba(20, 16, 12, 0.05);
   /* goes with the frame it belongs to */
-  opacity: calc(var(--app-lit) * (1 - var(--sheet-lift, 0)));
+  opacity: var(--app-lit);
   transition: opacity var(--deck-move);
 }
 
@@ -7889,7 +7697,7 @@ body.deck-shut .deck__close { visibility: visible; }
    answer and the quiet one — the mark and the word, set in the same ink the
    links below it use, at the size the readout under them uses.
 
-   No surface, and it does not need one: `--outro-ink-strong` is already chosen
+   No surface, and it does not need one: `--mat-ink-strong` is already chosen
    against the sky hour by hour, and the six links a few hundred pixels below
    are legible at every hour on exactly the same terms. The word is what makes
    it a target; it does not also need a box drawn round it. */
@@ -7906,7 +7714,7 @@ body.deck-shut .deck__close { visibility: visible; }
   padding: 0.5rem;
   border: 0;
   background: none;
-  color: var(--outro-ink-strong, #1c1a17);
+  color: var(--mat-ink-strong, #1c1a17);
   font-size: 0.875rem;
   font-weight: 500;
   letter-spacing: -0.006em;
@@ -7961,7 +7769,7 @@ body.deck-shut .deck__close { visibility: visible; }
   height: 2px;
   width: 18px;
   border-radius: 1px;
-  background: var(--outro-ink, #33302c);
+  background: var(--mat-ink, #33302c);
   opacity: 0.18;
   /* no transition: the loop writes these every frame it needs to, and a
      transition on top would fight the spring for control of the same number */
@@ -8013,7 +7821,7 @@ body.deck-shut .deck__close { visibility: visible; }
   text-decoration: none;
   width: fit-content;
   /* chosen against the sky by Sky.set(), the same way the footer's copy is */
-  color: var(--outro-ink, #33302c);
+  color: var(--mat-ink, #33302c);
   opacity: 0.58;
   transition:
     opacity 260ms var(--ease),
@@ -8027,51 +7835,48 @@ body.deck-shut .deck__close { visibility: visible; }
    disagree about which one is lit. */
 .deck__link.is-aim {
   opacity: 1;
-  color: var(--outro-ink-strong, #1c1a17);
+  color: var(--mat-ink-strong, #1c1a17);
   font-variation-settings: 'wght' 600;
   transform: translateX(6px) scale(1.02);
 }
 .deck__link { transform-origin: 0 50%; }
 
-/* the printed clock and condition line used to sit here; the slider below
-   says the hour and the sky says the weather, so it was saying it twice */
+/* a printed clock used to sit here as well; the hour is a line of type in the
+   sidebar now, and the menu does not need to say it a second time */
 
-/* THE TWO PODS DO NOT CHANGE LAYOUT, THEY TRANSLATE.
+/* THE POD DOES NOT CHANGE LAYOUT, IT TRANSLATES.
 
-   They keep the fixed corners they have everywhere else on this site — bottom
-   left and bottom right of the viewport — in every state. Opening the deck does
-   not restyle them, re-parent them or re-anchor them; it gives them a transform
-   that carries them into the deck's column, on the shell's own 600ms curve, so
-   they start on the frame the workspace starts and stop on the frame it stops.
+   It keeps the fixed corner it has everywhere else on this site — bottom right
+   of the viewport — in every state. Opening the deck does not restyle it,
+   re-parent it or re-anchor it; it gives it a transform that carries it into
+   the deck's column, on the shell's own 600ms curve, so it starts on the frame
+   the workspace starts and stops on the frame it stops.
 
-   THE DISTANCES ARE WRITTEN IN VIEWPORT UNITS so no measurement is needed and
-   nothing has to be recomputed on resize. The slider is left-anchored at 20px
-   and wants the deck's gutter, which is a few pixels. The mute is right-anchored
-   at 20px and wants to be a gutter in from the deck's right-hand edge, so it
-   crosses everything between: minus the viewport, plus the deck's width. Both
-   rise from the page's 20px to the deck's own bottom margin. */
+   THE DISTANCE IS WRITTEN IN VIEWPORT UNITS so no measurement is needed and
+   nothing has to be recomputed on resize. The mute is right-anchored at 20px
+   and wants to be a gutter in from the deck's right-hand edge, so it crosses
+   everything between: minus the viewport, plus the deck's width. It rises from
+   the page's 20px to the deck's own bottom margin. */
 .deck__pods { display: none; }
 
-body.deck-open .controls,
-body.deck-open .mute {
+body.deck-open .mute,
+body.deck-open .tmode,
+body.deck-open .gridtog {
   opacity: 1;
   pointer-events: auto;
 }
 
-body.deck-open .controls {
-  transform: translate3d(
-    calc(clamp(1.75rem, 3.2vw, 3.25rem) - 20px),
-    calc(20px - clamp(1.25rem, 3.5vh, 2rem)),
-    0);
-}
-
-body.deck-open .mute {
+body.deck-open .mute,
+body.deck-open .tmode,
+body.deck-open .gridtog {
   transform: translate3d(
     calc(var(--deck-w) - clamp(1.75rem, 3.2vw, 3.25rem) - 100vw + 20px),
     calc(20px - clamp(1.25rem, 3.5vh, 2rem)),
     0);
 }
-body.deck-open .mute:hover {
+body.deck-open .mute:hover,
+body.deck-open .tmode:hover,
+body.deck-open .gridtog:hover {
   transform: translate3d(
     calc(var(--deck-w) - clamp(1.75rem, 3.2vw, 3.25rem) - 100vw + 20px),
     calc(20px - clamp(1.25rem, 3.5vh, 2rem)),
@@ -8081,10 +7886,12 @@ body.deck-open .mute:hover {
 /* One curve for the journey, the pods' own springs for everything else they do.
    Duration and easing are the shell's, which is what makes the three read as
    one object rather than as three things that happen to start together. */
-body.deck-open .controls,
 body.deck-open .mute,
-body.deck-shut .controls,
-body.deck-shut .mute {
+body.deck-open .tmode,
+body.deck-open .gridtog,
+body.deck-shut .mute,
+body.deck-shut .tmode,
+body.deck-shut .gridtog {
   transition: transform var(--deck-move), opacity var(--deck-move);
 }
 
@@ -8153,21 +7960,10 @@ body.deck-shut .mute {
 body.deck-open .tab-menu,
 body.deck-shut .tab-menu { display: none; }
 
-/* AND IT GOES AT THE FOOTER TOO, for the same reason it goes when the deck is
-   out: by then the page is offering the same four links in the footer's own
-   Pages column, a few hundred pixels to the right, and a floating handle over
-   the sky beside them is the second copy.
-
-   It rides --end — the number the scroll loop already uses to bring the time
-   slider and the mute up at the end of the page — read backwards, so the handle
-   leaves on exactly the frame those two arrive. One set of controls at the
-   bottom of the page, and it is the set that belongs to the bottom of the page.
-   `--end-events-inv` is the matching keyword, written for the dock, which does
-   the same thing on a phone. */
-.tab-menu {
-  opacity: calc(1 - var(--end, 0));
-  pointer-events: var(--end-events-inv, auto);
-}
+/* IT USED TO GO AT THE FOOTER TOO, riding the number that detached the paper,
+   because the closing scene offered the same links a few hundred pixels to the
+   right. There is no closing scene now, so the handle simply stays where it is
+   for the whole page. */
 
 body.deck-shut .deck__close { display: none; }
 
@@ -8358,11 +8154,12 @@ body[data-page] .nav { display: none; }
      gutter, and the safe area cancels. Upward is not: it depends on the pod's
      own height, on the strip's resolved height and on the bottom safe area, so
      `Deck.podFit()` measures it once and writes the answer here. */
-  body.deck-open .controls {
-    transform: translate3d(calc(var(--deck-pad) - 20px), var(--deck-podup, 0px), 0);
-  }
   body.deck-open .mute,
-  body.deck-open .mute:hover {
+  body.deck-open .mute:hover,
+  body.deck-open .tmode,
+  body.deck-open .tmode:hover,
+  body.deck-open .gridtog,
+  body.deck-open .gridtog:hover {
     transform: translate3d(calc(20px - var(--deck-pad)), var(--deck-podup, 0px), 0);
   }
 
@@ -10390,986 +10187,800 @@ body.waking.awake .rv { opacity: 1; transform: none; }
 
 /* ==========================================================================
    45. THE ABOUT PAGE
-   Eight chapters, none of them composed the same way. The variation IS the
-   design: a personal page whose sections share a layout reads as a template
-   however good the parts are, and what this page is for is showing that
-   somebody made it deliberately.
 
-   THE GRID, AND WHY IT IS NOT CENTRED
-   Measured off the reference at a 1470px viewport: the writing runs from 17%
-   to 46% of the width, the visual from 57% to 84%, and the last 16% is left
-   empty on purpose. So this page is laid out on fourteen tracks — an edge,
-   twelve columns, an edge — and everything is PLACED on it by column number
-   rather than centred in a container. Two columns of different widths with an
-   unequal margin either side is what makes a page look art-directed; one
-   `max-width: 700px; margin: 0 auto` is what makes it look like a template.
+   IT IS THE HOME PAGE'S LAYOUT WITH A DOCUMENT IN THE CANVAS.
 
-   A few things hang deliberately outside their column — the hung prints in the
-   creed, the notes beside the pile. A grid that is never broken reads as a
-   table.
+   There is no `.about` grid, no `.about` type scale and no `.about` spacing
+   scale, and that is the whole design: the wrapper is `.home`, so the sidebar
+   is the same sticky rail at the same `--mast-w`, the canvas starts at the
+   same gutter, and every colour, radius, weight and step below is one the rest
+   of the site already uses. Nine hundred lines of stylesheet went to make this
+   page look like somewhere else; what is left is the hundred and fifty it
+   takes to set a document.
 
-   BORROWED, NOT REBUILT: the dot field, the pill, the annotation artifacts,
-   the buttons, `.reveal`, `.sec__anchor` and the rail's active-section
-   detection, the footer and its sky.
+   TWO COLUMNS, AND THEY ARE NOT THE SAME WIDTH. A fixed narrow one for the
+   things you look up and a fluid wide one for the things you read, which is
+   the same relationship the rail has with the work one level out. The narrow
+   one is sticky inside its own column — being a grid item, it stops of its own
+   accord when the band ends, with no scroll handler deciding that.
+
+   AND THE RIGHT EDGE IS LEFT OPEN. `--ab-read` caps the reading column at 42rem
+   rather than letting it fill, so at a wide viewport the page ends before the
+   window does. That is the asymmetry: the narrow column is fixed, the wide one
+   is capped, and the slack collects on the right where nothing needs it.
+
+   NOTHING IS IN A BOX. Two entries of experience and four awards, separated by
+   space and by one hairline each. A rounded rectangle around a job reads as a
+   card grid, which is the one thing this page must not be.
    ========================================================================== */
 
-.ab {
-  position: relative;
-  isolation: isolate;
-  overflow-x: clip;
-  /* THE EDGE IS WIDE ON PURPOSE. Measured off the reference, its writing
-     starts at 17% of the viewport — not at a 24px page margin. A generous
-     edge is most of what separates an art-directed page from a document. */
-  --edge: clamp(1.25rem, 9vw, 10rem);
-  --gap: clamp(0.75rem, 1.5vw, 1.5rem);
-}
-.ab > *:not(.canvas__dots) { position: relative; z-index: 1; }
+.about {
+  --ab-side: clamp(9.5rem, 13.5vw, 13rem);
+  --ab-read: 42rem;
 
-/* every band is the same fourteen tracks, so a heading in one section and a
-   photograph in another can share an edge without either knowing about it */
-.ab__hero,
-.ab__read-sec,
-.ab__creed,
-.ab__cv {
+  /* the canvas's own gutters, matched to `.home__work` so the two pages start
+     their content on the same vertical line */
+  padding: var(--mast-pad) var(--mast-pad) clamp(2.5rem, 6vh, 4rem)
+           clamp(0.75rem, 1vw, 1.125rem);
+
   display: grid;
-  grid-template-columns: var(--edge) repeat(12, minmax(0, 1fr)) var(--edge);
-  column-gap: var(--gap);
+  grid-template-columns: var(--ab-side) minmax(0, 1fr);
+  column-gap: clamp(1.5rem, 3vw, 3rem);
+  align-items: start;
 }
 
-/* ---- the voices -----------------------------------------------------------
-   Size, weight and ink all carry hierarchy, so no two levels are separated by
-   size alone. There were five; the section-heading level between the statement
-   and the body copy went out with the last of the sections that used it, and
-   is not being kept warm for a future one. */
-.ab__eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0;
-  font-family: var(--mono);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-}
-.ab__stud {
-  flex: none;
-  width: 6px; height: 6px;
-  border-radius: 2px;
-  background: var(--ink-ghost);
-  box-shadow: inset 0 0 0 1px rgba(20, 16, 12, 0.06);
-}
+/* CENTRED IN THE WINDOW, NOT PINNED TO THE TOP OF IT.
 
-/* LEVEL ONE. The largest thing on the site — deliberately larger than the
-   work page's lede, because this is the one page that is about a person. */
-.ab__hi {
-  margin: var(--sp-5) 0 var(--sp-4);
-  font-size: clamp(2.75rem, 6.4vw, 6rem);
-  font-weight: 500;
-  line-height: 0.94;
-  letter-spacing: -0.042em;
-}
-/* LEVEL TWO, set as authored lines */
-.ab__say {
-  margin: 0 0 var(--sp-6);
-  font-size: clamp(1.375rem, 2.2vw, 2rem);
-  font-weight: 400;
-  line-height: 1.18;
-  letter-spacing: -0.026em;
-  color: var(--ink-2);
-}
-.ab__ln { display: block; }
-.ab__meta { display: flex; flex-wrap: wrap; gap: 0.4375rem; }
+   This column is 480px of metadata beside 1150px of experience, so wherever it
+   is anchored there are 680 pixels of nothing left over. Anchored at the top —
+   which is where a sticky `top: 0` puts it and keeps it — all 680 collect
+   underneath it, and on a page that only scrolls 200px that is not a column
+   with space under it, it is a column stuck to the ceiling of a mostly empty
+   box.
 
-/* ==========================================================================
-   45a. THE HERO — ONE WHOLE SCREEN
-   Writing on columns 2–6, the pile on 8–12, and the sixteen per cent on the
-   right left empty. The two are NOT vertically centred against each other:
-   the writing sits above the middle and the pile hangs below it, which is what
-   gives the screen a diagonal to read along.
-   ========================================================================== */
-
-.ab__hero {
-  min-height: 100svh;
-  align-content: center;
-  align-items: center;
-  padding-block: clamp(5rem, 12vh, 9rem) clamp(4rem, 10vh, 7rem);
-}
-.ab__hero-col {
-  grid-column: 2 / span 6;
-  grid-row: 1;
-  align-self: center;
-  padding-bottom: clamp(1rem, 5vh, 4rem);
-}
-.ab__hero-vis {
-  position: relative;
-  grid-column: 9 / span 5;
-  grid-row: 1;
-  align-self: center;
-  margin-top: clamp(1rem, 6vh, 5rem);
-}
-
-/* ==========================================================================
-   45b. PHOTOGRAPHS
-   A print is paper: a white border, a caption strip under the window, a tilt,
-   and a shadow that says how far off the desk it is. The placeholder says what
-   it is waiting for in the same mono the rest of the page labels things in —
-   a deliberate temporary artifact rather than a grey box.
-   ========================================================================== */
-
-.pcard {
-  margin: 0;
-  padding: 0.5rem 0.5rem 0;
-  border-radius: 3px;
-  background: var(--paper-2);
-  box-shadow:
-    inset 0 0 0 1px rgba(20, 16, 12, 0.05),
-    0 6px 18px -8px rgba(20, 16, 12, 0.22);
-  transform: rotate(var(--rot, 0deg));
-  transition: transform 620ms var(--spring), box-shadow 320ms var(--ease);
-  cursor: pointer;
-  will-change: transform;
-}
-.pcard:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-.pcard__win {
-  position: relative;
-  aspect-ratio: 4 / 5;
-  border-radius: 1px;
-  overflow: hidden;
+   So it sticks to the middle instead. `top: 50%` with the half-height pull-back
+   holds it against the centre of the viewport at every scroll position, which
+   is both what the slack should look like when it is split — half above, half
+   below — and the one anchor that never changes as you move. The grid area it
+   travels inside is the tall column's own height, so there is room for the
+   whole journey and it never escapes its own track. */
+.ab__side {
+  position: sticky;
+  top: 50%;
+  transform: translateY(-50%);
+  align-self: start;
   display: grid;
-  place-items: center;
-  background:
-    linear-gradient(152deg, rgba(255, 255, 255, 0.6) 0%, transparent 48%),
-    var(--tint, #eceae4);
-}
-.pcard--shot .pcard__win { aspect-ratio: 16 / 10; }
-.pcard__img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pcard__label {
-  font-family: var(--mono);
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(20, 16, 12, 0.28);
-}
-.pcard__cap {
-  padding: 0.5625rem 0.25rem 0.625rem;
-  font-size: 0.625rem;
-  line-height: 1.3;
-  color: var(--ink-dim);
-  text-align: center;
-  min-height: 1.9rem;
+  gap: var(--sp-6);
 }
 
-/* a print PLACED in a composition rather than sitting in the flow */
-.pcard--set { position: absolute; width: var(--w, 40%); }
-
-/* ---- the pile -------------------------------------------------------------
-   Not a carousel: nothing travels sideways and nothing leaves the pile.
-   `--depth` is written by JS, `--rot` is how the print was put down, `--fan`
-   is how far the pile separates — and the transform is composed HERE from all
-   three, which is what lets the hover add to the pose instead of rewriting it.
-   ========================================================================== */
-.pile__stack {
-  position: relative;
-  width: 100%;
-  max-width: 27rem;
-  margin-left: auto;
-  aspect-ratio: 4 / 5.3;
-  --fan: 0px;
-}
-/* THE PILE LEANS ONE WAY. Each print behind the front one steps down and to
-   the LEFT rather than straight down: a stack that fans symmetrically reads as
-   a stack of cards, and one that leans reads as paper somebody put down in a
-   hurry. The step is small — nine pixels and a degree — because the tilts each
-   print already carries are doing most of the work. */
-.pile__stack .pcard {
-  position: absolute;
-  inset: 0;
-  transform:
-    translate3d(
-      calc(var(--depth, 0) * (var(--fan, 0px) - 5px)),
-      calc(var(--depth, 0) * 7px), 0)
-    rotate(calc(var(--rot, 0deg) + var(--depth, 0) * 1.1deg))
-    scale(calc(1 - var(--depth, 0) * 0.024));
-}
-.pile__stack .pcard.is-front {
-  box-shadow:
-    inset 0 0 0 1px rgba(20, 16, 12, 0.05),
-    0 16px 38px -14px rgba(20, 16, 12, 0.3);
-}
-.pile__stack.is-held { --fan: 16px; }
-/* picking one up: it turns toward you, lifts, and grows a little */
-:root:not(.hover-cold) .pile__stack.is-held .pcard.is-front {
-  transform: translate3d(0, -10px, 0) rotate(calc(var(--rot, 0deg) * 0.3)) scale(1.028);
-  box-shadow:
-    inset 0 0 0 1px rgba(20, 16, 12, 0.05),
-    0 28px 60px -20px rgba(20, 16, 12, 0.36);
+.ab__main {
+  display: grid;
+  gap: clamp(2.5rem, 6vh, 4rem);
+  max-width: var(--ab-read);
 }
 
-/* ---- a spread: prints composed inside their own box ---------------------- */
-.spread { position: relative; aspect-ratio: 1 / 1.02; }
-:root:not(.hover-cold) .spread .pcard:hover {
-  transform: rotate(calc(var(--rot, 0deg) * 0.4)) translateY(-5px) scale(1.02);
-  z-index: 4;
-  box-shadow:
-    inset 0 0 0 1px rgba(20, 16, 12, 0.05),
-    0 22px 46px -18px rgba(20, 16, 12, 0.32);
-}
-
-/* ==========================================================================
-   45c. ANNOTATIONS
-   Small, grey, and set against the thing they refer to rather than in a
-   caption slot. They are discoveries, not content — so they are never the
-   first thing read and never the widest.
-   ========================================================================== */
-
-.ab__scrawl {
+/* --- the section mark ------------------------------------------------------
+   A stud and four words of mono. It is the whole of what says a new section has
+   begun: no rule, no heading, and no gap the size of a paragraph. The same mark
+   the work page sets over its own bands. */
+.ab__label {
   display: flex;
   align-items: center;
   gap: 0.4375rem;
-  margin: 0;
-  max-width: 12rem;
-  font-style: italic;
-  font-size: 0.8125rem;
-  line-height: 1.35;
-  letter-spacing: -0.004em;
-  color: var(--ink-dim);
-  transform: rotate(var(--rot, -1deg));
-}
-.ab__scrawl--set { position: absolute; z-index: 5; }
-/* the hero's notes sit OUTSIDE the pile's box, not over it — an annotation on
-   top of the thing it annotates is a label */
-.ab__hero-vis .ab__scrawl--set { max-width: 9.5rem; }
-.ab__arrow {
-  flex: none;
-  width: 2.125rem; height: 0.8125rem;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 16'%3E%3Cg fill='none' stroke='%23c9c4bc' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M2 9c8-6 20-8 38-4'/%3E%3Cpath d='M34 1c3 2 5 3 6 4-2 1-4 3-5 6'/%3E%3C/g%3E%3C/svg%3E");
-}
-.ab__arrow--l { transform: scaleX(-1); }
-/* The page's own annotations sit in the flow, unlike the study figures'. Any
-   future annotation placed by coordinate needs its own `position: absolute`
-   AFTER this rule — the blanket `static` here outranks a single-class one. */
-.ab .anno { position: static; display: inline-block; max-width: 13rem; }
-.ab .anno--note { padding: 0.375rem 0.625rem; }
-
-/* ==========================================================================
-   45d. THE READ — a rail, and a spread per chapter
-   The rail is sticky inside its own grid column, so it travels with the read
-   and stops where the read stops. The spreads alternate side, so the chapter
-   is never a column of text with a column of pictures next to it.
-   ========================================================================== */
-
-.ab__read-sec { position: relative; padding-block: clamp(5rem, 14vh, 10rem); align-items: start; }
-
-.ab__rail {
-  grid-column: 2 / span 3;
-  position: sticky;
-  top: clamp(3rem, 16vh, 8rem);
-  align-self: start;
-  height: fit-content;
-}
-.ab__rail-t {
   margin: 0 0 var(--sp-3);
-  font-family: var(--mono);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-}
-.ab__rail-list { display: flex; flex-direction: column; }
-.ab__rl {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1.75rem minmax(0, 1fr);
-  align-items: baseline;
-  padding: 0.5625rem 0.6875rem;
-  border-radius: 8px;
-  text-decoration: none;
-  transition: background-color 260ms var(--ease), transform 420ms var(--spring),
-              opacity 260ms var(--ease);
-}
-.ab__rl-n {
   font-family: var(--mono);
   font-size: 0.625rem;
   font-weight: 500;
-  color: var(--ink-ghost);
-  font-variant-numeric: tabular-nums;
-  transition: color 260ms var(--ease);
-}
-.ab__rl-x { display: block; min-width: 0; }
-.ab__rl-h {
-  display: block;
-  font-size: var(--step-0);
-  font-weight: 500;
-  letter-spacing: -0.008em;
-  color: var(--ink-2);
-  transition: color 260ms var(--ease);
-}
-.ab__rl-s {
-  display: block;
-  margin-top: 0.0625rem;
-  font-size: 0.6875rem;
-  line-height: 1.3;
-  color: var(--ink-dim);
-}
-.ab__rl::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 50%;
-  width: 2px; height: 0;
-  border-radius: 1px;
-  background: var(--ink);
-  transform: translateY(-50%);
-  transition: height 380ms var(--spring);
-}
-:root:not(.hover-cold) .ab__rl:hover { background: var(--line-soft); transform: translateX(2px); }
-:root:not(.hover-cold) .ab__rl:hover .ab__rl-h { color: var(--ink); }
-.ab__rl:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.ab__rl.is-active { background: var(--line-soft); }
-.ab__rl.is-active::before { height: calc(100% - 0.9rem); }
-.ab__rl.is-active .ab__rl-h { color: var(--ink); font-weight: 560; }
-.ab__rl.is-active .ab__rl-n { color: var(--ink-2); }
-.ab__rail-list:has(.is-active) .ab__rl:not(.is-active) { opacity: 0.55; }
-
-.ab__read { grid-column: 6 / span 8; min-width: 0; }
-
-/* A CHAPTER IS A SPREAD, NOT A BLOCK. Words and pictures each get their own
-   half and their own vertical zone; the spread alternates side so turning the
-   page changes the composition rather than repeating it. */
-.ab__ch {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  column-gap: var(--gap);
-  padding-block: clamp(4rem, 13vh, 9rem);
-}
-.ab__ch + .ab__ch { border-top: 1px solid var(--line-soft); }
-/* EVERY ANCHOR SITS AT ITS SECTION'S TOP EDGE. Left static, an anchor lands
-   wherever the grid puts it — the hero's sat 368px down its own section, so
-   clicking "About" in the navigator scrolled DOWN to reach the top of the
-   page. Absolute at top 0 makes the target the edge it is supposed to be, and
-   the landing allowance stays the site's own `--nav-land`. */
-.ab__hero > .sec__anchor,
-.ab__read-sec > .sec__anchor,
-.ab__creed > .sec__anchor,
-.ab__cv > .sec__anchor,
-.ab__ch .sec__anchor {
-  position: absolute;
-  top: 0;
-  display: block;
-  width: 1px;
-  height: 1px;
-}
-.ab__ch .sec__anchor { scroll-margin-top: clamp(4rem, 15vh, 8rem); }
-.ab__ch-w { grid-column: 1 / span 4; align-self: center; }
-.ab__ch .spread--right { grid-column: 5 / span 4; }
-.ab__ch .spread--left { grid-column: 1 / span 4; grid-row: 1; }
-.ab__ch .spread--left + .ab__ch-w,
-.ab__ch:has(.spread--left) .ab__ch-w { grid-column: 5 / span 4; }
-
-.ab__ch-e {
-  margin: 0 0 var(--sp-3);
-  font-family: var(--mono);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-dim);
-}
-/* LEVEL TWO on the read: a statement, set in lines, not a label */
-.ab__ch-h {
-  margin: 0 0 var(--sp-4);
-  font-size: clamp(1.75rem, 2.9vw, 2.625rem);
-  font-weight: 500;
-  line-height: 1.0;
-  letter-spacing: -0.032em;
-}
-.ab__ch-b { max-width: 34ch; }
-.ab__ch-b p {
-  margin: 0 0 var(--sp-3);
-  font-size: var(--step-0);
-  line-height: 1.62;
-  color: var(--ink-2);
-}
-.ab__ch-b p:last-child { margin-bottom: 0; }
-
-/* ==========================================================================
-   45e. THE WALL OF TYPE
-   One statement across the page, prints hung in its corners rather than
-   arranged beside it, and the supporting copy set narrow and low so the type
-   is unmistakably the subject.
-   ========================================================================== */
-
-.ab__creed {
-  position: relative;
-  padding-block: clamp(6rem, 18vh, 12rem);
-  align-content: center;
-}
-.ab__eyebrow--creed { grid-column: 2 / span 6; }
-.ab__creed-h {
-  grid-column: 2 / span 11;
-  margin: var(--sp-4) 0 0;
-  font-size: clamp(2.25rem, 6.6vw, 6.25rem);
-  font-weight: 500;
-  line-height: 0.94;
-  letter-spacing: -0.042em;
-}
-/* the copy sits under the second line and only a third of the width — the
-   asymmetry is the composition */
-.ab__creed-b { grid-column: 7 / span 5; margin-top: var(--sp-6); max-width: 38ch; }
-.ab__creed-b p {
-  margin: 0 0 var(--sp-3);
-  font-size: var(--step-0);
-  line-height: 1.62;
-  color: var(--ink-2);
-}
-/* hung in the corners, outside the type's own columns */
-.pcard--hung { position: absolute; width: var(--w, 15%); z-index: 2; }
-:root:not(.hover-cold) .pcard--hung:hover {
-  transform: rotate(calc(var(--rot, 0deg) * 0.4)) translateY(-4px);
+  color: var(--text-3);
 }
 
-/* ==========================================================================
-   45f. THE RECORD — A RÉSUMÉ SET AS A DOCUMENT
-
-   THE TWO COLUMNS ARE THE READ'S OWN. The rail is on tracks 2–4 and the work
-   on 6–13, which is exactly where §45d puts `.ab__rail` and `.ab__read`. That
-   is not a coincidence being reused: measured off the reference at 2940px, its
-   metadata rail runs 1.9%–28% of the canvas and its experience column 35%–98%,
-   and on this page's twelve tracks those two placements ARE 2/span 3 and
-   6/span 8 to within half a track. The proportion is the reference's; the grid
-   was already here.
-
-   AND THE TWO COLUMNS DO NOT LINE UP, on purpose. The rail is a persistent
-   strip of metadata and the work is the story; forcing them onto shared rows
-   would turn the band into a table. The rail is sticky within its own column,
-   which — being a grid item — stops of its own accord when the band ends. No
-   scroll handler decides that.
-
-   NOTHING IS IN A BOX. The entries are separated by space and by one hairline
-   guide, and that guide is a gradient rather than a border so it fades in at
-   the first entry and out after the last instead of stopping at two hard
-   edges. A rounded rectangle around each job would read as a card grid, which
-   is the one thing this section must not be.
-   ========================================================================== */
-
-.ab__cv {
-  padding-block: clamp(5rem, 15vh, 10rem);
-  row-gap: clamp(3rem, 8vh, 5rem);
+.ab__stud {
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-radius: 1.5px;
+  background: var(--text-4);
 }
 
-/* ---- the rail: quieter than the work, and with its own rhythm ------------ */
-.ab__cv .cv__rail {
-  grid-column: 2 / span 3;
-  position: sticky;
-  /* the same allowance the read's rail sits at, so the two bands' left columns
-     come to rest on the same line */
-  top: clamp(3rem, 16vh, 8rem);
-  align-self: start;
-  /* THE TWO COLUMNS START ON DIFFERENT LINES, and this is the whole of it. In
-     the reference the rail's first heading sits about a tenth of the canvas
-     width below the experience label — 67px of a 680px canvas — and that
-     offset is most of what stops the band reading as a two-column table with a
-     shared first row. Held in vw so the ratio survives the width. */
-  margin-top: clamp(2rem, 7.8vw, 7.5rem);
-  display: flex;
-  flex-direction: column;
-  gap: clamp(2rem, 5vh, 3.25rem);
-}
-.cv__grp-t {
-  margin: 0 0 var(--sp-4);
-  font-size: var(--step-05);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.012em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
-/* ---- metadata chips ------------------------------------------------------
-   The same object in the rail and at the foot of a job, because a skill named
-   on its own and a skill named beside the work it was used on are the same
-   kind of thing. Not the site's `.pill`: those are 31px controls with a glyph
-   slot and a hover detail, and these are labels. */
-.cv__tags {
+/* --- tags ------------------------------------------------------------------
+   The same object in both columns — the expertise list and a job's own tags —
+   because they are the same kind of fact and giving them two treatments would
+   be inventing a distinction the content does not have. Smaller than `.pill`,
+   which is a hero-sized chip; this page's density is the point. */
+.ab__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
+  gap: 0.3125rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.cv__tag {
-  padding: 0.28125rem 0.5625rem 0.34375rem;
-  border-radius: 7px;
-  background: var(--paper-2);
-  box-shadow: inset 0 0 0 1px var(--line);
+
+.ab__tag {
+  padding: 0.1875rem 0.4375rem;
+  border-radius: 5px;
+  background: var(--border-soft);
+  box-shadow: inset 0 0 0 1px var(--border);
   font-size: 0.75rem;
-  line-height: 1.2;
-  letter-spacing: -0.004em;
-  color: var(--ink-2);
-  /* the lift is three pixels and it happens in a fifth of a second. Anything
-     more on a label reads as a button that does something. */
-  transition:
-    transform 260ms var(--ease),
-    box-shadow 260ms var(--ease),
-    background-color 260ms var(--ease),
-    color 260ms var(--ease);
-}
-:root:not(.hover-cold) .cv__tag:hover {
-  transform: translateY(-2px);
-  background: #f2f1ed;
-  box-shadow: inset 0 0 0 1px var(--ink-ghost), 0 4px 10px -6px rgba(20, 16, 12, 0.28);
-  color: var(--ink);
+  line-height: 1.35;
+  color: var(--text-2);
+  transition: color 200ms var(--ease), background-color 200ms var(--ease);
 }
 
-/* ---- education: type, not cards ----------------------------------------- */
-.cv__edu { margin: 0; padding: 0; list-style: none; }
-.cv__ed + .cv__ed { margin-top: var(--sp-4); }
-.cv__ed-w {
-  display: block;
-  font-size: var(--step-0);
-  font-weight: 500;
-  letter-spacing: -0.008em;
-  color: var(--ink);
+:root:not(.hover-cold) .ab__tag:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
 }
-.cv__ed-s { display: block; margin-top: 0.125rem; font-size: 0.75rem; line-height: 1.4; color: var(--ink-2); }
-.cv__ed-y {
+
+/* --- education -------------------------------------------------------------
+   Three lines a row, and the third is mono and tabular so two rows of dates
+   line up as a column without a column being drawn. */
+.ab__edu { margin: 0; padding: 0; list-style: none; }
+
+.ab__ed + .ab__ed { margin-top: var(--sp-4); }
+
+.ab__ed b {
   display: block;
-  margin-top: 0.25rem;
+  font-size: var(--step--1);
+  font-weight: 550;
+  line-height: 1.4;
+  color: var(--text-1);
+}
+
+.ab__ed span {
+  display: block;
+  margin-top: 0.0625rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-3);
+}
+
+.ab__ed i {
+  display: block;
+  margin-top: 0.1875rem;
   font-family: var(--mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.12em;
-  color: var(--ink-dim);
+  font-style: normal;
+  font-size: 0.6875rem;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--text-4);
 }
 
-/* ---- reach me: three physical little controls --------------------------- */
-.cv__reach { display: flex; gap: 0.5rem; }
-.cv__dot {
-  display: grid;
-  place-items: center;
-  width: 2.125rem; height: 2.125rem;
-  border-radius: 999px;
-  background: var(--paper-2);
-  box-shadow: inset 0 0 0 1px var(--line), 0 2px 6px -4px rgba(20, 16, 12, 0.22);
-  color: var(--ink-2);
-  text-decoration: none;
-  transition:
-    transform 320ms var(--spring),
-    box-shadow 280ms var(--ease),
-    background-color 260ms var(--ease),
-    color 260ms var(--ease);
+/* --- reach me --------------------------------------------------------------
+   Three words on one line. The underline is the site's own link treatment —
+   the hairline colour at rest, the ink on hover — so these behave like every
+   other link on the page rather than like buttons. */
+.ab__reach {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0;
+  font-size: var(--step--1);
 }
-.cv__dot-i { display: grid; place-items: center; width: 14px; height: 14px; }
-.cv__dot-i svg { width: 100%; height: 100%; display: block; }
-.cv__dot-t {
-  font-family: var(--mono);
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-:root:not(.hover-cold) .cv__dot:hover {
-  transform: translateY(-3px);
-  background: var(--ink);
-  box-shadow: 0 8px 18px -10px rgba(20, 16, 12, 0.45);
-  color: var(--paper);
-}
-.cv__dot:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
-/* ---- the work ----------------------------------------------------------- */
-.ab__cv .cv__exp { grid-column: 6 / span 8; }
-.cv__list {
+.ab__reach a {
+  color: var(--text-2);
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  text-decoration-color: var(--border);
+  transition: color 200ms var(--ease), text-decoration-color 200ms var(--ease);
+}
+
+:root:not(.hover-cold) .ab__reach a:hover {
+  color: var(--text-1);
+  text-decoration-color: var(--text-3);
+}
+
+/* --- experience ------------------------------------------------------------
+
+   A TIMELINE, NOT A LIST OF CARDS. One hairline guide down the left of the
+   band with a node on it per entry, and the guide is a gradient rather than a
+   border so it fades in at the first node and out after the last instead of
+   stopping at two hard edges.
+
+   The indent is `--ab-in` and every part of an entry shares it, which is what
+   makes the guide read as a margin rather than as a rule between two columns. */
+.ab__jobs {
+  --ab-in: 1.375rem;
   position: relative;
-  margin: clamp(2rem, 5vh, 3rem) 0 0;
-  /* room for the guide and the markers, which live outside the text column */
-  padding: 0 0 0 2.25rem;
+  margin: 0;
+  padding: 0 0 0 var(--ab-in);
   list-style: none;
 }
-/* THE GUIDE IS STRUCTURAL, NOT DECORATIVE. One pixel, in the softest line
-   token, and it fades at both ends so it reads as a margin rule rather than a
-   graphic with a start and a stop. */
-.cv__list::before {
+
+.ab__jobs::before {
   content: '';
   position: absolute;
-  /* 9px is the centre of an 18px marker sitting at the list's left edge, so the
-     bricks are ON the guide rather than beside it */
-  top: 0.5rem; bottom: 0.5rem; left: 9px;
+  left: 3px;
+  top: 0.3125rem;
+  bottom: 0.5rem;
   width: 1px;
   background: linear-gradient(
     to bottom,
-    transparent,
-    var(--line) 6%,
-    var(--line) 94%,
-    transparent
-  );
+    transparent 0,
+    var(--border) 8px,
+    var(--border) calc(100% - 20px),
+    transparent 100%);
 }
-.cv__job { position: relative; }
-.cv__job + .cv__job { margin-top: clamp(3.5rem, 9vh, 6rem); }
 
-/* the marker: a two-stud brick, and the only place this band quotes the home
-   page at all. Ghosted until you are reading its entry. */
-.cv__node {
+.ab__job { position: relative; }
+
+.ab__job + .ab__job { margin-top: var(--sp-6); }
+
+.ab__node {
   position: absolute;
-  top: 0.5rem;
-  left: -2.25rem;
-  display: flex;
-  gap: 2px;
-  justify-content: center;
-  width: 18px; height: 9px;
-  padding-top: 1px;
-  border-radius: 2px;
-  background: var(--ink-ghost);
-  transition:
-    background-color 320ms var(--ease),
-    box-shadow 320ms var(--ease),
-    transform 380ms var(--spring);
-}
-.cv__node > i { width: 5px; height: 3px; border-radius: 1px 1px 0 0; background: rgba(255, 255, 255, 0.5); }
-.cv__job.is-current .cv__node {
-  background: var(--ink);
-  box-shadow: 0 2px 6px -2px rgba(20, 16, 12, 0.4);
-}
-.cv__job.is-current .cv__node > i { background: rgba(255, 255, 255, 0.22); }
-
-.cv__head { display: flex; align-items: center; gap: 0.625rem; }
-/* THE MARK'S BOX IS FIXED AND THE ARTWORK IS NOT. A glyph, an image or two
-   letters all occupy the same 26px square, so dropping a real logo in later
-   changes nothing about where the company name sits. */
-.cv__logo {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 1.625rem; height: 1.625rem;
-  border-radius: 7px;
-  background: var(--paper-2);
-  box-shadow: inset 0 0 0 1px var(--line);
-  overflow: hidden;
-  color: var(--ink);
-  /* OPACITY IS IN THIS LIST BECAUSE THE MARK IS ALSO A `.reveal`. A transition
-     shorthand replaces the whole property, and this rule sits after `.reveal`
-     in the file — leave opacity out and the entrance stops fading and starts
-     switching on. Same for the company name below. */
-  transition:
-    opacity 380ms var(--ease),
-    transform 380ms var(--spring),
-    box-shadow 280ms var(--ease);
-}
-.cv__logo svg { display: block; height: 60%; width: auto; }
-.cv__logo img { width: 100%; height: 100%; object-fit: contain; }
-.cv__logo--letters {
-  font-family: var(--mono);
-  font-size: 0.5625rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--ink-dim);
-}
-.cv__co {
-  margin: 0;
-  font-size: var(--step-1);
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--ink-dim);
-  transition: opacity 380ms var(--ease), transform 380ms var(--ease), color 320ms var(--ease);
-}
-.cv__job.is-current .cv__co { color: var(--ink); }
-
-/* hovering an entry lifts its mark and its marker and draws a rule under the
-   name. It does not draw a card. */
-:root:not(.hover-cold) .cv__job:hover .cv__logo {
-  transform: translateY(-2px);
-  box-shadow: inset 0 0 0 1px var(--ink-ghost), 0 5px 12px -7px rgba(20, 16, 12, 0.32);
-}
-:root:not(.hover-cold) .cv__job:hover .cv__node { transform: translateY(-1px); }
-:root:not(.hover-cold) .cv__job:hover .cv__co { color: var(--ink); }
-.cv__co::after {
-  content: '';
-  display: block;
-  height: 1px;
-  margin-top: 0.1875rem;
-  background: var(--ink-ghost);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 420ms var(--ease);
-}
-:root:not(.hover-cold) .cv__job:hover .cv__co::after { transform: scaleX(1); }
-
-.cv__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.75rem;
-  margin: var(--sp-3) 0 0;
-  font-family: var(--mono);
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-.cv__role { color: var(--ink-2); }
-.cv__when { color: var(--ink-dim); }
-
-.cv__body {
-  margin: var(--sp-4) 0 0;
-  /* a readable measure, held independently of the column's width */
-  max-width: 58ch;
-  font-size: var(--step-0);
-  line-height: 1.62;
-  color: var(--ink-2);
-}
-
-/* ---- the achievements --------------------------------------------------- */
-.cv__wins { margin: var(--sp-5) 0 0; padding: 0; list-style: none; }
-.cv__win {
-  display: grid;
-  grid-template-columns: 0.875rem minmax(0, 1fr);
-  gap: 0 0.625rem;
-  padding: 0.28125rem 0;
-  max-width: 62ch;
-  font-size: 0.8125rem;
-  line-height: 1.55;
-  color: var(--ink-2);
-}
-.cv__win > span { transition: transform 260ms var(--ease), color 260ms var(--ease); }
-.cv__win-o {
-  width: 0.4375rem; height: 0.4375rem;
-  margin-top: 0.5em;
-  border-radius: 999px;
-  box-shadow: inset 0 0 0 1px var(--ink-ghost);
+  left: calc(var(--ab-in) * -1);
+  top: 0.3125rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--text-4);
   transition: box-shadow 260ms var(--ease), background-color 260ms var(--ease);
 }
-:root:not(.hover-cold) .cv__win:hover .cv__win-o {
-  background: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--ink);
+
+/* the one you are in is filled — read off the content, not off position */
+.ab__job.is-current .ab__node {
+  background: var(--text-1);
+  box-shadow: inset 0 0 0 1.5px var(--text-1);
 }
-:root:not(.hover-cold) .cv__win:hover > span { transform: translateX(2px); color: var(--ink); }
 
-.cv__tags--job { margin-top: var(--sp-5); }
-
-/* ---- the awards, as a ruled table ---------------------------------------
-   A YEAR, A THING, AND WHAT THE THING WAS. Three columns on hairlines, which
-   is what makes four prizes scannable in a glance instead of four more
-   paragraphs. The proportions are the reference's, measured off it: the year
-   takes about a sixth of the run, the name a quarter and the citation the
-   rest — so it is the NAMES that stack to a second line rather than the
-   citations, which is the right way round when the names are the shorter
-   strings and the one you are scanning for.
-
-   IT IS RULED AND NOT BOXED, like everything else in this band. The rule above
-   the whole run says "new movement"; the rules between rows are the table.
-   Nothing here is a card. */
-.cv__aw {
-  margin-top: clamp(3.5rem, 9vh, 6rem);
-  padding-top: var(--sp-5);
-  border-top: 1px solid var(--line);
-}
-.cv__aws { margin: var(--sp-5) 0 0; padding: 0; list-style: none; }
-.cv__aw-r {
-  display: grid;
-  grid-template-columns: 4.5rem minmax(0, 0.9fr) minmax(0, 1.6fr);
-  gap: 0 clamp(0.75rem, 2vw, 1.75rem);
+.ab__head {
+  display: flex;
   align-items: baseline;
-  padding: 0.875rem 0;
-  border-top: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+  gap: 0 0.5rem;
 }
-.cv__aw-r:last-child { border-bottom: 1px solid var(--line-soft); }
-.cv__aw-y {
-  font-family: var(--mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  color: var(--ink-dim);
-  font-variant-numeric: tabular-nums;
+
+.ab__co {
+  margin: 0;
+  font-size: var(--step-05);
+  font-weight: 560;
+  line-height: 1.2;
+  letter-spacing: -0.011em;
+  color: var(--text-2);
   transition: color 240ms var(--ease);
 }
-.cv__aw-n {
-  font-size: var(--step-0);
-  font-weight: 500;
-  line-height: 1.35;
-  letter-spacing: -0.008em;
-  color: var(--ink);
+
+.ab__job.is-current .ab__co { color: var(--text-1); }
+:root:not(.hover-cold) .ab__job:hover .ab__co { color: var(--text-1); }
+
+.ab__role {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.ab__body {
+  margin: var(--sp-2) 0 0;
+  max-width: 34rem;
+  font-size: var(--step--1);
+  line-height: 1.62;
+  color: var(--text-2);
+}
+
+/* --- the wins --------------------------------------------------------------
+   An open circle rather than a disc: the entry above is the claim and these
+   are the evidence, and a hollow mark is quieter than a filled one at the size
+   this page is set at. */
+.ab__wins {
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.4375rem;
+}
+
+.ab__wins li {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 36rem;
+  font-size: var(--step--1);
+  line-height: 1.55;
+  color: var(--text-3);
+}
+
+.ab__o {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-top: 0.5em;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--text-4);
+}
+
+:root:not(.hover-cold) .ab__wins li:hover { color: var(--text-2); }
+
+.ab__job .ab__tags { margin-top: var(--sp-3); }
+
+/* --- awards ----------------------------------------------------------------
+   A year, the thing, and what the thing was. Two columns and one hairline per
+   row, which is all four rows of two lines need to be scanned along. The year
+   column is narrower than the experience indent on purpose — the two bands are
+   not meant to line up into a table. */
+.ab__awards {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ab__award {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  gap: 0 0.75rem;
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.ab__award:last-child { border-bottom: 1px solid var(--border-soft); }
+
+.ab__yr {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: var(--text-4);
+}
+
+.ab__what { min-width: 0; }
+
+.ab__aw-n {
+  display: block;
+  font-size: var(--step--1);
+  font-weight: 520;
+  line-height: 1.45;
+  color: var(--text-1);
   text-decoration: none;
 }
-/* ONLY THE LINKED ONES GET THE ARROW, so the arrow means "this goes
-   somewhere" rather than decorating every row alike. */
-.cv__aw-n--to::after {
-  content: '\2197';
+
+/* the arrow is the only thing that says a row is a certificate you can open */
+.ab__ext {
+  margin-left: 0.3125rem;
+  font-size: 0.75em;
+  color: var(--text-4);
+  transition: transform 240ms var(--ease), color 240ms var(--ease);
   display: inline-block;
-  margin-left: 0.25em;
-  font-size: 0.82em;
-  color: var(--ink-dim);
-  transition: transform 300ms var(--spring), color 240ms var(--ease);
-}
-:root:not(.hover-cold) .cv__aw-n--to:hover::after { transform: translate(2px, -2px); color: var(--ink); }
-.cv__aw-n:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-.cv__aw-d { font-size: 0.8125rem; line-height: 1.45; color: var(--ink-dim); }
-/* the prize carries a shade more ink than the body that awarded it */
-.cv__aw-p { color: var(--ink-2); }
-/* the year darkens with the row, and that is the whole of the hover: this is a
-   table, and a table row that lifts off the page is a button */
-:root:not(.hover-cold) .cv__aw-r:hover .cv__aw-y { color: var(--ink-2); }
-
-/* ==========================================================================
-   45g. THE ENTRANCE
-   The site's own `.reveal` does the work; this only gives it a delay and,
-   for objects, a little rotation to settle out of. Hierarchy is deliberate:
-   the writing arrives plainly, the objects arrive with character.
-   ========================================================================== */
-
-.ab .reveal { transition-delay: var(--rv-delay, 0ms); }
-.ab .pcard.reveal { transform: rotate(calc(var(--rot, 0deg) + 5deg)) translateY(20px); }
-.ab .pcard.reveal.is-in { transform: rotate(var(--rot, 0deg)); }
-
-/* THE RÉSUMÉ ARRIVES LIKE A PRINTED PAGE COMING INTO FOCUS, which means a
-   shorter travel and a faster stagger than the rest of the page: six pixels
-   rather than fourteen, and 55ms between the parts of one entry rather than
-   90ms between the lines of a headline. The delays themselves are set in the
-   builder, one per part, in reading order — mark, name, role, description,
-   achievements, tags. Nothing here rotates: this band is a document. */
-.ab__cv .reveal { transform: translateY(6px); transition-duration: 480ms; }
-.ab__cv .reveal.is-in { transform: none; }
-
-/* ==========================================================================
-   45h. NARROWER — RECOMPOSED, NOT SHRUNK
-   The hero stacks but keeps its scale: the type stays large and the pile stays
-   a pile. The rail leaves its column and becomes a strip above the read. The
-   spreads stop being absolute compositions and become rows of prints, because
-   a hand-placed arrangement in a 350px column is a pile-up.
-   ========================================================================== */
-
-@media (max-width: 68rem) {
-  .ab__hero { min-height: 0; padding-block: clamp(4rem, 12vh, 7rem) clamp(3rem, 8vh, 5rem); row-gap: clamp(2.5rem, 7vh, 4rem); }
-  /* THE HERO'S NOTES COME IN OFF THE MARGIN. They are placed at negative
-     offsets against the pile, which is right when there is a margin to hang
-     them in and clips them off the screen when there is not. Stacked, they sit
-     under the pile as a line of asides instead. */
-  .ab__hero-vis { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
-  .ab__hero-vis .ab__scrawl--set {
-    position: static;
-    max-width: none;
-    inset: auto;
-    transform: rotate(-0.6deg);
-  }
-  .ab__hero-col { grid-column: 2 / span 12; grid-row: 1; }
-  .ab__hero-vis { grid-column: 2 / span 12; grid-row: 2; margin-top: 0; }
-  .pile__stack { margin-inline: auto; max-width: 20rem; }
-
-  .ab__read-sec { row-gap: var(--sp-5); }
-  .ab__rail {
-    grid-column: 2 / span 12;
-    position: sticky;
-    top: 0;
-    z-index: 6;
-    padding-block: 0.75rem;
-    background: var(--paper);
-    box-shadow: 0 1px 0 var(--line), 0 10px 16px -14px rgba(20, 16, 12, 0.3);
-  }
-  .ab__rail-list {
-    flex-direction: row;
-    gap: 0.375rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-    scroll-snap-type: x proximity;
-  }
-  .ab__rail-list::-webkit-scrollbar { display: none; }
-  .ab__rl { flex: none; grid-template-columns: auto; padding: 0.4375rem 0.75rem; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); scroll-snap-align: center; }
-  .ab__rl-n, .ab__rl-s { display: none; }
-  .ab__rl::before { display: none; }
-  .ab__rl.is-active { background: var(--ink); box-shadow: none; }
-  .ab__rl.is-active .ab__rl-h { color: var(--paper); }
-  :root:not(.hover-cold) .ab__rl:hover { transform: none; }
-  .ab__read { grid-column: 2 / span 12; }
-
-  .ab__ch { grid-template-columns: minmax(0, 1fr); row-gap: var(--sp-5); }
-  .ab__ch-w,
-  .ab__ch .spread--right,
-  .ab__ch .spread--left,
-  .ab__ch:has(.spread--left) .ab__ch-w { grid-column: 1; }
-  .ab__ch .spread--left { grid-row: auto; }
-
-  .ab__creed-h, .ab__creed-b, .ab__eyebrow--creed { grid-column: 2 / span 12; }
-  .ab__creed-b { max-width: 46ch; }
-  .pcard--hung { display: none; }
-
-  /* THE RÉSUMÉ IS REORDERED, NOT STACKED IN PLACE. The work is the story, so
-     it goes first and the rail follows it as part of the document — which is
-     also why the rail stops being sticky here: a sticky strip above a long
-     column of entries would sit over the thing you came to read, and the rail
-     is metadata. Below the work it reads as the colophon it is. */
-  .ab__cv { row-gap: clamp(3rem, 9vh, 4.5rem); }
-  .ab__cv .cv__exp { grid-column: 2 / span 12; grid-row: 1; }
-  .ab__cv .cv__rail {
-    grid-column: 2 / span 12;
-    grid-row: 2;
-    position: static;
-    top: auto;
-    padding-top: clamp(2rem, 6vh, 3rem);
-    border-top: 1px solid var(--line);
-  }
-  /* the measures stay. A `max-width` in ch cannot make a 300px column wider,
-     so releasing it here only buys a 110-character line on a small laptop. */
 }
 
-@media (max-width: 48rem) {
-  /* THE SPREADS BECOME ROWS. A composition placed by percentage inside a
-     350px box is not a composition, it is an overlap — so on a phone the
-     prints leave their positions and sit in a row that scrolls, keeping their
-     tilts and their shadows. */
-  .spread {
-    aspect-ratio: auto;
-    display: flex;
-    gap: 0.875rem;
-    overflow-x: auto;
-    padding-block: 0.5rem 1rem;
-    scrollbar-width: none;
-    scroll-snap-type: x proximity;
+:root:not(.hover-cold) a.ab__aw-n:hover .ab__ext {
+  color: var(--text-2);
+  transform: translate(1px, -1px);
+}
+
+a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-decoration-color: transparent; }
+:root:not(.hover-cold) a.ab__aw-n:hover { text-decoration-color: var(--border); }
+.ab__aw-n:focus-visible { outline: 2px solid var(--text-1); outline-offset: 3px; border-radius: 2px; }
+
+.ab__aw-s {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+/* --- narrower: recomposed, not shrunk --------------------------------------
+
+   Below 60rem the page is already one column — `.home` collapses its own grid
+   there and the rail moves under the canvas — so all this has to do is stop
+   the document being two columns inside it. The order is the reading order:
+   experience and awards first, then the things you look up.
+
+   The narrow column stops being sticky, because a sticky block in a single
+   column is a block that covers what is under it. */
+@media (max-width: 60rem) {
+  /* Below 60rem `.home` has already recomposed into one column with the rail's
+     own children promoted around the work — see §"NARROWER" — and this page's
+     canvas takes the work's slot there. All that is left for this rule is to
+     stop the document being two columns inside it. The order is the reading
+     order: what you read first, then what you look up. */
+  .about {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: clamp(2.5rem, 6vh, 3.5rem);
   }
-  .spread::-webkit-scrollbar { display: none; }
-  .spread .pcard--set {
-    position: relative;
-    inset: auto;
-    flex: none;
-    width: 56vw;
-    max-width: 15rem;
-    scroll-snap-align: center;
+  .ab__side {
+    position: static;
+    transform: none;
+    order: 2;
+    gap: var(--sp-5);
   }
-  .spread .ab__scrawl--set { position: static; margin-top: 0.25rem; }
+  .ab__main { order: 1; max-width: none; }
+}
 
-  /* THE GUIDE COMES IN OFF THE MARGIN. A 36px gutter for a marker is a fifth
-     of a phone's text column, so the guide and its bricks move to the very
-     left of the band and the writing keeps the width — the structure survives,
-     the measure does too. */
-  .cv__list { padding-left: 1.375rem; }
-  .cv__node { left: -1.375rem; }
-  .cv__co { font-size: var(--step-05); }
-  .cv__win { grid-template-columns: 0.75rem minmax(0, 1fr); gap: 0 0.5rem; }
-  /* three 34px targets in a row is fine; three in a row that has to share a
-     line with a heading is not, so the rail's groups get more air instead */
-  .ab__cv .cv__rail { gap: clamp(1.75rem, 5vh, 2.5rem); }
-
-  /* THE AWARDS TABLE LOSES ITS THIRD COLUMN, not its width. A citation like
-     "Winner, Service Design · Confederation of Indian Industry" in a third of
-     a phone's column is four words a line; so the year and the name keep the
-     top line and the citation takes the one under it, still hanging off the
-     name's own left edge. Two lines of a row, and it is still a table. */
-  .cv__aw-r { grid-template-columns: 3.25rem minmax(0, 1fr); row-gap: 0.1875rem; }
-  .cv__aw-d { grid-column: 2; }
-
+@media (max-width: 30rem) {
+  .ab__award { grid-template-columns: 2.5rem minmax(0, 1fr); }
+  .ab__jobs { --ab-in: 1.125rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pcard, .ab__rl, .ab__rl::before,
-  .cv__tag, .cv__dot, .cv__node, .cv__logo, .cv__co, .cv__co::after,
-  .cv__win-o, .cv__win > span { transition: none; }
-  .ab .pcard.reveal { transform: rotate(var(--rot, 0deg)); }
-  .ab__cv .reveal { transform: none; }
-  /* the rule under a company name is a hover flourish, not information */
-  .cv__co::after { display: none; }
+  .ab__tag, .ab__node, .ab__co, .ab__ext { transition: none; }
+}
+
+/* ================================================ 14. the two themes =====
+
+   THE THEME IS A LIGHTING RIG, NOT A REPAINT.
+
+   Almost nothing here sets a colour. The palette is the two blocks at the top
+   of this file — nine tokens declared once for the light theme and once under
+   `:root.is-dark` — and the page changes theme the same way it has always
+   changed anything: a card, a caption, a rule between two sections and the
+   closing lines all follow, because they were already reading `--ink` and
+   `--paper`. What is left for this section is the part a palette cannot say —
+   how hard the light on the bricks is — plus the handful of surfaces that were
+   written as literals, and the crossfade that carries the switch.
+
+   AND THE LAYOUT NEVER MOVES. Nothing below sets a width, a height, a padding,
+   a margin, a font-size or a position. `--amb-blur` spreads a shadow, and a
+   shadow has no layout. Measured, both ways, on every box in the sidebar and
+   the grid: identical to the pixel across a theme change.
+
+   ---------------------------------------------------------------------------
+   2  the surfaces
+   3  the light on the bricks
+   4  reduced motion
+   5  the dark theme's exceptions
+   6  the crossfade
+   -------------------------------------------------------------------------- */
+
+/* --- 2. the surfaces -----------------------------------------------------
+
+   NOTHING TRANSITIONS COLOUR AT REST, and that is deliberate. The palette only
+   ever changes at one moment — a press on the theme control — and section 6
+   below lends the whole document a crossfade for exactly the length of it. A
+   permanent colour transition on every large surface was needed when the hour
+   moved the palette every minute; with two fixed themes it is a standing cost
+   for an event that happens by hand. */
+.home__work .wcard__media {
+  transition:
+    transform 720ms var(--spring-soft),
+    box-shadow 520ms var(--ease);
+}
+
+/* --- 3. the light on the bricks ------------------------------------------
+
+   THE BRICKS ARE LIT BY THE THEME, and this is the join that keeps the
+   playground from being a toy with a fixed drop shadow pasted onto whichever
+   page it lands on: it is an object standing in the same light as everything
+   else around it.
+
+   The shadows were three hardcoded `drop-shadow`s at fixed alphas. They are
+   the same three, with the alpha multiplied by `--amb-shade` and the blur by
+   `--amb-blur`, plus one cool rim off the top-left scaled by `--amb-glow` —
+   which is zero in the light theme, so the rim costs nothing until there is a
+   dark room to justify it. THE BRICK'S OWN COLOURS ARE NOT TOUCHED by any of
+   this: these are drop-shadows cast around the art, not filters over it, so a
+   red brick is the same red in both themes.
+
+   `calc()` inside `drop-shadow` is fine; what is NOT fine is a bare `var()`
+   multiplication without units, which is why every length here is written as
+   `calc(<n>px * var(--amb-blur))` rather than composed elsewhere. */
+.brk .brk__art {
+  filter:
+    drop-shadow(0 calc(1px * var(--amb-blur)) calc(0.5px * var(--amb-blur))
+      rgba(20, 16, 12, calc(0.11 * var(--amb-shade))))
+    drop-shadow(0 calc(2px * var(--amb-blur)) calc(5px * var(--amb-blur))
+      rgba(20, 16, 12, calc(0.10 * var(--amb-shade))))
+    drop-shadow(calc(0.8px * var(--amb-glow)) calc(-0.8px * var(--amb-glow)) 0
+      rgba(184, 206, 236, calc(0.34 * var(--amb-glow))));
+}
+
+.brk.is-hov .brk__art {
+  filter:
+    drop-shadow(0 calc(1.5px * var(--amb-blur)) calc(1.5px * var(--amb-blur))
+      rgba(20, 16, 12, calc(0.13 * var(--amb-shade))))
+    drop-shadow(0 calc(9px * var(--amb-blur)) calc(16px * var(--amb-blur))
+      rgba(20, 16, 12, calc(0.14 * var(--amb-shade))))
+    drop-shadow(0 0 0.6px rgba(20, 16, 12, calc(0.36 * var(--amb-shade))))
+    drop-shadow(calc(1px * var(--amb-glow)) calc(-1px * var(--amb-glow)) 0
+      rgba(184, 206, 236, calc(0.4 * var(--amb-glow))));
+}
+
+.brk.is-hold .brk__art {
+  filter:
+    drop-shadow(0 calc(3px * var(--amb-blur)) calc(3px * var(--amb-blur))
+      rgba(20, 16, 12, calc(0.16 * var(--amb-shade))))
+    drop-shadow(0 calc(20px * var(--amb-blur)) calc(32px * var(--amb-blur))
+      rgba(20, 16, 12, calc(0.24 * var(--amb-shade))))
+    drop-shadow(0 0 0.6px rgba(20, 16, 12, calc(0.44 * var(--amb-shade))))
+    drop-shadow(calc(1.5px * var(--amb-glow)) calc(-1.5px * var(--amb-glow)) 0
+      rgba(196, 216, 244, calc(0.48 * var(--amb-glow))));
+}
+
+/* --- 4. reduced motion ---------------------------------------------------
+
+   The light still lands where it should; it simply arrives without a
+   crossfade. Nothing here loops, so there is nothing else to switch off. */
+@media (prefers-reduced-motion: reduce) {
+  .home__work .wcard__media { transition: none; }
+}
+/* --- 5. the dark theme ---------------------------------------------------
+
+   THE PALETTE HAS ALREADY DONE ALMOST ALL OF THIS. By the time `.is-dark` is
+   on the root, the nine tokens have swapped ends and every rule reading them
+   has followed — which is most of the site, because most of the site was
+   written against tokens in the first place.
+
+   What is left is the handful of places where a colour was written as a
+   literal because there was only ever one theme to write it for. Each one was
+   found the same way: by measuring the contrast of every visible run of text
+   and every surface against the dark ground, which is the only way to find
+   them — each of them looks perfectly correct in the stylesheet.
+
+   NOTHING HERE RECOLOURS THE WORK. The project previews keep their own
+   grounds, their own palettes and their own composition; the LEGO keeps its
+   red, blue, green and yellow. There is no filter, no tint and no hue shift on
+   any of it. A dark page changes the room, not the objects in it. */
+
+/* 1. THE PAGE BEHIND THE PAGE. Nothing normally sees `body` — the paper covers
+      it — but it is the surface behind an overscroll bounce and the one
+      painted before the first frame, and a white flash at the edge of a dark
+      page is exactly the kind of seam this should be quiet about. It reads
+      `--surface-2` and therefore already follows; this is only the selection
+      colour, which is a literal pair, reversed. */
+.is-dark ::selection { background: var(--text-1); color: var(--surface); }
+
+/* 1b. THE LAYOUT GRID is the same idea in reverse: a light hairline instead of
+      a dark one, at the alpha a dark ground needs to make the same amount of
+      almost-nothing. */
+.is-dark {
+  --grid-major: rgba(228, 233, 240, 0.075);
+  --grid-minor: rgba(228, 233, 240, 0.036);
+}
+
+/* 2. THE FIELD is drawn in an ink chosen for white paper. On a dark ground the
+      same ink is invisible and its inverse is the brightest thing on the
+      screen, so it takes a light hairline at a lower alpha. Only the colour
+      changes; the geometry is `:root`'s. */
+.is-dark { --grid-ink: rgba(216, 222, 234, 0.058); }
+
+/* 3. THE STATEMENT WAS PURE BLACK. `.canvas__headline` sets `color: #000`, and
+      the note at that rule is careful to say the black is measured and
+      deliberate. It is — on paper. On the dark ground it measures 1.15:1,
+      which is a headline nobody can read. The light design is untouched: this
+      only names the ink, and names it as the token. */
+.is-dark .canvas__headline { color: var(--text-1); }
+
+/* 4. THE PRIMARY BUTTON INVERTED ITSELF INTO NOTHING. `.btn` takes its face
+      from `--ink` and its label from a literal near-white; once the ink is the
+      light end that is white on white. Letting the label follow the paper the
+      way the face follows the ink fixes it in both directions at once.
+
+      NOT THE GHOST BUTTON, which declares its own `--btn-fg` — the tertiary
+      ink, because its ground is a whisper of tint rather than a solid. A
+      `.is-dark .btn` selector outweighs a bare `.btn--ghost` one, so a blanket
+      override reaches inside it and paints the label the ground colour. Its
+      own two literals need the dark end as well: a 3.5% black tint is
+      invisible on a dark page and its hover ring was a light grey. */
+.is-dark .btn:not(.btn--ghost) { --btn-fg: var(--surface); }
+.is-dark .btn--ghost { --btn-bg: rgba(236, 234, 230, 0.05); }
+.is-dark .btn--ghost:hover {
+  --btn-bg: rgba(236, 234, 230, 0.09);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* 5. THE PLAYGROUND'S DESK AND ITS KEYCAPS. `.canvas` is the desk the play
+      page is played on and it was a literal one shade off the body's; the caps
+      are white keys with a secondary-ink legend, which inverts into an
+      unreadable pair the moment the ink goes light, and whose pressed state
+      paints a literal white letter on `--ink`. */
+.is-dark .canvas { background: var(--surface-2); }
+
+.is-dark .cap {
+  background: var(--surface-2);
+  box-shadow:
+    inset 0 0 0 1px rgba(236, 234, 230, 0.16),
+    0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.is-dark .cap.is-hit {
+  background: var(--text-1);
+  color: var(--surface);
+  box-shadow: inset 0 0 0 1px rgba(236, 234, 230, 0.9);
+}
+
+/* 6. THE CHIPS WERE ALREADY DARK. A near-black toast on a light page is a
+      chip; on a dark page it is a hole. */
+.is-dark .toast,
+.is-dark .tip { background: #2b2f36; color: #f2f1ee; }
+.is-dark .tab-menu { background: #21252b; }
+
+/* 7. THE CARDS KEEP THEIR ARTWORK AND GAIN AN EDGE. A bright preview on a dark
+      page is a bright rectangle, and dimming it was ruled out — the imagery is
+      the work. What it gets instead is a hairline, so the join between the art
+      and the dark card is not a hard white step. */
+.is-dark .wcard__media { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07); }
+
+:root.is-dark:not(.hover-cold) .wcard:hover .wcard__media {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.11),
+    0 18px 40px -18px rgba(0, 0, 0, 0.7);
+}
+
+/* 8. LIGHT ON THE BRICKS, FROM ONE SIDE. This is the difference between a
+      brick lying on a dark page and a brick lit in a dark room: the shadow
+      goes black rather than brown, and the top-left edge catches a cool rim.
+      `--amb-glow` is zero for the whole of the light theme and 0.38 to 0.6
+      across the dark one, so the rim arrives with the theme and still moves a
+      little with the hour. The bricks' own colours are not touched by any of
+      this — these are drop-shadows, not filters on the art. */
+.is-dark .brk .brk__art {
+  filter:
+    drop-shadow(calc(-2px * var(--amb-glow)) calc(3px * var(--amb-blur))
+      calc(4px * var(--amb-blur)) rgba(0, 0, 0, calc(0.42 * var(--amb-shade))))
+    drop-shadow(0 calc(8px * var(--amb-blur)) calc(18px * var(--amb-blur))
+      rgba(0, 0, 0, calc(0.34 * var(--amb-shade))))
+    drop-shadow(calc(1px * var(--amb-glow)) calc(-1px * var(--amb-glow)) 0
+      rgba(184, 206, 236, calc(0.5 * var(--amb-glow))));
+}
+
+.is-dark .brk.is-hov .brk__art {
+  filter:
+    drop-shadow(calc(-2.5px * var(--amb-glow)) calc(3.5px * var(--amb-blur))
+      calc(4.5px * var(--amb-blur)) rgba(0, 0, 0, calc(0.46 * var(--amb-shade))))
+    drop-shadow(0 calc(14px * var(--amb-blur)) calc(24px * var(--amb-blur))
+      rgba(0, 0, 0, calc(0.4 * var(--amb-shade))))
+    drop-shadow(calc(1.2px * var(--amb-glow)) calc(-1.2px * var(--amb-glow)) 0
+      rgba(190, 210, 240, calc(0.56 * var(--amb-glow))));
+}
+
+.is-dark .brk.is-hold .brk__art {
+  filter:
+    drop-shadow(calc(-3px * var(--amb-glow)) calc(4px * var(--amb-blur))
+      calc(5px * var(--amb-blur)) rgba(0, 0, 0, calc(0.5 * var(--amb-shade))))
+    drop-shadow(0 calc(22px * var(--amb-blur)) calc(34px * var(--amb-blur))
+      rgba(0, 0, 0, calc(0.44 * var(--amb-shade))))
+    drop-shadow(calc(1.5px * var(--amb-glow)) calc(-1.5px * var(--amb-glow)) 0
+      rgba(196, 216, 244, calc(0.62 * var(--amb-glow))));
+}
+
+/* 9. THE TWO POD BUTTONS. A dark glass chip on light paper is a control; on a
+      dark page it is nothing. They invert into a light film with a hairline —
+      the same object, lit from the other side. */
+.is-dark .mute,
+.is-dark .tmode,
+.is-dark .gridtog {
+  background: rgba(240, 240, 238, 0.09);
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 240, 238, 0.14),
+    0 6px 18px -10px rgba(0, 0, 0, 0.7);
+  color: var(--text-1);
+}
+
+/* 10. THE CHROME THAT WAS WRITTEN IN LITERALS. Everything above this point
+       reads tokens and inverted on its own. These are the surfaces that were
+       typed as `#fff` or a near-white because there was one theme to type them
+       for — the drawing dock and its two drawers, the 404's panel and sign,
+       and the hero's three fact pills. Same objects, same shapes, same
+       shadows; only the film they are made of changes side. */
+.is-dark .tools__panel,
+.is-dark .tools__tab,
+.is-dark .inks,
+.is-dark .drawerpad,
+.is-dark .nfp,
+.is-dark .nfs { background: #1f2227; color: var(--text-1); }
+
+.is-dark .tools__panel,
+.is-dark .inks,
+.is-dark .drawerpad,
+.is-dark .nfp,
+.is-dark .nfs {
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 240, 238, 0.1),
+    0 12px 30px -10px rgba(0, 0, 0, 0.62);
+}
+
+.is-dark .tools__tab {
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 240, 238, 0.1),
+    -4px 4px 18px rgba(0, 0, 0, 0.5);
+}
+.is-dark .tools__tab:hover { box-shadow: inset 0 0 0 1px rgba(240, 240, 238, 0.16), -8px 6px 30px rgba(0, 0, 0, 0.6); }
+
+/* the label on the 404's panel is a dark chip with a light legend, and `--ink`
+   is the light end here — so the legend has to follow the ground, not stay
+   white on white */
+.is-dark .nfp__tip { color: var(--surface); }
+
+/* and the dock's own glyphs, which are `#1c1c1e` on the panel's white — the
+   panel moved and they did not, so every chip in the lower group was drawn in
+   near-black on near-black. The two illustrated tools (the pencil and the
+   marker) carry their own colours and are untouched. */
+.is-dark .tools__tab,
+.is-dark .tool,
+.is-dark .tool__plate,
+.is-dark .tool__slot { color: var(--text-1); }
+
+.is-dark .pill {
+  background: rgba(240, 240, 238, 0.07);
+  color: var(--text-2);
+}
+
+/* THE BACK PLATE. Two rules in this file claim `.pane` — a pull-quote block
+   and the fixed layer the mat lives in — and the quote's literal is the one
+   that lands on both. It is invisible under `.sky-root` either way; it is
+   named here so that neither of them is a light rectangle in the dark. */
+.is-dark .pane { background: var(--surface-2); }
+
+/* --- 5b. the layout grid -------------------------------------------------
+
+   WHERE IT SITS IS THE WHOLE OF WHY IT NEEDS NO MASK. `.sheet` is a stacking
+   context — `position: relative; z-index: 1` — so a child at `z-index: -1`
+   paints above the paper's own background and below every piece of content
+   inside it. There is nothing to fade behind text, because it was never in
+   front of it: not over a card, not over a caption, not over a brick.
+
+   Out of flow, so it cannot shift anything; `pointer-events: none`, so it
+   cannot take a click, a drag or a scroll; and it holds no geometry of its own
+   — every line's position is written by `Grid.draw` from what the page
+   measured. The layer is `inset: 0` of the paper, which is the document, so
+   the verticals run the full height of the page rather than of the window.
+
+   The reveal is opacity and nothing else: 320ms, no movement, no stagger. */
+.gridlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 320ms var(--ease);
+}
+
+:root.is-grid .gridlay { opacity: 1; }
+
+.gridlay i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--grid-major);
+}
+
+.gridlay b {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--grid-major);
+}
+
+.gridlay .is-sub { background: var(--grid-minor); }
+
+@media (prefers-reduced-motion: reduce) {
+  .gridlay { transition: none; }
+}
+
+/* --- 6. the crossfade ----------------------------------------------------
+
+   A THEME SWITCH IS SEVERAL HUNDRED ELEMENTS CHANGING COLOUR IN ONE FRAME.
+   Correct, and a cut — every rule on the page reads the same nine tokens, so
+   they all turn over together the moment the class lands.
+
+   So the transition is lent to the whole document for the length of the switch
+   and taken back afterwards, by `Theme.shift`. Nothing carries a colour
+   transition the rest of the time, which is the point: the cost is paid for
+   420ms by a deliberate press rather than standing on every surface forever.
+
+   The `!important` is deliberate, and it is scoped to one class, one moment
+   and five properties — none of which is a transform or an opacity. A brick
+   mid-drag, a reveal mid-flight and the spring on a hovered card all carry on
+   exactly as they were. */
+:root.is-shifting *,
+:root.is-shifting *::before,
+:root.is-shifting *::after {
+  transition-property: color, background-color, border-color, fill, box-shadow !important;
+  transition-duration: 420ms !important;
+  transition-timing-function: var(--ease) !important;
+  transition-delay: 0s !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root.is-shifting *,
+  :root.is-shifting *::before,
+  :root.is-shifting *::after { transition-duration: 1ms !important; }
 }

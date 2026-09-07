@@ -2008,295 +2008,137 @@ window.SITE = {
      the tilt and — where it is part of a composition — its position in that
      composition. Drop a `src` on any of them and the real photograph inherits
      all of it: same box, same rotation, same shadow, same interaction. */
+  /* ------------------------------------------------------------------- about
+     WHAT IS LEFT OF A PAGE THAT USED TO BE A SITE.
+
+     There were four more keys here: a `hero` with a name and a four-line
+     statement, five `chapters` of placeholder prose with photograph spreads
+     and scrawled annotations, a `creed`, and the titles that introduced them.
+     None of it said anything the work does not, and all of it was waiting on
+     photographs that do not exist. The page is a document now, and a document
+     is these five fields. */
   about: {
-    /* --- 01. the hero, a whole screen ------------------------------------
-       `statement` is set as separate lines because the line breaks are a
-       design decision at this size, not something to leave to the browser. */
-    hero: {
-      eyebrow: 'About',
-      hi: 'Hi, I’m Ishaan.',
-      statement: [
-        'A product designer',
-        'who likes building',
-        'things that feel',
-        'obvious.',
-      ],
-      meta: ['Product Designer', 'Delhi / India', 'Currently @ Cypherock'],
-      /* the pile in the hero's right half. Four prints, none of them square
-         to the page. */
-      pile: [
-        { label: 'Photo 01', note: 'Early days', tint: '#efeae2', rot: -3.4 },
-        { label: 'Photo 02', note: 'Something I built', tint: '#e9ebe8', rot: 2.2 },
-        { label: 'Photo 03', note: 'A random memory', tint: '#efe9e9', rot: -1.1 },
-        { label: 'Photo 04', note: 'Currently', tint: '#eae9ef', rot: 4.1 },
-      ],
-      /* annotations are placed against the pile, in percentages of the stage,
-         so they travel with it at every size */
-      notes: [
-        { text: 'this one matters', at: { top: '-4%', left: '-22%' }, arrow: 'r', kind: 'scrawl' },
-        { text: 'yes, I actually made this', at: { bottom: '-9%', right: '-2%' }, arrow: 'l', kind: 'scrawl' },
+    /* the one word over the timeline */
+    eyebrow: 'Experience',
+
+    expertise: {
+      title: 'Expertise',
+      items: [
+        'Product Experience Design',
+        'Interaction Design',
+        'Self-Custody UX',
+        'Design Systems',
+        'UI/UX',
+        'Hardware Ecosystems',
+        'Usability Testing',
+        'Accessibility',
       ],
     },
-
-    /* --- 02. the read: a rail, and a spread beside it --------------------
-       Each chapter carries its own scattered composition rather than a
-       photograph in the flow. `at` is a position in the spread's own box, in
-       percentages, and `w` is the print's width as a fraction of it — which is
-       what lets a spread be a composition instead of a list. */
-    chaptersTitle: 'The short version',
-    chapters: [
+    education: {
+      title: 'Education',
+      items: [
+        { what: 'Interaction Design', where: 'B.Des · UPES, Dehradun', when: '2020 – 2024' },
+        { what: 'Computer Science', where: 'Minor specialisation', when: '2021 – 2024' },
+      ],
+    },
+    reach: { title: 'Reach me' },
+    jobs: [
       {
-        id: 'ab-curiosity',
-        nav: 'Curiosity',
-        tiny: 'where it started',
-        eyebrow: 'The early days',
-        heading: ['Finding', 'the thing', 'that made', 'me curious.'],
-        body: [
-          'Placeholder. This is where the taking-things-apart paragraph goes — '
-            + 'the one that explains why interfaces felt like objects long '
-            + 'before there was a word for it.',
+        company: 'Cypherock',
+        glyph: 'cypherock',
+        role: 'Product Designer',
+        when: 'Currently',
+        body: 'Self-custody hardware for people who would rather not trust an '
+          + 'exchange with their keys. I lead the design of the X0 ecosystem — '
+          + 'the NFC card, its packaging and the wallet app that talks to it — '
+          + 'and the CySync clients behind it.',
+        wins: [
+          'Took X0 from concept to beta in four months: a mobile-first hardware '
+            + 'wallet spanning the physical NFC card, the packaging, the '
+            + 'manufacturing-ready assets and the companion app.',
+          'Architected the N45 design system — components, tokens, interaction '
+            + 'patterns and the documentation that made handoff repeatable across '
+            + 'platforms.',
+          'Designed the NFC and BLE interaction flows across CySync Desktop, '
+            + 'Mobile and the X1 Vault, with the firmware, hardware and frontend teams.',
+          'Led the CySync v2 redesign: a forecast +40% engagement, 25% fewer '
+            + 'interaction steps and +70% daily actives.',
+          'Built the affiliate ecosystem end to end — landing page, partner '
+            + 'dashboard and admin portal, with the onboarding and commission '
+            + 'workflows under them.',
         ],
-        spread: [
-          { label: 'Photo 05', note: 'The first one', tint: '#eceae4', rot: -4, at: { top: '2%', left: '4%' }, w: 46 },
-          { label: 'Photo 06', note: 'Kept the box', tint: '#e8ebec', rot: 3, at: { top: '34%', left: '48%' }, w: 40 },
-          { label: 'Photo 07', note: '', tint: '#efece6', rot: -1.5, at: { top: '66%', left: '12%' }, w: 34 },
-        ],
-        notes: [{ text: 'one of the early ones', at: { top: '26%', left: '52%' }, arrow: 'l', kind: 'scrawl' }],
+        tags: ['Product Design', 'Interaction Design', 'Design Systems', 'Hardware', 'Crypto'],
       },
       {
-        id: 'ab-making',
-        nav: 'Making',
-        tiny: 'learning by doing',
-        eyebrow: 'Getting my hands dirty',
-        heading: ['The fastest', 'way to learn', 'is to build', 'a worse one.'],
-        body: [
-          'Placeholder. Learning by shipping — the first ugly thing that '
-            + 'worked, and what it taught that reading about it would not have.',
+        company: 'Onefinnet',
+        initials: 'ON',
+        role: 'UI/UX Designer',
+        when: '2 years',
+        body: 'A B2B SaaS recruitment platform for the US market. I owned the '
+          + 'product design and the strategic direction of Onefinnet Talent, '
+          + 'directing a cross-functional team of seven.',
+        wins: [
+          'Created a new core revenue stream in Onefinnet Talent, driving 12% '
+            + 'growth in enterprise adoption inside six months.',
+          'Shipped a freemium acquisition model: +23% monthly actives and a 15% '
+            + 'improvement in lead conversion.',
+          'Designed the flagship AI assistant for job creation and interview '
+            + 'scheduling — 40% less manual recruiter effort, +18% retention.',
+          'Launched an integrated meeting scheduler MVP in a 60-day sprint; 180 '
+            + 'early adopters and a 90% positive usability score.',
+          'Built a design system from scratch with 100+ reusable components, '
+            + 'cutting handoff time 30% and inconsistencies 40%.',
         ],
-        spread: [
-          { label: 'Photo 08', note: 'An early build', tint: '#eae9ef', rot: 2.6, at: { top: '6%', left: '38%' }, w: 52 },
-          { label: 'Screenshot', note: 'Version one', tint: '#e8eaee', rot: -3.2, at: { top: '52%', left: '2%' }, w: 44, shot: true },
-        ],
-        notes: [{ text: 'this was fun', at: { bottom: '6%', right: '2%' }, arrow: 'l', kind: 'scrawl' }],
-      },
-      {
-        id: 'ab-design',
-        nav: 'Design',
-        tiny: 'turning chaos into systems',
-        eyebrow: 'Finding the discipline',
-        heading: ['Systems are', 'the shape', 'small decisions', 'make.'],
-        body: [
-          'Placeholder. Where design stopped being decoration and started '
-            + 'being the argument — the project where a choice had to be '
-            + 'defended rather than presented.',
-          'This chapter runs long on purpose: the spread beside it should be '
-            + 'tested against a column of text that actually keeps going.',
-        ],
-        spread: [
-          { label: 'Photo 09', note: 'The wall', tint: '#efe9e9', rot: -2.2, at: { top: '0%', left: '10%' }, w: 42 },
-          { label: 'Photo 10', note: '', tint: '#eceae3', rot: 4.4, at: { top: '24%', left: '54%' }, w: 36 },
-          { label: 'Screenshot', note: 'The system, eventually', tint: '#e9ebee', rot: -1.4, at: { top: '58%', left: '20%' }, w: 50, shot: true },
-        ],
-      },
-      {
-        id: 'ab-building',
-        nav: 'Building',
-        tiny: 'design and engineering',
-        eyebrow: 'Both hands',
-        heading: ['I’d rather', 'build it', 'than describe', 'it.'],
-        body: [
-          'Placeholder. What changes about a design decision when you are the '
-            + 'one who has to implement it — and why the two jobs stopped being '
-            + 'separate.',
-        ],
-        spread: [
-          { label: 'Screenshot', note: 'Mid-build', tint: '#e8eaee', rot: 2, at: { top: '8%', left: '6%' }, w: 54, shot: true },
-          { label: 'Photo 11', note: 'Desk, 2am', tint: '#eceae4', rot: -3.6, at: { top: '54%', left: '46%' }, w: 42 },
-        ],
-        notes: [{ text: 'drag this later', at: { top: '46%', left: '2%' }, arrow: 'r', kind: 'scrawl' }],
-      },
-      {
-        id: 'ab-now',
-        nav: 'Now',
-        tiny: 'what I’m doing today',
-        eyebrow: 'Today',
-        heading: ['Hardware', 'you can hold,', 'for money', 'you own.'],
-        body: [
-          'Placeholder. What Cypherock is, in your words rather than the '
-            + 'company’s — the part of it you would explain to a friend who '
-            + 'does not care about crypto.',
-        ],
-        spread: [
-          { label: 'Photo 12', note: 'The card', tint: '#e9ebe8', rot: -1.8, at: { top: '14%', left: '22%' }, w: 56 },
-        ],
+        tags: ['Product Design', 'B2B SaaS', 'Design Systems', 'Research', 'Prototyping'],
       },
     ],
 
-    /* --- 03. a wall of type, with photographs around it ------------------ */
-    creed: {
-      eyebrow: 'How I think',
-      lines: ['I like interfaces', 'with consequence.'],
-      body: [
-        'The interesting screens are the ones where a tap costs something — '
-          + 'money, access, a signature. Those deserve more weight on the page '
-          + 'than the ones that cost nothing, and usually get less.',
-        'Placeholder. Second paragraph, in your own words.',
-      ],
-      /* HUNG IN THE EMPTY ZONES, NOT OVER THE TYPE. The statement runs the full
-         measure on its first two lines and the copy sits at the right below
-         them — which leaves the top-right corner and the lower left empty, and
-         those are the only two places a print can hang without landing on a
-         word. Placed at 2% they covered "I li" of "I like". */
-      loose: [
-        { label: 'Photo 13', note: '', tint: '#efece6', rot: -5, at: { top: '54%', left: '2%' }, w: 13 },
-        { label: 'Photo 14', note: '', tint: '#eae9ef', rot: 3.4, at: { top: '3%', right: '2%' }, w: 12 },
-      ],
-    },
+    /* THE AWARDS, AS A TABLE RATHER THAN AS TROPHIES. A year, the thing, and
+       what the thing was — three columns on a rule at the foot of the work,
+       which is where a résumé puts them.
 
-    /* --- 04. the record ---------------------------------------------------
-       THE RÉSUMÉ, SET AS A DOCUMENT. Two columns that do not line up: a quiet
-       rail of metadata, and the work itself.
+       `url` IS OPTIONAL AND ONLY THREE ROWS HAVE ONE. A row with a link
+       renders as an anchor with the arrow after it and the rest stay plain,
+       so nothing has to be invented for the one certificate that was never
+       issued.
 
-       `expertise.items` are chips and nothing else — the same object appears at
-       the foot of each job, so a skill named on its own and a skill named
-       beside the work it was used on look the same, because they are.
-
-       `reach` has no links in it, and that is deliberate: the three controls are
-       built from `footer.links` and `person.resumeUrl` the way the footer's own
-       glyphs are, so the address and the profile can only ever be in one place.
-
-       EACH JOB'S MARK. `glyph` names an entry in site.js's PILL_ICON (the
-       Cypherock mark is in there already); `logo` is a path to an image;
-       `initials` is the fallback lettermark. All three occupy the same box, so
-       replacing a placeholder with real artwork later moves nothing. */
-    resume: {
-      eyebrow: 'Experience',
-      expertise: {
-        title: 'Expertise',
-        items: [
-          'Product Experience Design',
-          'Interaction Design',
-          'Self-Custody UX',
-          'Design Systems',
-          'UI/UX',
-          'Hardware Ecosystems',
-          'Usability Testing',
-          'Accessibility',
-        ],
-      },
-      education: {
-        title: 'Education',
-        items: [
-          { what: 'Interaction Design', where: 'B.Des · UPES, Dehradun', when: '2020 – 2024' },
-          { what: 'Computer Science', where: 'Minor specialisation', when: '2021 – 2024' },
-        ],
-      },
-      reach: { title: 'Reach me' },
-      jobs: [
+       THESE ARE THE CERTIFICATES THEMSELVES — the Drive shares and the Badgr
+       assertion off LinkedIn, which is why they are proof rather than a
+       programme's homepage. They are only as permanent as those shares: if a
+       row stops resolving, the fix is to drop its `url`, not to hunt for a
+       mirror. */
+    awards: {
+      title: 'Awards',
+      items: [
         {
-          company: 'Cypherock',
-          glyph: 'cypherock',
-          role: 'Product Designer',
-          when: 'Currently',
-          body: 'Self-custody hardware for people who would rather not trust an '
-            + 'exchange with their keys. I lead the design of the X0 ecosystem — '
-            + 'the NFC card, its packaging and the wallet app that talks to it — '
-            + 'and the CySync clients behind it.',
-          wins: [
-            'Took X0 from concept to beta in four months: a mobile-first hardware '
-              + 'wallet spanning the physical NFC card, the packaging, the '
-              + 'manufacturing-ready assets and the companion app.',
-            'Architected the N45 design system — components, tokens, interaction '
-              + 'patterns and the documentation that made handoff repeatable across '
-              + 'platforms.',
-            'Designed the NFC and BLE interaction flows across CySync Desktop, '
-              + 'Mobile and the X1 Vault, with the firmware, hardware and frontend teams.',
-            'Led the CySync v2 redesign: a forecast +40% engagement, 25% fewer '
-              + 'interaction steps and +70% daily actives.',
-            'Built the affiliate ecosystem end to end — landing page, partner '
-              + 'dashboard and admin portal, with the onboarding and commission '
-              + 'workflows under them.',
-          ],
-          tags: ['Product Design', 'Interaction Design', 'Design Systems', 'Hardware', 'Crypto'],
+          year: '2023',
+          name: '24hr Design Hackathon',
+          result: '2nd Runner Up',
+          where: 'School of Design, Doon University',
         },
         {
-          company: 'Onefinnet',
-          initials: 'ON',
-          role: 'UI/UX Designer',
-          when: '2 years',
-          body: 'A B2B SaaS recruitment platform for the US market. I owned the '
-            + 'product design and the strategic direction of Onefinnet Talent, '
-            + 'directing a cross-functional team of seven.',
-          wins: [
-            'Created a new core revenue stream in Onefinnet Talent, driving 12% '
-              + 'growth in enterprise adoption inside six months.',
-            'Shipped a freemium acquisition model: +23% monthly actives and a 15% '
-              + 'improvement in lead conversion.',
-            'Designed the flagship AI assistant for job creation and interview '
-              + 'scheduling — 40% less manual recruiter effort, +18% retention.',
-            'Launched an integrated meeting scheduler MVP in a 60-day sprint; 180 '
-              + 'early adopters and a 90% positive usability score.',
-            'Built a design system from scratch with 100+ reusable components, '
-              + 'cutting handoff time 30% and inconsistencies 40%.',
-          ],
-          tags: ['Product Design', 'B2B SaaS', 'Design Systems', 'Research', 'Prototyping'],
+          year: '2022',
+          name: 'CII Young Designer Awards',
+          result: 'Winner, Service Design',
+          where: 'Confederation of Indian Industry',
+          url: 'https://drive.google.com/file/d/1ahByNMiM3IJy4mup0QUE6OQUBHGVCQQt/view?usp=sharing',
+        },
+        {
+          year: '2022',
+          name: 'D’Source-DIC BHU SDGs Design Challenge',
+          result: 'Merit Award',
+          where: 'IDC School of Design, IIT Bombay',
+          url: 'https://drive.google.com/file/d/1r91OBZFxG8fNR8-DEMyLDbrJWl2SyfLF/view?usp=sharing',
+        },
+        {
+          year: '2022',
+          name: 'SSDC 2022',
+          result: 'Honorable Mention',
+          where: 'Service Design College',
+          url: 'https://eu.badgr.com/public/assertions/KDCSPP0jTLCqw3v8BbVXVw?action=download',
         },
       ],
-
-      /* THE AWARDS, AS A TABLE RATHER THAN AS TROPHIES. A year, the thing, and
-         what the thing was — three columns on a rule at the foot of the work,
-         which is where a résumé puts them.
-
-         `url` IS OPTIONAL AND ONLY THREE ROWS HAVE ONE. A row with a link
-         renders as an anchor with the arrow after it and the rest stay plain,
-         so nothing has to be invented for the one certificate that was never
-         issued.
-
-         THESE ARE THE CERTIFICATES THEMSELVES — the Drive shares and the Badgr
-         assertion off LinkedIn, which is why they are proof rather than a
-         programme's homepage. They are only as permanent as those shares: if a
-         row stops resolving, the fix is to drop its `url`, not to hunt for a
-         mirror. */
-      awards: {
-        title: 'Awards',
-        items: [
-          {
-            year: '2023',
-            name: '24hr Design Hackathon',
-            result: '2nd Runner Up',
-            where: 'School of Design, Doon University',
-          },
-          {
-            year: '2022',
-            name: 'CII Young Designer Awards',
-            result: 'Winner, Service Design',
-            where: 'Confederation of Indian Industry',
-            url: 'https://drive.google.com/file/d/1ahByNMiM3IJy4mup0QUE6OQUBHGVCQQt/view?usp=sharing',
-          },
-          {
-            year: '2022',
-            name: 'D’Source-DIC BHU SDGs Design Challenge',
-            result: 'Merit Award',
-            where: 'IDC School of Design, IIT Bombay',
-            url: 'https://drive.google.com/file/d/1r91OBZFxG8fNR8-DEMyLDbrJWl2SyfLF/view?usp=sharing',
-          },
-          {
-            year: '2022',
-            name: 'SSDC 2022',
-            result: 'Honorable Mention',
-            where: 'Service Design College',
-            url: 'https://eu.badgr.com/public/assertions/KDCSPP0jTLCqw3v8BbVXVw?action=download',
-          },
-        ],
-      },
     },
-
-    /* NO PERSISTENT FURNITURE. Two things used to live here: `dock`, the
-       bottom navigator's stops, and `edge`, the three words fixed at the
-       window's bottom right. Both are gone. With the page down to four bands
-       there is nothing for a navigator of movements to navigate, and the three
-       edge words were a second copy of links the footer already carries one
-       screen below. The header, the menu and the footer are the navigation. */
   },
 
   /* ------------------------------------------------------------------- footer */
@@ -2319,10 +2161,5 @@ window.SITE = {
       { label: 'GitHub', href: 'https://github.com/' },
       { label: 'Email', href: 'mailto:ishaangupta.888@gmail.com' },
     ],
-    /* the bit that floats on the sky below the sheet */
-    lead: 'Get in touch',
-    body:
-      'for thoughtful design work, early products, weird experiments, or internet rabbit holes.',
-    outroFine: '© {year} · sky shifts with the hour',
   },
 };

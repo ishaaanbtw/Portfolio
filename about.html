@@ -104,17 +104,48 @@
 <meta name="twitter:title" content="About — Ishaan Gupta">
 <meta name="twitter:description" content="Product designer in Delhi, currently at Cypherock. The longer version: how I got here, how I think, and what I am working on now.">
 <meta name="twitter:image" content="assets/img/og.png">
+<!-- THE THEME, BEFORE THE FIRST PAINT.
+
+     site.js runs at the end of the body, and without these lines a visitor
+     arriving in the evening gets a full white page for as long as it takes to
+     parse it. The rule is the same one `Theme` uses and is stated in full here
+     so the first frame is never a guess: a choice made by hand earlier in this
+     tab if there is one, and otherwise the local hour — six in the morning to
+     six in the evening is light, the rest of the day is dark.
+
+     `sessionStorage`, not `localStorage`, and that is the whole persistence
+     model: a deliberate press follows the visitor through every link on the
+     site and dies with the tab, so the next visit asks the clock again rather
+     than replaying a choice made at a different time of day. -->
+<script>
+(function () {
+  var t = null;
+  try { t = sessionStorage.getItem('site:theme'); } catch (e) { /* private mode */ }
+  if (t !== 'light' && t !== 'dark') {
+    var h = new Date().getHours();
+    t = (h >= 6 && h < 18) ? 'light' : 'dark';
+  }
+  if (t === 'dark') document.documentElement.classList.add('is-dark');
+})();
+</script>
 </head>
 <body data-page="about">
 
   <nav id="nav" class="nav" aria-label="Primary"></nav>
 
   <div class="sheet">
-    <main id="main"></main>
-    <footer id="foot"></footer>
+    <main id="main">
+      <!-- `#hero` is the wrapper `Pages.about` builds into, and it is named
+           that because the skip link and the entrance both name it. This page
+           has the home page's shape now: a rail on the left, a canvas on the
+           right, and no footer — the rail's closing block is the ending, the
+           same way it is on the home page. `Shell.foot()` looks for `#foot`
+           and returns when it is not there, so removing the element removes
+           the work of building it as well as the sight of it. -->
+      <div id="hero"></div>
+    </main>
   </div>
 
-  <div id="outro"></div>
 
   <script src="assets/js/content.js"></script>
   <script src="assets/js/site.js"></script>
