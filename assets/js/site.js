@@ -2152,7 +2152,33 @@
       if (!data || !data.items || !data.items.length) return;
 
       const section = el('section', { class: 'showcase', id: 'showcase' });
+
+      /* --- AN IRREGULAR COMPOSITION, NOT A GRID ---------------------------
+
+         WHAT THIS REPLACED: `grid-template-columns: 1fr 1fr` with every card on
+         one aspect ratio. Two equal columns and one ratio means every row lines
+         up, every card is the same size, and the eye reads the pattern before it
+         reads a single project.
+
+         WHAT IT IS NOW: two stacks of UNEQUAL width, and a ratio per card. The
+         stacks are independent — nothing lines up across them, because there are
+         no rows to line up — and the widths differ by about a fifth, so the left
+         one is plainly dominant and the right is the counter. Each card's
+         proportion is stated in content.js beside the project it belongs to,
+         which is where an art-direction decision about a particular piece of
+         work should live.
+
+         IT IS AUTHORED, NOT PACKED. Masonry decides where things go by fitting
+         them; this decides by being told. `col` in content.js says which stack a
+         project is in, so the composition is a thing somebody chose, is the same
+         on every load and every screen, and changes by editing one letter.
+         Irregular is the point; arbitrary is not. */
+      const cols = [
+        el('div', { class: 'showcase__col showcase__col--a' }),
+        el('div', { class: 'showcase__col showcase__col--b' }),
+      ];
       const grid = el('div', { class: 'showcase__grid' });
+      cols.forEach((c) => grid.appendChild(c));
 
       /* A TILE IS A LINK TO A PAGE NOW.
 
@@ -2174,11 +2200,18 @@
         const media = el('div', { class: 'wcard__media' },
           (PREVIEW[item.preview] || PREVIEW.bloom)(item));
         mountThumb(item, media);
+        /* THE ONE NUMBER THAT MAKES THE COMPOSITION. Written on the card as a
+           custom property rather than as a class, because it is a value per
+           project and not one of a set of sizes — 1.62 is what that photograph
+           wants, and a `--wide`/`--tall` enum would have to guess. */
+        if (item.ratio) media.style.setProperty('--ratio', item.ratio);
         card.appendChild(media);
         card.appendChild(el('div', { class: 'wcard__meta' },
           `<span class="wcard__title">${esc(item.title)}</span>` +
           `<span class="wcard__tags">${esc(item.meta || '')}</span>`));
-        grid.appendChild(card);
+        /* `col: 'b'` puts a project in the narrower stack; anything else is the
+           wide one. Stated per project, so the arrangement is editable copy. */
+        cols[item.col === 'b' ? 1 : 0].appendChild(card);
         this.cards.push({ el: card, sp: null, last: -1 });
       });
 
@@ -3600,6 +3633,34 @@
        axis is ordered before it is used. */
     KEEP: 46,
 
+    /* --- EXCEPT ON THE TRAY, WHICH IS A HARD EDGE ---------------------------
+
+       The soft edge is right when the surface is the window. A note pushed half
+       off the bottom of the page reads as a note you pushed aside, and the 46px
+       that stay put are what you grab to pull it back.
+
+       It is wrong when the surface is a small box with paper around it. The
+       tray is 330 by 250 in the middle of a column of type, and a brick pushed
+       four fifths of the way out of it is not hanging off the page — it is
+       lying across the closing lines, or sliced by the box's own clip. What is
+       outside a window is gone; what is outside this is still on the screen and
+       plainly in the wrong place.
+
+       So the tray asks for its full extent back on each axis, which puts the
+       object's own edge on the host's edge and nothing past it. Per axis,
+       because a hard fence has to hold a 6x1 lying down as tightly as it holds
+       a 2x2, and one number cannot do both. `w`/`h` are the object's PAINTED
+       extent at its current angle, which is what the eye sees meet the edge.
+
+       Every other surface is untouched: the test is the tray's own class. */
+    keep(host, w, h) {
+      if (host && host.classList && host.classList.contains('canvas--tray')) {
+        return { kx: w, ky: h };
+      }
+      const k = Math.min(this.KEEP, w * 0.9, h * 0.9);
+      return { kx: k, ky: k };
+    },
+
     edge(it, ox, oy) {
       it.bounds = null;
       const host = (Canvas && Canvas.host) || null;
@@ -3607,17 +3668,17 @@
       const r = it.node.getBoundingClientRect();
       const h = host.getBoundingClientRect();
       if (!r.width || !h.width) return;
-      const k = Math.min(this.KEEP, r.width * 0.9, r.height * 0.9);
+      const { kx, ky } = this.keep(host, r.width, r.height);
       /* `ox/oy` are canvas coordinates and everything derived from the two
          rects is screen distance, so the screen part is divided before it is
          added. The bounds are what stops an object being dragged off the paper;
          measured in the wrong unit they let it go 6.5% too far, or stopped it
          6.5% short, depending on which edge you pushed against. */
       const s = host.offsetWidth ? h.width / host.offsetWidth : Space.k();
-      let x0 = ox + ((h.left + k) - r.right) / s;
-      let x1 = ox + ((h.right - k) - r.left) / s;
-      let y0 = oy + ((h.top + k) - r.bottom) / s;
-      let y1 = oy + ((h.bottom - k) - r.top) / s;
+      let x0 = ox + ((h.left + kx) - r.right) / s;
+      let x1 = ox + ((h.right - kx) - r.left) / s;
+      let y0 = oy + ((h.top + ky) - r.bottom) / s;
+      let y1 = oy + ((h.bottom - ky) - r.top) / s;
       if (x0 > x1) { const m = (x0 + x1) / 2; x0 = x1 = m; }
       if (y0 > y1) { const m = (y0 + y1) / 2; y0 = y1 = m; }
       it.bounds = { x0, x1, y0, y1 };
@@ -4093,7 +4154,21 @@
   const Rack = {
     tool: 'select',
 
+    /* --- WHERE THE DOCK IS, AND WHERE IT IS NOT ---------------------------
+       It used to be built on every page, which meant the home page carried a
+       48x328 panel of drawing tools beside a grid of project cards, and every
+       other page carried at least the edge tab that opens it. The drawing, the
+       notes, the stickers and the presets have a page of their own now, so the
+       dock is built on the pages where those things are the point: the desk,
+       the room, and a case study you can annotate.
+
+       This is a decision about mounting, not a feature flag inside the module.
+       Nothing below this line knows about it, and `S.rack.scope` still governs
+       how the dock behaves on the pages that do have one. */
+    HOMES: ['play', 'notfound', 'project'],
+
     init() {
+      if (this.HOMES.indexOf(Shell.page) < 0) return;
       const rack = el('div', { class: 'tools' });
       const panel = el('div', { class: 'tools__panel', role: 'toolbar', 'aria-label': 'Annotation tools' });
 
@@ -4475,6 +4550,12 @@
     },
 
     setMode(next, why) {
+      /* THERE IS NO DOCK ON EVERY PAGE ANY MORE — see `HOMES` on `init`. Three
+         of this module's methods are reachable from outside it (the frame loop
+         calls `applyScope`, the placement listener and the shortcuts call
+         `pick`), so each one asks whether there is anything to drive rather
+         than every caller having to remember to. */
+      if (!this.rack) return;
       if (next === this.mode) return;
       const wasOpen = this.mode === 'open';
       this.mode = next;
@@ -4500,6 +4581,7 @@
 
     /* re-evaluate on scroll and on drawer changes */
     applyScope() {
+      if (!this.rack) return;
       /* A phone has no edge tab — the CSS hides it — so every rule below that
          collapses the dock would take the tools away with nothing left to bring
          them back. The FAB is always on screen instead, and the dock's state
@@ -4571,6 +4653,7 @@
     },
 
     pick(name, silent, force) {
+      if (!this.rack) return;
       /* Clicking the live tool puts it back — except when `force` is set.
          Choosing a second sticker from the drawer must re-arm the tool, not
          toggle it off. */
@@ -5167,14 +5250,36 @@
       });
     },
 
-    init(host) {
+    /* --- `opts.column: false` — A DESK WITH NO SENTENCE ON IT ---------------
+
+       The canvas has always come with the hero's column in it: the headline as
+       a draggable text layer and the two tags beside it. The play page wants
+       the desk and not the sentence — the statement is in the rail on that page
+       the same as on every other — and the honest way to say so is to not build
+       it, rather than to build it and take it off afterwards.
+
+       Taking it off afterwards is what this replaced, and it left three things
+       behind that a removed node does not clean up: a `Drag` item pointing at a
+       detached element, a resize listener re-measuring it forever, and a
+       `document.fonts.ready` callback waiting to do the same. All three were
+       harmless and all three were work being done on behalf of something that
+       is not on the page.
+
+       `.canvas__intro` ITSELF IS STILL BUILT, EMPTY. It is the name
+       `Bricks.zone` looks for to work out which part of the surface is spoken
+       for, and a canvas without one reads as "no measurement available" rather
+       than "nothing is in the way" — which are different answers and produce
+       different regions. Empty, it measures zero height and tells the truth. */
+    init(host, opts) {
       const c = S.canvas;
       if (!c) return;
+      const column = !opts || opts.column !== false;
       host.classList.add('canvas');
       host.appendChild(el('div', { class: 'canvas__dots', 'aria-hidden': 'true' }));
 
       const rv = c.reveal || {};
       const intro = el('div', { class: 'canvas__intro' });
+      if (column) {
       /* the heading is a text layer: selectable, movable, rotatable, resizable */
       const head = el('div', { class: 'drg canvas__head', style: 'position:relative' });
       /* split into words so the reveal resolves left to right — that's what
@@ -5332,6 +5437,7 @@
       window.__pills = made;
 
       intro.appendChild(pills);
+      }                                  /* --- end of `if (column)` --------- */
       host.appendChild(intro);
 
       /* the rotating hint */
@@ -5786,7 +5892,27 @@
          transforms, they ignore scroll, and they are final from the first
          frame the element exists — measured against the host's own offset box,
          which is the same box the bricks' `left`/`top` are written into. */
-      const intro = $('.canvas__intro', host);
+      /* THE TYPE IS A SIBLING OF THE PHYSICS LAYER, NOT A CHILD OF IT.
+
+         Every other surface in this file contains its own column, so looking
+         inside the host is the whole of finding it. The sidebar does not: the
+         layer is `inset: 0` of the column and the block of type is beside it.
+         The two share a containing block, so `offsetTop`/`offsetLeft` are
+         measured against the same origin and the fractions below are still the
+         host's — no conversion, and nothing to get wrong.
+
+         THE TEST FOR "AM I STILL THE COLUMN" IS WHETHER I STILL COVER IT. In
+         the stacked layout the layer is a 150px strip somewhere else on the
+         page with no type near it, and reading the sidebar's block there would
+         describe a protected region that is nowhere in this rectangle. Four
+         pixels of tolerance, because a border or a sub-pixel height should not
+         change the answer. */
+      let intro = $('.canvas__intro', host);
+      const par = host.parentElement;
+      if (!intro && host.classList && host.classList.contains('canvas--tray')
+          && par && Math.abs(par.offsetHeight - host.offsetHeight) < 4) {
+        intro = $('.canvas__intro', par);
+      }
       const W = host.offsetWidth, H = host.offsetHeight;
       this.keep = intro && W && H ? {
         x0: intro.offsetLeft / W, x1: (intro.offsetLeft + intro.offsetWidth) / W,
@@ -5795,6 +5921,77 @@
 
       const z = Object.assign({}, this.ZONE);
       const k = this.keep;
+
+      /* ---- THE TRAY IS THE WHOLE BOX ---------------------------------------
+         Every branch below this one answers the same question: the intro column
+         is INSIDE the canvas, so where may a brick come to rest without landing
+         on the words? The tray has no column on it — the statement is in the
+         rail above it, outside the box entirely — so the question does not
+         arise and the answer is the surface.
+
+         Which makes this the simplest region in the file, deliberately. No
+         island, because there is nothing to build one around. No ramp, because
+         nothing is in the way at one end and not the other. `pad` is zero
+         because the 72px every other region keeps clear on the right is the
+         dock's width, and there is no dock on this page.
+
+         The insets are a brick's own overhang: a piece coming to rest hard in a
+         corner at 40 degrees reaches past the rectangle the physics is holding,
+         and this box has white paper around it rather than the edge of the
+         window — so what hangs over is not cropped, it is visibly outside. */
+      /* ---- THE PLAYGROUND IS THE WHOLE SIDEBAR ---------------------------
+
+         The physics container is the left column itself — all of it, top to
+         bottom — and there is nothing on the screen that says so. No border, no
+         panel, no box: the boundary lives here, in four numbers, and the only
+         way to find it is to pick a brick up and push it at one.
+
+         WHICH MEANS THE TYPE HAS TO BE PROTECTED BY THE REGION, because it is
+         no longer protected by being outside a box. Two mechanisms, both of
+         which this engine already had:
+
+           THE ISLAND is the block of type at the top — the statement, the two
+           buttons, Site and Links, all inside `.canvas__intro`, which is the
+           name this function looks for. Bricks fall THROUGH it and may not come
+           to REST in it or in the strip just below, so the pile builds under the
+           navigation and the words stay readable. Derived from the measured
+           element, so moving the type in the stylesheet moves the region with
+           it rather than leaving a number here to be kept in step.
+
+           THE FLOOR is read off the closing lines. `y1` is a constant in every
+           other region; here it is wherever `.mast__foot` starts, so the pile
+           stops above "Currently designing at Cypherock" instead of burying it.
+           Measured rather than written down, because where that block sits
+           depends on the height of the window.
+
+         `pad` is zero: every other region keeps 72px clear on the right for the
+         dock, and this page has no dock.
+
+         `pack` spreads the pile through the open half rather than heaping it on
+         the floor. A little over half the pieces aim low, where they crowd and
+         touch; the rest are left through the space above. That is what makes it
+         read as a handful somebody tipped into the column rather than as a row
+         along the bottom of it. */
+      if (host.classList && host.classList.contains('canvas--tray')) {
+        z.x0 = 0.025; z.x1 = 0.975;
+        z.pad = 0;
+        z.edgeTop = 0.03;
+
+        /* the closing lines, looked up the same way and for the same reason */
+        const foot = $('.mast__foot', host) || (par ? $('.mast__foot', par) : null);
+        z.y1 = foot && H
+          ? clamp((foot.offsetTop - 12) / H, 0.3, 0.985)
+          : 0.95;
+
+        if (k) {
+          z.island = { x0: 0, x1: 1, y1: Math.min(z.y1 - 0.02, k.y1 + 0.014) };
+        } else {
+          z.lo = 0.06; z.hi = 0.06; z.ramp = [0, 1];
+          z.island = null;
+        }
+        z.pack = { share: 0.56, low: 0.42, high: 0.3 };
+        return z;
+      }
 
       /* AROUND, NOT UNDER OR OVER — the 404 room.
 
@@ -5992,11 +6189,34 @@
        not change — and measured every time it matters. */
     wallHosts() {
       if (this._wh) return this._wh;
-      const intro = this.introEl || (this.host && $('.canvas__intro', this.host));
+      const host = this.host;
+      const tray = !!(host && host.classList && host.classList.contains('canvas--tray'));
+      const par = host && host.parentElement;
+      let intro = this.introEl || (host && $('.canvas__intro', host));
+      /* --- THE PLAYGROUND IS A SIBLING LAYER, NOT A WRAPPER -----------------
+         On the hero the physics host IS the canvas, so everything solid is
+         inside it and a lookup scoped to the host finds all of it. The sidebar
+         is built the other way round: `.mast__air` is an absolutely positioned
+         layer laid OVER `.mast`, and the type it has to keep off — the
+         statement, the button row, the two navigation lists, the closing lines
+         — are its SIBLINGS. So the host-scoped lookup came back null, which
+         made `wallHosts` return an empty list, which made every element on the
+         page non-solid. Measured: a dragged brick sat 2888px2 over the
+         statement and 1226px2 over the buttons, and stayed there on release.
+         The collision model was never wrong; nothing had been declared to it.
+         `zone()` already reaches for the sibling this way — see the same
+         parent-height test there — and this is that lookup, for the walls. */
+      if (!intro && tray && par) intro = $('.canvas__intro', par);
       this.introEl = intro;
-      if (!intro) return (this._wh = []);
-      const list = $$('.drg', intro).filter((n) => !n.classList.contains('brk'));
-      const cta = $('.canvas__cta', intro);
+      /* Walls are gathered from the whole column on the tray, because the
+         closing lines sit OUTSIDE `.canvas__intro` as a sibling of it, and
+         "solid" has nothing to do with which wrapper a thing happens to be in. */
+      const scope = (tray && par) || intro;
+      if (!scope) return (this._wh = []);
+      const list = intro
+        ? $$('.drg', intro).filter((n) => !n.classList.contains('brk'))
+        : [];
+      const cta = intro && $('.canvas__cta', intro);
       if (cta) list.push(cta);
       /* AN OBSTACLE DOES NOT HAVE TO BE DRAGGABLE. Every wall here is something
          you can pick up, because on the hero every one of them is — and that
@@ -6004,7 +6224,7 @@
          brick exactly the way the headline does, and it must not become a
          thing you can drag off the page. `data-wall` says "solid" without
          saying "yours". */
-      $$('[data-wall]', intro).forEach((n) => { if (list.indexOf(n) < 0) list.push(n); });
+      $$('[data-wall]', scope).forEach((n) => { if (list.indexOf(n) < 0) list.push(n); });
       /* Anything that IS a wall gets flagged on its drag item, and Drag.apply
          bumps a counter for flagged items only. That counter is the whole
          invalidation strategy: one integer compare per pointer event while
@@ -6690,14 +6910,56 @@
       const nowH = host.getBoundingClientRect().height;
       const settled = this.lastH != null && Math.abs(nowH - this.lastH) < 0.5;
       this.lastH = nowH;
-      if (nowH < innerHeight * 0.72 || !settled) {
+      /* AND "TALL ENOUGH" ONLY APPLIES TO A HOST THAT IS MEANT TO BE TALL.
+         The test below exists because the hero grows to fill the window and
+         everything measured while it is still growing is measured against a
+         box that is about to change. The tray is 250px on purpose: it will
+         never reach 72% of the window, so it would spend all forty of its
+         tries failing and then proceed anyway, a third of a second late. What
+         both hosts genuinely need is the OTHER half of the test — a height
+         unchanged since the frame before, which is what "finished" means. */
+      const tall = !(host.classList && host.classList.contains('canvas--tray'));
+      if ((tall && nowH < innerHeight * 0.72) || !settled) {
         this.tries = (this.tries || 0) + 1;
         if (this.tries < 40) { requestAnimationFrame(() => this.init(host)); return; }
       }
 
       const r = host.getBoundingClientRect();
       const narrow = r.width <= 768;
-      this.U = this.unit(r.width);
+      /* A STUD IS SIZED OFF THE BOX'S SHORTER DIMENSION WHEN THE BOX IS WIDE
+         AND SHORT, and every canvas until now was neither. `unit` reads a width
+         because a full-window canvas is always at least as tall as it is wide,
+         so the width is the smaller constraint. The tray in the stacked layout
+         is the opposite shape: 671 by 152 at a 768 window, and asking for the
+         width there returns the MAXIMUM stud size — 20px, so a 4x2 is 80 by 40
+         in a box 152 tall, and three of them welded together are taller than
+         the box they are in. That is what left pieces 9px outside on most
+         releases: `fenceIn` skips an axis a structure cannot fit on, because
+         shifting it would only change which end hangs over.
+
+         2.2 is the aspect at which a brick reads as proportionate to its box —
+         measured against the tall layout, where the width already wins and this
+         changes nothing. Everything that is not the tray is untouched. */
+      /* THE TRAY IS SIZED FOR LEGIBILITY, NOT FOR THE WINDOW.
+
+         `unit` reads a width because a full-window canvas is always at least
+         as tall as it is wide, so the width is the smaller constraint. The
+         tray is neither: it is a 250px box in the sidebar, and asking for its
+         width returns the MINIMUM stud — 13px, at which the wall, the studs
+         and the occlusion that make a brick read as moulded plastic are all
+         about a pixel each. So the box's dimensions are scaled up before they
+         are asked: a brick in a small box should be a legible brick, not a
+         proportionally small one.
+
+         The height factor is the tighter of the two and it is a correctness
+         number rather than a look: at 2.4 a three-brick structure fits inside
+         the shortest box this layout produces at ANY angle, and `fenceIn`
+         gives up on an axis a structure cannot fit on. Measured against the
+         stacked layout's 671x169 strip, which is the worst case. */
+      const basis = host.classList && host.classList.contains('canvas--tray')
+        ? Math.min(r.width * 1.45, r.height * 2.4)
+        : r.width;
+      this.U = this.unit(basis);
       this.touch = matchMedia('(hover: none)').matches;
 
       /* Before a single piece is laid: everything below reads this. */
@@ -7083,7 +7345,14 @@
           floor = Math.max(floor, shadow + span * (b2.isle || 0));
         }
         const l = Z.x0 * h.width - cx + hw;
-        const r2 = Math.min(Z.x1 * h.width, h.width - 72) - cx - hw;
+        /* THE 72 IS THE DOCK, AND IT IS NOT ALWAYS THERE. Every region keeps
+           the right-hand strip clear so the fall does not bury the toolbar;
+           the tray has no toolbar, and 72px of a 330px box is a fifth of the
+           floor left empty for nothing. Read off the region instead of written
+           in here, so the one page that differs says so where it is described
+           rather than here where it is applied. */
+        const pad = Z.pad == null ? 72 : Z.pad;
+        const r2 = Math.min(Z.x1 * h.width, h.width - pad) - cx - hw;
         /* AND A CEILING, WHICH THE REGION NEVER HAD.
 
            `ceil` says how high a piece's BOTTOM may come to rest; nothing said
@@ -7669,6 +7938,10 @@
     plan(set, skip, keep) {
       const U = this.U, a = set[0];
       const REACH = this.detect();
+      /* hoisted out of the candidate loop — one class test per gesture frame
+         rather than one per candidate seat, of which there are a few hundred */
+      const noBury = !!(this.host && this.host.classList
+        && this.host.classList.contains('canvas--tray'));
       /* STAY ON THE TARGET YOU ARE ALREADY ON.
 
          The sweep scores every lawful landing and takes the lowest, which is
@@ -7795,6 +8068,25 @@
                every extra shared edge earns back a third of one, so a join
                along a whole side beats a join on a single corner when the two
                are otherwise equally close. */
+            /* --- IN THE SIDEBAR, BURYING IS NOT A WORSE OPTION ------------
+               On the hero, scoring a buried landing down rather than throwing
+               it away is the right call and the note above says why: after the
+               fall half the canvas overlaps something, and a piece that can
+               only be placed imperfectly should still be placeable. That
+               reasoning depends on there being somewhere else to go. The
+               sidebar is a 294px column with sixteen pieces in it, and the
+               same rule there produced a real overlap: measured over four
+               loads, one drag in four landed a piece 8.5px inside a stationary
+               one — both squared to quarter turns, so not a modelling artifact
+               but two bricks visibly occupying the same space.
+
+               So here a buried candidate is not considered at all. If no clear
+               landing exists the piece simply does not snap, which on this page
+               is the better outcome — it stays where the hand left it, fenced
+               off the type, rather than being welded into another brick. Scoped
+               to the tray by the host's own class, so the hero and the 404 keep
+               the behaviour their comment describes. */
+            if (buried && noBury) continue;
             const k2 = d0 + buried * U * 1.5 - Math.min(touch, cap) * U * 0.34 + bias
               - (keep && keep.g === g && keep.cx === cx && keep.cy === cy ? STICK : 0);
             if (this.debug) this._cand.push({ tx: tx0, ty: ty0, d: d0, k: k2, touch, buried });
@@ -8276,6 +8568,7 @@
       clearTimeout(this.hintT);
       this.hintOff();
       this.mark({ members: this.heldSet || [] }, 'is-hold', false);
+      this.mark({ members: this.heldSet || [] }, 'is-solo', false);
       this.ghost({}, null);
       this.blocked(null);
       this.heldSet = null;
@@ -8323,6 +8616,17 @@
       this.mark(this.hovg, 'is-hov', false);
       this.hovg = null;
       this.mark({ members: set }, 'is-hold', true);
+      /* --- WHY THE SWELL IS ONLY FOR A LONE PIECE -------------------------
+         A held piece is asked to grow very slightly, which is the ordinary
+         way of saying "this is in your hand". Each brick is its own absolutely
+         positioned node, so a scale is about each piece's OWN centre — and the
+         file already works out what that costs an assembly a few rules above
+         the brick styles: it opens a gap at every seam, because two bricks
+         welded flush both grow away from the join. The swell is right for one
+         piece on its own and wrong for a structure, so it is applied to one
+         piece on its own. A structure in the hand still lifts, still darkens
+         its shadow and still reads as held; it simply keeps its seams. */
+      if (set.length === 1) this.mark({ members: set }, 'is-solo', true);
 
       /* SQUARE IT IN THE HAND.
 
@@ -8365,9 +8669,9 @@
           L = Math.min(L, q.left); T = Math.min(T, q.top);
           R = Math.max(R, q.right); B = Math.max(B, q.bottom);
         });
-        const k = Math.min(Drag.KEEP, (R - L) * 0.9, (B - T) * 0.9);
-        let x0 = it.x + (h.left + k) - R, x1 = it.x + (h.right - k) - L;
-        let y0 = it.y + (h.top + k) - B, y1 = it.y + (h.bottom - k) - T;
+        const { kx, ky } = Drag.keep(this.host, R - L, B - T);
+        let x0 = it.x + (h.left + kx) - R, x1 = it.x + (h.right - kx) - L;
+        let y0 = it.y + (h.top + ky) - B, y1 = it.y + (h.bottom - ky) - T;
         if (x0 > x1) { const mid = (x0 + x1) / 2; x0 = x1 = mid; }
         if (y0 > y1) { const mid = (y0 + y1) / 2; y0 = y1 = mid; }
         it.bounds = { x0, x1, y0, y1 };
@@ -8381,7 +8685,45 @@
        the piece 12px sideways and the piece is still exactly under the cursor
        the moment it leaves the magnet's range again. An accumulated pull
        cannot be undone and the object walks away from the hand holding it. */
+    /* --- THE FENCE IS BOTH THE FIRST AND THE LAST WORD ON THE FRAME --------
+
+       `steer` below is the whole of what a drag frame does, and it ends by
+       pulling the piece toward whatever it is aiming at — that is the magnet,
+       and the magnet is why fencing only at the top of the frame was not
+       enough. Order, measured at 1440: the fence resolved 13509px2 of overlap
+       to nothing by moving the piece 310px clear of the type, then the magnet
+       pulled it 9px back up into the bottom edge of the block, and 68px2 of a
+       navigation row went under a brick that the fence had certified as clear
+       on that very frame. The fence was right and it simply was not last.
+
+       So it runs twice, and the two calls are not redundant. The one at the top
+       of `steer` is what makes the PREVIEW honest: the plan, the ghost and the
+       paint all read the group's position, and a plan measured from a position
+       the fence is about to change previews a landing for a piece that is not
+       there. The one here is what makes the RESULT honest, because nothing can
+       run after it.
+
+       It is cheap enough to say twice. Both calls are projections — they
+       compute a position from the current one rather than advancing anything —
+       so calling it again cannot accumulate, overshoot, or oscillate, and on
+       every frame where the first call already cleared the walls the second
+       finds nothing to do and returns false. */
     move(rec) {
+      const out = this.steer(rec);
+      const g = rec.gest;
+      if (g && g.set && g.set.length && this.fend(g.set)) {
+        /* the members are painted by `paint` inside the frame; the fence runs
+           after that, so whatever it moved has to be written out again */
+        g.set.forEach((r) => Drag.apply(r.it));
+      }
+      /* AND THE WORK IS TOLD THERE IS A BRICK ABOUT. `Push` reads the held set
+         itself and springs home on its own once the hand is empty, so this is
+         one call with no state to keep in step — see the module. */
+      Push.wake();
+      return out;
+    },
+
+    steer(rec) {
       const g = rec.gest;
       if (!g) return;
       const dx = rec.it.x - g.leadX, dy = rec.it.y - g.leadY;
@@ -8389,6 +8731,13 @@
         if (s.r === rec) return;
         s.r.it.x = s.x + dx; s.r.it.y = s.y + dy;
       });
+
+      /* OUT OF THE TYPE BEFORE ANYTHING IS PLANNED OR PAINTED. Ordered here on
+         purpose: the plan, the ghost and the paint all read the group's
+         position, and a fence applied after them would preview a landing for a
+         piece that is no longer where the preview was measured. One correction,
+         then everything downstream sees one position. */
+      this.fend(g.set);
 
       let plan = this.plan(g.set, rec.g, g.plan);
       /* Truing the target can change its footprint, so anything measured
@@ -8547,6 +8896,10 @@
         const from = g.set.map((r) => ({ r, x: r.it.x, y: r.it.y }));
         this.weld(g.set, plan);
         if (this.wallSettle(g.set)) {
+          /* A LAWFUL SEAT IS NOT YET A CLEAR ONE — see `trayClear`. Only on the
+             tray; every other surface keeps the placement exactly as the solver
+             and `wallSettle` agreed it. */
+          this.trayClear(g.set);
           const to = g.set.map((r) => ({ x: r.it.x, y: r.it.y }));
           this.animate(from, to);
           Sound.voice({ freq: 540, gain: 0.038, dur: 0.055, bright: 3000, drop: 1.5, noise: 0.35 });
@@ -8565,9 +8918,47 @@
           this.endHold(rec);
           return true;
         }
+      } else if (this.trayFree(g.set, before, rec)) {
+        return true;
+      } else if (this.inWall(g.set)) {
+        /* --- A FREE DROP IS STILL A DROP --------------------------------
+           The branch above is the whole of what used to enforce the walls on
+           release, and it only runs when there was a ghost. Let go of a piece
+           in open space — no neighbour in range, no edge in range, so no plan
+           and no ghost — and nothing checked anything: measured, a brick
+           released over the statement stayed sitting on it at 2337px2. The
+           hero never showed this because its walls are the middle of the
+           canvas and something is almost always in range; this column is
+           mostly clear space and the free drop is the COMMON case here.
+
+           `wallSettle` already knows how to walk a group out of the type, and
+           `inWall` is the same test the audit below uses, so this is the
+           existing guarantee applied to the one path that skipped it rather
+           than a second opinion about where a brick may rest. */
+        const from = g.set.map((r) => ({ r, x: r.it.x, y: r.it.y }));
+        if (this.wallSettle(g.set)) {
+          this.animate(from, g.set.map((r) => ({ x: r.it.x, y: r.it.y })));
+        } else {
+          this.restore(before);
+          this.endHold(rec);
+          return true;
+        }
       }
 
       this.endHold(rec);
+
+      /* THE FENCE, ONCE NOW AND TWICE AFTER.
+
+         `drop` is not the last thing that moves a piece on the way down —
+         `weld`, `wallSettle`, `spin` and `animate` all write positions after it
+         returns, and `.drg` carries a 150ms transform transition on top of
+         that, so a rect measured here is where the piece is LEAVING rather than
+         where it lands. One call now (free, and it catches the still cases),
+         one on the next frame, and one after the transition has finished.
+         `fenceIn` returns immediately on every surface but the tray. */
+      this.fenceIn(g.set);
+      requestAnimationFrame(() => this.fenceIn(g.set));
+      setTimeout(() => this.fenceIn(g.set), 340);
 
       /* AND THE CHALLENGE IS TOLD A GESTURE ENDED — not what happened in it.
          It re-reads the board off the canvas and works the rest out itself. */
@@ -8614,6 +9005,473 @@
 
        This is the line that makes "a brick can never be left on the hero" a fact
        about the program rather than a property of its cleverness. */
+    /* --- AND THE OTHER HALF OF SAYING THE TRAY IS A HARD EDGE --------------
+
+       `Drag.keep` fences the GESTURE: while your finger is down the piece
+       cannot be pushed past the box. That is not the whole of it, because the
+       RELEASE moves things too, and it moves them after the fence was
+       measured:
+
+         `spin`  squares the piece to a quarter turn. A 6x1 grabbed at 40
+                 degrees is 131px wide; upright it is 150. The fence was
+                 measured against the first number.
+         `weld`  seats the piece on a neighbour's lattice, which can carry it a
+                 stud or two further out than the drag was ever allowed to go.
+         `animate` and `wallSettle` both write positions after `drop` returns.
+
+       Measured under a hammer of forty flung drags: up to 35px over, and at
+       the narrow layout's short wide box it happened on 35 of the 40. On a
+       surface with paper around it that is a brick lying across the closing
+       lines, not a brick hanging off the edge of the window.
+
+       So the structure is pulled back in after it is placed, and in WHOLE
+       STUDS. That is the part that matters and it is not cosmetic: a fractional
+       shift takes every cell off the lattice, and from then on every snap this
+       structure is party to is measured from a lie. A whole number of units
+       moves the picture and leaves the arithmetic alone.
+
+       It moves the STRUCTURE, never the piece — a build corrected one brick at
+       a time would be pulled apart by its own fence.
+
+       Only where the edge is hard. Every other surface keeps the soft one, and
+       the test is `Drag.keep`'s own answer, so there is one definition of
+       "hard edge" in the file and this reads it rather than repeating it. */
+    /* --- THE PIECE IN THE HAND IS FENCED TOO, ON THIS PAGE ONLY -------------
+
+       The hero's rule is that nothing is fenced during a gesture: the piece is
+       in your hand, it goes exactly where your hand goes, and the ghost makes
+       the promise about where it will end up. That is the right rule for a
+       canvas whose whole subject is the object you are holding, and it is the
+       wrong one here. In the sidebar the object you are holding is passing over
+       somebody's name, their email button and their navigation, and "it will
+       move when you let go" is not an answer while the sentence is unreadable
+       underneath it. So on the tray the fence is live: the held group is
+       projected out of every wall on the same frame the pointer moved it, and
+       what you see is a brick that slides along the underside of the type
+       instead of across it.
+
+       A PROJECTION, NOT AN INTEGRATION. `move` writes the group's position from
+       the pointer every frame and this corrects that position; it never adds to
+       its own previous answer. So there is no drift to accumulate, no spring to
+       settle and nothing to damp — let go of a brick held against the type and
+       the correction is simply not applied next frame. That is also why it is
+       safe to run three passes: the passes resolve one position, they do not
+       advance a simulation.
+
+       The push is the MINIMUM TRANSLATION and it is continuous — not snapped to
+       the wall's lattice the way `wallOut` snaps a release. A release wants the
+       tidy seat; a drag wants to slide, and quantising a live drag to whole
+       studs is what makes a piece feel like it is catching on something. */
+    FEND: 3,
+    /* covers the 3px hold lift, the 3.5% solo swell on a ~20px piece, and the
+       art's own bleed past its cells — see the note in `fend` */
+    HOLDPAD: 4,
+
+    /* WHAT ELSE IS SOLID, when the caller wants more than the type to be.
+
+       One box per OCCUPIED CELL rather than one per piece, because a piece is
+       not its bounding box: two L's interlock, and a bounding box would refuse
+       the join that the lattice says is perfectly legal. Built only for the
+       release, where it is computed once, never per drag frame. */
+    solidBricks(skip) {
+      const U = this.U, out = [];
+      const mine = new Set();
+      (skip || []).forEach((r) => {
+        const g = r.g;
+        ((g && g.members) || [r]).forEach((m) => mine.add(m));
+      });
+      (this.recs || []).forEach((r) => {
+        if (mine.has(r)) return;
+        const rx = this.ax(r), ry = this.ay(r);
+        this.cells(r).forEach(([c, w]) => {
+          out.push({ ox: rx + c * U, oy: ry + w * U, nx: 1, ny: 1 });
+        });
+      });
+      return out;
+    },
+
+    fend(set, room, extra) {
+      const host = this.host;
+      if (!host || !host.classList || !host.classList.contains('canvas--tray')) return false;
+      if (!set || !set.length) return false;
+      const ws = extra && extra.length ? this.wallsNow().concat(extra) : this.wallsNow();
+      if (!ws.length) return false;
+      const U = this.U, a = set[0];
+      /* NOT `WALLEPS` HERE. That slop exists to reconcile two lattices that are
+         not the same one, so a piece seated flush by the snap solver reads as
+         touching rather than as overlapping. This push is continuous and seats
+         nothing, so it can ask for real separation — and it has to: a stud and
+         a quarter of tolerated penetration is a visible bite out of a
+         navigation row, which is exactly what the sweep still found once the
+         big overlaps were gone. */
+      const eps = 0.01;
+
+      /* --- THE GROUP'S FOOTPRINT, FROM EACH MEMBER'S OWN ANCHOR -------------
+
+         `inWall`'s convention, not `wallOut`'s, and the difference is not
+         cosmetic. `wallOut` measures the group as the anchor's position plus
+         each member's LATTICE offset (`r.gx - a.gx`), which is exact for a
+         welded structure because a welded structure is by definition on one
+         lattice. Mid-drag that is not what is on the screen: the members are
+         carried by their own positions, and anything held that is not a single
+         welded block — a multi-selection, a pair mid-weld — has members the
+         shared lattice does not describe.
+
+         Measured on a held pair at 1512: the fence reported its own model
+         perfectly clear (3200px2 of overlap resolved to 0) while the painted
+         bricks were 82px left and 93px below the box it had been clearing, and
+         1553px2 of them was sitting on the navigation. A fence that is honest
+         about the wrong shape is worse than no fence, because it reports
+         success. So each member is measured from its own anchor, which is what
+         `inWall` does — and `inWall` is the test the release audit uses, so the
+         fence and the audit now agree about what the group is. */
+      let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+      set.forEach((r) => {
+        const rx = this.ax(r), ry = this.ay(r);
+        this.cells(r).forEach(([c, w]) => {
+          const x = rx + c * U, y = ry + w * U;
+          L = Math.min(L, x); T = Math.min(T, y);
+          R = Math.max(R, x + U); B = Math.max(B, y + U);
+        });
+      });
+      if (!isFinite(L)) return false;
+
+      /* --- WHAT IS PAINTED IS A LITTLE LARGER THAN WHAT IS OCCUPIED --------
+
+         The cell footprint is what the brick OCCUPIES; it is not quite what it
+         COVERS. `.is-hold` lifts the art 3px, `.is-solo` swells it 3.5%, and
+         the art is drawn a hair outside its cells. So the footprint is grown by
+         a few pixels before anything is compared against it.
+
+         A CONSTANT, NOT A MEASUREMENT, and that is the point. The first version
+         of this unioned in each held node's real painted rect, which is exact
+         about the shape and wrong about the frame: `move` writes the group's
+         position from the pointer and this runs before `Drag.apply`, so the
+         rect still describes the PREVIOUS position. At ordinary pointer speeds
+         the two are a pixel apart and it did not matter; on a single-frame
+         teleport across the window the stale rect is hundreds of pixels away
+         and the fence solved for a shape that was nowhere near the brick. That
+         is what left the odd pixel outside the column in the synthetic
+         zero-wait drags.
+
+         Nothing that a measurement would have caught is lost, because the
+         difference between the two boxes is not the position — it is the lift,
+         the swell and the bleed, all of which are constants of the held state.
+         The one case that would have needed a live rect was a piece caught
+         mid-rotation, and pieces are squared instantly on the press now (see
+         the `is-hold` transition rule), so there is no longer such a frame.
+         Exact, cheaper, and it drops a layout read per member per event. */
+      const pad = this.HOLDPAD;
+      L -= pad; T -= pad; R += pad; B += pad;
+
+      const box = (w) => ({
+        l: w.ox, t: w.oy, r: w.ox + w.nx * U, b: w.oy + w.ny * U,
+      });
+      const over = (mx, my) => {
+        let worst = 0;
+        ws.forEach((w) => {
+          const q = box(w);
+          const ox = Math.min(R + mx, q.r) - Math.max(L + mx, q.l);
+          const oy = Math.min(B + my, q.b) - Math.max(T + my, q.t);
+          if (ox > eps && oy > eps) worst += ox * oy;
+        });
+        return worst;
+      };
+
+      /* NO EARLY RETURN FOR "NOT ON A WALL".
+
+         There was one here, and it quietly disabled the host clamp at the
+         bottom of this function on exactly the layout that needed it most. On a
+         phone the column is restacked: the walls are the type in the flow above
+         and below, and the playground is a 314x133 strip between them, so a
+         brick being flung about inside that strip is usually nowhere near a
+         wall. `over(0,0)` was zero, this returned, and the edge of the box went
+         unenforced — 13 of 14 hard flings put part of a piece outside the
+         strip, by up to 9px, on pieces small enough (58x15 in a 314x133 box)
+         that there was nothing geometric about it.
+
+         The loop below already does nothing when there is no overlap: the first
+         pass finds no wall to escape and breaks with a zero correction. So the
+         cheap path is preserved without a return that also skips the clamp. */
+
+      /* --- THE SMALLEST EXIT THAT IS ACTUALLY AVAILABLE ---------------------
+
+         The first version of this took the nearest way off the nearest wall,
+         which is `wallOut`'s rule, and on this column it did nothing at all for
+         the case that matters most. The statement sits at the TOP of the
+         sidebar, so a brick dragged onto it is nearest the top edge — and there
+         is no room above it. The correction was computed, cancelled by the
+         bounds clamp, and the piece stayed on the sentence: 1600px2, the single
+         worst reading in the sweep, and the one place a visitor's eye actually
+         is.
+
+         So all four exits are costed and the cheapest one that CLEARS and FITS
+         wins. Each direction is resolved against every wall lying across it —
+         the ones moving that way cannot avoid, which is the same reasoning
+         `wallOut` documents at length — so an exit is never a move out of one
+         wall and into another. Blocked upward, the piece goes down the sentence
+         and out from under it, which is both lawful and the obvious thing. */
+      /* WHAT COUNTS AS "FITS" HAS TWO ANSWERS, so the caller says which.
+
+         Mid-drag it is the lead item's own drag bounds, which is the fence the
+         gesture is already being held inside. From `fenceIn` there is no
+         gesture and no bounds — the structure has just been shifted bodily back
+         into the column — so the limit is how far it can still travel inside
+         the host, passed in. One solver, two constraints, rather than a second
+         copy of this reasoning for the release path. */
+      /* --- THE COLUMN IS A CONSTRAINT, NOT A CORRECTION ---------------------
+
+         This used to resolve the walls first and then clamp the result into the
+         host, and that ordering has now been wrong twice in the same way. It is
+         the `fenceIn` bug over again, one level down: the exit takes the piece
+         off the type and out of the column, the clamp brings it back into the
+         column, and where it lands is the type. At 1512 the block of type spans
+         the column from y=9 to y=389, so "up and out" is the cheapest exit and
+         the top of the window is 9px away — it happened on about one release in
+         two.
+
+         So the box is folded into the constraint instead. `fit` is the only
+         thing that decides what a candidate may be, and every candidate is
+         already inside the column by the time it is costed, which is exactly
+         what "the smallest exit that is actually available" was supposed to
+         mean. Nothing is applied after the solve, so nothing can undo it.
+
+         `bx`/`by` START at the correction that brings the group inside the box,
+         so a piece that is already outside it — a stale rect during a fast
+         fling, a structure the release nudged over an edge — is brought in even
+         when it is touching no wall at all and the loop below does nothing.
+
+         A group LARGER than the column cannot satisfy both edges; the clamp
+         then resolves toward one of them rather than oscillating, which is the
+         same "left alone rather than made worse" spirit as `fenceIn`'s own
+         size test. */
+      const wHost = host.offsetWidth || 0;
+      const hHost = host.offsetHeight || 0;
+      const lim = room || (wHost && hHost
+        ? { mnx: -L, mxx: wHost - R, mny: -T, mxy: hHost - B }
+        : null);
+      const fit = (mx, my) => {
+        if (lim) return [clamp(mx, lim.mnx, lim.mxx), clamp(my, lim.mny, lim.mxy)];
+        return [mx, my];
+      };
+
+      let bx = 0, by = 0, best = Infinity;
+      if (lim) { const f = fit(0, 0); bx = f[0]; by = f[1]; }
+      for (let pass = 0; pass < this.FEND; pass += 1) {
+        const cand = [];
+        let up = 0, down = 0, left = 0, right = 0;
+        ws.forEach((w) => {
+          const q = box(w);
+          const ox = Math.min(R + bx, q.r) - Math.max(L + bx, q.l);
+          const oy = Math.min(B + by, q.b) - Math.max(T + by, q.t);
+          if (ox <= eps || oy <= eps) return;
+          up = Math.min(up, q.t - (B + by));
+          down = Math.max(down, q.b - (T + by));
+          left = Math.min(left, q.l - (R + bx));
+          right = Math.max(right, q.r - (L + bx));
+        });
+        if (!up && !down && !left && !right) break;
+        [[0, up], [0, down], [left, 0], [right, 0]].forEach((p) => {
+          if (!p[0] && !p[1]) return;
+          const f = fit(bx + p[0], by + p[1]);
+          cand.push([f[0], f[1], over(f[0], f[1]), Math.abs(f[0]) + Math.abs(f[1])]);
+        });
+        if (!cand.length) break;
+        /* clear first, then cheap — an exit that leaves the piece half on the
+           type is not a smaller version of getting off it */
+        cand.sort((p, q) => (p[2] - q[2]) || (p[3] - q[3]));
+        const pick = cand[0];
+        if (pick[2] >= over(bx, by) && pass) break;
+        bx = pick[0]; by = pick[1]; best = pick[2];
+        if (!best) break;
+      }
+
+      /* Debug only, like `_ej`. This runs on every pointer event of every drag,
+         and the frame has no business allocating an object to describe itself
+         unless somebody has asked to read one. */
+      if (this.debug) {
+        this._fend = { bx: Math.round(bx * 10) / 10, by: Math.round(by * 10) / 10,
+          resid: Math.round(over(bx, by)), was: Math.round(over(0, 0)),
+          calls: ((this._fend && this._fend.calls) || 0) + 1 };
+      }
+      /* --- WHY THE HARD EDGE HAS TO KNOW ABOUT THE PAINT -------------------
+
+         `Drag.keep` gives this column a hard edge rather than the canvas's soft
+         one, and the reason is stated where it is written: the box has paper
+         around it, so a piece half outside is SLICED rather than left hanging
+         off an edge. That promise is about the brick's POSITION, and what is on
+         the screen is slightly larger than its position — the art lifts 3px
+         while it is held and swells 3.5% while it is held alone. The bounds
+         clamp in `Drag` cannot cover that, because it fences `it.x` and the
+         lift is applied after it in the transform. Six pieces in a fast drag
+         across the four corners had their art riding outside the column.
+
+         Which is why the footprint above unions the painted box, and why the
+         host is part of `lim` rather than a correction applied afterwards.
+         Both of those are the fix for this; there is nothing left to do here. */
+      if (!bx && !by) return false;
+      set.forEach((r) => { r.it.x += bx; r.it.y += by; });
+      return true;
+    },
+
+    fenceIn(set) {
+      const host = this.host;
+      if (!host || !host.classList || !host.classList.contains('canvas--tray')) return false;
+      if (!set || !set.length) return false;
+      const h = host.getBoundingClientRect();
+      if (!h.width) return false;
+      const g = set[0] && set[0].g;
+      const all = g && g.members && g.members.length ? g.members : set;
+      let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+      all.forEach((r) => {
+        const q = r.it.node.getBoundingClientRect();
+        L = Math.min(L, q.left); T = Math.min(T, q.top);
+        R = Math.max(R, q.right); B = Math.max(B, q.bottom);
+      });
+      if (!isFinite(L)) return false;
+      const s = host.offsetWidth ? h.width / host.offsetWidth : 1;
+      const U = this.U || 1;
+      /* enough whole studs to clear the overhang, and never fewer */
+      const studs = (over) => Math.ceil((over / s - 0.02) / U) * U;
+      let dx = 0, dy = 0;
+      /* A structure wider than the box cannot be brought inside on that axis,
+         and shifting it would only change which end hangs over. Left alone. */
+      if (R - L <= h.width + 0.5) {
+        if (L < h.left) dx = studs(h.left - L);
+        else if (R > h.right) dx = -studs(R - h.right);
+      }
+      if (B - T <= h.height + 0.5) {
+        if (T < h.top) dy = studs(h.top - T);
+        else if (B > h.bottom) dy = -studs(B - h.bottom);
+      }
+      if (!dx && !dy) return false;
+      all.forEach((r) => { r.it.x += dx; r.it.y += dy; Drag.apply(r.it); });
+
+      /* --- AND NOT BACK ONTO THE TYPE -------------------------------------
+
+         This function is the LAST thing to write a position on the way down,
+         which makes it the last thing able to break the one guarantee the
+         release path exists to keep. It did break it, and the engine's own
+         audit is what said so: `[brk] PLACED ON THE HERO: 9:br24, 0:br24 |
+         plan wall/undefined`, reproducible on a welded pair dropped on the
+         statement at 1512.
+
+         The sequence is worth stating because neither half is wrong on its
+         own. `wallOut` resolves a blocked release by the nearest way off the
+         rectangle, and for a four-stud structure sitting on a statement at the
+         top of the column the nearest way off is UPWARD — into eleven pixels
+         of room. It goes there, correctly by its own rule, and hangs out of the
+         column. Then this runs, sees a structure over the top edge, and shifts
+         it down by whole studs until it fits — straight back through the
+         sentence it was just taken off. Each step did its job; the composition
+         of the two undid the result.
+
+         So the correction is not finished when the structure is inside the box.
+         It is finished when the structure is inside the box AND off the type,
+         and `fend` already knows how to find the cheapest exit that satisfies
+         a constraint. What it gets here is the room this structure has left to
+         move inside the host, so it can only choose an exit that keeps what
+         this function just achieved. */
+      if (this.inWall(all)) {
+        const room = {
+          mnx: -((L + dx * s) - h.left) / s, mxx: (h.right - (R + dx * s)) / s,
+          mny: -((T + dy * s) - h.top) / s, mxy: (h.bottom - (B + dy * s)) / s,
+        };
+        if (this.fend(all, room)) all.forEach((r) => Drag.apply(r.it));
+      }
+      return true;
+    },
+
+    /* --- A FREE RELEASE IN THE SIDEBAR RESOLVES AGAINST EVERYTHING ---------
+
+       The branch below this one enforces the type on a release with no snap
+       plan. It is not enough on this page, and making the solver refuse buried
+       seats is what exposed why: with buried candidates thrown away (see
+       `noBury`), a piece released among a crowded pile often has NO plan at
+       all, and "no plan" used to mean "stays exactly where the hand left it" —
+       which can be squarely on top of another brick. Measured at 1512: 206px2
+       of one piece's cells inside another's after a single drag.
+
+       So a free release here resolves against the walls AND against every cell
+       every other piece is standing on, using the fence that already knows how
+       to find the cheapest exit that stays inside the column. If there is
+       genuinely nowhere to go the piece is put back where it was picked up,
+       which is the same admission of defeat the snap path already makes and for
+       the same reason: a release that cannot be resolved is not a placement.
+
+       Returns true when it has handled the release, so `drop` can stop. */
+    /* GET THIS GROUP CLEAR OF EVERYTHING SOLID, wherever it came from.
+
+       Shared by both release paths, because both of them could leave a piece
+       inside another one and neither could see it. The snap path can: a
+       BLOCKED release is resolved by `wallOut`, which is analytic, wall-aware
+       and brick-blind by construction — it answers "the nearest way off this
+       rectangle of type" and has no opinion about what is standing there. So a
+       piece dragged onto the statement is pushed off it and into whatever brick
+       happens to be below. The free path can for the opposite reason: no plan
+       at all means nothing was consulted.
+
+       Two passes, because the host clamp inside the fence trims the first
+       correction to keep the group inside the column, and a trimmed correction
+       can leave a residue for the second to finish. */
+    trayClear(set) {
+      const host = this.host;
+      if (!host || !host.classList || !host.classList.contains('canvas--tray')) return false;
+      if (!set || !set.length) return false;
+      const all = (set[0].g && set[0].g.members && set[0].g.members.length)
+        ? set[0].g.members : set;
+      /* the group's OWN members are never obstacles to themselves — which is
+         also what keeps a lawful weld from being prised apart by this */
+      const solid = this.solidBricks(all);
+      /* ALTERNATE, AND ALWAYS FINISH ON THE TYPE.
+
+         One pass of each was enough to stop bricks landing on the navigation
+         and left an occasional fifth of a stud of brick-on-brick overlap,
+         because the walls-only pass is free to undo a little of the brick pass.
+         Alternating converges on satisfying both wherever both CAN be
+         satisfied, and ending on the type means that where they cannot, the
+         words win — which is the priority the brief sets and not a property of
+         whichever overlap happened to cost more. */
+      let moved = false;
+      for (let i = 0; i < 2; i += 1) {
+        if (this.fend(all, null, solid)) moved = true;
+        if (this.fend(all)) moved = true;
+      }
+      /* --- AND THE TYPE GETS THE LAST WORD -------------------------------
+         Clearing bricks and clearing type are not equally important, and
+         resolving them together lets the cheaper one win. The fence costs an
+         exit by TOTAL overlap across everything solid, so with forty-odd brick
+         cells in the list and one large block of type, an exit that gets clear
+         of three bricks and grazes the navigation can score better than one
+         that does the opposite — measured, it put a brick over two or three
+         navigation rows at 1512.
+
+         They are not equally important because the brief is not symmetrical
+         about them: a brick may never cover the words, and bricks overlapping
+         each other is untidy. So the two are resolved in priority order — one
+         pass against everything, then a final pass against the type alone,
+         which can only ever move the piece further off the words. If that
+         reintroduces a little brick overlap, that is the right trade and it is
+         made deliberately here rather than by whichever cost happened to be
+         larger. */
+      if (this.debug) {
+        this._tc = { calls: ((this._tc && this._tc.calls) || 0) + 1,
+          moved, n: all.length, solid: solid.length };
+      }
+      return moved;
+    },
+
+    trayFree(set, before, rec) {
+      const host = this.host;
+      if (!host || !host.classList || !host.classList.contains('canvas--tray')) return false;
+      if (!set || !set.length) return false;
+      const from = set.map((r) => ({ r, x: r.it.x, y: r.it.y }));
+      if (!this.trayClear(set)) return false;
+      if (this.inWall(set)) { this.restore(before); this.endHold(rec); return true; }
+      this.animate(from, set.map((r) => ({ x: r.it.x, y: r.it.y })));
+      return false;   // handled the position; let `drop` finish normally
+    },
+
     wallSettle(set) {
       if (!this.wallsNow().length || !set.length) return true;
       /* The group as it is NOW, which after a weld is not the list that was
@@ -9316,12 +10174,12 @@
           R = Math.max(R, q.right); B = Math.max(B, q.bottom);
         });
         if (!isFinite(L)) return;
-        const k = Math.min(Drag.KEEP, (R - L) * 0.9, (B - T) * 0.9);
+        const { kx, ky } = Drag.keep(this.host, R - L, B - T);
         let dx = 0, dy = 0;
-        if (R < h.left + k) dx = (h.left + k) - R;
-        else if (L > h.right - k) dx = (h.right - k) - L;
-        if (B < h.top + k) dy = (h.top + k) - B;
-        else if (T > h.bottom - k) dy = (h.bottom - k) - T;
+        if (R < h.left + kx) dx = (h.left + kx) - R;
+        else if (L > h.right - kx) dx = (h.right - kx) - L;
+        if (B < h.top + ky) dy = (h.top + ky) - B;
+        else if (T > h.bottom - ky) dy = (h.bottom - ky) - T;
         if (!dx && !dy) return;
         g.members.forEach((r) => { r.it.x += dx; r.it.y += dy; Drag.apply(r.it); });
       });
@@ -12757,50 +13615,554 @@
     },
   };
 
-  const Pages = {
-    home() {
-      /* The hero is a Figma-style canvas: dotted grid, an intro whose pills are
-         draggable, and anything you place on it afterwards. */
-      const hero = $('#hero');
-      Canvas.init(hero);
-      /* THE ENTRANCE USED TO BE MOUNTED HERE, and is not any more: it needs a
-         viewport and nothing else, so it goes up in `Boot.arm` before this page
-         is built at all. See the note there. */
+  /* ==================================================== 5d. the rail =====
 
-      const rv = (S.canvas && S.canvas.reveal) || {};
-      const cta = el('div', { class: 'canvas__cta rv' });
-      cta.style.setProperty('--rv-delay', `${rv.ctaAt || 1500}ms`);
-      cta.style.setProperty('--rv-blur', `${rv.blur || 14}px`);
-      cta.appendChild(el('button', { class: 'btn', 'data-action': 'copy-email' },
+     THE LEFT COLUMN, AND WHY IT IS A COLUMN.
+
+     It carries everything that is not the work: who this is, how to reach him,
+     where else to go, and the small object at the bottom. Four things that used
+     to be four separate pieces of furniture — a headline the size of a poster,
+     a floating MENU tab, a dock on the right, and a footer three screens down —
+     collapsed into one strip of the layout you can read in a second.
+
+     IT IS NOT FIXED, IT IS STICKY, and the difference is the whole reason the
+     bottom of the page still works. Fixed would mean the rail sits over the
+     footer and the sky at the end of the scroll and the closing block has 300px
+     of it missing. Sticky inside the grid means the rail is pinned for exactly
+     as long as there is work beside it and then releases, and the footer gets
+     the full width it was designed for. Nothing about that needs a scroll
+     handler.
+
+     THE ACTIVE ROW IS A SQUARE, 5px, in the ink. That is the entire indicator.
+     An underline moves the baseline, a background is a button, and a colour
+     change on its own is not visible next to rows that are already muted. */
+  const Rail = {
+    /* Rendered as one node and handed back, so the page that wants it decides
+       where it goes rather than this reaching into the document. */
+    build() {
+      const c = S.rail;
+      if (!c) return null;
+      const page = Shell.page;
+      const mast = el('div', { class: 'mast' });
+      /* EVERY WORD IN THE COLUMN GOES IN HERE, and the name is not cosmetic:
+         `.canvas__intro` is what `Bricks.zone` looks for to work out which part
+         of a surface is spoken for. The whole column is the physics container
+         now, so the type has to be a region the region knows about — this
+         element IS the island the bricks may not come to rest in. */
+      const keep = el('div', { class: 'canvas__intro mast__keep' });
+
+      /* --- the statement, and the two things you can do about it ---------- */
+      /* --- WHAT THE BRICKS MAY NOT BUILD OVER ------------------------------
+         `data-wall` is the engine's word for "solid, and not yours to pick up"
+         — the same attribute the 404's sign uses. Declared here, on the four
+         things in this column that are type or controls, because this is where
+         they are made; `Bricks.wallHosts` collects them and the drag solver
+         then refuses any landing that overlaps one and slides the piece to the
+         nearest lawful seat instead. Marking the WRAPPERS rather than each row
+         is deliberate: the boxes are merged into connected regions anyway (see
+         WALLJOIN), and a nav list is one object to a brick, not five.
+
+         The island in `zone()` is the other half of this and does a different
+         job: it stops a piece coming to REST on the type as it falls. Nothing
+         stopped a piece being DRAGGED there, which is the whole of what was
+         reported. */
+      const say = el('div', { class: 'mast__say', 'data-wall': '' });
+      /* `headline()` splits the sentence into words for the reveal and reads
+         the same `*word*` italic the hero read. The reveal timings are the
+         canvas's, so the line arrives the way every other line on the site
+         does — there is one entrance, not a second one for this page. */
+      say.appendChild(headline(c.say, (S.canvas && S.canvas.reveal) || {}));
+      keep.appendChild(say);
+
+      const cta = el('div', { class: 'mast__cta', 'data-wall': '' });
+      cta.appendChild(el('button', { class: 'btn btn--sm', 'data-action': 'copy-email' },
         `<span class="btn__label">${esc(S.hero.primary.label)}</span>`));
-      cta.appendChild(el('a', { class: 'btn btn--ghost', href: S.person.resumeUrl, 'data-action': 'resume' },
-        `<span class="btn__label">＋ ${esc(S.hero.secondary.label)}</span>`));
+      cta.appendChild(el('a', {
+        class: 'btn btn--sm btn--ghost', href: S.person.resumeUrl, 'data-action': 'resume',
+      }, `<span class="btn__label">＋ ${esc(S.hero.secondary.label)}</span>`));
+      keep.appendChild(cta);
 
-      $('.canvas__intro', hero).appendChild(cta);
+      /* --- the two lists -------------------------------------------------- */
+      const list = (label, rows) => {
+        const box = el('nav', { class: 'mast__set', 'aria-label': label, 'data-wall': '' });
+        box.appendChild(el('p', { class: 'mast__label' }, esc(label)));
+        rows.forEach((row) => {
+          const here = !!(row.at && row.at.indexOf(page) >= 0);
+          /* THE PERSONAL ADDRESS, NOT THE WORK ONE. `person.email` is the
+             address the site is written FROM and `copyEmail` is where he wants
+             to be written back TO — see the note on both in content.js. The
+             Copy button already uses the second one, so a Links row pointing at
+             the first would put two different addresses on one page. */
+          const mail = S.person.copyEmail || S.person.email;
+          const href = row.kind === 'email' ? `mailto:${mail}` : url(row.href);
+          const a = el('a', {
+            class: `mast__row${here ? ' is-here' : ''}`,
+            href,
+            ...(here ? { 'aria-current': 'page' } : {}),
+            ...(/^https?:/.test(href) ? { target: '_blank', rel: 'noopener' } : {}),
+          }, esc(row.label));
+          /* aria-hidden: the square says "current" to the eye and
+             `aria-current` already says it to a screen reader. */
+          if (here) a.appendChild(el('i', { class: 'mast__here', 'aria-hidden': 'true' }));
+          box.appendChild(a);
+        });
+        return box;
+      };
+      /* --- SITE AND LINKS, BOTH INSIDE THE PROTECTED BLOCK ---------------
+         In the order the brief lists them, and both in `keep` — a brick may
+         pass in front of the navigation on its way down and may never stop on
+         it. What is left below is the playground, and it is the whole of the
+         rest of the column. */
+      keep.appendChild(list('Site', c.site || []));
+      keep.appendChild(list('Links', c.links || []));
+      mast.appendChild(keep);
 
-      Showcase.init($('#main'));
+      /* THE PLAYGROUND LAYER. Empty, invisible, and the physics container — its
+         box is the whole column on a wide screen and a strip in the flow on a
+         narrow one, which is all in the stylesheet. See the long note there for
+         why the engine is not hosted on the column element itself. */
+      const air = el('div', { class: 'mast__air', 'aria-hidden': 'true' });
+      mast.appendChild(air);
 
-      /* THE HOME PAGE ENDS ON THE WORK. Three things used to sit between the
-         showcase and the footer and all three are gone.
+      /* --- and the closing lines ------------------------------------------ */
+      const foot = el('div', { class: 'mast__foot', 'data-wall': '' });
+      (c.now || []).forEach((line) => foot.appendChild(el('p', {}, esc(line))));
+      foot.appendChild(el('p', { class: 'mast__fine' },
+        esc(String(c.fine || '').replace('{year}', new Date().getFullYear()))));
+      mast.appendChild(foot);
 
-         THE CLOSING BLOCK — five lines of scroll-revealed type with five
-         underlined words that opened cards ("I'm currently at Cypherock,
-         otherwise vibecoding and playing poker…"). Its data is out of
-         content.js with it; `Words` and `Peek`, the two modules that drove it,
-         are still here and are now unreached. Both are guarded — `Peek.init`
-         returns on finding no `mark.rule[data-peek]`, `Words.tick` on having
-         nothing mounted — so they cost nothing while they wait, and either
-         comes back the moment something asks for it.
+      this.el = mast;
+      this.trayEl = air;
+      return mast;
+    },
+  };
 
-         THE TEAMS / AWARDS TABLE — `Tabs.init($('#main'))`. THE COMPONENT AND
-         ITS DATA BOTH STAY: `Pages.work` builds the same component off the
-         same `S.index.tabs`, so this is one call site removed, not a feature.
-         The table is still on the work page.
+  /* ==================================================== 5e. the tray =====
 
-         THE DESK ILLUSTRATION — removed earlier: the footer carries the
-         closing weight itself, and a decorative drawing between the work and
-         the contact details was the only thing on the page that belonged to no
-         system. */
+     A SMALL WORKSHOP FLOOR IN THE CORNER OF THE PAGE.
+
+     WHAT THIS IS: `Bricks`, in a 330px box. The same rigid-body dump that
+     fills the 404 room and used to fill the hero — gravity, spin, restitution,
+     friction, pairwise contact — with eight or nine pieces instead of sixty
+     four. They are thrown in from above, they tumble, they push each other
+     around on the way down, they pile up on the floor of the box, and where
+     they stop is wherever that leaves them. Different every load. Then they
+     hold still until a hand moves one, and a piece goes exactly where you put
+     it, at whatever angle you leave it at.
+
+     WHAT IT WAS, AND WHY THAT WENT. An isometric object on a stud lattice:
+     pieces snapped to whole cells, stacked in layers, and turned in quarter
+     tricks. It was precise and it was the wrong toy — you could not put a
+     brick down at an angle, you could not knock one into another, and nothing
+     about it moved the way the thing it is a picture of moves. The engine that
+     does move that way was already in this file.
+
+     SO THIS MODULE IS THIRTY LINES. It does not simulate anything. It marks
+     the box as a brick surface, tells `Bricks` how many pieces to roll, and
+     holds the throw until the entrance has left the screen. Everything the
+     bricks then do is `Bricks`, unchanged, which is the point: one physics
+     engine, one visual language, one set of behaviours to keep correct.
+
+     THREE THINGS THE BOX NEEDS THAT THE FULL-SIZE CANVAS DID NOT, all of them
+     in `Bricks` rather than here, each marked `canvas--tray` at its site:
+       zone()        the whole box is the floor, with no column to protect and
+                     no 72px of toolbar to keep clear
+       init()        no "wait until the host is 72% of the window" — this host
+                     is 250px on purpose and would wait forever
+       Drag.keep()   a hard edge instead of the soft one, because the box has
+                     paper around it rather than a window edge, and a brick
+                     half outside it is sliced rather than hanging off. */
+
+  /* --- THE WORK GETS OUT OF THE WAY ---------------------------------------
+
+     Everything above this makes the brick yield: it is fenced out of the type,
+     out of the buttons, out of the closing lines, and off the edge of the
+     column. That is the right rule for anything made of words — a sentence
+     cannot step aside — but it is only half of what a physical thing does. A
+     brick pressed against the project grid should not simply stop dead against
+     an invisible line; the grid should notice.
+
+     SO THE CARDS ARE THE ONE THING HERE THAT MOVES INSTEAD OF THE BRICK. The
+     brick keeps its ground and the card slides away from it, springs back when
+     the brick leaves, and carries a fraction of the shove to whatever it is
+     touching. That ordering — the LEGO occupies the space and the content
+     accommodates it, rather than the LEGO being drawn on top — is the whole
+     distinction being asked for.
+
+     HOW FAR IT CAN GO IS NOT A TASTE DECISION, IT IS A MEASUREMENT. The
+     playground's right edge stands 12-16px from the nearest card, and the grid
+     itself leaves only 16-17px between its right edge and the window at every
+     width from 1024 to 1512. A card cannot travel further than that without
+     either leaving the viewport or dragging a horizontal scrollbar onto a page
+     whose brief forbids one. So the cap is small by arithmetic, and the effect
+     is a flinch rather than a shove: the nearest card gives about a stud, its
+     neighbour a fraction of that, and both are home again a few hundred
+     milliseconds after the brick backs off. Restrained is also what was asked
+     for — "subtle and constrained", "cap max displacement", "no layout
+     instability" — so the geometry and the brief agree here.
+
+     NOTHING IS RECALCULATED WHEN NOTHING IS HAPPENING. The layout is measured
+     once per gesture, not per frame; the loop is its own self-terminating rAF
+     in the manner of `Bricks.rain`, started by a drag and stopped by itself the
+     moment every card is home and the hand is empty. At rest this module costs
+     nothing at all, which is the difference between physics and jitter. */
+  const Push = {
+    MAX: 12,          // px a card may be displaced, before the viewport cap
+    /* REACH IS CALIBRATED, NOT CHOSEN. The fence stops the held piece with its
+       right edge about 18px from the nearest card — the column's own edge, plus
+       whatever the piece's painted box gives up to its rotation. So a reach of
+       20 produced 1.4px of travel: correct, and invisible. At 34 the shove
+       saturates the cap the moment the brick is pressed against the edge, and
+       the grid starts to feel it about two studs out, which is close enough to
+       read as contact rather than as the page moving on its own. */
+    REACH: 34,        // how close the brick has to come to be felt
+    DECAY: 0.4,       // what a touching neighbour inherits
+    K: 0.2,           // spring stiffness
+    D: 0.7,           // damping
+    EPS: 0.05,        // below this a card is home
+
+    cards: [],
+    live: false,
+
+    arm(host) {
+      this.host = host || null;
+      this.cards = $$('.home__work .wcard').map((node) => ({ node, x: 0, v: 0, want: 0 }));
+      this.live = false;
+      this.geo = null;
+    },
+
+    /* THE LAYOUT'S GEOMETRY, NOT THE PAINTED ONE. Each card's rect with its own
+       current displacement taken back out, so a card that has already moved is
+       not measured from where it moved to — which is what turns a spring into a
+       ratchet that walks the grid off the page. Read once per gesture. */
+    measure() {
+      const vw = innerWidth;
+      this.geo = this.cards.map((c) => {
+        const r = c.node.getBoundingClientRect();
+        return {
+          L: r.left - c.x, T: r.top, R: r.right - c.x, B: r.bottom,
+          cap: Math.max(0, Math.min(this.MAX, vw - 6 - (r.right - c.x))),
+        };
+      });
+    },
+
+    wake() {
+      if (!this.cards.length || REDUCED) return;
+      if (!this.geo) this.measure();
+      if (this.live) return;
+      this.live = true;
+      const step = () => {
+        this.live = this.tick();
+        if (this.live) requestAnimationFrame(step);
+        else this.geo = null;
+      };
+      requestAnimationFrame(step);
+    },
+
+    /* WHAT THE BRICK IN THE HAND IS ASKING OF EACH CARD. Zero when the hand is
+       empty, which is what makes the release a spring home rather than a second
+       gesture: the target simply stops being requested. */
+    aim() {
+      this.cards.forEach((c) => { c.want = 0; });
+      const set = Bricks.heldSet;
+      if (!set || !set.length || !this.geo) return;
+
+      let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+      set.forEach((r) => {
+        const q = r.it.node.getBoundingClientRect();
+        if (!q.width && !q.height) return;
+        L = Math.min(L, q.left); T = Math.min(T, q.top);
+        R = Math.max(R, q.right); B = Math.max(B, q.bottom);
+      });
+      if (!isFinite(L)) return;
+
+      /* THE NEAREST CARD FIRST. Only cards the brick is actually beside — the
+         ones whose vertical band it overlaps — feel anything, which is both the
+         physical answer and the reason the rest of the page stays still. */
+      this.cards.forEach((c, i) => {
+        const g = this.geo[i];
+        if (!g || !g.cap) return;
+        if (B <= g.T || T >= g.B) return;
+        const want = (R + this.REACH) - g.L;
+        if (want <= 0) return;
+        c.want = Math.min(want, g.cap);
+      });
+
+      /* AND WHAT IT PASSES ON. One level deep and decayed, so a shove spreads
+         to what is touching and stops there — a cascade that can start another
+         cascade is how a grid ends up oscillating on its own. */
+      const seed = this.cards.map((c) => c.want);
+      this.cards.forEach((c, i) => {
+        const g = this.geo[i];
+        if (!g || !g.cap) return;
+        let take = 0;
+        this.cards.forEach((o, j) => {
+          if (i === j || !seed[j]) return;
+          const q = this.geo[j];
+          if (!q) return;
+          const near = q.R + 24 > g.L && g.L > q.L;   // the card to its left
+          const stack = Math.abs(q.L - g.L) < 2       // the same column
+            && Math.min(q.B, g.B) + 48 > Math.max(q.T, g.T);
+          if (near || stack) take = Math.max(take, seed[j] * this.DECAY);
+        });
+        if (take > c.want) c.want = Math.min(take, g.cap);
+      });
+    },
+
+    tick() {
+      this.aim();
+      let busy = false;
+      this.cards.forEach((c) => {
+        const d = c.want - c.x;
+        c.v = (c.v + d * this.K) * this.D;
+        c.x += c.v;
+        if (Math.abs(c.x - c.want) < this.EPS && Math.abs(c.v) < this.EPS) {
+          c.x = c.want; c.v = 0;
+        } else busy = true;
+        if (c.x) {
+          c.node.style.setProperty('--push-x', `${c.x.toFixed(2)}px`);
+        } else {
+          c.node.style.removeProperty('--push-x');
+        }
+      });
+      /* Keep going while anything is still travelling OR while a brick is
+         still in the hand, because a hand that has not moved this frame can
+         still move next frame. Nothing else keeps this alive. */
+      return busy || !!(Bricks.heldSet && Bricks.heldSet.length);
+    },
+  };
+
+  const Tray = {
+    init(host) {
+      const c = S.tray;
+      if (!host || !c) return;
+      /* THE HOST IS THE PLAYGROUND LAYER, which is `inset: 0` of the sidebar —
+         so the physics rectangle and the visible column ARE the same rectangle,
+         by construction rather than by two numbers being kept in step, and the
+         boundary follows the layout at every width. */
+      this.host = host;
+      host.classList.add('canvas--tray');
+
+      /* WHAT THE DRAG FENCES AGAINST. `Drag.edge` measures `Canvas.host`, and
+         on this page nothing has called `Canvas.setSurface` — there is no
+         drawing here and no notes to place, so the surface machinery is not
+         wanted. This is the one field of it that is, assigned directly: without
+         it `edge` finds no host, sets no bounds, and a brick can be dragged
+         across the project grid and off the page. */
+      Canvas.host = host;
+
+      /* ROLLED, NOT AUTHORED. `scatter` is what the 404 room uses: what and
+         roughly where, generated fresh, so the pile is different every visit.
+         An authored arrangement would be a composition, and a composition is
+         the thing the isometric version was — it is not what a handful of
+         bricks tipped onto a desk looks like. */
+      const narrow = innerWidth <= 700;
+      Bricks.defs = Bricks.scatter(narrow ? (c.mobilePieces || 9) : (c.pieces || 16));
+
+      /* AND THE THROW WAITS FOR THE ENTRANCE TO GET OFF THE PAGE.
+
+         On a cold load a charcoal sheet covers everything for about a second
+         and a half. `Bricks.init` lays out and immediately throws — `Boot.hold`
+         exists precisely so the hero's fall happened BEHIND that sheet, which
+         was right when the fall filled the window and is wrong for eight bricks
+         in a box nobody has seen yet. Filmed: the first frame the visitor saw
+         was the pile already at rest.
+
+         So the whole of init is held, not just the fall: nothing is built in
+         the box until there is somebody to watch it arrive. `landed` is the
+         class the entrance adds as it finishes leaving; a warm load never adds
+         `waking` at all, so the plain case starts immediately. The timeout is
+         the same four second failsafe the inline script in the head gives
+         itself — if the entrance never reports in, the bricks come anyway. */
+      const body = document.body;
+      const go = () => {
+        if (this.went) return;
+        this.went = true;
+        Bricks.init(host);
+        /* The work is measured once the bricks exist and never again until a
+           gesture asks for it. */
+        Push.arm(host);
+
+        /* AND THEN, OCCASIONALLY, ONE MORE.
+
+           `drip` is the 404 room's trickle and it is the right shape for this
+           exactly as it is: one piece, every so often, thrown in on top of the
+           pile that is already there — same region, same floor, same contact
+           torque, so a late brick bounces off what it lands on rather than
+           appearing. What makes it subtle rather than weather is the two
+           numbers. Every nine to twenty-two seconds, one at a time: long
+           enough that you have stopped watching the box before the next one
+           arrives, which is what makes it read as accidental instead of as a
+           feature demonstrating itself.
+
+           `max` matters more than `every`. Left uncapped, a tab open for ten
+           minutes accumulates forty bricks and the quiet box in the corner has
+           become a heap — the exact thing the brief is against. Sixteen is
+           about twice the load, so the pile grows visibly over a long visit
+           and then stops.
+
+           It also declines to interrupt: `drip` returns early while a piece is
+           in somebody's hand, and while the tab is hidden. */
+        Bricks.drip(S.tray && S.tray.drip);
+      };
+      if (REDUCED || !body.classList.contains('waking') || body.classList.contains('landed')) {
+        go();
+        return;
+      }
+      const obs = new MutationObserver(() => {
+        if (body.classList.contains('landed')) { obs.disconnect(); clearTimeout(fail); go(); }
+      });
+      obs.observe(body, { attributes: true, attributeFilter: ['class'] });
+      const fail = setTimeout(() => { obs.disconnect(); go(); }, 4000);
+    },
+  };
+
+  const Pages = {
+    /* --- THE HOME PAGE IS THE WORK -----------------------------------------
+
+       WHAT THIS USED TO BE. One full viewport of hero: a 46px headline you
+       could pick up and rotate, two tags, a dotted grid with a cursor
+       parallax, eighteen bricks scattered across the whole window, a stack of
+       stickers, a rotating hint, a keycap legend, a dock on the right and a
+       MENU tab on the left. The first project was 900px below all of it. Every
+       one of those things is well made and there were far too many of them on
+       one screen — the page opened by demonstrating that it could do things
+       rather than by showing what had been made.
+
+       WHAT IT IS NOW. Two columns. The left one is everything that is not the
+       work, in one strip you read top to bottom in about a second: who this
+       is, the two things you might want to do, where else to go, a small
+       object, and the closing lines. The right one is the work, starting at
+       the top of the window, and there is nothing above it to scroll past.
+
+       The count is the argument: two project cards and their captions are on
+       screen at 900px tall, where there used to be none.
+
+       WHERE EVERYTHING WENT.
+         The canvas, the dock, the marker, the notes, the stickers and the
+       floor of bricks are on `/play`, all together, where making a mess is the
+       point of the page. `Pages.play` is a dozen lines because it is the same
+       code this method used to run.
+         The headline is in the rail at a third of the size, still the same
+       sentence and still the same italic.
+         The footer and the sky are unchanged and still close the page — the
+       rail is sticky rather than fixed precisely so that they get the whole
+       width when the work runs out. */
+    home() {
+      const main = $('#main');
+      const hero = $('#hero');
+
+      const wrap = el('div', { class: 'home' });
+      const mast = Rail.build();
+      if (mast) wrap.appendChild(mast);
+
+      const work = el('div', { class: 'home__work' });
+      wrap.appendChild(work);
+      /* `#hero` is the div index.html gives us. It is now the two-column
+         wrapper's parent rather than a canvas, so it keeps its id (the skip
+         link and the entrance both name it) and loses everything else. */
+      hero.appendChild(wrap);
+
+      /* THE WORK GOES IN THE RIGHT COLUMN, not after it. `Showcase.init`
+         appends a `<section class="showcase">` to whatever it is handed, so
+         handing it the column is the whole of the change — the cards, their
+         thumbnails, their captions and the scroll-driven entrance are the same
+         component the old page used and the same one the work page uses. */
+      Showcase.init(work);
+
+      /* AND ONE LINK AT THE END OF IT. The grid is four featured projects; the
+         archive and the teams table are on the work page, and this is how you
+         reach them now that this page has no MENU tab. One row of caption-sized
+         type under the last card — the smallest thing that can be a door. */
+      const more = S.rail && S.rail.more;
+      if (more) {
+        work.appendChild(el('div', { class: 'home__more' },
+          `<a href="${url(more.href)}">${esc(more.label)} <span aria-hidden="true">→</span></a>`));
+      }
+
+      /* AND THE TRAY LAST, because the brick engine sizes a stud off the box
+         and the box is whatever height the rail has left once everything above
+         it has been laid out. One frame, so that layout has happened. */
+      if (Rail.trayEl) requestAnimationFrame(() => Tray.init(Rail.trayEl));
+
+      /* AND NO FOOTER. `index.html` no longer has the `#foot` element, so
+         `Shell.foot()` finds nothing and returns — the closing lines are the
+         last block of the rail, and a second copy of the email address, the
+         same four social links and a Pages list that repeats the Site list is
+         three duplications of a column that is already on the screen. The sky
+         still closes the page: `#outro` is untouched.
+
+         Every other page keeps its footer. It is the right ending for a case
+         study, which has no rail beside it.
+
+         Kept for the reader: `Words`, `Peek` and `Tabs` are all still in the
+         file and all still unreached from here. See the note in `Pages.work`,
+         which is where the teams table lives now. */
+    },
+
+    /* --- THE PLAY PAGE IS THE OLD HERO, GIVEN ITS OWN ADDRESS -------------
+
+       Everything the home page used to open with is here: the dotted desk, the
+       draggable type, the dock with the marker and the sticker drawer and the
+       presets, the notes, the drawing layer, and a floor of bricks with no
+       composition to protect. It is the same `Canvas` and the same `Bricks`
+       this method's predecessor called — not a copy of them — so a fix to
+       either still lands in both places it is used.
+
+       WHY IT IS A PAGE AND NOT A MODE. Because the home page has a job, and
+       the job is the work. A visitor who wants to draw on the portfolio can
+       still draw on the portfolio; they just have to mean it, and the door has
+       a name and an address you can send to somebody. */
+    play() {
+      const c = S.play || {};
+      const main = $('#main');
+      const hero = $('#hero');
+
+      const wrap = el('div', { class: 'home home--play' });
+      const mast = Rail.build();
+      if (mast) wrap.appendChild(mast);
+
+      const desk = el('div', { class: 'home__work home__work--desk' });
+      wrap.appendChild(desk);
+      hero.appendChild(wrap);
+
+      /* the one line of copy on the page, above the desk */
+      if (c.lead || c.note) {
+        const head = el('div', { class: 'play__head' });
+        if (c.lead) head.appendChild(el('p', { class: 'play__lead' }, esc(c.lead)));
+        if (c.note) head.appendChild(el('p', { class: 'play__note' }, esc(c.note)));
+        desk.appendChild(head);
+      }
+
+      /* A FLOOR OF BRICKS, ROLLED FRESH, AND DECIDED BEFORE THE DESK IS BUILT.
+         `Canvas.init` calls `Bricks.init` itself at the end, so the pieces have
+         to be chosen first or the desk gets the home page's eighteen authored
+         ones. `Bricks.scatter` is what the 404 room uses: generated rather than
+         written down, a different arrangement every visit. Which is right here
+         for the same reason it is right there — this page is not a composition,
+         it is a supply of parts. */
+      const narrow = innerWidth <= 768;
+      Bricks.defs = Bricks.scatter(narrow ? (c.mobilePieces || 12) : (c.pieces || 22));
+
+      /* THE DESK. `Canvas.init` brings the dot field, the eighteen-brick
+         engine, the sticker stack, the surface the notes and drawings are
+         placed onto, and the ink layer — and it registers the surface and the
+         placement listener itself, so neither is called again here. */
+      const floor = el('div', { class: 'play__floor' });
+      desk.appendChild(floor);
+      Canvas.init(floor, { column: false });
+
+      /* AND THE HERO'S SENTENCE IS NEVER PUT ON IT. The statement is in the rail on
+         this page as it is on the home page, so the draggable headline and the
+         two tags would be the same words twice. `column: false` is the flag —
+         see the long note over `Canvas.init` for what it does and does not
+         build, and why `.canvas__intro` itself still has to exist. */
+
+      /* AND NO BRICKS IN THE SIDEBAR ON THIS PAGE. It is the same sidebar —
+         same statement, same lists, same closing lines — but beside a desk with
+         twenty-two bricks on it, sixteen more in the column stop being a detail
+         and become a smaller, worse copy of what is already there. `Tray.init`
+         is simply not called; the column keeps its spacer and its layout. */
     },
 
     /* --- THE 404 IS A ROOM, NOT A MESSAGE ---------------------------------
@@ -14220,6 +15582,13 @@
       const dk = Deck.tick(dt);
       Sheet.tick(vh);
 
+      /* NO LINE FOR THE TRAY, AND THAT IS THE POINT. It used to have one: the
+         isometric version ran its own clock off this loop. `Bricks` does not —
+         the dump is a self-contained rAF that starts when the pieces are
+         thrown, integrates until every body is asleep, and then ends. From
+         then on a brick moves only inside a drag, and `Drag.tick` above is
+         already what drives that. So there is nothing for this loop to ask,
+         and at rest the tray costs it nothing. */
       if (a || b || dr || pr || gh || pk || dk) idleFrames = 0;
       else idleFrames++;
 
@@ -14305,6 +15674,64 @@
        sixty frames a second, so the numbers themselves are readable. */
     window.__wake = () => (Boot.sched ? Boot.sched.slice() : null);
     window.__brkEj = () => Bricks._ej || null;
+    window.__brkFend = () => Bricks._fend || null;
+    window.__brkTC = () => Bricks._tc || null;
+    /* EVERY STANDING STRUCTURE, AS A PAINTED BOX, next to the box it has to fit
+       inside. `fenceIn` declines to move a structure that is larger than the
+       host on an axis, so "how big has this pile welded itself into" is the
+       question behind any piece left hanging over the edge. */
+    window.__brkGroups = () => {
+      const h = Bricks.host && Bricks.host.getBoundingClientRect();
+      return (Bricks.groups || []).map((g, i) => {
+        const m = (g.members || []);
+        if (!m.length) return null;
+        let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+        m.forEach((r) => {
+          const q = r.it.node.getBoundingClientRect();
+          L = Math.min(L, q.left); T = Math.min(T, q.top);
+          R = Math.max(R, q.right); B = Math.max(B, q.bottom);
+        });
+        return { i, n: m.length, w: Math.round(R - L), ht: Math.round(B - T),
+          outL: h ? Math.round(h.left - L) : 0, outR: h ? Math.round(R - h.right) : 0,
+          outT: h ? Math.round(h.top - T) : 0, outB: h ? Math.round(B - h.bottom) : 0,
+          hostW: h ? Math.round(h.width) : 0, hostH: h ? Math.round(h.height) : 0 };
+      }).filter(Boolean);
+    };
+    window.__push = () => ({
+      n: Push.cards.length, live: Push.live, geo: !!Push.geo, reduced: REDUCED,
+      want: Push.cards.map((c) => +c.want.toFixed(1)),
+      x: Push.cards.map((c) => +c.x.toFixed(1)),
+      cap: Push.geo ? Push.geo.map((g) => +g.cap.toFixed(1)) : null,
+      gL: Push.geo ? Push.geo.map((g) => Math.round(g.L)) : null,
+      held: !!(Bricks.heldSet && Bricks.heldSet.length),
+    });
+    /* WHAT THE LIVE FENCE IS LEAVING BEHIND, in the only units that matter:
+       how far the piece in the hand is inside a wall right now. The drag-time
+       guarantee is that this is zero, and a guarantee nothing can read is a
+       guarantee nobody checks. */
+    window.__brkHeld = () => {
+      const set = Bricks.heldSet;
+      if (!set || !set.length) return null;
+      const U = Bricks.U;
+      let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+      set.forEach((r) => {
+        const rx = Bricks.ax(r), ry = Bricks.ay(r);
+        Bricks.cells(r).forEach(([c, w]) => {
+          const x = rx + c * U, y = ry + w * U;
+          L = Math.min(L, x); T = Math.min(T, y); R = Math.max(R, x + U); B = Math.max(B, y + U);
+        });
+      });
+      let resid = 0;
+      Bricks.wallsNow().forEach((w) => {
+        const ox = Math.min(R, w.ox + w.nx * U) - Math.max(L, w.ox);
+        const oy = Math.min(B, w.oy + w.ny * U) - Math.max(T, w.oy);
+        if (ox > 0 && oy > 0) resid += ox * oy;
+      });
+      const n = set.map((r) => r.it.node.getBoundingClientRect());
+      const px = { L: Math.min(...n.map((q) => q.left)), T: Math.min(...n.map((q) => q.top)),
+        R: Math.max(...n.map((q) => q.right)), B: Math.max(...n.map((q) => q.bottom)) };
+      return { cellBox: { L, T, R, B }, paintBox: px, resid: Math.round(resid), n: set.length };
+    };
     /* WHAT THE GESTURE CURRENTLY INTENDS, as data.
 
        The counterpart to taking the overlay away: the state a test used to read
@@ -14440,6 +15867,18 @@
     window.__mqSlow = () => Marquee.SLOW;
     /* SectionNav: the active item and the band membership, without a browser */
     window.__ink = () => Ink;
+    /* THE TRAY, FOR THE HARNESS — which is `Bricks` with a small host, so the
+       existing `__bricks`/`__brkState` hooks already report on it. This is the
+       host, so a test can ask whether anything left the box. */
+    window.__tray = () => Tray;
+    /* one brick, any kind, at any lattice size — the only way to look at the
+       renderer's output without eight tumbling copies of it in the way */
+    /* THE TRICKLE, OFF. A piece on its way in starts up to 760px above the box
+       and is clipped by it, which is correct on the page and ruinous in a
+       harness: a test that measures "is anything outside the box" while a
+       brick is falling into it measures the fall. */
+    window.__brkStopDrip = () => { clearTimeout(Bricks._drip); Bricks._drip = null; };
+    window.__brkDripNow = () => { const r = Bricks.recs.length; Bricks.drip({ every: [1, 2], count: [1, 1], max: 99 }); return r; };
     window.__railRI = () => RailInk.current;
     window.__navActive = () => (SectionNav.links || [])
       .findIndex((a) => a.classList.contains('is-active'));

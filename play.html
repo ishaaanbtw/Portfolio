@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ishaan Gupta — Product Designer</title>
-<meta name="description" content="Product designer working on self-custody, hardware and onchain interfaces.">
+<title>Ishaan Gupta — Play</title>
+<meta name="description" content="A desk with nothing on it. Draw, stack, leave a note.">
 <meta name="theme-color" content="#f7f6f3">
 <!-- The one font the page always needs, started before the stylesheet has been
      parsed. Without this the request only begins once the CSS is read and the
@@ -13,12 +13,6 @@
      case studies set code, so both can arrive late without anything moving. -->
 <link rel="preload" href="assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/site.css">
-<!-- The X0 card's thumbnail is a video, and until its poster is painted the
-     card shows the CSS preview underneath it — a flash of blue on every cold
-     load. The poster is fetched here rather than when site.js reaches the
-     showcase, so it is already in the cache by the time the card mounts.
-     Remove this line if that card stops using a video thumbnail. -->
-<link rel="preload" as="image" href="assets/media/x0/companion-thumb.webp">
 <!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT.
      What this is: site.js section 5c2c, site.css section 44. Why it cannot
      live in site.js: the sheet is charcoal and the page is paper, and site.js
@@ -101,17 +95,17 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ishaan Gupta">
-<meta property="og:title" content="Ishaan Gupta — Product Designer">
-<meta property="og:description" content="Product designer working on self-custody, hardware and onchain interfaces.">
+<meta property="og:title" content="Ishaan Gupta — Play">
+<meta property="og:description" content="A desk with nothing on it. Draw, stack, leave a note.">
 <meta property="og:image" content="assets/img/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Ishaan Gupta — Product Designer">
-<meta name="twitter:description" content="Product designer working on self-custody, hardware and onchain interfaces.">
+<meta name="twitter:title" content="Ishaan Gupta — Play">
+<meta name="twitter:description" content="A desk with nothing on it. Draw, stack, leave a note.">
 <meta name="twitter:image" content="assets/img/og.png">
 </head>
-<body data-page="home">
+<body data-page="play">
 
   <nav id="nav" class="nav" aria-label="Primary"></nav>
 
@@ -119,17 +113,7 @@
     <main id="main">
       <div id="hero"></div>
     </main>
-    <!-- NO FOOTER ON THIS PAGE, and the element is gone rather than hidden:
-         `Shell.foot()` looks for `#foot` and returns when it is not there, so
-         removing it removes the work of building it as well as the sight of it.
-         The rail's closing block is the footer now — the same two lines about
-         where he is and what he is doing, and the copyright — and the big one
-         underneath was a second email address, a second set of social links
-         and a Pages list that repeated the rail's Site list.
-         The sky below still closes the page. -->
   </div>
-
-  <div id="outro"></div>
 
   <script src="assets/js/content.js"></script>
   <script src="assets/js/site.js"></script>

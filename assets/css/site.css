@@ -637,6 +637,11 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
   --btn-fg: var(--ink-dim);
   box-shadow: inset 0 0 0 1px var(--line);
 }
+
+/* THE RAIL'S PAIR. Two buttons in a 272px column, so the horizontal padding
+   comes in far enough that both fit on one row at the narrowest rail. The type
+   size is untouched — this is a tighter button, not a smaller one. */
+.btn--sm { padding: 0.42rem 0.78rem; }
 .btn--ghost:hover { --btn-bg: rgba(20, 16, 12, 0.06); --btn-fg: var(--ink-2); box-shadow: inset 0 0 0 1px #ddd9d2; }
 
 .btn__label { position: relative; display: block; }
@@ -813,6 +818,538 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 .dim { color: var(--ink-dim); }
 
 /* ==========================================================================
+   7. THE HOME PAGE — A SIDEBAR AND THE WORK
+
+   TWO COLUMNS, AND EVERY NUMBER IN HERE IS MEASURED OFF THE REFERENCE.
+
+   The reference was captured at a 1392px window and read with a pixel probe
+   rather than by eye, because "it feels too big" is not a number and the whole
+   correction is about numbers. What came back:
+
+     sidebar            283px  = 20.3% of the window
+     sidebar padding     16px  (and it does NOT grow with the window)
+     intro paragraph     14px on an 18px line
+     nav rows            14px on a 22.5px pitch, label 14px
+     footer              13px on a 19px line
+     intro -> Site        51px       Play -> playground   33px
+     playground -> foot   15px       label -> first row   14px
+     first card's top     17px from the top of the page
+     card                 539 wide
+
+   The previous pass had the sidebar at 24%, the statement at 32px and the nav
+   at 15px on a 24.6px pitch — about a sixth too large everywhere, which is
+   exactly the "too large, too loose" it read as. Nothing here was chosen to
+   feel premium; every value is either the reference's or derived from it.
+
+   THE ONE DEPARTURE, AND IT IS DELIBERATE: the statement is 22px, not the
+   reference's 14px. The reference's top-left block is a paragraph OF body copy;
+   ours is the sentence the whole site is built on, and at 14px the sidebar has
+   no anchor in it at all. 22px is the size at which it breaks exactly where the
+   brief writes it — "I'm Ishaan, a product / designer who engineers." — in a
+   252px column, which is the test that says it is the right size.
+
+   THE SIDEBAR IS WHITE AND THE WORK IS ON PAPER. That colour change is the
+   separation, which is why there is no rule and no border between the two:
+   a panel that is a different white from the page beside it is a distinction
+   you read instantly and never notice. It is painted as a background on the
+   GRID rather than on the sticky sidebar, because the sidebar is
+   `height: 100svh` and would leave the panel short of the bottom on any page
+   whose grid is taller than the window.
+   ========================================================================== */
+
+.home {
+  /* 240 -> 320, and 284 at the reference's own 1392 — 20.4vw is the measured
+     20.3% with a hair of rounding. Narrow is the point: the reference works
+     because the work gets four fifths of the page. */
+  --mast-w: clamp(15rem, 20.4vw, 20rem);
+  /* 16px, and it is nearly flat on purpose. The reference does not scale its
+     gutter with the window and neither should this: a 16px margin on a 14px
+     column is correct at every width, and the 40px it used to become at 1470
+     is what made the sidebar read as loose. */
+  --mast-pad: clamp(1rem, 1.15vw, 1.25rem);
+
+  display: grid;
+  grid-template-columns: var(--mast-w) minmax(0, 1fr);
+  column-gap: 0;
+  align-items: start;
+
+  /* NO PANEL, NO RULE, NO DIVIDER. There was a white column painted here and it
+     has gone: the left side is a physics container now, and anything that draws
+     its edge tells the visitor where the walls are before they have found them.
+     The separation is the whitespace and the change of content, which is all
+     the reference itself uses. */
+}
+
+/* --- the sidebar --------------------------------------------------------- */
+
+.mast {
+  position: sticky;
+  top: 0;
+  /* svh, so the sidebar is not taller than the window on a phone with a
+     retracting address bar — dvh would resize it as the bar moves */
+  height: 100vh;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--mast-pad) var(--mast-pad) calc(var(--mast-pad) + var(--sa-bottom, 0px));
+  /* 14px, flat. Every row, label and line in here reads this rather than
+     `--step-0`, which grows to 15 and was a whole step too big at 1392. */
+  font-size: 0.875rem;
+
+  /* AND IT IS THE PHYSICS CONTAINER. `.drg` is absolutely positioned, so the
+     bricks resolve against this element — `position: sticky` already makes it a
+     containing block, which is why there is nothing to add for that.
+
+     NOT CLIPPED, DELIBERATELY. `overflow: hidden` would be the lazy way to
+     guarantee nothing leaves the column, and it would guarantee it by cutting
+     bricks in half along an invisible line, which is worse than the thing it
+     prevents. The fence is in the physics — `Drag.keep`, `Bricks.fenceIn`,
+     `zone` — and it is measured: 160 hard flings at four widths, nothing out.
+     The one place a piece IS outside the column is the first frames of its
+     fall, above the top of it, and `.sheet`'s own clip hides that. */
+}
+
+/* THE TYPE IS ABOVE THE BRICKS, AND THE BRICKS ARE STILL GRABBABLE.
+
+   `.brk` carries `z-index: 4`, so without this every word in the column would
+   be painted under the pile. The two content blocks are lifted over it instead
+   — and `pointer-events` are left completely alone, because the existing brick
+   rules already say the right thing: the wrapper takes no events and only the
+   painted cell rects do. A press on a link is a press on the link, a press on a
+   brick between two links is a press on the brick, and a press on empty paper
+   is a press on the paper. Nothing here has to arbitrate. */
+.mast__keep,
+.mast__foot { position: relative; z-index: 5; }
+
+/* AND THE HERO CANVAS'S OWN INTRO STYLES ARE UNDONE HERE.
+
+   `.canvas__intro` is not a look, it is a NAME: it is the string
+   `Bricks.zone()` searches for to find out which part of a surface is spoken
+   for. The block of type in this column has to carry it so the physics knows to
+   protect it — and carrying it also inherits the hero canvas's layout for that
+   element, which is `position: absolute` at `top: 17vh, left: 5.5vw` on a 42rem
+   measure. Applied to a 284px sidebar that put the statement on one line
+   running off the side of the column and pushed everything below it right.
+
+   So every property that block sets for the canvas is set back here. The three
+   that matter are the position, the measure and `pointer-events: none` — the
+   last one would make the whole navigation unclickable, which is the one thing
+   the brief is most explicit about. */
+.mast .canvas__intro {
+  position: static;
+  top: auto;
+  left: auto;
+  z-index: auto;
+  width: auto;
+  max-width: none;
+  padding: 0;
+  pointer-events: auto;
+}
+
+/* THE PLAYGROUND LAYER — the physics container, and the only element in the
+   page that is one.
+
+   IT IS A REAL BOX AND NOT THE SIDEBAR ITSELF, for one reason: below 60rem the
+   sidebar becomes `display: contents` so its children can be reordered around
+   the work, and an element with `display: contents` generates no box at all.
+   Hosting the physics on it there gave the engine a zero-sized region, sixteen
+   bricks positioned against the wrong ancestor, and a navigation with bricks
+   painted over it — measured: 7 of 9 links unreachable at 768, 2 of 9 at 390.
+
+   So the layer is its own element, and its BOX is what changes with the
+   layout: stretched over the whole column here, a strip in the flow when the
+   page is stacked. One host at every width, so nothing has to be re-hosted on
+   a resize, and the engine only ever sees a rectangle.
+
+   `inset: 0` of the sidebar, which is `position: sticky` and therefore the
+   containing block — so the physics rectangle and the visible column are the
+   same rectangle by construction.
+
+   `pointer-events: none` and NOT because the layer is decorative. The bricks
+   inside it set `auto` on their own painted cells (see `.brk__hit`), so a press
+   on a brick reaches the brick and a press on the empty column between two
+   bricks reaches the page. Without this the layer would be a 300 by 900 sheet
+   of glass over the whole sidebar. */
+.mast__air {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+
+.mast__say { margin: 0 0 0.75rem; }
+
+/* THE STATEMENT, AT A THIRD OF WHAT IT WAS. See the note above for why this is
+   the one value that is not the reference's, and what test settles it. */
+.home .mast__say .canvas__headline {
+  /* `display: inline-block` is what the canvas gave it, so that a headline you
+     could pick up was only as wide as its own longest line. In a column it has
+     to be a block: shrink-to-fit plus a wrap cap is two mechanisms both trying
+     to choose the measure, and the answer they agree on is narrow. */
+  display: block;
+  margin: 0;
+  max-width: none;
+  width: auto !important;
+  font-size: clamp(1.125rem, 0.9rem + 0.62vw, 1.375rem);
+  line-height: 1.26;
+  letter-spacing: -0.014em;
+  font-weight: 450;
+}
+
+.mast__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  /* 40px to the Site label, which is the reference's 51px from the intro less
+     the row of buttons the reference does not have */
+  margin: 0 0 2.5rem;
+}
+
+/* --- the two lists ------------------------------------------------------- */
+
+.mast__set { margin: 0; }
+/* THE GAP BETWEEN THE TWO LISTS. It used to be the playground box between them
+   doing this; with the box gone they were sitting one row apart and "Play" and
+   "Links" read as one list of five. The reference's own section gap, measured
+   at 35px between the last row's ink and the next label's. */
+.mast__set + .mast__set { margin-top: 1.65rem; }
+
+.mast__label {
+  margin: 0 0 0.2rem;
+  font-size: inherit;
+  font-weight: 450;
+  color: var(--ink);
+}
+
+.mast__row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  /* 22.5px pitch, measured: 14px on 1.45 leading is 20.3, plus 2.2 of padding */
+  padding: 0.07rem 0;
+  font-size: inherit;
+  line-height: 1.45;
+  color: var(--ink-dim);
+  text-decoration: none;
+  /* a colour is the whole hover. No underline, no slide, no background —
+     these are seven rows of 14px type in a quiet column. */
+  transition: color 180ms var(--ease);
+}
+:root:not(.hover-cold) .mast__row:hover { color: var(--ink-2); }
+.mast__row.is-here { color: var(--ink); }
+
+/* THE ENTIRE ACTIVE INDICATOR. Five pixels of ink, square, on the row.
+   An underline moves the row, a background makes it a button, and a colour
+   change alone is invisible next to rows that are already muted — this is the
+   smallest mark that is unambiguous. */
+.mast__here {
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+  flex: none;
+}
+
+/* --- the closing lines --------------------------------------------------- */
+
+/* `auto` ON THE TOP, WHICH IS WHAT PUTS THEM AT THE BOTTOM. It was `1.5rem`
+   and the playground layer used to be a flex item that grew, so the spacer did
+   this job; the layer is stretched over the whole column now and cannot also be
+   in the flow. This rule is the last one to touch `margin-top`, which is why
+   the value is here rather than beside the layer — stated there it lost to this
+   one on document order, the footer sat directly under the navigation, and
+   `zone()` read its position as the floor and put the whole pile in the top
+   40% of the column. */
+.mast__foot { margin: auto 0 0; }
+.mast__foot p {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.42;
+  color: var(--ink-dim);
+}
+.mast__fine { margin-top: 0.7rem !important; }
+
+/* --- the playground -----------------------------------------------------
+   THERE IS NO RULE FOR IT, AND THAT IS THE FEATURE.
+
+   A bordered, tinted, min-height rectangle used to sit here between the two
+   lists. It has gone completely. The playground is the sidebar; the sidebar has
+   no border, no outline, no divider, no panel and no shadow; and the only thing
+   that says where the walls are is what happens when you push a brick at one.
+
+   What is left is two lines, and both are about the engine rather than the look:
+   the dot field and the canvas's own furniture belong to a desk, and this is a
+   column of type that happens to have bricks in it. */
+
+/* the dot field belongs to the desk, not to a box in a column of type */
+.canvas--tray > .canvas__dots,
+.canvas--tray > .canvas__hint,
+.canvas--tray > .canvas__keys { display: none; }
+
+/* --- the work column ----------------------------------------------------- */
+
+/* The reference puts its first card 17px from the top of the page and 12px off
+   the sidebar. Both are this one padding, so the card's top edge and the
+   sidebar's first line sit on the same line across the page — the only
+   alignment this layout asks for, and the reason the two columns read as one
+   composition. */
+.home__work { padding: var(--mast-pad) var(--mast-pad) 0 clamp(0.75rem, 1vw, 1.125rem); }
+
+/* The showcase is the same component the work page builds. What changes here is
+   only that it is inside a column rather than being the page: its own vertical
+   padding comes off, because the top line is the layout's, and the grid stops
+   insetting itself, because the column already has margins. */
+.home__work .showcase { padding: 0; }
+
+/* TWO STACKS OF UNEQUAL WIDTH, AND NO ROWS.
+
+   This was `grid-template-columns: 1fr 1fr` and every card on one ratio, which
+   is the definition of a rhythm: same width, same height, every caption on the
+   same line, the pattern read before the work. It is two independent flex
+   columns now.
+
+   `1.18` and `1` is the whole asymmetry, and it is deliberately not a dramatic
+   ratio — a fifth is enough that the left column is plainly the dominant one
+   and small enough that the page still reads as a composition rather than as a
+   feature column with a sidebar of thumbnails.
+
+   THE ROWS ARE GONE, WHICH IS THE POINT. Two independent stacks have nothing to
+   align: a card's height is its own ratio's business, so the second card in
+   each column starts wherever the first one finished, and the two columns
+   diverge more the further down you read. That is what a grid cannot do. */
+.home__work .showcase__grid {
+  width: 100%;
+  margin-inline: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9375rem;
+}
+.home__work .showcase__col {
+  display: flex;
+  flex-direction: column;
+  /* the reference's own row gap, measured at 38px between a caption and the
+     card under it */
+  gap: 2.375rem;
+  min-width: 0;
+}
+.home__work .showcase__col--a { flex: 1.18 1 0; }
+.home__work .showcase__col--b { flex: 1 1 0; }
+
+/* AND THE RATIO COMES OFF THE CARD. `--ratio` is written per project by
+   `Showcase.init` from content.js; 1.45 is the fallback, which is what every
+   card used to be and is still what the work page's grid uses. */
+.home__work .wcard__media { aspect-ratio: var(--ratio, 1.45); }
+
+/* THE CAPTION, AND THE ONE MEASUREMENT THAT DECIDES ITS SHAPE.
+
+   Title left, meta right, on one line — that is the caption in the reference,
+   and it works there because the titles are one word. Ours are sentences
+   ("Designing the Digital Identity of Cypherock X0"), so the two only fit
+   beside each other while the card is wide.
+
+   THE TEST IS THE CARD, NOT THE WINDOW, and that is why this is a container
+   query. The card's width is a function of the viewport AND the sidebar AND the
+   column count AND which breakpoint reordered the page — four numbers, three of
+   which change independently. A media query would have to reproduce all of them
+   and be re-derived every time one moved. Asking the card how wide it actually
+   is cannot go out of date.
+
+   430px is measured: below it the meta squeezes the title into four lines. */
+.home__work .wcard { container-type: inline-size; }
+
+@container (min-width: 430px) {
+  .home__work .wcard__title { min-width: 0; }
+  /* the facts are a set, not prose: one line or nothing */
+  .home__work .wcard__tags { white-space: nowrap; flex: none; }
+}
+
+@container (max-width: 429.9px) {
+  /* the meta drops under the title and aligns with it — a caption of two rows
+     rather than two ragged columns fighting over the same 340px */
+  .home__work .wcard__meta { display: block; }
+  .home__work .wcard__tags {
+    display: block;
+    margin-left: 0;
+    text-align: left;
+    padding-top: 0.12rem;
+  }
+}
+
+/* the caption sits tight under its card, the way the reference's does */
+.home__work .wcard__meta { padding-top: 0.55rem; font-size: 0.875rem; }
+
+.home__more {
+  padding: 1.75rem 0.1rem clamp(2rem, 5vh, 3rem);
+  font-size: 0.875rem;
+}
+.home__more a {
+  color: var(--ink-dim);
+  text-decoration: none;
+  transition: color 180ms var(--ease);
+}
+:root:not(.hover-cold) .home__more a:hover { color: var(--ink); }
+
+/* THE SIDEBAR IS THE NAVIGATION ON THESE TWO PAGES, so the MENU tab and the
+   header links are not. Both are edge furniture that would land on top of the
+   sidebar — the tab at the left edge, in the same 16px the sidebar's own
+   padding occupies — and both say what the sidebar already says, in one more
+   place. Every other page keeps them exactly as they were. */
+body[data-page='home'] #nav,
+body[data-page='play'] #nav,
+body[data-page='home'] .tab-menu,
+body[data-page='play'] .tab-menu { display: none; }
+
+/* AND SO IS THE PHONE'S BAR. Below 48rem the header collapses into `.mbar` —
+   the name at one end, a hamburger at the other — and on these two pages both
+   are already on the page: the name is the first three words of the statement,
+   and the menu is the Site list. Two navigations for three links. The `.mbar`
+   rule that shows it is inside a media query and this one is not, so the
+   weight has to be matched deliberately rather than by accident. */
+@media (max-width: 48rem) {
+  body[data-page='home'] .mbar,
+  body[data-page='play'] .mbar { display: none; }
+}
+
+/* --- NARROWER: RECOMPOSED, NOT SHRUNK ------------------------------------
+
+   A 240px column of navigation beside a single column of cards is a desktop
+   layout with less room, and it reads like one — both halves too narrow to do
+   their job. So below 60rem the two columns become one and the ORDER changes,
+   which is the part that makes this a recomposition rather than a squeeze:
+
+     the statement and the two buttons
+     the work
+     Site and Links, side by side
+     the playground
+     the closing lines
+
+   The identity leads, the work follows immediately, and the navigation and the
+   playground close the page — the same reading order the desktop layout has top
+   to bottom in its sidebar, laid down the page instead of beside it. Nothing is
+   hidden and nothing is added.
+
+   `display: contents` IS THE WHOLE MECHANISM. The sidebar is one element with
+   six children; promoting them to be the grid's own items is what lets them be
+   reordered around the work without the page building a second DOM for small
+   screens. Its padding, its white panel and its sticky position go with it,
+   which is correct — in one column there is nothing to stick to and nothing to
+   be a panel beside. */
+@media (max-width: 60rem) {
+  .home {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: clamp(1rem, 4vw, 2rem);
+    padding: calc(var(--sa-top, 0px) + clamp(1.25rem, 4vh, 2rem)) var(--gut)
+             clamp(1.5rem, 4vh, 2.5rem);
+    background-image: none;
+  }
+  .mast { display: contents; }
+
+  /* `.mast__keep` also goes to `display: contents`, so its four children — the
+     statement, the buttons and the two lists — become grid items in their own
+     right and can be ordered around the work. The block still exists in the DOM
+     and is still what `Bricks.zone` measures; it simply stops being a box. */
+  .mast__keep { display: contents; }
+  .mast__say { order: 1; grid-column: 1 / -1; margin-bottom: 0.75rem; }
+  .mast__cta { order: 2; grid-column: 1 / -1; margin-bottom: clamp(1.75rem, 5vh, 2.5rem); }
+  .home__work { order: 3; grid-column: 1 / -1; padding: 0; }
+  /* both lists, one per column of the same row */
+  /* the two lists share row 4 side by side, and the tray comes after them —
+     the DOM has the tray between them, so this is the one place the stacked
+     layout's reading order differs from the sidebar's, and `order` is what
+     says so */
+  .mast__set { order: 4; margin: 0 0 clamp(1.25rem, 3.5vh, 2rem); }
+  .mast__foot { order: 6; grid-column: 1 / -1; margin-top: 0; }
+
+  /* THE STATEMENT IS NOT RE-CAPPED HERE, DELIBERATELY. In the sidebar the
+     column is its measure; across the page the gutters are. It sets on one line
+     at 22px in a 708px column, which is dense and level, and it wraps on its
+     own by about 420px. */
+
+  /* THE PLAYGROUND IS A STRIP HERE. In one column the sidebar's children are
+     grid items in the page's own flow, so the container is no longer a tall
+     column with slack in it — the spacer has to be given a height, and that
+     height is the playground. Tall enough that a two or three brick structure
+     fits inside it at any angle: the fence gives up on an axis a structure
+     cannot fit on, so "fits" is a correctness property here and not a look. */
+  .mast__air {
+    /* back into the flow, and given a height of its own — this is the same
+       host, just a different rectangle */
+    position: relative;
+    inset: auto;
+    order: 5;
+    grid-column: 1 / -1;
+    height: clamp(9rem, 22vw, 12rem);
+    margin: 0 0 clamp(1.25rem, 3vh, 2rem);
+  }
+  /* nothing to push down in one column */
+  .mast__foot { margin-top: 0; }
+
+  /* AND THE GRID KEEPS TWO COLUMNS LONGER THAN THE SHOWCASE'S OWN RULE DOES.
+     `.showcase__grid` drops to one column at 52rem, which is right when the
+     grid is the page and wrong here: at 768 that is one 708px card per screen,
+     which is less work visible than the desktop layout shows and the opposite
+     of what this page is for. Two columns hold until 40rem; the caption shape
+     follows the card's own width, so it has already stacked by then. */
+  /* THE STACKS STAY, AND THE ASYMMETRY GOES. Below 60rem the two columns are
+     about 340px each — at that size the difference between 1.18 and 1 is 30px,
+     which is not a composition, it is a misalignment. Equal widths, and the
+     per-card ratios carry the irregularity on their own. */
+  .home__work .showcase__col--a,
+  .home__work .showcase__col--b { flex: 1 1 0; }
+  .home__work .showcase__col { gap: clamp(1.25rem, 3vh, 2rem); }
+
+  .home__more { padding-bottom: clamp(1.5rem, 4vh, 2.5rem); }
+
+  /* THE DESK KEEPS A SCREEN OF ITS OWN. It is the point of the play page, so it
+     does not become a 200px strip between two lists. */
+  .home--play .play__floor { min-height: min(72svh, 34rem); }
+}
+
+@media (max-width: 40rem) {
+  /* ONE CARD AT A TIME, because two of them are now 150px of picture. The two
+     stacks fold into one flow — `wrap` plus a full-width basis, so the DOM
+     order (a, a, b, b) becomes the reading order and the projects do not
+     interleave. */
+  .home__work .showcase__grid { flex-wrap: wrap; gap: 1.5rem; }
+  .home__work .showcase__col { flex: 1 1 100%; gap: 1.5rem; }
+}
+
+@media (max-width: 34rem) {
+  .home { grid-template-columns: 1fr; }
+  .mast__air { height: clamp(8rem, 34vw, 10rem); }
+}
+
+/* ==========================================================================
+   7b. THE PLAY PAGE — THE DESK, GIVEN ITS OWN ADDRESS
+
+   The same rail, and beside it everything the home page used to open with: the
+   dotted canvas, the brick engine, the dock, the marker, the notes and the
+   stickers. Two lines of copy above it and nothing else — the page is a
+   surface, so the only thing it has to do is get out of the way.
+   ========================================================================== */
+
+.play__head {
+  padding: 0 0 clamp(0.75rem, 2vh, 1.25rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.75rem;
+}
+.play__lead { margin: 0; font-size: var(--step-0); font-weight: 450; color: var(--ink); }
+.play__note { margin: 0; font-size: var(--step--1); color: var(--ink-dim); }
+
+/* THE DESK IS A CANVAS AND NOT THE WINDOW. `.canvas` sets `min-height: 100svh`
+   because until now it always was the window; inside a column it has to be told
+   its own height instead. Tall enough that `Bricks.init`'s "is the host laid
+   out yet" test passes on the first frame, and short enough that the page does
+   not scroll for no reason. */
+.home--play .play__floor {
+  min-height: calc(100svh - 5.5rem);
+  border-radius: 3px;
+}
+
+/* ==========================================================================
    8. WORK SHOWCASE
    A two-column grid of cards, each a live preview panel over a title/meta row.
    Measured off the reference: ~703px cards, 15px gutter, 1.45 media ratio,
@@ -838,10 +1375,25 @@ body[data-page='home'] .nav a[aria-current='page']::after { display: none; }
 .wcard {
   display: block;
   /* --in is the scroll-driven entrance: small and low, then full size */
-  opacity: calc(0.15 + var(--in, 1) * 0.85);
+  /* SOFTENED, DELIBERATELY. This used to run 0.9 -> 1 scale over 26px of rise,
+     which on a page whose whole hero was above the grid read as the cards
+     arriving. On a page where two of them are already on screen at load it
+     reads as the layout settling after you have started looking at it. A tenth
+     of the travel and a third of the scale: enough that a card entering from
+     below is not simply switched on, not enough to be a movement you watch. */
+  opacity: calc(0.35 + var(--in, 1) * 0.65);
+  /* `--push-x` IS A SECOND, INDEPENDENT CHANNEL ON THE SAME TRANSFORM.
+
+     The entrance owns the vertical and the scale; the brick fence owns the
+     horizontal. Composing them into one `translate3d` rather than giving the
+     card a wrapper keeps both on the compositor and means neither can clobber
+     the other: `Push` writes only `--push-x` and never touches `--in`, and the
+     scroll entrance writes only `--in`. A card that has never been near a
+     brick has no `--push-x` at all — the property is removed, not set to zero —
+     so the default rendering is exactly what it was. */
   transform:
-    translate3d(0, calc((1 - var(--in, 1)) * 26px), 0)
-    scale(calc(0.9 + var(--in, 1) * 0.1));
+    translate3d(var(--push-x, 0px), calc((1 - var(--in, 1)) * 9px), 0)
+    scale(calc(0.978 + var(--in, 1) * 0.022));
   transform-origin: 50% 70%;
   will-change: transform, opacity;
 }
@@ -4669,7 +5221,22 @@ body.past-hero .sel { opacity: 0; }
    150ms behind the cursor and make a live resize arrive after the handle that
    asked for it. Spelled out for the pills too, because their own rule further
    down re-declares `transition` and would otherwise put it back. */
+/* AND `is-hold` IS PART OF "WHILE A GESTURE IS RUNNING".
+
+   It was missing, and the gap is a real one rather than a tidy-up. `is-drag`
+   arrives only once the four-pixel threshold is crossed; `is-hold` arrives on
+   the press, and the press is where a brick gets SQUARED to a quarter turn.
+   So the squaring animated — 150ms of the piece turning through intermediate
+   angles while the physics had already recorded it as square. For that tenth
+   of a second the shape on the screen was larger than the shape the collision
+   model was holding, in the one direction that matters: a bar caught mid-turn
+   covers a good deal more than its own cells, which is how a piece whipped
+   off the pile came to clip a navigation row that the fence had certified as
+   clear. The engine's own note two rules up already states the principle —
+   the piece is in the hand the moment it is pressed — and this is that
+   sentence applied to the transform as well as to the state. */
 .drg.is-drag,
+.drg.is-hold,
 .drg.is-xf,
 .drg.is-settle,
 .drg.is-spin,
@@ -4768,12 +5335,28 @@ body.past-hero .sel { opacity: 0; }
    at all rather than reusing `.is-drag`, which Drag only ever puts on the lead
    node. A shade more lift than hover, a longer shadow, and the outline firms
    up: the piece reads as held rather than as pointed at. */
-.brk.is-hold { --lift: -2px; }
+.brk.is-hold { --lift: -3px; }
+
+/* IN THE HAND: A LITTLE LARGER, AND LIFTED FURTHER OFF THE PAPER.
+
+   Three and a half percent, at the bottom of the range that reads as picked
+   up at all — the piece is 19px across, so this is two thirds of a pixel, and
+   any more on an object this small stops looking like elevation and starts
+   looking like a hover state on a button. The lift goes from 2px to 3 and the
+   shadow lengthens with it, because the swell alone reads as the piece
+   growing rather than as the piece rising; it is the shadow that says which.
+
+   `is-solo` and not `is-hold`, so a welded structure keeps its seams — see the
+   note where the class is set. `--hs` is the canvas's existing hold-scale
+   channel, already composed into `.drg`'s transform after the rotation, so the
+   piece's angle is preserved exactly and nothing here can turn it. */
+.brk.is-solo { --hs: 1.035; }
+
 .brk.is-hold .brk__art {
   filter:
-    drop-shadow(0 2px 2px rgba(20, 16, 12, 0.14))
-    drop-shadow(0 16px 26px rgba(20, 16, 12, 0.20))
-    drop-shadow(0 0 0.6px rgba(20, 16, 12, 0.42));
+    drop-shadow(0 3px 3px rgba(20, 16, 12, 0.16))
+    drop-shadow(0 20px 32px rgba(20, 16, 12, 0.24))
+    drop-shadow(0 0 0.6px rgba(20, 16, 12, 0.44));
 }
 
 /* THE PIECE BEING AIMED AT. The other half of the snap indicator — the ghost

@@ -117,6 +117,7 @@ window.SITE = {
       { label: 'Home', href: 'index.html' },
       { label: 'Work', href: 'work.html' },
       { label: 'About', href: 'about.html' },
+      { label: 'Play', href: 'play.html' },
       { label: 'Resume', kind: 'resume' },
       { label: 'Email', kind: 'email' },
     ],
@@ -134,7 +135,90 @@ window.SITE = {
     { label: 'Home', href: 'index.html' },
     { label: 'Work', href: 'work.html' },
     { label: 'About', href: 'about.html' },
+    { label: 'Play', href: 'play.html' },
   ],
+
+  /* ------------------------------------------------------------------- the rail
+     THE LEFT COLUMN OF THE HOME AND PLAY PAGES, and the whole of their
+     navigation. It is a column of the layout, not a floating widget: it
+     scrolls with the page it belongs to and stops when that page's content
+     stops.
+
+     `at` is which pages mark a row as the one you are on. The home page shows
+     the work, so Work is where you are when you are there — the row is still a
+     real link and it goes to the full archive. */
+  rail: {
+    /* The statement. Same string the hero used to set at 46px; `*word*` is the
+       italic, exactly as in `canvas.headline`. */
+    say: 'I’m Ishaan, a product designer who *engineers*.',
+    site: [
+      /* Work is the home page, because the home page IS the work — the grid of
+         projects is the first thing on it. The fuller archive is one link at
+         the end of that grid rather than a second row up here. */
+      { label: 'Work', href: 'index.html', at: ['home'] },
+      { label: 'About', href: 'about.html', at: ['about'] },
+      { label: 'Play', href: 'play.html', at: ['play'] },
+    ],
+    /* the one link under the grid, to the archive and the teams table */
+    more: { label: 'All work', href: 'work.html' },
+    links: [
+      { label: 'Github', href: 'https://github.com/' },
+      { label: 'Email', kind: 'email' },
+      { label: 'Linkedin', href: 'https://www.linkedin.com/in/ishaangupta24' },
+      { label: 'Twitter', href: 'https://x.com/' },
+    ],
+    /* two lines, present tense */
+    now: [
+      'Currently designing at Cypherock.',
+      'Based in Gurugram, studying at UPES.',
+    ],
+    fine: '© Ishaan Gupta {year}',
+  },
+
+  /* ---------------------------------------------------------------- the tray
+     THE HANDFUL OF BRICKS IN THE LEFT COLUMN, and the only number here worth
+     touching is how many.
+
+     They are not composed. `Bricks.scatter` rolls what and roughly where, the
+     dump throws them in from above, and they land wherever tumbling and
+     bumping into each other leaves them — a different pile every visit, the
+     same way the 404 room fills. An authored arrangement is what the earlier
+     isometric version was, and a composition is not what a few bricks tipped
+     onto a desk looks like.
+
+     Keep the count low. Nine is a scatter you can pick through; twenty is a
+     heap, and a heap in the corner of an editorial page is the thing this
+     whole layout exists to avoid. */
+  tray: {
+    /* MANY, NOT A FEW. The playground is the whole left column now rather than a
+       box inside it, so there is four or five times the floor — and nine pieces
+       in it read as a few things that got left behind rather than as a handful
+       somebody tipped in. Sixteen fills the open half without becoming a heap;
+       the region's `pack` decides how they distribute. */
+    pieces: 16,
+    /* a phone lays the column out as a strip across the page, with about a
+       third of the area */
+    mobilePieces: 9,
+    /* THE TRICKLE. One more piece every so often, thrown onto the pile that is
+       already there. `every` is the wait either side of a piece, in ms, and it
+       is long on purpose: you should have stopped watching the box before the
+       next one arrives. `max` is the whole population — the box stops filling
+       rather than becoming a heap over a long visit. */
+    drip: { every: [9000, 22000], count: [1, 1], max: 16 },
+  },
+
+  /* ------------------------------------------------------------- the play page
+     Everything that used to be on the home page's hero and now has somewhere of
+     its own: the dotted desk, the dock, the marker, the notes, the stickers,
+     and a floor of bricks with no composition to keep. The home page is the
+     work; this is the workshop. */
+  play: {
+    lead: 'A desk with nothing on it.',
+    note: 'Draw, stack, leave a note. Nothing here is saved.',
+    /* how many bricks are tipped onto the desk */
+    pieces: 22,
+    mobilePieces: 12,
+  },
 
   /* ------------------------------------------------------- hero call to action */
   hero: {
@@ -522,6 +606,9 @@ window.SITE = {
          card with still artwork.                                             */
       { title: 'Designing the Digital Identity of Cypherock X0',
         meta: 'Product identity, 2026, Singapore', href: '#x0-identity',
+        /* THE DOMINANT ONE. Widest stack, and the tallest proportion in the
+           set — it is the newest work and the composition says so. */
+        col: 'a', ratio: 1.34,
         thumb: 'assets/media/x0/companion-thumb.mp4',
         thumbPoster: 'assets/media/x0/companion-thumb.webp',
         preview: 'search', line: 'A new product, unmistakably Cypherock',
@@ -1076,6 +1163,11 @@ window.SITE = {
          placeholders written before the card existed.                        */
       { title: 'Onefinnet Talent', meta: 'B2B SaaS, 2024–25, Noida (on-site)',
         href: '#onefinnet-talent',
+        /* THE COUNTER. Narrower stack and the widest proportion in the set, so
+           it is plainly a different shape from the one beside it and its caption
+           lands well above that one's — which is what stops the two columns
+           reading as a row. */
+        col: 'b', ratio: 1.72,
         /* `sheet` rather than the default `cover`: the artwork is a title card,
            not a photograph, so cropping it to the panel cost the outer columns
            and left it looking like a screenshot of something else. On a field
@@ -1587,8 +1679,13 @@ window.SITE = {
           ],
         } },
       { title: 'Today, around the world', meta: 'Design, 2024, Everywhere', href: '#',
+        /* the tall one. A fan of passports wants the height. */
+        col: 'a', ratio: 1.06,
         preview: 'fan' },
       { title: 'Magic Extractor', meta: 'Design, 2025, Bengaluru', href: '#',
+        /* short and wide, under the tall one, so the right-hand stack ends on a
+           different line again */
+        col: 'b', ratio: 1.5,
         preview: 'ring', line: 'Extracting', stat: '672/897 files parsed' },
     ],
   },
