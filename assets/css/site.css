@@ -79,8 +79,14 @@
      rather than as a rule: a major at every real edge of the layout, a minor
      halfway between the wide ones. No accent, no second hue — the same ink the
      type is set in, brought down to almost nothing. */
-  --grid-major: rgba(20, 16, 12, 0.07);
-  --grid-minor: rgba(20, 16, 12, 0.034);
+  /* TEN PER CENT, ASKED FOR, AND THE SUB-GRID KEEPS ITS DISTANCE. The majors
+     were 7% and the minors 3.4% — a hair under half — and that ratio is the
+     whole reason the field reads as a grid with a finer grid inside it rather
+     than as graph paper. So the number that was named moves and the
+     relationship is preserved: 10% and 4.8%. Both modes land on the same pair,
+     which they did not before. */
+  --grid-major: rgba(20, 16, 12, 0.1);
+  --grid-minor: rgba(20, 16, 12, 0.048);
 
   /* type */
   /* ONE family across the whole project; hierarchy comes from weight, size and
@@ -816,6 +822,14 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
      is what made the sidebar read as loose. */
   --mast-pad: clamp(1rem, 1.15vw, 1.25rem);
 
+  /* THERE WAS A THIRD TRACK HERE AND IT HAS GONE. IshaanLLM used to be a
+     column of this grid: opening it grew the track from zero and the showcase
+     genuinely reflowed into what was left. That worked, and it is not what the
+     panel is any more — it is a fixed object that unfolds out of its own
+     launcher in the corner, over the page rather than beside it, because the
+     launcher and the panel have to read as one thing and a launcher cannot be
+     a grid track. The page under it is now untouched by the feature existing,
+     which is why nothing here mentions it. See section 45. */
   display: grid;
   grid-template-columns: var(--mast-w) minmax(0, 1fr);
   column-gap: 0;
@@ -1315,29 +1329,11 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
 
 /* THE SIDEBAR IS THE NAVIGATION ON THESE THREE PAGES, so the MENU tab and the
    header links are not. Both are edge furniture that would land on top of the
-   sidebar — the tab at the left edge, in the same 16px the sidebar's own
-   padding occupies — and both say what the sidebar already says, in one more
-   place. About joined the list when it stopped being a site of its own and
-   became the same layout with a document in the canvas; the case studies and
-   the work index keep them exactly as they were, because they have no rail. */
-body[data-page='home'] #nav,
-body[data-page='play'] #nav,
-body[data-page='about'] #nav,
-body[data-page='home'] .tab-menu,
-body[data-page='play'] .tab-menu,
-body[data-page='about'] .tab-menu { display: none; }
+   sidebar. Both of them are gone now — the header row of links with its own
+   note further up this file, and the deck's paper tab at section 38 — so
+   there is nothing left to hide on these three pages and the rules that hid
+   it have gone with the things themselves. */
 
-/* AND SO IS THE PHONE'S BAR. Below 48rem the header collapses into `.mbar` —
-   the name at one end, a hamburger at the other — and on these two pages both
-   are already on the page: the name is the first three words of the statement,
-   and the menu is the Site list. Two navigations for three links. The `.mbar`
-   rule that shows it is inside a media query and this one is not, so the
-   weight has to be matched deliberately rather than by accident. */
-@media (max-width: 48rem) {
-  body[data-page='home'] .mbar,
-  body[data-page='play'] .mbar,
-  body[data-page='about'] .mbar { display: none; }
-}
 
 /* --- NARROWER: RECOMPOSED, NOT SHRUNK ------------------------------------
 
@@ -2216,8 +2212,19 @@ body[data-page='about'] .tab-menu { display: none; }
   transform: translateX(8px) scale(0.9);
 }
 
+/* And its mirror, for the sidebar and the case study's rail: left edge on the
+   point, centred on it vertically, coming out of the column rather than rising
+   off it. Chosen in the module from the anchor, exactly like `left` — the label
+   still has one owner and one place that decides where it goes. */
+.tip[data-side='right'] {
+  translate: var(--tip-x) calc(var(--tip-y) - 50%);
+  transform-origin: 0 50%;
+  transform: translateX(-8px) scale(0.9);
+}
+
 .tip.is-up { transform: translateY(-6px) scale(1); opacity: 1; }
-.tip[data-side='left'].is-up { transform: none; }
+.tip[data-side='left'].is-up,
+.tip[data-side='right'].is-up { transform: none; }
 
 .tip::after {
   content: '';
@@ -2233,6 +2240,12 @@ body[data-page='about'] .tab-menu { display: none; }
 /* the same square, turned to the side the label is now on */
 .tip[data-side='left']::after {
   left: auto; right: -3px;
+  top: 50%; bottom: auto;
+  translate: 0 -50%;
+}
+
+.tip[data-side='right']::after {
+  left: -3px; right: auto;
   top: 50%; bottom: auto;
   translate: 0 -50%;
 }
@@ -2405,6 +2418,13 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
 }
 .rail__link:hover { color: var(--ink-2); transform: translateX(3px); }
 
+/* THE ROW THAT USED TO BE HERE IS IN THE CORNER NOW. IshaanLLM was a
+   `.rail__link` in this list, matching Approach and Learnings — which is
+   precisely what was wrong with it: every other row here scrolls you to a part
+   of the piece you are reading, and that one opened an assistant. It is a
+   tool, not a section, and its launcher is the collapsed state of the panel
+   itself — see `.llm__chip` in section 45. This list is sections only. */
+
 .rail__link.is-active {
   color: var(--ink);
   font-weight: 600;
@@ -2423,6 +2443,12 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
    rail's row would stretch to the case study's height and its `top` would have
    nothing to stick against. */
 .proj__body {
+  /* TWO TRACKS, AS IT ALWAYS WAS. The third one IshaanLLM used to take is
+     gone from here for the reason given on `.home` — and it mattered most on
+     this page, because the panel's containing block was this element and the
+     hero sits ABOVE it. Opening the panel while reading the hero put it a
+     whole viewport below the fold: the launcher moved and nothing arrived.
+     See section 45. */
   display: grid;
   grid-template-columns: var(--proj-rail) minmax(0, 1fr);
   align-items: start;
@@ -5424,8 +5450,19 @@ body.past-hero .sel { opacity: 0; }
   gap: 0.34em;
   padding: 0.3em 0.62em;
   border-radius: 999px;
+  /* A FIXED-DARK SURFACE MUST NOT TAKE ITS INK FROM A THEME TOKEN, and that is
+     the whole of the bug. The pill's ground is a literal — 78% of the site's
+     near-black, so it reads on paper, on the desk and on a photograph alike —
+     but its text was `--paper-2`, which is #fdfcf9 in the light and #18181b in
+     the dark. So in dark mode this was near-black type on a near-black pill:
+     the words were there, laid out, hit-testable and completely unreadable.
+
+     Paired inversions are fine — the toast is `--ink` on `--paper` and both
+     flip together — but half a pair is not. The ink is a literal now, to match
+     the ground it is on, and the dark mode gets its own lifted surface below
+     rather than a second ink. */
   background: rgba(20, 16, 12, 0.78);
-  color: var(--paper-2);
+  color: #fbfaf8;
   font-size: 10.5px;
   letter-spacing: 0.01em;
   line-height: 1.5;
@@ -5468,6 +5505,20 @@ body.past-hero .sel { opacity: 0; }
 }
 .brkhint--tap svg { display: block; }
 .brkhint--tap:active { background: rgba(20, 16, 12, 0.92); }
+
+/* AND IN THE DARK IT LIFTS INSTEAD OF DEEPENING. 78% black over a #0f0f11 desk
+   is a pill you cannot find even once its text is legible — the ground it is
+   over is already darker than the pill wants to be. So it takes the same
+   treatment the tooltip already has in the dark (#26262a, see section 41),
+   plus the hairline every dark frame on this site draws, which is what
+   separates it from the desk. Same object, same ink, one surface up. */
+.is-dark .brkhint {
+  background: #26262a;
+  box-shadow: inset 0 0 0 1px rgba(240, 240, 238, 0.1);
+}
+
+.is-dark .brkhint kbd { background: rgba(255, 255, 255, 0.14); }
+.is-dark .brkhint--tap:active { background: #313137; }
 
 @media (prefers-reduced-motion: reduce) {
   .brkghost, .brkhint { transition-duration: 1ms; }
@@ -6549,12 +6600,11 @@ body[data-page='project'] .blk-head__t {
   line-height: 1.3;
 }
 
-body[data-page='project'] .phero__title {
-  letter-spacing: -0.014em;
-  line-height: 1.18;
-  font-weight: 450;
-  max-width: 30ch;
-}
+/* The hero's title used to be tuned here — a 30ch measure and a 450 weight
+   against `--step-3`. The opening scene sets its own name at `--step-1` and
+   states every one of those properties itself (see `.phero__name`), and a rule
+   scoped to `body[data-page='project']` outranks it, so leaving this in place
+   would have quietly put the old measure back. */
 
 body[data-page='project'] .proj__title {
   letter-spacing: -0.014em;
@@ -6600,41 +6650,13 @@ body[data-page='project'] strong { font-weight: 550; }
    not a menu: it is the handle for the same reveal the desktop has, turned
    through ninety degrees — see section 38. Desktop keeps its own handle; the
    two are mutually exclusive and the switch is here, not in JS. */
-.mbar { display: none; }
+
 
 @media (max-width: 48rem) {
-  .mbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 94;
-    height: calc(56px + var(--sa-top));
-    padding: var(--sa-top) calc(var(--sa-right) + 1.25rem) 0 calc(var(--sa-left) + 1.5rem);
-    pointer-events: none;              /* only the name and the button are live */
-  }
+  
 
-  /* Set to sit ON the line the hamburger's bars are centred on, not above it:
-     the two marks at either end of the bar are the only things up here and they
-     have to read as one row. Quiet, because it is a label — the page's own
-     first sentence is what should be loud, and that is at the other end of the
-     screen. */
-  .mbar__name {
-    pointer-events: auto;
-    font-size: 0.9375rem;
-    line-height: 1;
-    letter-spacing: -0.006em;
-    color: var(--ink-2);
-    opacity: 0.62;
-    text-decoration: none;
-    -webkit-tap-highlight-color: transparent;
-    transition: opacity 220ms var(--ease);
-  }
-  .mbar__name:active { opacity: 1; }
-
-  /* it goes with the page under the menu, the same way the bars do */
-  .mbar.is-open .mbar__name { opacity: 0; transition: opacity 200ms var(--ease); }
+  /* The phone's bar and its name were here. Both are gone with the deck they
+     opened — see the note at section 38. */
 
   /* --- THERE IS NO BAR ANY MORE, ONLY A BUTTON ----------------------------
      What used to be here was a translucent strip across the top of the screen
@@ -6674,8 +6696,8 @@ body[data-page='project'] strong { font-weight: 550; }
 
      So it goes on the first scroll and comes back at the top. The handle does
      not: it is the navigation, and it carries its own paper. */
-  .mbar { transition: opacity 240ms var(--ease); }
-  .mbar.is-away { opacity: 0; pointer-events: none; }
+  
+  
 
   /* the hero's own content starts below the bar */
   body[data-page='home'] .canvas__intro { padding-top: calc(var(--sa-top) + 3.25rem); }
@@ -7513,24 +7535,7 @@ body[data-page='project'] strong { font-weight: 550; }
   --deck-move: 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-body.deck-open {
-  --app-x: var(--deck-w);
-  /* THE INSET IS BACK, THE DIALOG LIGHTING IS NOT.
 
-     A uniform scale shrinks all four edges, so this is also the top and bottom
-     padding: 0.935 puts 29px of sky above the workspace and 29px below it.
-
-     That inset was blamed once for making the thing read as a floating modal
-     and taken down to 0.99, which removed the padding along with the problem.
-     The padding was not the problem. What made it a dialog was the light on it —
-     180px of blur thrown straight down from a card hanging in the middle of the
-     viewport. So the inset is restored and the shadow is not: it casts sideways
-     off the leading edge now, which is the edge you can actually see, and reads
-     as a sheet lifted at one side rather than a window floating in space. */
-  --app-s: 0.935;
-  --app-r: 20px;
-  --app-lit: 1;
-}
 
 /* --- the three layers ----------------------------------------------------- */
 
@@ -7578,10 +7583,7 @@ body.deck-open {
   transition: transform var(--deck-move);
 }
 
-body.deck-open .app,
-body.deck-shut .app {
-  transform: translate3d(var(--app-x), var(--app-y), 0) scale(var(--app-s));
-}
+
 
 /* THE FRAME THE SHELL CASTS, and the reason it is not on `.app` any more.
 
@@ -7712,29 +7714,11 @@ body.is-locked {
 
 /* --- what is underneath --------------------------------------------------- */
 
-.deck {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  /* THE LAYER STAYS, ITS CONTENTS HIDE. The whole deck used to switch to
-     `visibility: hidden` when the shell was home — it is behind the page then,
-     and a menu you can read through the gap the footer opens in the paper is a
-     menu in the wrong place. But the two footer pods live in here now, and they
-     have to be visible at the footer with the deck shut, so what hides is the
-     menu rather than the layer holding it. */
-  pointer-events: none;
-}
-body.deck-open .deck { pointer-events: auto; }
 
-.deck__inner,
-.deck__close { visibility: hidden; }
-body.deck-open .deck__inner,
-body.deck-open .deck__close,
-body.deck-shut .deck__inner,
-body.deck-shut .deck__close { visibility: visible; }
+
+
+
+
 
 /* THE WAY OUT, IN THE DECK'S OWN VOICE.
 
@@ -7748,79 +7732,24 @@ body.deck-shut .deck__close { visibility: visible; }
    against the sky hour by hour, and the six links a few hundred pixels below
    are legible at every hour on exactly the same terms. The word is what makes
    it a target; it does not also need a box drawn round it. */
-.deck__close {
-  position: absolute;
-  top: clamp(1.25rem, 3.5vh, 2rem);
-  left: clamp(1.75rem, 3.2vw, 3.25rem);
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  /* the padding is the target, not a visible box */
-  margin: -0.5rem 0 0 -0.5rem;
-  padding: 0.5rem;
-  border: 0;
-  background: none;
-  color: var(--mat-ink-strong, #1c1a17);
-  font-size: 0.875rem;
-  font-weight: 500;
-  letter-spacing: -0.006em;
-  line-height: 1;
-  opacity: 0.62;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  /* the same two things the links do, so it belongs to them */
-  transition: opacity 260ms var(--ease), transform 420ms var(--spring);
-}
-.deck__close svg { width: 13px; height: 13px; }
-.deck__close:hover,
-.deck__close:focus-visible { opacity: 1; transform: translateX(3px); }
-.deck__close:active { transform: translateX(3px) scale(0.97); }
 
-.deck__inner {
-  position: relative;
-  z-index: 1;
-  width: var(--deck-w);
-  padding-inline: clamp(1.75rem, 3.2vw, 3.25rem);
-  display: flex;
-  flex-direction: column;
-  gap: clamp(2rem, 5vh, 3.5rem);
-}
+
+
+
+
+
 
 /* --- the rail, the indicator, and the list beside them -------------------- */
 
-.deck__navwrap {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.15rem;
-}
+
 
 /* SEGMENTS, NOT A LINE. A continuous stroke can only get brighter; it cannot
    say *where along itself* you are. Twenty-odd separate marks each answer that
    on their own, which is what makes the focus gradient legible — the rail reads
    as a ruler with a finger on it. Their width and opacity are written by the
    frame loop; everything here is the part that never changes. */
-.deck__rail {
-  position: relative;
-  flex: none;
-  width: 26px;
-  align-self: stretch;
-  /* the segments are absolutely placed, so the rail needs its own height from
-     the list beside it */
-  min-height: 100%;
-}
-.deck__rail i {
-  position: absolute;
-  left: 0;
-  top: var(--y);
-  height: 2px;
-  width: 18px;
-  border-radius: 1px;
-  background: var(--mat-ink, #33302c);
-  opacity: 0.18;
-  /* no transition: the loop writes these every frame it needs to, and a
-     transition on top would fight the spring for control of the same number */
-}
+
+
 
 /* THE ARROW IS GONE, AND THE INDICATOR IS NOT. Drawing a cursor here was a
    mistake of the literal kind: a second pointer parked in the interface reads
@@ -7830,63 +7759,20 @@ body.deck-shut .deck__close { visibility: visible; }
    currently is, which is the same information without a duplicate mouse in it.
    So the element stays, as the thing the spring writes to and the segments
    measure against, and it paints nothing. */
-.deck__mark {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
-  visibility: hidden;
-}
 
-.deck__nav {
-  display: flex;
-  flex-direction: column;
-  /* A plain pointer. A custom arrow in here competed with the one the rail was
-     drawing and neither won. */
-  cursor: pointer;
 
-  /* ROOM. The list was set solid — six lines of 2.35rem type at 1.34 with
-     nothing between them, so it read as a paragraph of place names rather than
-     as six separate destinations you might choose between. The gap is what
-     makes them choosable. */
-  gap: 0.6rem;
-}
+
 
 /* Large, quiet, and NOT staggered. A list that flies in one item at a time is
    a menu animating itself, which is the one thing this interaction is not: the
    deck is already here, and lay here while you were reading. */
-.deck__link {
-  font-size: clamp(1.6rem, 2.2vw, 2.35rem);
-  line-height: 1.22;
-  letter-spacing: -0.02em;
-  /* 500, not 600. At this size a semibold six deep is a wall — the weight was
-     doing the work the spacing should have been doing, and now the spacing
-     does it. The aimed item goes to 600, so the step between resting and
-     chosen is still a full weight. */
-  font-weight: 500;
-  text-decoration: none;
-  width: fit-content;
-  /* chosen against the sky by Sky.set(), the same way the footer's copy is */
-  color: var(--mat-ink, #33302c);
-  opacity: 0.58;
-  transition:
-    opacity 260ms var(--ease),
-    color 260ms var(--ease),
-    font-variation-settings 320ms var(--ease),
-    transform 420ms var(--spring);
-}
+
 /* Hover and the current page are the same state, because they mean the same
    thing to the rail: this is the destination. `is-aim` is written by the same
    call that re-points the indicator, so the item and the marker can never
    disagree about which one is lit. */
-.deck__link.is-aim {
-  opacity: 1;
-  color: var(--mat-ink-strong, #1c1a17);
-  font-variation-settings: 'wght' 600;
-  transform: translateX(6px) scale(1.02);
-}
-.deck__link { transform-origin: 0 50%; }
+
+
 
 /* a printed clock used to sit here as well; the hour is a line of type in the
    sidebar now, and the menu does not need to say it a second time */
@@ -7904,43 +7790,17 @@ body.deck-shut .deck__close { visibility: visible; }
    and wants to be a gutter in from the deck's right-hand edge, so it crosses
    everything between: minus the viewport, plus the deck's width. It rises from
    the page's 20px to the deck's own bottom margin. */
-.deck__pods { display: none; }
 
-body.deck-open .mute,
-body.deck-open .tmode,
-body.deck-open .gridtog {
-  opacity: 1;
-  pointer-events: auto;
-}
 
-body.deck-open .mute,
-body.deck-open .tmode,
-body.deck-open .gridtog {
-  transform: translate3d(
-    calc(var(--deck-w) - clamp(1.75rem, 3.2vw, 3.25rem) - 100vw + 20px),
-    calc(20px - clamp(1.25rem, 3.5vh, 2rem)),
-    0);
-}
-body.deck-open .mute:hover,
-body.deck-open .tmode:hover,
-body.deck-open .gridtog:hover {
-  transform: translate3d(
-    calc(var(--deck-w) - clamp(1.75rem, 3.2vw, 3.25rem) - 100vw + 20px),
-    calc(20px - clamp(1.25rem, 3.5vh, 2rem)),
-    0) scale(1.09);
-}
+
+
+
+
 
 /* One curve for the journey, the pods' own springs for everything else they do.
    Duration and easing are the shell's, which is what makes the three read as
    one object rather than as three things that happen to start together. */
-body.deck-open .mute,
-body.deck-open .tmode,
-body.deck-open .gridtog,
-body.deck-shut .mute,
-body.deck-shut .tmode,
-body.deck-shut .gridtog {
-  transition: transform var(--deck-move), opacity var(--deck-move);
-}
+
 
 /* --- the handle ----------------------------------------------------------- */
 
@@ -7948,50 +7808,12 @@ body.deck-shut .gridtog {
    canvas's left edge for the whole journey. That is what makes the edge read as
    the edge of something you are pushing: the handle is the leading edge, and it
    is the first thing the deck appears from behind. */
-.tab-menu {
-  position: fixed;
-  top: 50%;
-  left: 0;
-  z-index: 92;
-  transform: translateY(-50%);
-  display: grid;
-  place-items: center;
-  /* IT HAS TO LOOK LIKE A CONTROL FROM THE FIRST FRAME.
 
-     It was paper-on-paper with a hairline of shadow — welded to the canvas,
-     which was the point, and near enough invisible against it, which was not.
-     A visitor who never notices the handle has no navigation at all.
 
-     Nothing about it is redesigned: same place, same shape, same vertical
-     word, same push interaction. It is simply given the panel language the
-     dock and the builds shelf already use — white, a 1px inside stroke, a soft
-     shadow — and a little more room to stand in. That is the difference
-     between a fold in the paper and a thing you press. */
-  padding: 1.35rem 0.6rem;
-  border: 0;
-  border-radius: 0 12px 12px 0;
-  background: #fff;
-  box-shadow:
-    inset 0 0 0 1px var(--line, #e7e4de),
-    2px 0 4px -2px rgba(20, 16, 12, 0.1),
-    10px 0 28px -14px rgba(20, 16, 12, 0.32);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: padding-left 260ms var(--ease), background-color 260ms var(--ease);
-}
-.tab-menu span {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink, #14100c);
-}
-.tab-menu:hover { background: #fff; }
-.tab-menu:hover span { color: var(--ink); }
-.tab-menu:hover { padding-left: 0.75rem; }
-.tab-menu:active { transform: translateY(-50%) scale(0.97); }
+
+
+
+
 
 /* IT IS GONE WHILE THE DECK IS OUT — not faded, not disabled, not there. With
    a navigation panel open beside it, a second control offering the same thing
@@ -8004,15 +7826,14 @@ body.deck-shut .gridtog {
    on in the same frame, the ✕ leaves with it, and the handle does not come back
    until `deck-shut` clears — which is when the shell has landed. There is no
    frame with both on screen, in either direction. */
-body.deck-open .tab-menu,
-body.deck-shut .tab-menu { display: none; }
+
 
 /* IT USED TO GO AT THE FOOTER TOO, riding the number that detached the paper,
    because the closing scene offered the same links a few hundred pixels to the
    right. There is no closing scene now, so the handle simply stays where it is
    for the whole page. */
 
-body.deck-shut .deck__close { display: none; }
+
 
 
 /* The rule that hid the header row of links used to be here. The row is gone
@@ -8069,33 +7890,7 @@ body.deck-shut .deck__close { display: none; }
     --deck-bot: clamp(0.85rem, 1.9svh, 1.15rem);
   }
 
-  body.deck-open {
-    --app-x: 0px;
-    --app-y: var(--deck-h);
-
-    /* 0.935 — THE DESKTOP'S OWN NUMBER, and the second correction to it.
-
-       It was 0.97 first, on the reasoning that a phone wants less of everything.
-       Six pixels of sky down each side is not a margin, it is a seam: too thin
-       to read as space left on purpose, wide enough to look like the canvas
-       failed to reach the edge. Taking the scale out altogether fixed that and
-       lost the margin with it, which is the wrong trade — the sheet then sits
-       flush against the glass on three sides and lifted on one.
-
-       So the mechanism was never the problem, the amount was, and the amount
-       that works is the one the laptop already uses. At 390px it puts 12.7px of
-       sky down each side, which is a margin you can see the intent of. It also
-       means the sheet lifts by the same proportion at every width and only the
-       direction of travel changes — which is the whole claim this interaction
-       makes about itself.
-
-       A uniform scale is also the only way to inset horizontally without either
-       distorting the page or relaying it out: `width` and `left` would reflow
-       every line of type in the workspace on the frame the animation starts. */
-    --app-s: 0.935;
-    --app-r: 22px;
-    --app-lit: 1;
-  }
+  
 
   /* --- the handle, which is the desktop's handle -------------------------
      Not a hamburger, and not a second design. This is `.tab-menu` — the same
@@ -8109,87 +7904,42 @@ body.deck-shut .deck__close { display: none; }
      the deck is out — `body.deck-open .tab-menu` is declared once, above, for
      both widths — so the way back is the ✕ in the menu and there is never a
      second control on screen. */
-  .tab-menu {
-    top: calc(var(--sa-top) + 0px);
-    left: auto;
-    right: calc(var(--sa-right) + 1.25rem);
-    transform: none;
-    padding: 0.55rem 0.85rem 0.6rem;
-    border-radius: 0 0 10px 10px;
-    box-shadow:
-      0 1px 0 rgba(20, 16, 12, 0.05),
-      0 6px 22px -12px rgba(20, 16, 12, 0.22);
-    transition: padding-bottom 260ms var(--ease), background-color 260ms var(--ease);
-  }
-  .tab-menu span {
-    writing-mode: horizontal-tb;
-    font-size: 0.6875rem;
-  }
-  .tab-menu:hover { padding-left: 0.85rem; padding-bottom: 0.85rem; }
-  .tab-menu:active { transform: scale(0.97); }
+  
+  
+  
+  
 
   /* --- the menu, at the top ---------------------------------------------- */
 
   /* Same layer, same paint order, pinned to the top of the viewport instead of
      the left of it. Its lower half stays under the canvas at all times, which
      is what makes the canvas read as lying ON it. */
-  .deck {
-    align-items: flex-start;
-    justify-content: stretch;
-  }
+  
 
   /* THE WAY OUT IS IN THE MENU, in the corner the handle was in — so the thumb
      that opened it does not have to go anywhere else to close it. Mirrored from
      the desktop's left-hand corner for the same reason the handle is: this side
      is the one this layout leads from. */
-  .deck__close {
-    top: calc(var(--sa-top) + var(--deck-top));
-    left: auto;
-    right: calc(var(--sa-right) + var(--deck-pad) - 0.5rem);
-    margin: 0;
-  }
-  .deck__close:hover,
-  .deck__close:focus-visible { transform: none; }
-  .deck__close:active { transform: scale(0.97); }
+  
+  
+  
 
-  .deck__inner {
-    width: 100%;
-    height: var(--deck-h);
-    padding-inline: calc(var(--deck-pad) + var(--sa-left)) calc(var(--deck-pad) + var(--sa-right));
-    /* Clears the ✕ above and the two pods below. Both reserves are measured in
-       svh as well as rem, so the whole column compresses together instead of
-       the nav being the only thing that gives. */
-    padding-top: calc(var(--sa-top) + var(--deck-top) + clamp(1.9rem, 4.6svh, 2.5rem));
-    padding-bottom: calc(var(--deck-bot) + clamp(3rem, 7.5svh, 3.5rem));
-    gap: 0;
-    justify-content: flex-start;
-  }
+  
 
-  .deck__navwrap { gap: 0.9rem; }
-  .deck__rail { width: 22px; }
-  .deck__rail i { width: 14px; }
+  
+  
+  
 
-  .deck__nav { gap: 0; }
+  
 
   /* THE TARGET IS THE ROW, NOT THE WORD. `width: fit-content` is what the
      desktop wants — a cursor lands where it is pointed and a hit area wider
      than the ink is a hit area you cannot see. A finger is not a cursor: the
      row is 44px tall and reaches the full width of the column, so the whole
      line answers rather than the eleven characters in it. */
-  .deck__link {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    /* 44px is the target, and on any phone tall enough to hold six of them it
-       is what you get. Below that the row gives up to 4px rather than let the
-       list run into the pods — 40px is still inside the thumb's own tolerance,
-       and the rows are stacked flush so the reachable area is continuous. */
-    min-height: clamp(40px, 6.6svh, 44px);
-    font-size: clamp(1.4rem, 6.4vw, 1.85rem);
-    line-height: 1.2;
-  }
+  
   /* tap feedback, on the aim transform so the two never fight */
-  .deck__link:active { transform: translateX(6px) scale(0.985); }
+  
 
   /* --- the two pods ------------------------------------------------------
      They keep their fixed corners and translate into the foot of the menu
@@ -8198,14 +7948,7 @@ body.deck-shut .deck__close { display: none; }
      gutter, and the safe area cancels. Upward is not: it depends on the pod's
      own height, on the strip's resolved height and on the bottom safe area, so
      `Deck.podFit()` measures it once and writes the answer here. */
-  body.deck-open .mute,
-  body.deck-open .mute:hover,
-  body.deck-open .tmode,
-  body.deck-open .tmode:hover,
-  body.deck-open .gridtog,
-  body.deck-open .gridtog:hover {
-    transform: translate3d(calc(20px - var(--deck-pad)), var(--deck-podup, 0px), 0);
-  }
+  
 
   /* --- the canvas edge ---------------------------------------------------
      THREE SIDES ARE ON SCREEN NOW, not one. The top is the edge that comes into
@@ -8230,7 +7973,7 @@ body.deck-shut .deck__close { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .pane, .pane::after, .hud, .hud::after,
   .app { transition-duration: 1ms; }
-  .deck__link { transition-duration: 1ms; }
+  
 }
 
 /* ==========================================================================
@@ -9884,75 +9627,439 @@ body.waking.awake .rv { opacity: 1; transform: none; }
    is written first so the better answer overwrites it.
    ========================================================================== */
 
+/* --- THE OPENING SCENE ----------------------------------------------------
+
+   ONE SCREEN, THE ARTIFACT ON IT, AND THE WORDS UNDERNEATH.
+
+   WHAT THIS REPLACES AND WHY. The old hero was a `min-height` on a block
+   inside the study's own column, and by the numbers it worked: measured at
+   1440x900 it was 837px tall and the first section began at exactly 900. It
+   still read as the first paragraph of an article, because filling the screen
+   is not the same as owning it. Three things were wrong and all three were
+   structural rather than a matter of degree:
+
+     it was the width of the body text (351px in, on the study's measure)
+       rather than the width of the window, so it looked like a block IN a
+       page instead of the page's opening
+     the section rail stood beside it from the first pixel, so the page
+       opened by announcing a table of contents
+     the visual came FOURTH — after an eyebrow, a two-line title, a lede and
+       a five-column facts table, 265px of type before any of the work
+
+   So it is full bleed, it is a sibling of the study rather than a child of it,
+   and the order is inverted: the frame takes every pixel the words do not
+   need, and the words are a caption to it. `--step-1` for the name, not
+   `--step-3`. Three facts on one line, not a table of five.
+
+   `svh`, NOT `vh`. On a phone `100vh` is the viewport at its TALLEST, which is
+   the state it is in only after the address bar has retracted; a hero measured
+   in it opens with its last line underneath the browser. `100svh` is the
+   smallest the viewport ever gets, which is the one that is always on screen.
+   The `vh` line is the fallback for engines that have neither, written first so
+   the better answer overwrites it.
+   ========================================================================== */
+
 .phero {
-  min-height: calc(100vh - var(--proj-top));
-  min-height: calc(100svh - var(--proj-top));
+  /* the field and its ink, defaulted to paper — a study that states neither
+     gets a hero whose artwork carries all of the colour */
+  --phero-field: var(--surface-2);
+  --phero-ink: var(--ink);
+  --phero-scale: 0.7;
+
+  min-height: 100vh;
+  min-height: 100svh;
   display: grid;
-  grid-template-rows: auto auto minmax(8rem, 1fr);
-  gap: clamp(1.25rem, 3.4vh, 2.25rem);
-  padding-bottom: var(--sp-7);
+  /* THE FRAME TAKES WHAT IS LEFT, which is the whole hierarchy in one line.
+     `minmax(0, 1fr)` and not `auto`: the words are measured first and the
+     artifact gets the remainder, so on a short window the composition gives up
+     picture rather than giving up legibility — and `0` as the minimum is what
+     lets the frame's own overflow clip instead of pushing the caption off the
+     bottom of the screen. */
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: clamp(1rem, 2.6vh, 1.75rem);
+  /* ITS OWN TOP INSET, AND NOT `--proj-top`.
+
+     `--proj-top` is declared on `.proj`, and lifting the hero out of that
+     container took it out of the inheritance chain — so the variable resolved
+     to nothing, which in a SHORTHAND is not "skip that side". An invalid
+     var() makes the whole declaration guaranteed-invalid, so the element fell
+     back to `padding: 0` on all four sides at once. That is why the field ran
+     edge to edge and the caption started at x=0: one undefined custom
+     property took out the horizontal inset too.
+
+     The number is the same clamp `--proj-top` holds. It is written here rather
+     than re-declared as a variable because the hero is no longer part of that
+     layout and should not be reading its measurements. */
+  padding: clamp(2.5rem, 7vh, 4.5rem) var(--gut) clamp(1.5rem, 4vh, 2.5rem);
 }
 
-.phero__eyebrow {
-  font-size: var(--step--1);
-  color: var(--ink-dim);
-  letter-spacing: 0.02em;
-  margin: 0 0 0.75rem;
+/* --- the frame ------------------------------------------------------------ */
+
+.phero__frame {
+  position: relative;
+  min-height: 0;
+  border-radius: 8px;
+  /* `clip`, not `hidden`: it does not create a scroll container, so a sticky
+     or transformed descendant is unaffected — the same choice `.sheet` makes */
+  overflow: clip;
+  background: var(--phero-field);
+  display: grid;
+  justify-items: center;
+  padding: clamp(1.25rem, 3.4vw, 3rem);
 }
 
-/* One size below the biggest thing on the home page, on purpose: the home page
-   is where the name shouts, and a case study's title is a caption to the work
-   rather than a headline over it. */
-.phero__title {
-  font-size: var(--step-3);
-  line-height: 1.02;
-  letter-spacing: -0.028em;
-  font-weight: 500;
+.phero__frame[data-at='center'] { align-items: center; }
+/* the artifact stands ON the bottom edge — no padding under it to stand on */
+.phero__frame[data-at='bottom'] { align-items: end; padding-bottom: 0; }
+.phero__frame[data-at='top'] { align-items: start; padding-top: 0; }
+
+/* A DEFINITE HEIGHT, BECAUSE A PERCENTAGE OF NOTHING IS NOTHING.
+
+   This was `max-height: 100%` with no height of its own, and inside it
+   `.phero__panel` asks for `height: 100%`. Percentage heights resolve against
+   the PARENT's height, the parent's height was auto, and the only child with
+   an intrinsic size — `.pv-search__sheet` — sits inside an absolutely
+   positioned preview and so contributes none. Circular, and it resolved the
+   way circular always resolves: the artifact measured 887 x 0 and the frame
+   was a plain field with nothing in it.
+
+   So both axes are stated as fractions of the frame, which HAS a definite
+   height: it is the `1fr` row of a grid whose own height is `100svh`. No
+   ratio is imposed on the artwork — every preview in this file is built to
+   fill whatever box it is given, and the tile's video covers — so the box is
+   simply a rectangle the layout chooses. Which is also what makes `scale` a
+   real control rather than a suggestion. */
+.phero__art {
+  width: min(100%, calc(var(--phero-scale) * 100%));
+  height: min(100%, calc(var(--phero-scale) * 118%));
+  display: grid;
+}
+
+/* --- the three layouts ---------------------------------------------------
+
+   AN OBJECT, A SURFACE, OR THE WHOLE WALL. This is the part that has to be
+   per project, and it is three rules rather than three templates: the
+   structure above is identical and what changes is what the frame does to the
+   artifact's edges.
+
+   `panel` — air all round it, its own corner radius, a soft shadow under it.
+   The artifact reads as a thing placed on a field. Right for hardware, and for
+   identity work where the artifact IS the subject.
+
+   `bleed` — it rises out of the bottom edge and is cropped by it, so the
+   screen carries on past the frame. Which is what a working interface does:
+   you are looking at part of something in use. Right for software.
+
+   `plate` — edge to edge, no field visible at all. For a piece whose artwork
+   is already a composition and wants no frame around it. */
+
+.phero[data-layout='panel'] .phero__art {
+  border-radius: 4px;
+  overflow: clip;
+  box-shadow: 0 24px 60px -30px rgba(0, 0, 20, 0.45);
+}
+
+.phero[data-layout='bleed'] .phero__art {
+  /* IT RUNS OFF THE BOTTOM, and the negative margin is what does it rather
+     than an over-tall box. Anchored to the end of the frame and then pulled
+     down past that edge, so the top of the artifact and both its sides are
+     inside the frame and its lower edge is cut by it — the screen carries on
+     below the fold, which is what looking at software in use looks like. An
+     over-tall end-aligned item would have overflowed the TOP instead, which
+     crops the wrong end.
+
+     The top corners are rounded and the bottom two are not, because those are
+     the two edges you can still see. */
+  align-self: end;
+  height: min(calc(100% - 1rem), calc(var(--phero-scale) * 130%));
+  margin-bottom: calc(-1 * clamp(1.25rem, 4.5vh, 3rem));
+  border-radius: 5px 5px 0 0;
+  overflow: clip;
+  box-shadow: 0 -18px 50px -32px rgba(0, 0, 20, 0.4);
+}
+
+.phero[data-layout='plate'] .phero__frame { padding: 0; }
+.phero[data-layout='plate'] .phero__art { width: 100%; max-height: none; height: 100%; }
+
+/* THE ARTWORK FILLS THE ARTIFACT. `.wcard__media` is the tile's own panel and
+   it comes with the tile's aspect ratio; in here the frame decides the height,
+   so the ratio is released and the media takes the box it is given. */
+.phero__panel {
+  aspect-ratio: auto;
+  height: 100%;
+  min-height: 0;
+  border-radius: inherit;
+}
+
+.phero__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* --- the caption --------------------------------------------------------- */
+
+/* IDENTITY ON THE LEFT, CONTEXT ON THE RIGHT, THE CUE IN THE CORNER. Baseline
+   aligned along the bottom, which is what makes it read as one line of
+   furniture under the picture rather than as two stacked blocks. */
+.phero__foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 26rem);
+  align-items: end;
+  gap: clamp(1rem, 3vw, 2.5rem);
+}
+
+.phero__name {
   margin: 0;
-  max-width: 22ch;
+  /* ONE STEP, NOT THREE. The brief is explicit that the title must not be
+     enormous and that the visual carries the impact; this site's own restraint
+     says the same thing. It is also the SHORT name — the sentence-length one is
+     the Overview's heading, where a sentence belongs. */
+  font-size: var(--step-1);
+  line-height: 1.14;
+  letter-spacing: -0.018em;
+  font-weight: 500;
+  color: var(--ink);
 }
 
-.phero__lede {
-  margin: 1.1rem 0 0;
-  max-width: 46ch;
+/* THREE FACTS, ON ONE LINE, WITH A MIDDOT BETWEEN THEM. The labelled
+   five-column table that used to be here is the right shape for the top of a
+   case study and the wrong one for a title card. It still exists — inside
+   Overview, as the `facts` block — which is where the record belongs. This is
+   the orientation. */
+.phero__facts {
+  margin: 0.45rem 0 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.5rem;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+
+.phero__facts i {
+  font-style: normal;
+  color: var(--ink-ghost);
+}
+
+.phero__side {
+  display: grid;
+  gap: 0.9rem;
+  justify-items: start;
+}
+
+.phero__line {
+  margin: 0;
+  max-width: 42ch;
   font-size: var(--step-0);
   line-height: 1.55;
   color: var(--ink-2);
 }
 
-/* THE FACTS, LABELLED. The tile writes them as one comma-separated line —
-   "Product identity, 2026, Singapore" — which is the right shape for a caption
-   under a picture and the wrong one at the top of a case study: nothing in it
-   says which of the three is the discipline and which is the place. */
-.phero__facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem clamp(1.5rem, 4vw, 3.25rem);
+/* THE CUE, AND THE WHOLE POINT OF IT IS THAT IT LEAVES.
+
+   Ten pixels of tracked capitals in the ghost ink with a hairline arrow under
+   them — quieter than any other text on the screen, and nothing about it reads
+   as a button, which is requirement seven. It is not centred and it is not
+   bouncing: it sits at the corner furthest from the name, and the arrow
+   breathes 3px on the site's own 3.2s cadence.
+
+   It goes on the first 40px of scroll rather than fading out over the whole
+   hero — by then the visitor has answered the question it was asking. */
+.phero__cue {
   margin: 0;
-  padding-top: 1.1rem;
-  border-top: 1px solid var(--line);
-}
-.phero__facts dt {
-  font-size: 0.6875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 500;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--ink-dim);
-  margin-bottom: 0.2rem;
-}
-.phero__facts dd {
-  margin: 0;
-  font-size: var(--step--1);
-  color: var(--ink);
+  color: var(--ink-ghost);
+  transition: opacity 320ms var(--ease), translate 420ms var(--ease);
 }
 
-/* The tile's own panel, released from the tile's proportions: on a card the
-   aspect ratio is what keeps a grid of four in step, and here there is one of
-   them and the height is whatever the screen has left. */
-.phero__panel {
-  aspect-ratio: auto;
-  height: 100%;
-  min-height: 9rem;
-  border-radius: 6px;
+/* A GLYPH, NOT A DRAWING. This was a 1px stem with a rotated corner for a
+   head, and at 10px the two did not meet cleanly — it rendered as a tick.
+   The arrow is a character, set in the same face as everything else, which is
+   also the mark the suggestion rows in section 45 use. It breathes 2px on the
+   site's 3.2s cadence and nothing else moves. */
+.phero__cue i {
+  font-style: normal;
+  font-size: 0.8125rem;
+  line-height: 1;
+  animation: pheroCue 3.2s ease-in-out infinite;
+}
+
+@keyframes pheroCue {
+  0%, 100% { translate: 0 -2px; opacity: 0.5; }
+  50% { translate: 0 2px; opacity: 1; }
+}
+
+.phero.is-past .phero__cue {
+  opacity: 0;
+  translate: 0 6px;
+}
+
+/* --- the give-way -------------------------------------------------------
+
+   THE HERO HANDS OVER, AND IT DOES IT WITH THE SCROLLBAR RATHER THAN WITH A
+   LISTENER. `animation-timeline: view()` ties the whole thing to the element's
+   own passage through the viewport: no scroll handler, no rAF, no measurement,
+   and — the part that matters for the brief — no scroll-jacking, because the
+   browser is still doing the scrolling and this is only reading it.
+
+   It is deliberately almost nothing: the caption lifts 10px and fades as it
+   leaves, and the frame loses a little light and 1.5% of its size over the
+   whole screen. There is no parallax, nothing is pinned, and the numbers are
+   small enough that you would not name it if asked what happened — which is
+   the difference between a transition and an effect.
+
+   Wrapped in `@supports` because engines without it should get a hero that
+   simply scrolls, which is a perfectly good hero, and inside a reduced-motion
+   guard because it is motion. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .phero__foot {
+      animation: pheroLift linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 72%;
+    }
+
+    .phero__frame {
+      animation: pheroSink linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+  }
+}
+
+@keyframes pheroLift {
+  to { opacity: 0; translate: 0 -10px; }
+}
+
+@keyframes pheroSink {
+  to { opacity: 0.5; scale: 0.985; }
+}
+
+/* --- THE LAUNCHER IS THE PANEL, COLLAPSED --------------------------------
+
+   THE WHOLE OF IT IS IN SECTION 45 NOW, and that is the fix rather than a
+   reorganisation. There used to be a `.llmcta` here: a fixed button in the
+   corner, a separate element from the panel, with its own surface, its own
+   shadow and a rule that slid it 389px to the left when the panel opened. Two
+   objects, and it read as two — you watched a button travel out of the way and
+   then a second thing arrive from the right edge, with both on screen at once
+   in the middle of it.
+
+   So there is no launcher element any more. The chip in the corner is the
+   panel's own collapsed state: one box, one position, one surface, that grows
+   from chip to panel and back. Nothing travels sideways and there is nothing
+   for a second component to be out of step with. `.llm__chip` — the face it
+   wears while it is small — is defined with the panel it belongs to. */
+
+/* --- THE DOCK IS NOT PART OF AN OPENING SCENE ----------------------------
+
+   The drawing dock is shell furniture and it is on this page already; it used
+   to sit on paper, because the hero was inset on the study's own measure and
+   there was margin to its right. A full-bleed hero puts a white rack straight
+   onto the project's field — a toolbar over the artwork, in the one frame the
+   brief says should be almost entirely about the project.
+
+   So it steps out while the hero is on screen and comes back with the case
+   study, which is the same rule the section rail now follows. It travels rather
+   than fading, for the reason given in section 45: an invisible dock is still a
+   dock as far as hit-testing is concerned. The three corner pods stay — theme,
+   grid and sound are the visitor's own controls, they sit over the caption's
+   paper rather than over the artwork, and they were there before this. */
+body[data-page='project'].phero-up .tools {
+  translate: calc(100% + 4rem) -50%;
+  opacity: 0;
+  transition:
+    translate 420ms var(--spring-soft),
+    opacity 260ms var(--ease);
+}
+
+/* --- on the field ---------------------------------------------------------
+
+   A STUDY THAT STATES A COLOUR OWNS THE INK ON IT. Nothing in the caption sits
+   on the field — the words are under the frame, on paper — so the only thing
+   `--phero-ink` is for is anything drawn INSIDE the frame that the artwork does
+   not provide. Stated here rather than per project so a fourth layout can use
+   it without a new rule. */
+.phero__frame { color: var(--phero-ink); }
+
+/* --- and in the dark ------------------------------------------------------
+
+   The field is the study's own colour and stays exactly as authored: a
+   project's identity does not have a night version, and a blue that inverts is
+   a different blue. What DOES change is the paper the caption is on and the
+   three inks in it, all of which are tokens and all of which invert on their
+   own. The only literal here is the shadow, because a shadow made of navy is
+   invisible on a dark ground. */
+.is-dark .phero[data-layout='panel'] .phero__art {
+  box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.72);
+}
+
+.is-dark .phero[data-layout='bleed'] .phero__art {
+  box-shadow: 0 -18px 50px -30px rgba(0, 0, 0, 0.66);
+}
+
+/* --- narrow: recomposed, not shrunk --------------------------------------
+
+   THE ORDER INVERTS BELOW 48rem, and that is a recomposition rather than a
+   breakpoint. On a wide window the artifact is the first thing you see and the
+   name is its caption, because the eye goes to the picture and the picture has
+   the width to be worth going to. On a 390px screen it does not: the artifact
+   is 342px across, the name would be pushed below the fold by it, and a
+   visitor who has just tapped a tile needs to be told they arrived before they
+   are shown anything.
+
+   So on a phone the name and its facts come first, the artifact under them, the
+   sentence under that, and the cue last — which is the order the brief's own
+   mobile diagram gives. The frame keeps whatever room is left, so it is still
+   the biggest thing on the screen; it is simply no longer the first. */
+@media (max-width: 48rem) {
+  .phero {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: clamp(0.9rem, 2.4vh, 1.4rem);
+    padding-top: clamp(1.25rem, 4vh, 2rem);
+  }
+
+  .phero__frame { order: 2; border-radius: 6px; }
+
+  .phero__foot {
+    display: contents;
+  }
+
+  .phero__id { order: 1; }
+  .phero__side { order: 3; gap: 0.7rem; }
+
+  .phero__name { font-size: var(--step-05); }
+  .phero__line { font-size: var(--step--1); max-width: none; }
+
+  /* the artifact takes more of a narrow frame — 70% of 342px is a thumbnail */
+  .phero__art { width: min(100%, calc(var(--phero-scale, 0.7) * 118%)); }
+  .phero[data-layout='bleed'] .phero__art,
+  .phero[data-layout='panel'] .phero__art { width: 100%; }
+
+  /* `display: contents` on the foot means the give-way has nothing to animate;
+     the two children take it instead, so the hand-over survives the reorder */
+  .phero__cue { justify-content: flex-start; }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) and (max-width: 48rem) {
+    .phero__foot { animation: none; }
+    .phero__id,
+    .phero__side {
+      animation: pheroLift linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 72%;
+    }
+  }
 }
 
 /* --- the way on ---------------------------------------------------------
@@ -10609,8 +10716,9 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
       a dark one, at the alpha a dark ground needs to make the same amount of
       almost-nothing. */
 .is-dark {
-  --grid-major: rgba(232, 232, 236, 0.075);
-  --grid-minor: rgba(232, 232, 236, 0.036);
+  /* the same pair as the light mode now — see the note there */
+  --grid-major: rgba(232, 232, 236, 0.1);
+  --grid-minor: rgba(232, 232, 236, 0.048);
 }
 
 /* 2. THE FIELD is drawn in an ink chosen for white paper. On a dark ground the
@@ -10668,7 +10776,7 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
       chip; on a dark page it is a hole. */
 .is-dark .toast,
 .is-dark .tip { background: #26262a; color: #f2f1ee; }
-.is-dark .tab-menu { background: #1e1e21; }
+
 
 /* 7. THE CARDS KEEP THEIR ARTWORK AND GAIN AN EDGE. A bright preview on a dark
       page is a bright rectangle, and dimming it was ruled out — the imagery is
@@ -11258,4 +11366,1291 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
   :root.is-shifting *,
   :root.is-shifting *::before,
   :root.is-shifting *::after { transition-duration: 1ms !important; }
+}
+
+/* ==========================================================================
+   45. ISHAANLLM
+
+   A LAYER OF THE PORTFOLIO, NOT A WIDGET ON IT.
+
+   Everything here reads the site's own tokens — `--surface-2` for the paper,
+   `--line` for every edge, `--ink` / `--ink-2` / `--ink-dim` for the three
+   weights of text, `--spring` for the entrance. There is no colour, no
+   gradient and no shadow in this section that is not already used somewhere
+   else in this file, which is the whole of why it reads as part of the site:
+   it is made of the same four materials as the sidebar next to it.
+
+   AND IT IS SMALL TYPE. 13px for an answer, 12px for a question, 11px for the
+   chips, 9px for the BETA mark — the portfolio's ladder, not a chat app's. A
+   panel of 15px messages would be the largest text on the screen.
+   ========================================================================== */
+
+/* --- the row in the sidebar ---------------------------------------------- */
+
+/* A BUTTON WEARING A ROW'S CLOTHES. Everything here is undoing what a browser
+   does to a `<button>` so that `.mast__row` above can do its job unopposed:
+   the row's own colour, size, hover and 22.5px pitch are inherited and not
+   restated once. */
+.mast__row--llm {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+  width: 100%;
+  padding: 0.07rem 0;
+  font: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* THE MARK, AND IT IS DELIBERATELY THE QUIETEST THING IN THE COLUMN. Nine
+   pixels, tracked open, in the ghost ink, inside a hairline — the same
+   hairline every separator on this site is drawn with. It says experimental by
+   being small, which is the only honest way to say it: a coloured badge would
+   be the loudest object in the sidebar and would be claiming the opposite. */
+/* ONE MARK, ONE APPEARANCE, IN THREE PLACES AND TWO THEMES.
+
+   This had two appearances and they were showing up side by side. The rail's
+   copy was pinned to the bright end whenever the panel was open, and the
+   header's copy — the one directly beside it — sat at the dim end, because it
+   had no `[aria-expanded]` rule to promote it. Measured: same 9px, same
+   weight, same tracking, same 30.6 x 11.9 box, same padding, same radius, and
+   two different inks with two different rings. Which is the worst kind of
+   inconsistency, because everything else about them matched well enough that
+   the difference read as a rendering fault rather than as a state.
+
+   THE MARK IS NOT A STATE INDICATOR. It says "this is experimental", which is
+   true whether the panel is open, hovered or untouched, and on the rail, in
+   the header and in a case study alike. The row's own colour is already the
+   open state — `[aria-expanded='true']` takes it to full ink — so the chip has
+   nothing left to say about it and should stop trying.
+
+   So there is one pair of values and no promotion. They are the legible pair:
+   `--border` at #272729 against a #0f0f11 sidebar is a hairline you have to be
+   told is there, which is why the dark ring is stated as lifted white like
+   every other dark frame on this site. */
+.llm__beta {
+  --beta-ink: var(--ink-2);
+  --beta-ring: var(--ink-ghost);
+  --beta-wash: var(--line-soft);
+
+  flex: none;
+  font-size: 0.5625rem;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--beta-ink);
+  padding: 0.18em 0.34em 0.14em;
+  border-radius: 3px;
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--beta-ring);
+  transition: background-color 220ms var(--ease);
+}
+
+.is-dark .llm__beta {
+  --beta-ring: rgba(240, 240, 238, 0.32);
+  --beta-wash: rgba(240, 240, 238, 0.07);
+}
+
+/* IT STILL BREATHES, BUT NOT WITH ITS OWN IDENTITY.
+
+   The breath used to swing the ink and the ring between two pairs, which is
+   why a still frame of the rail's chip never matched the header's: half the
+   cycle was a different colour. So the animation moved off the two properties
+   that define the mark and onto the one that does not — a wash behind it,
+   fading in and out from nothing. The text and the edge hold exactly one value
+   everywhere and at every instant; what pulses is the paper under them.
+
+   3.2s ease-in-out infinite is not a number picked for this: it is the rhythm
+   `tabGlow` already uses on the dock's collapsed handle, the site's one other
+   "this is live, come and look" animation. Same cadence, so the two read as
+   one idea.
+
+   It runs on the two entry points and not in the panel's header, where the
+   answer is already yes — and it stops the moment it is hovered or opened,
+   because an animation whose only job is to attract attention has no business
+   continuing once it has it. Both of those settle the wash to transparent,
+   which is the resting look, which is the header's look. */
+.mast__row--llm .llm__beta,
+.llm__chip .llm__beta {
+  animation: llmBeta 3.2s ease-in-out infinite;
+}
+
+@keyframes llmBeta {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: var(--beta-wash); }
+}
+
+:root:not(.hover-cold) .mast__row--llm:hover .llm__beta,
+.mast__row--llm[aria-expanded='true'] .llm__beta,
+:root:not(.hover-cold) .llm:not(.is-up):hover .llm__beta,
+.llm.is-up .llm__chip .llm__beta {
+  animation: none;
+  background-color: transparent;
+}
+
+.mast__row--llm[aria-expanded='true'] { color: var(--ink); }
+
+/* --- the panel ----------------------------------------------------------- */
+
+/* IT IS NOT AN OVERLAY, AND THAT IS A LAYOUT FACT RATHER THAN A LOOK.
+
+   The panel is the third column of `.home` — the same grid the sidebar is the
+   first column of. It takes real space, the portfolio genuinely narrows into
+   what is left, and there is no scrim because there is nothing to veil: the
+   work has not gone behind anything, it has moved over.
+
+   Which also settles the two things people expect an overlay to break. The
+   sidebar's track is `--mast-w`, a clamp of the viewport, and it is the FIRST
+   track — so it does not move and cannot be covered, `.mast__air` is the same
+   rectangle before and after, and the brick pile is not preserved by any
+   effort. It is untouched. */
+/* ONE BOX, TWO SIZES, AND THAT IS THE WHOLE MECHANISM.
+
+   WHAT THIS REPLACED, AND WHY. IshaanLLM was a third column of the page grid.
+   Opening it grew the track from zero and the portfolio genuinely reflowed into
+   the width that was left — no transform, no overlay, the page making room. It
+   was the right answer to the question that was asked, and it produced three
+   problems that were all the same problem:
+
+     The launcher was a separate fixed element, so it had to be told to travel
+     out of the panel's way. You saw a button slide left, and then a panel
+     arrive beside it. Two objects.
+
+     The panel lived INSIDE the page grid, so on a case study its containing
+     block was `.proj__body` — and the hero is a sibling ABOVE that. Opening it
+     while reading the hero put the panel's top edge at 963px in a 900px
+     window. Measured. The launcher moved and nothing arrived, which is exactly
+     what it looked like.
+
+     And the panel was inside the content the router swaps, so a route change
+     destroyed and rebuilt it.
+
+   NOW IT IS ONE FIXED BOX ANCHORED TO THE BOTTOM-RIGHT CORNER, and its width
+   and height are what animate. Small, it is the chip. Large, it is the panel.
+   The right and bottom edges never move — `right` and `bottom` are the anchors
+   and only the two lengths change — so it unfolds up and to the left out of the
+   exact spot the chip occupied, and folds back into it.
+
+   WIDTH AND HEIGHT, NOT A TRANSFORM. A scale would distort the type and a
+   translate would slide a finished panel in from off-screen; neither is a
+   thing expanding. These are the two properties that actually describe a box
+   getting bigger, and animating them on a fixed element with `overflow: clip`
+   costs one composited layer's worth of repaint, not a page reflow — nothing
+   outside this box is laid out again, which is the other half of why the
+   portfolio no longer moves when you open it.
+
+   THE SPRING OVERSHOOTS, AND IT CAN ONLY DO SO INWARD. `--spring-soft` passes
+   about 4% beyond its target and settles back; with the right edge pinned that
+   overshoot travels the LEFT edge a few pixels further out and returns. Which
+   is what gives it weight, and it is the same curve a brick lands on. 420ms
+   out, 340ms back — an opening is an arrival and wants the time; a closing is
+   a dismissal and should not keep you waiting. */
+:root {
+  /* how wide the panel is when it is open. Read here and in three furniture
+     rules, which is why it is at the root rather than on the element.
+
+     THE FLOOR IS 20REM AND IT USED TO BE 17. The clamp was written when this
+     was a grid track and every pixel it took came off the work, so the low end
+     was a negotiation with the showcase. It takes nothing now — at 1024 that
+     sum gave a 276px column, which is a phone's measure on a desktop. The vw
+     term and the ceiling are unchanged, so at 1440 it is the same 389px it has
+     been. */
+  --llm-pw: clamp(20rem, 27vw, 25rem);
+  /* how tall. `svh` not `dvh`: a retracting address bar must not resize an
+     open panel mid-scroll. */
+  --llm-ph: min(78svh, 40rem);
+  /* the corner it lives in — the pods' own inset, so the collapsed chip shares
+     their baseline instead of inventing one four pixels off it */
+  --llm-inset: 20px;
+  /* the collapsed size. The chip is the same 12px wordmark and 9px mark as the
+     sidebar's row, so this is that line plus the header's own padding. */
+  --llm-cw: 10.25rem;
+  --llm-ch: 2.0625rem;
+  /* WHAT THE FIXED FURNITURE HAS TO CLEAR. The dock and the corner pods are
+     fixed to the window, so no amount of reflow moves them — they are told the
+     number and step aside. It is the panel's width plus its inset plus a
+     gutter, because the panel no longer runs to the edge of the screen. */
+  --llm-clear: calc(var(--llm-pw) + var(--llm-inset) + 12px);
+}
+
+.llm {
+  position: fixed;
+  right: var(--llm-inset);
+  bottom: var(--llm-inset);
+  /* above the dock's 90, inside `.hud`; the tooltip layer is above both */
+  z-index: 95;
+
+  width: var(--llm-cw);
+  height: var(--llm-ch);
+  box-sizing: border-box;
+
+  /* THE CLIP IS WHAT MAKES IT AN UNFOLDING RATHER THAN A RESIZE. The panel
+     inside is a constant size and is anchored to this box's bottom-right
+     corner, so while the box is small the panel is simply outside it and not
+     drawn. Growing the box reveals the panel it already contains — which is
+     why the conversation is never re-wrapped on any frame of the animation,
+     and why there is no half-formed squashed panel to look at on the way.
+     `clip`, not `hidden`: it creates no scroll container, so the log's own
+     scrolling still works inside it. */
+  overflow: clip;
+
+  border-radius: 7px;
+  background: var(--surface-2);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 10px 26px -16px rgba(20, 16, 12, 0.3);
+
+  /* THE CLOSING CURVE AND DURATION; the opening ones are on `.is-up`.
+
+     AN EASE, NOT THE SPRING, and that came out of a per-frame measurement. Both
+     directions used `--spring-soft` at first. Outward its 4% overshoot is the
+     whole point: the target is the open panel, and passing it travels the LEFT
+     edge a few pixels further out where there is nothing to notice. Inward the
+     target is the chip, and 4% of a chip is visible — the box reached 162x28 at
+     254ms before settling back to 164x33, which is a sixth of its own height,
+     squashed, at the end of the motion, on the one element that never leaves
+     the screen. It is still the reverse of the open: the same two properties
+     contracting to the same corner. It arrives rather than landing. */
+  transition:
+    width 340ms var(--ease),
+    height 340ms var(--ease),
+    border-radius 240ms var(--ease),
+    box-shadow 240ms var(--ease),
+    opacity 200ms var(--ease);
+}
+
+.llm.is-up {
+  width: var(--llm-pw);
+  height: var(--llm-ph);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 26px 60px -30px rgba(20, 16, 12, 0.34);
+  transition:
+    width 420ms var(--spring-soft),
+    height 420ms var(--spring-soft),
+    border-radius 260ms var(--ease),
+    box-shadow 320ms var(--ease);
+}
+
+/* ON THE SHELL THERE IS NO CHIP IN THE CORNER, AND THE BOX IS STILL HERE.
+
+   The three sections have their own entry point — a row in the sidebar's list,
+   beside Work and About — and the corner is already occupied there by the grid,
+   theme and sound pods, which cannot move to the other side of the window
+   because the other side of the window is the brick tray. So on those pages
+   the collapsed box is not painted at all, and the panel unfolds from the
+   corner the same way regardless. That is deliberate and it is what the brief
+   asks for: where the trigger IS and where the panel OPENS are two different
+   questions, and the answer to the second one is always this corner. */
+.llm[data-chip='off']:not(.is-up) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- the two faces -------------------------------------------------------
+
+   THE PANEL IS A CONSTANT SIZE. It is the open box's size at every moment,
+   including the moments the box is chip-sized, and it is pinned to the same
+   bottom-right corner — so it is revealed outward from that corner rather than
+   being laid out over and over at intermediate widths. Its own fade is short
+   and slightly late: by the time it is legible the box is most of the way
+   open, so what you read is a panel arriving, never a panel being stretched.
+
+   `visibility` is what keeps a closed panel's input and buttons out of the tab
+   order. Immediate on the way in, delayed on the way out so nothing blinks
+   away mid-fold. */
+.llm__panel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--llm-pw);
+  height: var(--llm-ph);
+  display: flex;
+  flex-direction: column;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 160ms var(--ease),
+    visibility 0s linear 340ms;
+}
+
+.llm.is-up .llm__panel {
+  visibility: visible;
+  opacity: 1;
+  transition:
+    opacity 200ms var(--ease) 90ms,
+    visibility 0s;
+}
+
+/* AND THE CHIP IS THE FACE IT WEARS WHILE IT IS SMALL.
+
+   Pinned to the same corner at the collapsed size, so it does not move a pixel
+   while it fades — the box grows out from behind it. It carries no surface and
+   no shadow of its own: those belong to the box, which is the point. What is
+   left is the wordmark and the mark, at the header's own left padding and very
+   nearly the header's own baseline — so at the instant the two swap, the words
+   are within a few pixels of each other and the label reads as becoming the
+   header rather than as being replaced by it. Then it rides up with the top
+   edge, because the top edge is the thing that is moving.
+
+   It goes out fast, in 120ms, and comes back late. There is never a frame with
+   a chip and a legible panel on screen together, which was the complaint. */
+.llm__chip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--llm-cw);
+  height: var(--llm-ch);
+  box-sizing: border-box;
+
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 1.15rem;
+
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: -0.002em;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    opacity 160ms var(--ease) 150ms,
+    transform 180ms var(--spring-soft);
+}
+
+.llm.is-up .llm__chip {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms var(--ease);
+}
+
+/* the wordmark does not shrink to make room for the mark beside it; at these
+   sizes there is nothing to make room for, and a chip whose label had started
+   ellipsing would be a chip that was too small */
+.llm__chip-t { flex: none; }
+
+/* THE PRESS IS THE FIRST BEAT OF THE UNFOLDING — the chip gives by 1.5%, and
+   the box starts growing out of it. Small enough to read as the control being
+   solid rather than as an animation. */
+.llm__chip:active { transform: scale(0.985); transition-duration: 70ms; }
+
+.llm__chip:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--ink-dim);
+  border-radius: 7px;
+}
+
+:root:not(.hover-cold) .llm:not(.is-up):hover {
+  box-shadow:
+    inset 0 0 0 1px var(--ink-ghost),
+    0 14px 30px -16px rgba(20, 16, 12, 0.34);
+}
+
+/* --- the edge catches the light, while it is a chip ----------------------
+
+   THE SHEEN MOVED WITH THE CHIP. It was on the old launcher element; it is on
+   the box now, which is the same edge it always described and one fewer thing
+   to keep in step. A narrow arc of the site's accent runs once around the
+   border every 4.2s, with a blurred bloom behind it, so the two together read
+   as a bevel passing under a light source rather than as a coloured border.
+
+   `@property` is what makes the angle animatable at all — an unregistered
+   custom property interpolates as a string, which is to say it does not
+   interpolate. `inherits: true` is what lets ONE animation on the box drive
+   both layers, so the crisp arc and its bloom are always at the same place on
+   the edge. Where `@property` is unsupported the arc sits still at its start
+   angle: a static gold catch on one corner, not a broken control.
+
+   AND IT STOPS ONCE IT HAS WORKED. Hovering or opening ends it, for the same
+   reason the BETA mark stops breathing: a thing whose only job is to be
+   noticed has no business continuing after it has been. */
+@property --cta-sheen {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0turn;
+}
+
+.llm { animation: ctaSheen 4.2s linear infinite; }
+
+@keyframes ctaSheen {
+  to { --cta-sheen: 1turn; }
+}
+
+.llm::before,
+.llm::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--cta-sheen),
+    transparent 0deg,
+    var(--accent) 18deg,
+    transparent 44deg,
+    transparent 150deg,
+    color-mix(in srgb, var(--accent) 55%, transparent) 168deg,
+    transparent 194deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  transition: opacity 260ms var(--ease);
+}
+
+/* the bloom: a wider band, blurred, at half strength — and the strength is a
+   token because the dark theme wants more of it. Stated ONCE here so that the
+   rules which fade the sheen out are the only ones declaring `opacity` on this
+   pseudo; a second declaration in a theme block outranks them and leaves the
+   arc lit under an open panel, which is exactly what happened. */
+.llm::before {
+  padding: 5px;
+  filter: blur(4px);
+  opacity: var(--sheen-bloom, 0.5);
+}
+
+/* the arc itself */
+.llm::after { padding: 1.5px; }
+
+:root:not(.hover-cold) .llm:hover::before,
+:root:not(.hover-cold) .llm:hover::after,
+.llm.is-up::before,
+.llm.is-up::after,
+.llm[data-chip='off']::before,
+.llm[data-chip='off']::after { opacity: 0; }
+
+/* PAUSED RATHER THAN REMOVED. Nobody can see the arc once the panel is open or
+   on a page that paints no chip, so the angle has no business being recomputed
+   sixty times a second. `animation: none` would also stop it — and would reset
+   the angle to zero, so the arc would jump on its way back in. Pausing leaves
+   it where it was. */
+.llm.is-up,
+.llm[data-chip='off'] { animation-play-state: paused; }
+
+/* --- in the dark --------------------------------------------------------- */
+
+/* the surface, the hairline and the ink are tokens and invert on their own;
+   the lift is a literal, because a shadow made of brown ink is invisible on a
+   dark ground. The accent is warmer and lighter there — #c9a06a against
+   #a8722c — which is the right way round for a light travelling over an edge,
+   so all that changes for the sheen is how much bloom the ground can take. */
+.is-dark .llm {
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 240, 238, 0.14),
+    0 12px 30px -16px rgba(0, 0, 0, 0.7);
+}
+
+.is-dark .llm.is-up {
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 240, 238, 0.14),
+    0 26px 64px -28px rgba(0, 0, 0, 0.78);
+}
+
+:root.is-dark:not(.hover-cold) .llm:not(.is-up):hover {
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 240, 238, 0.3),
+    0 14px 34px -16px rgba(0, 0, 0, 0.75);
+}
+
+/* a dark ground carries more bloom before it reads as haze */
+.is-dark .llm { --sheen-bloom: 0.62; }
+
+/* --- the head ------------------------------------------------------------ */
+
+/* ONE LINE, AND THE SMALLEST TYPE IN THE HEADER IS THE POINT. 12px wordmark,
+   the 9px experimental mark beside it, two 11px controls at the far end. A
+   chat product puts a name, an avatar and a subtitle up here; this is a strip
+   of chrome the width of a sidebar row, because that is what it is.
+
+   The sentence that used to live here has moved into the empty state. It is
+   true once — the first time you open the panel — and printing it above every
+   turn afterwards is a header explaining itself to someone already reading. */
+.llm__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* the controls are 28px tall and optically centred on the wordmark, so the
+     strip keeps the height it had rather than growing by the difference */
+  padding: 0.8rem 1.15rem 0.7rem;
+  box-shadow: inset 0 -1px 0 var(--line-soft);
+}
+
+.llm__name {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: -0.002em;
+  color: var(--ink);
+}
+
+/* AND THEY ARE NOT THERE WHILE IT IS A CHIP. Start-over and close are the
+   panel's controls; on a 33px chip they would be two icons crowding the mark,
+   and closing something that is already closed is not an action. They come in
+   with the rest of the panel — no separate rule needed, because the panel's own
+   fade carries them. This exists so the next person does not add one. */
+.llm__tools {
+  flex: none;
+  display: flex;
+  gap: 0.05rem;
+  /* the wash is wider than the glyph, so it is pulled back into the corner —
+     the GLYPH lines up with the panel's padding, not the button around it */
+  margin-right: -0.45rem;
+}
+
+/* TWENTY-EIGHT AND FOURTEEN, WHICH IS THE SIZE THE REST OF THE SITE USES.
+
+   These were 11px glyphs in a 22px button, chosen to be quiet, and quiet went
+   past restrained into hard to see: the site's other small controls — the
+   three corner pods, the dock's chips — are 32px with a 14.4px glyph, so an
+   11px mark was the smallest thing on the whole page by a clear margin and it
+   was the one you have to hit to close the panel. Restraint is a colour
+   decision here, not a size one: these stay in the ghost ink and only come up
+   to full ink on hover, which is what keeps them from competing with the
+   wordmark beside them. 28px is also a real pointer target. */
+.llm__ico {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  color: var(--ink-ghost);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 160ms var(--ease),
+    background 160ms var(--ease),
+    opacity 160ms var(--ease),
+    transform 200ms var(--spring-soft);
+}
+
+.llm__ico svg { width: 14px; height: 14px; }
+/* start-over is meaningless with nothing to start over from, and it says so by
+   going quiet rather than by disappearing — a control that comes and goes is a
+   header that changes shape */
+.llm__ico[disabled] { opacity: 0.34; pointer-events: none; }
+:root:not(.hover-cold) .llm__ico:hover { color: var(--ink); background: var(--line-soft); }
+.llm__ico:active { transform: scale(0.9); transition-duration: 90ms; }
+
+/* --- the conversation ---------------------------------------------------- */
+
+/* IT GROWS UPWARD OUT OF THE FIELD, which is the single decision that stops
+   this reading as a chat window. An empty chat panel is a tall grey void with
+   a heading floating in the middle of it; here the first thing a visitor reads
+   sits directly above the thing they type into, and each answer pushes the one
+   before it up and out.
+
+   `margin-top: auto` on the first child rather than `justify-content: flex-end`
+   — the flex-end version bottom-aligns correctly and then makes the top of an
+   overflowing column unreachable, which is a well-known way to lose the start
+   of a conversation. */
+.llm__log {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.1rem 1.15rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.llm__log > :first-child { margin-top: auto; }
+
+/* --- the invitation ------------------------------------------------------ */
+
+/* THE ONE PLACE THE PANEL RAISES ITS VOICE, and it raises it to 16px. That is
+   the largest type in here and it appears exactly once, before anything has
+   been asked — everything after it is 13px and under. Two lines: a question,
+   and the honest description of what this thing actually is. The second line
+   is not marketing, it is the feature's one real limitation stated up front,
+   which is also the most interesting thing about it. */
+.llm__intro {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.llm__intro-h {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 450;
+  letter-spacing: -0.016em;
+  line-height: 1.24;
+  color: var(--ink);
+}
+
+.llm__intro-p {
+  margin: 0;
+  max-width: 32ch;
+  font-size: 0.75rem;
+  line-height: 1.56;
+  color: var(--ink-dim);
+}
+
+/* --- it knows where you are ---------------------------------------------- */
+
+/* TEN PIXELS, TRACKED OPEN, IN THE GHOST INK — the same treatment as the BETA
+   mark, for the same reason: it is metadata about the interface rather than
+   something to read. A badge here would be the panel congratulating itself on
+   knowing which page it is on. This just quietly names it, and the fact that
+   the questions underneath change with it is the actual proof. */
+.llm__where {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--ink-ghost);
+}
+
+.llm__where i {
+  flex: none;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* it belongs to the list under it, not to the log's own rhythm */
+.llm__where + .llm__cues { margin-top: -0.85rem; }
+
+/* --- the questions on offer ---------------------------------------------- */
+
+/* A LIST, NOT PILLS, AND THAT IS THE WHOLE DESIGN.
+
+   Capsules in a column read as a chat product and, worse, as buttons of
+   unequal weight — the long one looks more important than the short one. A
+   list of left-aligned rows with an arrow that slides when you point at it
+   reads as a list of things you could ask, which is what it is. It is also
+   what the sidebar three rows above already is: same 13px, same inks, same
+   quiet hover. The suggestions are a second navigation system, so they are
+   built out of the first one's parts.
+
+   The negative inline margin lets the hover wash reach a little past the text
+   without the text moving — the row is wider than its label, like a menu
+   item. */
+.llm__cues {
+  display: grid;
+  gap: 0.01rem;
+  margin-inline: -0.5rem;
+}
+
+.llm__cues-lb {
+  margin: 0 0 0.28rem 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--ink-ghost);
+}
+
+.llm__cue {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.33rem 0.5rem;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.48;
+  text-align: left;
+  color: var(--ink-2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 160ms var(--ease), background 160ms var(--ease);
+}
+
+/* THE ARROW IS THE MOVING PART. The row itself does not shift — a menu item
+   that slides sideways under the cursor is a menu item you have to chase. The
+   arrow moves 2px and takes the accent, which is the one saturated colour this
+   site allows its chrome, and pressing pushes it two more. That is the whole
+   of the physical response: small, on the right element, and over in 200ms. */
+.llm__cue-i {
+  flex: none;
+  font-size: 0.6875rem;
+  line-height: 1.62;
+  color: var(--ink-ghost);
+  transition: color 160ms var(--ease), transform 240ms var(--spring-soft);
+}
+
+.llm__cue-i::before { content: '\2192'; }
+
+:root:not(.hover-cold) .llm__cue:hover { color: var(--ink); background: var(--line-soft); }
+:root:not(.hover-cold) .llm__cue:hover .llm__cue-i {
+  color: var(--accent);
+  transform: translateX(2px);
+}
+.llm__cue:active { background: var(--line); }
+.llm__cue:active .llm__cue-i { transform: translateX(4px); transition-duration: 90ms; }
+.llm__cue:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--ink-dim); }
+
+/* THEY ARRIVE ONE AFTER ANOTHER, and only when they are new. `data-fresh` is
+   written by the render for the turn that has just landed and for nothing
+   else, so a repaint caused by a route change or a restored conversation shows
+   the same list sitting perfectly still. 46ms apart and 300ms each: read as
+   one gesture, not as four events.
+
+   It animates `translate` rather than `transform` so the pressed state of the
+   arrow inside it is not fighting a filled animation for the same property. */
+.llm__cues[data-fresh] .llm__cue {
+  animation: llmCue 300ms var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 46ms + 60ms);
+}
+
+@keyframes llmCue {
+  from { opacity: 0; translate: 0 5px; }
+  to { opacity: 1; translate: none; }
+}
+
+/* --- a turn -------------------------------------------------------------- */
+
+.llm__turn {
+  display: grid;
+  gap: 0.7rem;
+}
+
+/* THE QUESTION IS AN INSET CHIP AND THE ANSWER IS PLAIN TYPE, which is the
+   reverse of the convention and the right way round here. A chat product gives
+   the assistant the coloured bubble; this is a portfolio, so what Ishaan's
+   document says is set as prose on the page and what the visitor typed is the
+   small object in the margin. One step back in surface, one hairline, 5px
+   radius — the card radius this site uses everywhere. */
+.llm__q {
+  margin: 0;
+  justify-self: end;
+  max-width: 86%;
+  padding: 0.3rem 0.55rem;
+  border-radius: 5px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.llm__a {
+  margin: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.llm__a p {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.62;
+  color: var(--ink-2);
+}
+
+.llm__a b { font-weight: 550; color: var(--ink); }
+/* the one it does not know: same type, one ink quieter — a shrug rather than
+   an error state */
+.llm__a--none p { color: var(--ink-dim); }
+
+.llm__a code,
+.llm__note code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.32em;
+  border-radius: 3px;
+  background: var(--line-soft);
+  color: var(--ink);
+}
+
+.llm__note {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.56;
+  color: var(--ink-dim);
+}
+
+/* THE RULE UNDER AN ANSWER, DRAWN INSIDE THE LIST'S OWN INSET so it lines up
+   with the text and not with the wider hover row. It is the only separator in
+   the panel, and it is doing the work the label "You might also ask" used to
+   do — which is why the label can now say something useful instead. */
+.llm__turn .llm__cues {
+  position: relative;
+  margin-top: 0.25rem;
+  padding-top: 0.85rem;
+}
+
+.llm__turn .llm__cues::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  top: 0;
+  height: 1px;
+  background: var(--line-soft);
+}
+
+/* --- thinking ------------------------------------------------------------ */
+
+/* THREE DOTS AND NO WORD. "Thinking…" is a label on a state a visitor can
+   already see, and at 300ms it is a label nobody finishes reading. The dots
+   occupy exactly one line of answer type, so the answer replaces them without
+   the column jumping. */
+.llm__think {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: calc(0.8125rem * 1.62);
+}
+
+.llm__think i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink-ghost);
+  animation: llmThink 1.05s ease-in-out infinite;
+}
+
+.llm__think i:nth-child(2) { animation-delay: 0.14s; }
+.llm__think i:nth-child(3) { animation-delay: 0.28s; }
+
+@keyframes llmThink {
+  0%, 100% { opacity: 0.28; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+
+/* THE ANSWER ARRIVES, ONCE. Same rule as the suggestions: only the turn marked
+   fresh moves, so nothing replays. The question does not animate at all — it
+   was already on screen a beat before the answer, put there by the visitor's
+   own press, and animating it would be the interface taking credit. */
+.llm__turn[data-fresh] .llm__a {
+  animation: llmSay 320ms var(--ease) both;
+}
+
+@keyframes llmSay {
+  from { opacity: 0; translate: 0 4px; }
+  to { opacity: 1; translate: none; }
+}
+
+/* --- the field ----------------------------------------------------------- */
+
+/* NO CAPSULE. This is the bottom edge of the panel with a caret in it: a
+   hairline above, the panel's own padding either side, and the type sitting on
+   the same measure as an answer. A rounded input floating in a padded footer
+   is the one detail that would make this read as a widget pasted on.
+
+   It is a textarea so Shift+Enter can break a line, and it grows to about four
+   of them before it scrolls — a long question stays readable while it is being
+   written without the field turning into a box. */
+.llm__foot {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.45rem;
+  padding: 0.7rem 1.15rem calc(0.85rem + var(--sa-bottom, 0px));
+  box-shadow: inset 0 1px 0 var(--line-soft);
+  transition: box-shadow 200ms var(--ease);
+}
+
+.llm__foot:focus-within { box-shadow: inset 0 1px 0 var(--line); }
+
+.llm__in {
+  flex: 1 1 auto;
+  min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  padding: 0.28rem 0;
+  font: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink);
+  resize: none;
+  overflow-y: auto;
+  max-height: 88px;
+}
+
+.llm__in::placeholder { color: var(--ink-ghost); }
+.llm__in:focus { outline: none; }
+
+/* IT ARMS. Grey and half-lit with nothing typed, then the full ink-on-paper
+   inversion the moment there is something to send — so the button is the
+   answer to "will this do anything if I press it", stated before the press. */
+.llm__go {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-bottom: 0.05rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--line-soft);
+  color: var(--ink-ghost);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 200ms var(--ease),
+    color 200ms var(--ease),
+    opacity 200ms var(--ease),
+    transform 240ms var(--spring-soft);
+}
+
+.llm__go svg { width: 14px; height: 14px; }
+.llm__go[disabled] { opacity: 0.55; cursor: default; }
+.llm__go:not([disabled]) { background: var(--ink); color: var(--paper); }
+:root:not(.hover-cold) .llm__go:not([disabled]):hover { transform: translateY(-1px); }
+.llm__go:not([disabled]):active { transform: scale(0.9); transition-duration: 90ms; }
+
+/* --- the phone ----------------------------------------------------------- */
+
+/* A SHEET FROM THE BOTTOM, BECAUSE A PANEL FROM THE RIGHT ON A 390px SCREEN
+   IS A PAGE. Same spring, same materials, one axis turned — which is exactly
+   what the deck used to do at this width and the one idea from it worth
+   keeping.
+
+   `dvh` and not `vh`: the keyboard changes the viewport on a phone, and a
+   sheet measured in `vh` would keep the input underneath it. */
+/* BELOW 60rem THERE IS NO COLUMN TO BE. `.mast` goes to `display: contents` at
+   that width, so the shell is no longer a sidebar beside a page — it is one
+   flow of ordered blocks, and a third track cannot exist without every one of
+   those blocks having to be told to span two. So at narrow widths the panel
+   becomes what the brief allows it to become: a full-width sheet from the
+   bottom, on the same spring, with one axis turned. This is the one place a
+   fixed element is correct, and it is scoped to exactly the widths where a
+   layout column is impossible.
+
+   `dvh` and not `svh` here: the keyboard changes the viewport on a phone, and
+   a sheet measured against the large viewport would keep its own input
+   underneath it. */
+/* --- narrower windows are the same object with different numbers ---------
+
+   THERE USED TO BE TWO BLOCKS HERE AND A BREAKPOINT ARGUMENT BETWEEN THEM. The
+   panel was a grid track above 70rem, a fixed bottom sheet below it, and a
+   restatement of the track for the ten rems where `.home` still had its
+   columns but `.proj__body` had given up its own — three descriptions of one
+   feature, keyed to two different folds, because the thing was made of layout.
+
+   It is one fixed box now and it does not care what the page grid is doing, so
+   a phone needs no second description of it: the box is the same box, unfolding
+   from the same corner, and only its open size and inset change. Which is also
+   what requirement ten actually asks for — the same interaction, adapted, not a
+   modal that replaces it.
+
+   `--llm-pw` is redefined at the root rather than on `.llm`, because the dock
+   and the pods read it too and a panel whose width the furniture disagreed
+   about is how things end up overlapping. */
+@media (max-width: 60rem) {
+  :root {
+    /* a tablet gets a panel, not a sheet: wide enough to read in, narrow
+       enough that the page is still visibly there behind it, and close enough
+       to the floor above this breakpoint that crossing it is not a jump */
+    --llm-pw: min(calc(100vw - 24px), 22rem);
+    --llm-ph: min(84svh, 36rem);
+    --llm-inset: 12px;
+  }
+}
+
+@media (max-width: 40rem) {
+  :root {
+    /* on a phone it is near enough the full width — 12px of page down each
+       side is what keeps it reading as a panel that came from the corner
+       rather than a modal that took the screen */
+    --llm-pw: calc(100vw - 24px);
+    --llm-ph: min(76svh, 34rem);
+  }
+
+  /* THE SPRING GIVES WAY TO AN EASE AT THIS WIDTH, for one concrete reason:
+     4% of overshoot on a panel that is already 24px short of the window would
+     push its left edge off the screen and back on again. Nothing to see, and
+     what you cannot see you should not spend a frame on. */
+  .llm,
+  .llm.is-up {
+    transition-timing-function: var(--ease);
+  }
+}
+
+@media (max-width: 40rem) {
+  .llm__head { padding: 0.85rem 1rem 0.75rem; }
+  .llm__log { padding: 0.95rem 1rem 1.15rem; gap: 1.05rem; }
+  .llm__foot { padding: 0.65rem 1rem calc(0.8rem + var(--sa-bottom, 0px)); }
+  /* 16px: below it iOS zooms the viewport when the field takes focus. The
+     suggestions come up half a step with it — they are the thing a thumb has
+     to land on, and 12px rows at 44px apart is a list you miss. */
+  .llm__in { font-size: 1rem; max-height: 104px; }
+  .llm__cue { font-size: 0.8125rem; padding: 0.42rem 0.5rem; }
+  /* 32px and 15px on a phone — the dock's own numbers, for the same reason:
+     a finger lands where it is aimed less precisely than a cursor does */
+  .llm__ico { width: 2rem; height: 2rem; }
+  .llm__ico svg { width: 15px; height: 15px; }
+  .llm__go { width: 2rem; height: 2rem; }
+  .llm__go svg { width: 15px; height: 15px; }
+  .llm__intro-h { font-size: 1.0625rem; }
+  .llm__intro-p, .llm__note { font-size: 0.8125rem; }
+  .llm__q, .llm__a p { font-size: 0.8125rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* the box still opens — it has to, there is nowhere else for the panel to be
+     — it just arrives at its size in one step instead of unfolding to it. The
+     chip still swaps for the panel, because that is a state change and not an
+     animation. */
+  .llm,
+  .llm.is-up { transition: none; animation: none; }
+  .llm__panel,
+  .llm.is-up .llm__panel { transition: none; }
+  .llm__chip,
+  .llm.is-up .llm__chip { transition: none; }
+  .llm__cue,
+  .llm__cue-i,
+  .llm__go,
+  .llm__ico { transition: none; }
+  .llm__cues[data-fresh] .llm__cue,
+  .llm__turn[data-fresh] .llm__a { animation: none; }
+  .llm__think i { animation: none; opacity: 0.6; }
+  /* the mark stops breathing, and there is nothing to restore: the wash is the
+     only thing that moved and transparent is where it belongs at rest */
+  .mast__row--llm .llm__beta,
+  .llm__chip .llm__beta { animation: none; }
+}
+
+/* --- and in the dark ----------------------------------------------------- */
+
+/* ALMOST NOTHING, WHICH IS THE POINT OF HAVING READ THE TOKENS. The paper, the
+   three inks and every hairline invert on their own with `:root.is-dark`. Only
+   the two shadows are literals — a shadow made of brown ink is invisible on a
+   dark ground — and the panel's own edge is lifted slightly, because at 5% the
+   inset hairline that separates it from the page disappears. */
+/* the hairline only, for the reason given on `.llm__panel` — `--border` at
+   #272729 disappears against a 5% panel, so the edge is stated in the same
+   lifted alpha every dark frame on this site uses */
+.is-dark .llm__panel {
+  box-shadow: inset 1px 0 0 rgba(240, 240, 238, 0.11);
+}
+
+@media (max-width: 70rem) {
+  .is-dark .llm__panel {
+    box-shadow:
+      inset 0 1px 0 rgba(240, 240, 238, 0.11),
+      0 -22px 50px -24px rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* --- and the furniture that is fixed to the window, not to the page -------
+
+   THE ONE THING A LAYOUT COLUMN CANNOT REFLOW. The dock, its tooltip and the
+   three corner pods are `position: fixed`: they are anchored to the window's
+   right edge, so a narrower content column does not move them and they would
+   sit on the panel. On the Play page that is the whole toolbar landing on the
+   conversation.
+
+   So they travel, by exactly the panel's width, on exactly the panel's curve —
+   which is why the dock reads as staying on the desk rather than as a second
+   thing that also animates. `translate` and not `transform`, deliberately:
+   `.tools` already carries `translate: 0 -50%` for its own centring and the
+   pods use `transform` for their hover scale, so the two compose instead of
+   overwriting each other. And `right` is left alone, which is what keeps
+   `.tools__tab`'s `calc(-1 * var(--dock-inset))` correct — the collapsed handle
+   still lands on the edge of the space the desk now has, rather than under the
+   panel. */
+.tools { transition: translate 340ms var(--spring-soft); }
+.mute,
+.tmode { transition: translate 340ms var(--spring-soft); }
+/* the grid pod already transitions its on/off face — that list is restated
+   here with the travel appended rather than replaced */
+.gridtog {
+  transition:
+    background-color 220ms var(--ease),
+    box-shadow 220ms var(--ease),
+    translate 340ms var(--spring-soft);
+}
+
+body.llm-open .tools { translate: calc(-1 * var(--llm-clear)) -50%; }
+
+/* EXCEPT ON A CASE STUDY, WHERE IT LEAVES INSTEAD OF TRAVELLING.
+
+   Travelling is right on the shell: the dock moves by the panel's width and
+   lands over the desk or the showcase's own margin, which is empty. A case
+   study has no margin to land in. Its column is `min(72rem, 100% - gut)` and
+   the prose fills it, so a rack shifted inward by 389px comes to rest on the
+   text — measured at 1440 with the panel open, the dock straddled the column's
+   right edge and covered the ends of four lines.
+
+   And there is nothing for it to do there. It is the drawing dock; the reader
+   has just opened an assistant to ask about the piece. So on this one page it
+   steps out for the length of the conversation and comes back when the panel
+   closes, which is the same thing it already does over the project hero and
+   for the same reason. It travels rather than fading — an invisible dock is
+   still a dock as far as hit-testing is concerned. */
+body[data-page='project'].llm-open .tools {
+  translate: calc(100% + 4rem) -50%;
+  opacity: 0;
+  transition:
+    translate 420ms var(--spring-soft),
+    opacity 260ms var(--ease);
+}
+/* THE PODS TRAVEL RATHER THAN LEAVING, and that is a judgement rather than a
+   fallout. The panel covers the corner they sit in, so they have to go
+   somewhere — and the theme toggle in particular is a thing a reader may well
+   want WHILE the panel is open. Sliding them clear of its left edge keeps them
+   usable; hiding them would be tidier and worse. On a case study they are
+   already on the other side of the window and this does not reach them. */
+body.llm-open .mute,
+body.llm-open .tmode,
+body.llm-open .gridtog { translate: calc(-1 * var(--llm-clear)) 0; }
+
+/* --- ON A CASE STUDY THE THREE PODS ARE ON THE OTHER SIDE OF THE PAGE ------
+
+   THE CORNER HAS ONE OCCUPANT. Theme, grid and sound have always sat at 20, 60
+   and 100px from the right; IshaanLLM wants that corner, and the first answer
+   was to shift them along it — four controls in a row sharing a baseline. Which
+   works and reads as a toolbar: a strip of chrome along the bottom of the
+   window, with the one thing that matters competing against three things that
+   do not.
+
+   So on a case study they cross to the bottom LEFT, under the section rail,
+   where the column is short and the space below it is empty. That separates the
+   two jobs by putting them at opposite ends of the window: the assistant on the
+   right, the reader's own controls on the left, neither queued behind the other.
+
+   NOT ON THE SHELL, and that is a constraint rather than an inconsistency —
+   the bottom left of the shell is the brick tray. Pods there would land in the
+   pile.
+
+   The order reads left to right — grid, theme, sound — so the numbers invert:
+   the pod that was innermost from the right is outermost from the left.
+   `right: auto` is stated because the base rule sets `right` and one side has
+   to win. */
+body[data-page='project'] .mute,
+body[data-page='project'] .tmode,
+body[data-page='project'] .gridtog { right: auto; }
+
+body[data-page='project'] .gridtog { left: calc(20px + var(--sa-left)); }
+body[data-page='project'] .tmode { left: calc(60px + var(--sa-left)); }
+body[data-page='project'] .mute { left: calc(100px + var(--sa-left)); }
+
+/* AND THEY DO NOT TRAVEL WITH THE PANEL, which is the whole reason this needs a
+   rule rather than three numbers. The rule above shifts every fixed control
+   LEFT by the panel's clearance so it stays out from under the conversation —
+   correct for something anchored to the right edge, and exactly wrong for
+   something anchored to the left, where it would walk the pods off the side of
+   the screen. They are already nowhere near the panel. */
+body[data-page='project'].llm-open .mute,
+body[data-page='project'].llm-open .tmode,
+body[data-page='project'].llm-open .gridtog { translate: none; }
+
+/* the pods are 44px wide and 56 apart at this width rather than 40 and 40 —
+   see section 36 — so the left-hand ladder is restated with those numbers */
+@media (max-width: 48rem) {
+  body[data-page='project'] .gridtog { left: calc(20px + var(--sa-left)); }
+  body[data-page='project'] .tmode { left: calc(76px + var(--sa-left)); }
+  body[data-page='project'] .mute { left: calc(132px + var(--sa-left)); }
+}
+
+/* THE AMBIENT HINT GIVES WAY, BECAUSE THE DESK IS NARROWER NOW. The rotating
+   tip is anchored bottom-left of the desk and the shortcut legend bottom-right
+   of it, and the longest of the tips ("Selected? Drag it, or use the handles to
+   resize and rotate") needs most of a wide desk to itself. With the panel open
+   the desk is a quarter narrower and the two would meet.
+
+   The legend stays and the tip goes, which is the right way round: the legend
+   is reference — the keys that work right now — and the tip is flavour that
+   will come round again. It is an opacity, so nothing moves and nothing is
+   re-laid-out, and it is back the moment the panel closes. */
+body.llm-open .canvas__hint {
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+}
+
+/* AND THE DRAWING STOPS AT THE PANEL'S EDGE. The ink is one fixed canvas over
+   the whole window at z-index 85, well above the sheet — so a stroke drawn
+   where the panel now is would be painted on top of the conversation. It is
+   clipped to the space the desk has instead, on the same curve, so the edge of
+   the drawing travels with the edge of the panel. The strokes themselves are
+   not moved or redrawn: exactly like the bricks, they stay where they were made
+   and the part behind the panel is simply out of sight until it closes. */
+.ink:not(.ink--inline) {
+  clip-path: inset(0 0 0 0);
+  transition:
+    opacity 420ms var(--ease),
+    clip-path 340ms var(--spring-soft);
+}
+body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0); }
+
+@media (max-width: 60rem) {
+  /* narrow is the bottom sheet, so nothing travels sideways and nothing clips */
+  body.llm-open .tools { translate: 0 -50%; }
+  body.llm-open .mute,
+  body.llm-open .tmode,
+  body.llm-open .gridtog { translate: none; }
+  body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 0 0 0); }
+
+  /* AND THEY STEP OUT ENTIRELY, WHICH IS A STACKING FACT RATHER THAN A CHOICE.
+     `.hud` is its own stacking context at z-index 4 and the shell is at 1, so
+     the dock's 90 and the pods' 50 are measured inside a layer that is already
+     above the page — no z-index the sheet could name from inside the shell can
+     get in front of them. On a wide window that does not matter, because the
+     panel is a column and they have travelled clear of it. Under a sheet that
+     covers the whole width there is nowhere to travel to, so they leave: the
+     sheet owns the screen while it is up, and they come back on the same curve
+     when it closes.
+
+     THEY LEAVE BY TRAVELLING, NOT BY FADING, and that is the difference between
+     a fix and a fix that looks like one. Fading them keeps them exactly where
+     they were as far as hit-testing is concerned — `pointer-events: none` on
+     `.tools` is undone by `.tools.is-open .tools__panel`'s own `auto`, so an
+     invisible open drawer went on swallowing presses meant for the sheet's
+     close button. Off the edge of the window there is nothing to swallow them
+     with, every child rides along without being named, and the dock keeps its
+     layout so nothing has to be re-measured when it comes back.
+
+     The percentage is of the element's own width, so this is "its whole self
+     plus a hand's width past the frame" and it holds for the desktop rack and
+     the phone's single button alike. */
+  body.llm-open .tools {
+    translate: calc(100% + 4rem) -50%;
+    opacity: 0;
+    transition:
+      translate 320ms var(--spring-soft),
+      opacity 200ms var(--ease);
+  }
+  body.llm-open .mute,
+  body.llm-open .tmode,
+  body.llm-open .gridtog {
+    translate: 0 calc(100% + 4rem);
+    opacity: 0;
+    transition:
+      translate 320ms var(--spring-soft),
+      opacity 200ms var(--ease);
+  }
 }

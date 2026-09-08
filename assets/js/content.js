@@ -688,6 +688,56 @@ window.SITE = {
             + 'its own identity, while remaining unmistakably Cypherock?',
           eyebrow: 'Cypherock · Product Design',
           title: 'X0',
+          /* --- THE OPENING SCENE ----------------------------------------
+
+             The hero is a full screen of its own, above the study, and this
+             is its art direction. Every key is optional; a study with no
+             `hero` block still gets a hero, built from the facts above and
+             the tile's own artwork on paper.
+
+             THE POINT OF IT BEING DATA. One structure, many compositions —
+             which is the difference between a hero and a header. The layout
+             a project gets is a claim about what kind of work it is:
+
+               panel   the artifact sits on a field of its own colour, with
+                       air all round it. An OBJECT, presented. Right for
+                       hardware and for identity work.
+               bleed   the artifact rises out of the bottom edge and is
+                       cropped by it. A SURFACE, in use. Right for software.
+               plate   the artifact fills the frame edge to edge.
+
+             `field` is the colour behind it and `ink` the colour of anything
+             set on that colour; `scale` is how much of the frame's width the
+             artifact takes; `at` is where it sits in the frame. `line` is the
+             one sentence under the name — it falls back to `lede`, which on
+             this study is a question two lines long, so it is stated shorter
+             here. `facts` is the metadata row, and it is deliberately three
+             items rather than the study's five: the hero orients, the study
+             is where the detail lives.                                     */
+          hero: {
+            layout: 'panel',
+            /* NO FIELD, AND THAT IS THE ART DIRECTION RATHER THAN AN OMISSION.
+
+               It was set to the tile's own blue, on the reasoning that the
+               piece the reader clicked should still be the piece in front of
+               them. But the ARTWORK is that blue — `.pv-search` paints the
+               field itself and sets the white lattice card on it — so a blue
+               wall behind a blue artifact put the same colour in two places
+               with a drop shadow between them, and a shadow between two
+               identical colours reads as a rendering fault.
+
+               Paper is the wall. The blue panel is the object on it, with air
+               all round and its own shadow under it, which is what `panel`
+               means and what an identity project wants: the artifact
+               presented, not the brand colour sprayed across the window.
+               `field` stays in the vocabulary for a project whose artwork has
+               no ground of its own. */
+            ink: '#f4f5ff',
+            scale: 0.62,
+            at: 'center',
+            facts: ['Product identity', 'Hardware · Mobile', '2026'],
+            line: 'A new product category inside an ecosystem that already had one.',
+          },
           /* The dock opens with the study, as it does on a project page and as
              Onefinnet does. `reading: true` collapses it to its tab instead. */
           reading: false,
@@ -1196,6 +1246,23 @@ window.SITE = {
             + 'resumes.',
           eyebrow: 'Onefinnet \u00b7 Product Design',
           title: 'Talent',
+          /* A DIFFERENT COMPOSITION, WHICH IS THE WHOLE REASON THIS IS DATA.
+             X0 is an object on a field; this is a product being used, so it
+             rises out of the bottom edge of the frame and is cropped by it —
+             the screen carries on past the fold, which is what a working
+             interface does. Pale field, dark ink, wider artifact. See the
+             note on the X0 hero for what each key does. */
+          hero: {
+            layout: 'bleed',
+            /* same reasoning as X0's — the artwork brings its own lavender, so
+               a lavender wall behind it doubled the ground. Paper, and the
+               screen rises out of it. */
+            ink: '#1a1730',
+            scale: 0.84,
+            at: 'bottom',
+            facts: ['B2B SaaS', 'Product design', '2024 — 25'],
+            line: 'The screens where a human decides what the model got right.',
+          },
           /* The dock opens with the study, as it does on a project page. Set
              `reading: true` to have it collapse to its tab instead — the
              machinery for that is still in Rack.applyScope. */
