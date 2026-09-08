@@ -172,12 +172,27 @@
 
   /* ======================================================== 1. sound ===== */
 
+  /* THE AUDIO IS ALWAYS ON, AND THERE IS NO STATE FOR IT TO BE IN.
+
+     There was a `muted` flag read from `localStorage['sound']`, a `toggle`, and
+     a pod in the corner to work it. All three have gone rather than being
+     defaulted to on, because a flag that is only ever false is a branch the
+     next person has to read and prove is dead.
+
+     THE KEY IS DELIBERATELY NOT READ ANY MORE, which is the one thing worth
+     being explicit about: anyone who muted the site while the pod existed has
+     `sound: off` sitting in their browser, and honouring it now would leave
+     them silent forever with nothing to press. Ignoring it is what makes the
+     removal safe for people who already visited.
+
+     WHAT STILL GATES IT is the browser, not this file. An AudioContext created
+     before a user gesture starts life suspended and plays nothing, so the first
+     sound anyone hears is a response to something they did. The bus sits at
+     0.34 gain through a 7.2kHz low-pass — confirmation, never announcement. */
   const Sound = {
     ctx: null,
-    muted: localStorage.getItem('sound') === 'off',
 
     wake() {
-      if (this.muted) return;
       /* A context created before a user gesture starts life suspended, and a
          suspended context plays nothing at all. Resume on every wake. */
       if (this.ctx) {
@@ -211,7 +226,6 @@
        pitched body for the "material". Everything else is a preset over this.
        Pitch wobbles a few percent per hit so repeats never feel mechanical. */
     voice({ freq = 520, gain = 0.1, dur = 0.07, bright = 2600, type = 'sine', drop = 0.55, noise = 0.5, attack = 0.004 }) {
-      if (this.muted) return;
       this.wake();
       if (!this.ctx || this.ctx.state !== 'running') return;
 
@@ -256,7 +270,6 @@
 
     /* tiny two-note confirmation tick — only for completed actions */
     chime() {
-      if (this.muted) return;
       this.wake();
       if (!this.ctx || this.ctx.state !== 'running') return;
       [1568, 2093].forEach((f, i) => {
@@ -272,13 +285,6 @@
         o.start(t);
         o.stop(t + 0.2);
       });
-    },
-
-    toggle() {
-      this.muted = !this.muted;
-      localStorage.setItem('sound', this.muted ? 'off' : 'on');
-      if (!this.muted) { this.wake(); this.tap(); }
-      return this.muted;
     },
   };
 
@@ -447,7 +453,13 @@
       if (!sheet) return;
       let saved = null;
       try { saved = sessionStorage.getItem(this.KEY); } catch (e) { /* private mode */ }
-      this.on = saved === '1';
+      /* ON BY DEFAULT, AND THE DISTINCTION THAT MATTERS IS BETWEEN "OFF" AND
+         "NEVER ASKED". `saved === '1'` treated both the same, so the grid was
+         off until somebody found the pod — which is the wrong way round for a
+         thing that describes how the page is built. A visitor who has turned it
+         off still gets it off: the key holds '0' for them, and only the absence
+         of the key means nobody has expressed a preference yet. */
+      this.on = saved === null ? true : saved === '1';
       document.documentElement.classList.toggle('is-grid', this.on);
 
       this.el = el('div', { class: 'gridlay', 'aria-hidden': 'true' });
@@ -892,12 +904,6 @@
     linkedin: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M3.4 5.2H.9V15h2.5V5.2ZM2.15 1a1.45 1.45 0 1 0 0 2.9 1.45 1.45 0 0 0 0-2.9ZM15 9.6c0-2.9-1.6-4.6-3.8-4.6-1.3 0-2.1.6-2.6 1.4V5.2H6.1V15h2.5V9.9c0-1.3.5-2.2 1.7-2.2 1.1 0 1.6.8 1.6 2.2V15H15V9.6Z"/></svg>',
   };
 
-  const SPEAKER =
-    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round">' +
-    '<path d="M7.2 3.2 4.4 5.6H2.2v4.8h2.2l2.8 2.4V3.2Z" fill="currentColor" stroke="none"/>' +
-    '<path d="M9.6 6.1a2.6 2.6 0 0 1 0 3.8"/><path d="M11.6 4.3a5.2 5.2 0 0 1 0 7.4"/>' +
-    '<path class="slash" d="M13.9 4.6 9.4 11.4" stroke-width="1.5"/></svg>';
-
   const Shell = {
     page: document.body.dataset.page || 'home',
 
@@ -972,9 +978,10 @@
       App.mount(theme);
       Theme.paint();
 
-      /* THE GRID. Same object again, and it is last in the row because it is
-         the one a visitor is least likely to want — the theme is a preference,
-         the sound is an interruption, and this is a thing you look at once. */
+      /* THE GRID. Same object again, and it is FIRST in the row now — the row
+         reads left to right from the bottom-left corner, and of the two that
+         are left the theme is the one a visitor is more likely to reach for, so
+         it takes the outer position where the cursor arrives. */
       const grid = el('button', {
         class: 'gridtog', type: 'button', 'aria-pressed': 'false',
         'aria-label': 'Show the layout grid',
@@ -986,17 +993,9 @@
       App.mount(grid);
       Grid.paint();
 
-      /* SOUND. */
-      const mute = el(
-        'button',
-        { class: 'mute', 'aria-pressed': String(Sound.muted), 'aria-label': 'Toggle sound' },
-        SPEAKER
-      );
-      mute.addEventListener('click', () => {
-        const m = Sound.toggle();
-        mute.setAttribute('aria-pressed', String(m));
-      });
-      App.mount(mute);
+      /* THERE WAS A SOUND POD HERE. The audio is not optional any more — see
+         the note over `Sound` — so there is nothing for a third control to say.
+         Two pods in the corner now: the grid and the theme. */
     },
 
     /* Whatever sits under the cursor at first paint shouldn't light up before
@@ -14953,7 +14952,7 @@
 
         const a = el('div', { class: `llm__a${turn.a.unknown ? ' llm__a--none' : ''}` });
         turn.a.text.split('\n\n').forEach((para) => {
-          if (para.trim()) a.appendChild(el('p', {}, MD.inline(para.trim())));
+          if (para.trim()) a.appendChild(MD.block(para.trim()));
         });
         row.appendChild(a);
 
@@ -15077,13 +15076,53 @@
   /* --- the document, parsed ----------------------------------------------- */
 
   const KB = {
-    /* `## Title` opens an entry, `### Title` a detail inside it, and the four
+    /* `## Title` opens an entry, `### Title` a detail inside it, and the
        directive lines are `key: value` on their own line before the prose.
        Everything else is the answer. The HTML comment at the top of the file is
-       the format guide and is dropped whole. */
+       the format guide and is dropped whole.
+
+       AND EVERY DIRECTIVE IS OPTIONAL, WHICH IS THE PART THAT WAS NOT TRUE.
+
+       The format was designed to be authored for this engine: `ask:` lines gave
+       the suggestion chips their wording, `when:` gave a paragraph the words
+       that reach it, `where:` put an entry on a page. Handed a knowledge base
+       written the way a person actually writes one — sections, sub-sections,
+       prose, no markup — it parsed the headings correctly and then had nothing
+       to work with: every `##` section's answer came back empty, because an
+       entry's answer is the prose ABOVE its first `###` and a normally written
+       document goes straight from a heading into its first sub-heading. No
+       `ask:` anywhere meant no chips at all. Measured on a real 874-line
+       document: 22 entries, 78 details, zero usable answers.
+
+       So each directive now has a fallback derived from the document's own
+       shape, and the fallbacks are the interesting half of this function:
+
+         an entry with no prose of its own leads with its first sub-section
+         a sub-section with no `when:` is reachable by the words in its title
+         a sub-section titled as a question is offerable as that question
+         an entry with no `ask:` is offerable as "Tell me about <title>"
+         `#### ` blocks become labelled paragraphs of the section above them
+         a leading "7. " on a heading is a section number, not part of a name
+
+       An authored directive always wins. Nothing here overrides a line the
+       document actually states — these only fill silence. */
     parse(md) {
-      const src = String(md).replace(/<!--[\s\S]*?-->/g, '');
+      const src = String(md)
+        .replace(/<!--[\s\S]*?-->/g, '')
+        /* CITATION ARTEFACTS, AND THEY ARE INVISIBLE IN AN EDITOR. Documents
+           assembled by a tool can carry `filecite` runs delimited by
+           private-use codepoints (U+E200 and up) — they render as tofu boxes
+           in an answer and there were thirteen of them in the first real
+           document this saw. Strip the delimiters, then the run they marked. */
+        .replace(/[-]/g, '')
+        .replace(/\s*filecite\S*/g, '');
       const list = (v) => String(v).split(',').map((s) => s.trim()).filter(Boolean);
+      /* "## 7. Case Studies" is section seven, and its name is "Case Studies".
+         The number is how a person keeps a long document in order; it is not
+         part of what the thing is called, and it was being read as part of it —
+         which surfaced in the interface as "I don't have that about 3. Design
+         Philosophy". */
+      const TITLE = (s) => String(s).trim().replace(/^\d+\s*[.)]\s*/, '');
       const entries = [];
       let e = null, d = null;
 
@@ -15091,12 +15130,33 @@
         const line = raw.replace(/\s+$/, '');
         let m = line.match(/^##\s+(?!#)(.+)$/);
         if (m) {
-          e = { title: m[1].trim(), tags: [], asks: [], see: [], where: [],
-            open: false, body: '', details: [] };
+          e = { title: TITLE(m[1]), tags: [], asks: [], see: [], where: [],
+            open: false, internal: false, body: '', details: [] };
           d = null;
           entries.push(e);
           return;
         }
+
+        /* A FOURTH LEVEL, FLATTENED RATHER THAN IGNORED. `#### Problem` under
+           `### Cypherock X0` is how a case study gets written, and it used to
+           fall through to the body as the literal characters `#### Problem`.
+           It becomes a bold label on its own line — which is what it looked
+           like in the source — and its words join the words that can reach the
+           section it belongs to, so "the problem in X0" finds the X0 block. */
+        /* A SEPARATOR IS NOT A SENTENCE. `---` between sections is how a long
+           markdown document is kept readable in an editor, and it was landing
+           in whichever body was open — so an answer could end with a paragraph
+           containing three hyphens. */
+        if (/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line)) return;
+
+        m = line.match(/^#{4,}\s+(.+)$/);
+        if (m && (d || e)) {
+          const t = TITLE(m[1]);
+          (d || e).body += '\n**' + t + '**\n\n';
+          if (d) d.sub.push(t);
+          return;
+        }
+
         m = line.match(/^###\s+(.+)$/);
         if (m && e) {
           /* A DETAIL HAS ITS OWN QUESTIONS NOW, and that is what makes the
@@ -15105,12 +15165,12 @@
              `ask:` means the panel can OFFER it — which is the difference
              between "here are four questions about the portfolio" and "here
              are four questions about the thing you are looking at". */
-          d = { title: m[1].trim(), when: [], asks: [], body: '' };
+          d = { title: TITLE(m[1]), when: [], asks: [], sub: [], body: '' };
           e.details.push(d);
           return;
         }
         if (!e) return;
-        m = line.match(/^(tags|ask|see|when|where|open)\s*:\s*(.*)$/i);
+        m = line.match(/^(tags|ask|see|when|where|open|internal)\s*:\s*(.*)$/i);
         if (m) {
           const k = m[1].toLowerCase(), v = m[2];
           if (k === 'ask') { (d ? d.asks : e.asks).push(v.trim()); return; }
@@ -15123,6 +15183,14 @@
              by its own title matching the route before this is consulted. */
           if (k === 'where') { e.where.push(...list(v)); return; }
           if (k === 'open') { e.open = /^(true|yes|1)$/i.test(v.trim()); return; }
+          /* NOTES TO WHOEVER MAINTAINS THE DOCUMENT, NOT ANSWERS FOR A
+             VISITOR. A knowledge base tends to grow sections about itself —
+             confidence rules, gaps still to fill, instructions on tone — and
+             every one of them was answerable, so "what should you not guess"
+             returned the list of things not to guess. `internal: true` keeps a
+             section in the file and out of the engine entirely: it is dropped
+             before anything can score it, offer it or cite it. */
+          if (k === 'internal') { e.internal = /^(true|yes|1)$/i.test(v.trim()); return; }
           if (k === 'when') { if (d) d.when.push(...list(v)); return; }
         }
         if (d) d.body += line + '\n';
@@ -15130,19 +15198,96 @@
       });
 
       const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+      /* WHAT NEVER REACHES A VISITOR, and both of these come from the document
+         asking for something the engine had no way to honour.
+
+         A paragraph marked "Unknown / To confirm" is the author telling
+         themselves not to state this yet. Left in, it is prose like any other
+         and gets quoted as fact — the worst possible failure for a portfolio,
+         because the sentences most likely to be marked that way are the ones
+         about scope, impact and numbers. Dropped whole.
+
+         A paragraph opening `**Observed:**` or `**Known at a high level:**` is
+         a confidence label, not an answer. The label goes and the sentence
+         stays: a visitor asked what Ishaan cares about should read the answer,
+         not the provenance of it. `**Role:**`, `**Location:**`, `**Dates:**`
+         and the rest are content and are left exactly alone — only the four
+         confidence words in the document's own scale are treated as labels. */
+      const UNSURE = /^\s*(?:[-*]\s*)?\*{0,2}unknown\s*\/\s*to\s*confirm/i;
+      /* A PLACEHOLDER IS NOT AN ANSWER. Half of one case study in the first
+         real document was `**To confirm.**` — a note to the author that the
+         block is still to be written. Served as prose, the panel answered "what
+         was the hardest part of Onefinnet?" with the words "To confirm.", which
+         is worse than admitting it does not know: it looks like the document
+         has an answer and the answer is nonsense. */
+      const STUB = /^\s*\*{0,2}(?:to\s*(?:be\s*)?confirm(?:ed)?|tbd|todo|to\s*do|n\/?a|not\s+specified)\b[\s.*]*$/i;
+      const LABEL = /^\*\*(?:observed|known|confirmed|inferred)\b[^*]*:\*\*\s*/i;
+      /* a paragraph that is nothing but a bold label */
+      const BARE = /^\*\*[^*]+\*\*$/;
+
+      const clean = (txt) => {
+        const paras = String(txt)
+          .split(/\n\s*\n/)
+          .filter((p) => !UNSURE.test(p) && !STUB.test(p))
+          .map((p) => p.split('\n').map((l) => l.replace(LABEL, '')).join('\n').trim())
+          .filter(Boolean);
+        /* AND A LABEL WITH NOTHING UNDER IT GOES WITH THE THING IT LABELLED.
+           `#### Outcomes / impact` followed by a placeholder leaves a heading
+           introducing nothing once the placeholder is dropped — a bold word
+           alone at the end of an answer, which reads as a truncated reply. */
+        return paras
+          .filter((p, i) => !(BARE.test(p) && (i === paras.length - 1 || BARE.test(paras[i + 1]))))
+          .join('\n\n')
+          .trim();
+      };
+
+      /* a title that reads as a question can be offered as one; a noun like
+         "Gaming" cannot, and a chip list is the last place to put a heading
+         and hope it passes for a question */
+      const ASKABLE = /\?\s*$|^(?:who|what|why|how|when|where|which|does|do|did|is|are|can|should)\b/i;
+
       entries.forEach((x) => {
-        x.body = x.body.trim();
-        x.details.forEach((y) => { y.body = y.body.trim(); });
-        /* the first paragraph is the answer — see rule two in the document */
-        x.lead = x.body.split(/\n\s*\n/)[0] || '';
+        x.body = clean(x.body);
+        /* A HEADING WITH NOTHING LEFT UNDER IT IS NOT SOMETHING TO OFFER.
+           Once the placeholders are gone, several of the case-study blocks are
+           empty — and an empty block that still carried its `ask:` would be a
+           chip a visitor could press to be told nothing. Dropped here, so the
+           chip never exists rather than being filtered later by everything
+           that might offer it. */
+        x.details = x.details.filter((y) => { y.body = clean(y.body); return !!y.body; });
+        x.details.forEach((y) => {
+          /* the words that reach a paragraph, when nobody wrote them down.
+             Pushed one at a time on purpose: `Engine.detail` requires every
+             word of a `when` entry to be present, so the whole title as a
+             single entry would only ever match someone quoting the heading. */
+          /* `auto` marks a `when` list nobody wrote. It matters because an
+             authored `when:` is strong evidence — someone chose those words for
+             this block — while a derived one is just the heading again, and the
+             two cannot be scored the same way. */
+          if (!y.when.length) { y.when = y.title.split(/\s+/).concat(y.sub); y.auto = true; }
+          if (!y.asks.length && ASKABLE.test(y.title)) y.asks = [y.title];
+        });
+        /* THE FIRST PARAGRAPH IS THE ANSWER — see rule two in the document —
+           AND IF THERE IS NO PARAGRAPH, THE FIRST SUB-SECTION IS. A section
+           that goes straight into its first `###` has written its answer, it
+           has just written it one level down. */
+        x.lead = x.body.split(/\n\s*\n/)[0]
+          || (x.details.length ? x.details[0].body.split(/\n\s*\n/)[0] : '')
+          || '';
+        if (!x.asks.length) x.asks = ['Tell me about ' + x.title];
         x.slug = slug(x.title);
         x.routes = x.where.filter((w) => /^project\s*:/i.test(w))
           .map((w) => slug(w.replace(/^project\s*:/i, '')));
         x.pages = x.where.filter((w) => !/^project\s*:/i.test(w)).map((w) => w.toLowerCase());
       });
+      /* the internal sections leave here rather than being flagged for every
+         consumer to remember to skip — one filter, and nothing downstream can
+         reach them by accident */
+      const live = entries.filter((x) => !x.internal);
       const byTitle = new Map();
-      entries.forEach((x) => byTitle.set(x.title.toLowerCase(), x));
-      return { entries, byTitle };
+      live.forEach((x) => byTitle.set(x.title.toLowerCase(), x));
+      return { entries: live, byTitle };
     },
   };
 
@@ -15162,9 +15307,18 @@
        a question about something absent tops out around 2. */
     FLOOR: 3.2,
 
+    /* THE SINGULAR AND THE PLURAL ARE THE SAME WORD, which is not a
+       linguistic position so much as the cheapest fix for a real miss: the
+       document has a sub-section called "Sports" and "do you play any sport"
+       reached nothing at all, because the two strings are not equal. One
+       trailing `s` is dropped from anything longer than three letters that
+       does not already end in `ss` — enough for sports/games/principles/
+       decisions, and short of a stemmer, which would start folding words that
+       mean different things. */
     words(s) {
       return String(s).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
-        .filter((w) => w.length > 1 && !this.STOP.has(w));
+        .filter((w) => w.length > 1 && !this.STOP.has(w))
+        .map((w) => (w.length > 3 && /[^s]s$/.test(w) ? w.slice(0, -1) : w));
     },
 
     openers(kb) {
@@ -15184,15 +15338,44 @@
       /* an authored question, matched: the strongest signal there is, and it is
          a ratio rather than a count so a long `ask` line is not rewarded for
          its length */
+      let top = 0;
       const ask = (list, weight) => {
         (list || []).forEach((a) => {
           const aw = this.words(a);
           if (!aw.length) return;
           const hit = aw.filter((w) => has(qw, w)).length;
-          s = Math.max(s, (hit / aw.length) * weight);
+          const r = hit / aw.length;
+          if (r > top) top = r;
+          s = Math.max(s, r * weight);
         });
       };
       ask(e.asks, 7);
+      /* AND A SUB-SECTION'S TITLE COUNTS, but it is scored BOTH WAYS.
+
+         "How I got into design" is a heading rather than an `ask:` line, and
+         without it a document of nothing but headings and prose cannot reach
+         the floor from anywhere: the entry title is the only thing weighted
+         highly, and a section called "About Ishaan" shares no words with a
+         question about how he started.
+
+         The one-way ratio the authored asks use is wrong for a heading,
+         though, and measurably so. It asks "how much of this string was
+         matched", which a two-word heading satisfies by sharing one common
+         word: "Design principles" scored half marks against "how did you get
+         into design" and, with its entry title also containing "design", beat
+         the section that actually answers the question. So a heading is scored
+         by how much of the QUESTION it covers as well — "Design principles"
+         covers one of three question words, "How I got into design" covers
+         two — and the product of the two ratios separates them by a factor of
+         four. Authored `ask:` lines keep the one-way ratio; they were written
+         to be matched and their wording is deliberate. */
+      e.details.forEach((d) => {
+        const dw = this.words(d.title);
+        if (!dw.length) return;
+        const hit = dw.filter((w) => has(qw, w)).length;
+        if (!hit) return;
+        s = Math.max(s, (hit / dw.length) * (hit / qw.length) * 12);
+      });
       /* AND A DETAIL'S QUESTION POINTS AT ITS ENTRY TOO. "What does a normal
          week look like?" names no subject at all — it is the question written
          on a `###` block inside Work — so without this it scored nothing
@@ -15212,6 +15395,47 @@
          every question by accident */
       const bw = new Set(this.words(e.body));
       s += Math.min(2, qw.filter((w) => bw.has(w)).length * 0.4);
+
+      /* AN AUTHORED `when:` WORD BRINGS ITS ENTRY WITH IT.
+
+         `when:` is the vocabulary a visitor types for a block whose heading
+         uses different words — "Location / education" is the right name for
+         the block and nobody asks for their location, they ask where you are
+         based. It was only ever consulted AFTER an entry had won, to choose
+         between that entry's blocks, which works for a document whose entries
+         carry prose and does nothing for one whose sections are entirely
+         sub-sections: "where are you based" reduces to the single word
+         "based", no entry title or tag contains it, nothing reached the floor
+         and the panel said it had nothing. It has it — one heading down.
+
+         Only authored lists count. Every block also gets a `when` list derived
+         from its own heading, and scoring those here would hand 4.2 to every
+         entry with a sub-section sharing one word with the question — which is
+         most of them, for a word like "design". Derived headings are scored by
+         the two-way ratio above, where sharing one common word is worth very
+         little, and that is the right treatment for a guess. */
+      e.details.forEach((d) => {
+        if (d.auto) return;
+        const n = (d.when || []).filter((w) => {
+          const ww = this.words(w);
+          return ww.length && ww.every((x) => has(qw, x));
+        }).length;
+        if (n) s = Math.max(s, 4.2 + Math.min(n - 1, 2) * 0.7);
+      });
+
+      /* AND A QUESTION THAT MATCHES AN AUTHORED `ask:` WORD FOR WORD IS THAT
+         QUESTION, which needed saying out loud because the title weight could
+         out-vote it. "How did you get into design?" is written on a block
+         inside About Ishaan and matched it perfectly — 6.4 — while Design
+         Philosophy scored 7.2 on the strength of one generic word in its own
+         title plus a little prose overlap, and answered with its principles.
+
+         A near-exact hit on a line someone wrote to be matched is the
+         strongest evidence in this function, so it gets a flat bonus rather
+         than a bigger multiplier: a multiplier would also inflate the partial
+         matches, which are exactly the ones that should stay beatable by an
+         entry whose subject is named outright. */
+      if (top >= 0.85) s += 3;
 
       /* WHERE THE VISITOR IS, AS A THUMB ON THE SCALE AND NOTHING MORE.
 
@@ -15333,6 +15557,20 @@
       if (thread.seen.indexOf(key) < 0) thread.seen.push(key);
     },
 
+    /* DOES THE QUESTION NAME THIS ENTRY — by its title or one of its tags,
+       rather than by scoring well against it. Used by the scope guard below,
+       where the difference between "asked about X0" and "happened to match
+       something in X0" is the whole point. */
+    names(q, e) {
+      const qw = this.words(q);
+      if (!qw.length) return false;
+      const hit = (s) => {
+        const w = this.words(s);
+        return w.length && w.some((x) => qw.indexOf(x) >= 0);
+      };
+      return hit(e.title) || (e.tags || []).some(hit);
+    },
+
     answer(q, thread, kb, ctx) {
       /* THE CONTEXT ARRIVES AS AN ARGUMENT, which is the only way this stays
          swappable. `{ page, project, theme, conversation }` is exactly what an
@@ -15342,6 +15580,27 @@
       const here = (ctx && ctx.entry) || null;
       let best = null, hi = 0;
       kb.entries.forEach((e) => {
+        /* --- ONE PROJECT DOES NOT ANSWER FOR ANOTHER -----------------------
+
+           Measured on the Onefinnet page: "what was the hardest part?" came
+           back with Cypherock X0's challenges. Both case studies carry the same
+           `ask:` on that block, X0's block has content and Onefinnet's is still
+           a placeholder, so X0 matched word-for-word and won — and the panel
+           presented one project's hardest problems as the other's. A wrong
+           answer that reads perfectly is the worst kind for a portfolio.
+
+           So an entry scoped to a project is not eligible while the visitor is
+           reading a DIFFERENT project, unless the question names it. Asking
+           "tell me about Onefinnet" from the X0 page still works, because that
+           question says Onefinnet; asking something vague gets the project in
+           front of you or an honest "I don't have that about Onefinnet Talent
+           yet", which is what the empty block actually means.
+
+           Only project entries are scoped. Everything general — the philosophy,
+           the skills, the personal sections — answers from anywhere, which is
+           the point of it being general. */
+        if (ctx && ctx.project && e.routes && e.routes.length
+            && e.routes.indexOf(ctx.project) < 0 && !this.names(q, e)) return;
         const s = this.score(q, e, here);
         if (s > hi) { hi = s; best = e; }
       });
@@ -15545,14 +15804,39 @@
     },
   };
 
-  /* --- the two pieces of Markdown that reach the reader -------------------
+  /* --- the Markdown that reaches the reader -------------------------------
 
-     Only inside a paragraph, and only three things: bold, italic and code. Not
-     a Markdown renderer — the document's prose is prose, and anything more
-     structural than emphasis in an answer wants to be a separate entry. The
-     text is escaped FIRST, so a document that contains a `<script>` is a
-     document that says "<script>". */
+     Inside a paragraph: bold, italic and code, and nothing else. The text is
+     escaped FIRST, so a document containing a `<script>` is a document that
+     says "<script>".
+
+     AND ONE STRUCTURE, BECAUSE PEOPLE WRITE LISTS. The note here used to say
+     that anything more structural than emphasis wanted to be its own entry,
+     which was true of a document written for this engine and not true of one
+     written by a person: five design principles are a list, they are a list in
+     the source, and collapsed into a paragraph they came out as "- Clarity over
+     clutter — … - Intentionality over decoration — …" in a single run-on line.
+     A block whose every line is a bullet or a number becomes a `ul` or an `ol`;
+     everything else is still a paragraph. Nothing else has been added — no
+     headings, no tables, no links — because those genuinely do want to be
+     separate entries. */
   const MD = {
+    /* one paragraph in, one element out */
+    block(s) {
+      const lines = String(s).split('\n').map((l) => l.trim()).filter(Boolean);
+      const BUL = /^[-*•]\s+/;
+      const NUM = /^\d+[.)]\s+/;
+      const bul = lines.length > 1 && lines.every((l) => BUL.test(l));
+      const num = lines.length > 1 && lines.every((l) => NUM.test(l));
+      if (!bul && !num) return el('p', {}, this.inline(s));
+      const list = el(num ? 'ol' : 'ul',
+        { class: num ? 'llm__list llm__list--n' : 'llm__list' });
+      lines.forEach((l) => {
+        list.appendChild(el('li', {}, this.inline(l.replace(bul ? BUL : NUM, ''))));
+      });
+      return list;
+    },
+
     inline(s) {
       return esc(String(s).replace(/\s*\n\s*/g, ' '))
         .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')

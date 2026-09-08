@@ -811,16 +811,43 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
    whose grid is taller than the window.
    ========================================================================== */
 
-.home {
-  /* 240 -> 320, and 284 at the reference's own 1392 — 20.4vw is the measured
-     20.3% with a hair of rounding. Narrow is the point: the reference works
-     because the work gets four fifths of the page. */
+/* AT `:root`, NOT ON `.home`, AND THAT IS A BUG FIX RATHER THAN TIDYING.
+
+   The sidebar's own gutter — a 16px margin on a 14px column, correct at every
+   width; the 40px it used to become at 1470 is what made the column read as
+   loose. It was declared on `.home` because `.mast` is the only thing that
+   used it.
+
+   It is not any more. The grid and theme pods align to the byline in that
+   column, and they are `position: fixed` children of `.hud`, which is a
+   sibling of the page flow rather than a descendant of `.home`. A custom
+   property that does not resolve makes the ENTIRE `calc()` invalid, and an
+   invalid `left` falls back to `auto` — so both pods were laid out at their
+   static position and appeared in the top-left corner of the window. Measured:
+   left 0, centre y 16.
+
+   One declaration, inherited by both the column and the layer above it, is the
+   fix. The same trap took the project hero's padding when it was lifted out of
+   `.proj`. */
+:root {
+  --mast-pad: clamp(1rem, 1.15vw, 1.25rem);
+  /* AND THE COLUMN'S WIDTH, FOR THE SAME REASON. 240 -> 320, and 284 at the
+     reference's own 1392 — 20.4vw is the measured 20.3% with a hair of
+     rounding. Narrow is the point: the reference works because the work gets
+     four fifths of the page.
+
+     It moved out of `.home` when the two pods started aligning to the RIGHT
+     end of the sidebar's closing line: they are fixed to the window, so they
+     have to be able to read where that column ends, and a custom property they
+     cannot resolve takes the whole `calc()` with it. */
   --mast-w: clamp(15rem, 20.4vw, 20rem);
+}
+
+.home {
   /* 16px, and it is nearly flat on purpose. The reference does not scale its
      gutter with the window and neither should this: a 16px margin on a 14px
      column is correct at every width, and the 40px it used to become at 1470
      is what made the sidebar read as loose. */
-  --mast-pad: clamp(1rem, 1.15vw, 1.25rem);
 
   /* THERE WAS A THIRD TRACK HERE AND IT HAS GONE. IshaanLLM used to be a
      column of this grid: opening it grew the track from zero and the showcase
@@ -853,6 +880,11 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
   height: 100svh;
   display: flex;
   flex-direction: column;
+  /* THERE WAS A 52PX RESERVE ON THIS PADDING AND IT HAS GONE. It existed to
+     lift the closing block clear of a row of pods sitting beneath the byline,
+     and it took its 52px out of the brick tray, which is the `flex: 1` element
+     in this column. The pods are on the byline's own line now, so there is
+     nothing to reserve and the tray has its full height back. */
   padding: var(--mast-pad) var(--mast-pad) calc(var(--mast-pad) + var(--sa-bottom, 0px));
   /* 14px, flat. Every row, label and line in here reads this rather than
      `--step-0`, which grows to 15 and was a whole step too big at 1392. */
@@ -2055,11 +2087,24 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
    the whole way down, like every other piece of furniture. */
 
 /* TWO OF THEM, SIDE BY SIDE, and they are the same object twice: same size,
-   same film, same corner. The theme sits inboard of the sound because it is
-   the one a visitor is more likely to want, and 40px apart is the pod's own
-   width plus a gap — a number the deck-open transform below depends on, since
-   both pods travel on one expression. */
-.mute,
+   same film, same corner. 40px apart is the pod's own width plus a gap.
+
+   THERE WERE THREE. The sound pod has gone — the audio is not optional any
+   more, so there was nothing for a control to say. See the note over `Sound`.
+
+   BOTTOM LEFT, AND THEY USED TO BE BOTTOM RIGHT. The right-hand corner belongs
+   to IshaanLLM now — its collapsed chip sits there and unfolds into the panel
+   out of that exact spot — and a launcher with three utilities queued along the
+   baseline beside it reads as a toolbar: the one thing that matters competing
+   with three things that do not. So the two jobs go to opposite ends of the
+   window. The assistant is on the right; the reader's own controls are on the
+   left, where on the shell they land under the sidebar's closing byline and
+   read as the last line of that block.
+
+   The order reads left to right — grid, theme, sound — which inverts the
+   numbers: the pod that was innermost from the right is outermost from the
+   left. The theme stays in the middle because it is the one a visitor is most
+   likely to want and the middle is the easiest of the three to hit. */
 .tmode,
 .gridtog {
   position: fixed;
@@ -2074,13 +2119,11 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
   box-shadow: 0 1px 2px rgba(8, 6, 4, 0.18), 0 8px 22px -10px rgba(8, 6, 4, 0.45);
   color: #fff;
 }
-.mute { right: 20px; }
-.tmode { right: 60px; }
-.gridtog { right: 100px; }
-.mute:hover,
+.gridtog { left: calc(20px + var(--sa-left, 0px)); }
+.tmode { left: calc(60px + var(--sa-left, 0px)); }
 .tmode:hover,
 .gridtog:hover { transform: scale(1.09); }
-.mute svg, .tmode svg, .gridtog svg { width: 0.9rem; height: 0.9rem; }
+.tmode svg, .gridtog svg { width: 0.9rem; height: 0.9rem; }
 
 /* --- THE GRID POD SHOWS WHETHER THE GRID IS ON --------------------------
 
@@ -2117,8 +2160,75 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
    changing state, which is what a theme switch is. */
 .tmode svg { transition: transform 460ms var(--spring); }
 .tmode[aria-pressed='true'] svg { transform: rotate(180deg); }
-.mute .slash { transition: opacity 200ms ease, transform 320ms var(--spring); transform-origin: center; }
-.mute[aria-pressed='false'] .slash { opacity: 0; transform: scale(0.4); }
+
+/* --- AND ON THE SHELL THEY SIT ON THE BYLINE'S LINE ----------------------
+
+   NOT UNDER IT. They were a row of their own beneath "© Ishaan Gupta 2026",
+   which meant the sidebar had to reserve a band at its bottom for them and the
+   band came out of the brick tray. On the same line there is nothing to
+   reserve: the closing block is where it always was, the tray has its full
+   height back, and the two pods read as the end of that line rather than as a
+   third paragraph after it.
+
+   THEY ARE RIGHT-ALIGNED TO THE COLUMN, NOT TUCKED IN AFTER THE TEXT. The
+   first version set a left offset of the byline's own width plus a gap, which
+   put the two pods immediately after "2026" and left the rest of the column
+   empty to their right. Reading it back: two controls floating mid-column with
+   no edge to belong to. The closing block is a block — the type starts at the
+   column's left edge and these end at its right one, and the space between
+   them is the column, which is the same relationship every other row in this
+   sidebar has.
+
+   So the offsets are measured from the far edge: `--mast-w` less the gutter
+   less the pods. No text width appears in them, which also means rewriting the
+   byline cannot break the alignment — the previous version had a 128.3px
+   constant in it that would have had to move with the string.
+
+   THE VERTICAL OFFSET IS DERIVED. The byline is the last line in a flex column
+   whose bottom padding is `--mast-pad`, and its line box is 18.46px tall. A
+   32px pod centred on that line therefore hangs (32 - 18.46) / 2 = 6.77px
+   below the text block — hence the subtraction. Measured at 1440x900: the line
+   sits 865-883 and the pods 858-890, both centred on 874.
+
+   `:has(.mast__fine)` IS THE SCOPE, deliberately rather than a list of page
+   names. This is an alignment to a specific piece of type, so the condition is
+   whether that type is on the page: it is on Work, About and Play and not on a
+   case study or the 404, and a new shell section would inherit it without
+   anyone remembering to add it here. The media query is still needed because
+   below 60rem the sidebar is `display: contents` — the byline is still in the
+   document but it is no longer a column at the left of the window, so the pods
+   go back to the corner. */
+@media (min-width: 60.0625rem) {
+  body:has(.mast__fine) .gridtog,
+  body:has(.mast__fine) .tmode {
+    bottom: calc(var(--mast-pad) + var(--sa-bottom, 0px) - 0.423rem);
+  }
+  /* the outer pod's right edge lands on the column's right edge; the inner
+     one sits its own width and a gap inboard of that */
+  body:has(.mast__fine) .tmode { left: calc(var(--mast-w) - var(--mast-pad) - 2rem); }
+  body:has(.mast__fine) .gridtog { left: calc(var(--mast-w) - var(--mast-pad) - 4.5rem); }
+}
+
+/* --- AND WHERE THE LINE CANNOT HOLD BOTH, THE GRID POD LEAVES -------------
+
+   THE ARITHMETIC IS THE WHOLE RULE. The byline is 128.3px of 13px type — a
+   fixed size, so a fixed width — and two pods with their gap are 72px. Below
+   about 18px of air between them the pair stops reading as the end of a line
+   and starts reading as something crowding the type.
+
+   The column is `clamp(15rem, 20.4vw, 20rem)` less two 16px gutters, so it is
+   216px wide at 1216px of window and 219px at 1232. That is where the three
+   numbers stop fitting, and 77rem is that width. Above it there is room for
+   both; below it the grid pod steps out and the theme keeps the corner —
+   which is the right one to keep, because it is the one a visitor is far more
+   likely to want.
+
+   Only in this regime. Below 60rem the sidebar is no longer a column, both
+   pods are back in the bottom-left of the window with a whole page of room,
+   and the grid returns with them. */
+@media (min-width: 60.0625rem) and (max-width: 77rem) {
+  body:has(.mast__fine) .gridtog { display: none; }
+}
 
 /* ==========================================================================
    15b. TACTILE PRESS
@@ -6489,14 +6599,13 @@ body.past-hero .sel { opacity: 0; }
      every touch tablet. The objects need no help from this rule in any case:
      they are already positioned, so their hit pad below resolves against them.
 
-     AND `.mute` WAS THE SAME BUG, FOUND THE SAME WAY ONE PASS LATER.
-     It is `position: fixed; right: 20px; bottom: 20px` a thousand lines up, and
-     this rule outranked that on every touch device, so it dropped into the flow
-     as the last child of body — where `right: 20px` on a relatively positioned
-     element means "shift LEFT by twenty", and it landed at x = -20 with a third
-     of itself off the edge of the screen. That is the half-circle stuck to the
-     left margin beside the time slider. Like the objects above, it is already
-     positioned and needs nothing from this rule for its hit pad to resolve. */
+     THE SOUND POD WAS THE SAME BUG, FOUND THE SAME WAY ONE PASS LATER. It was
+     `position: fixed` a thousand lines up, and this rule outranked that on
+     every touch device, so it dropped into the flow as the last child of body
+     and landed a third of itself off the edge of the screen. The pod no longer
+     exists — the audio is not optional — but the lesson is why the two pods
+     that remain are not in this list either: they are already positioned and
+     need nothing from it for their hit pads to resolve. */
   .inks button,
   .tool:not(.tool--obj),
   .drawerpad button,
@@ -6504,7 +6613,6 @@ body.past-hero .sel { opacity: 0; }
   .tab { position: relative; }
 
   .inks button::after,
-  .mute::after,
   .tool::after,
   .drawerpad button::after,
   .tools__tab::after,
@@ -7239,29 +7347,21 @@ body[data-page='project'] strong { font-weight: 550; }
    pointed; a finger does not, and 44 is the number the rest of this phone
    already uses. */
 @media (max-width: 48rem) {
-  .mute { right: calc(20px + var(--sa-right)); }
-  .tmode { right: calc(60px + var(--sa-right)); }
-  .gridtog { right: calc(100px + var(--sa-right)); }
-  .mute, .tmode, .gridtog { bottom: calc(20px + var(--sa-bottom)); }
+  .tmode, .gridtog { bottom: calc(20px + var(--sa-bottom)); }
 
-  /* AND IT STACKS ABOVE THE DRAWING DOCK ON THE ONE PAGE THAT HAS ONE. Both
-     controls are declared into the same corner at the same inset, which used
-     to be safe by accident: the mute rode the number that detached the paper
-     and only existed at the end of the page, and the dock left on the same
-     number read backwards, so the two were never on screen together. Nothing
-     fades in on scroll any more, so on `play` they were landing on top of each
-     other — 48px of dock under 44px of mute. The mute goes up by the dock's
-     height and a gap; the corner reads as one column of two controls, which is
-     what it always looked like it was going to be. */
-  body[data-page='play'] .mute,
-  body[data-page='play'] .tmode,
-  body[data-page='play'] .gridtog { bottom: calc(20px + 3.75rem + var(--sa-bottom)); }
+  /* THEY USED TO BE LIFTED ABOVE THE DRAWING DOCK ON `play`, and they no
+     longer need to be. The dock is one button in the bottom RIGHT of a phone
+     and these are in the bottom left, so the collision that rule existed to
+     solve — 48px of dock under 44px of mute, both declared into the same
+     corner at the same inset — cannot happen any more. Removed rather than
+     kept as insurance: a 60px lift with nothing under it is a gap someone
+     later has to explain. */
 
-  .mute, .tmode, .gridtog { width: 2.75rem; height: 2.75rem; }
-  .mute svg, .tmode svg, .gridtog svg { width: 1.15rem; height: 1.15rem; }
+  .tmode, .gridtog { width: 2.75rem; height: 2.75rem; }
+  .tmode svg, .gridtog svg { width: 1.15rem; height: 1.15rem; }
   /* the gaps grow with them: 44px of pod plus 12 */
-  .tmode { right: calc(76px + var(--sa-right)); }
-  .gridtog { right: calc(132px + var(--sa-right)); }
+  .gridtog { left: calc(20px + var(--sa-left, 0px)); }
+  .tmode { left: calc(76px + var(--sa-left, 0px)); }
 }
 
 /* --- 36a. the phone's hero, upside down ------------------------------------
@@ -10827,10 +10927,9 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
       rgba(196, 216, 244, calc(0.62 * var(--amb-glow))));
 }
 
-/* 9. THE TWO POD BUTTONS. A dark glass chip on light paper is a control; on a
+/* 9. THE POD BUTTONS. A dark glass chip on light paper is a control; on a
       dark page it is nothing. They invert into a light film with a hairline —
       the same object, lit from the other side. */
-.is-dark .mute,
 .is-dark .tmode,
 .is-dark .gridtog {
   background: rgba(240, 240, 238, 0.09);
@@ -11873,6 +11972,54 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
 /* a dark ground carries more bloom before it reads as haze */
 .is-dark .llm { --sheen-bloom: 0.62; }
 
+/* --- a list inside an answer ---------------------------------------------
+
+   THE MARKER IS THE SAME ARROW THE SUGGESTIONS USE, not a browser bullet. A
+   knowledge base written by a person has lists in it — five design principles,
+   four things a project decided — and they were being collapsed into one
+   run-on paragraph. Now they are a list, and it is set like the rest of the
+   panel: the same measure, the same leading, the marker in `--ink-ghost` so it
+   organises the lines without competing with them.
+
+   `list-style: none` and a hanging marker rather than `list-style-position`,
+   because a wrapped item has to align to its own text and not to the bullet —
+   which is the whole reason a browser list looks wrong in a column this
+   narrow. */
+.llm__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.llm__list li {
+  position: relative;
+  padding-left: 0.95rem;
+  font-size: 0.8125rem;
+  line-height: 1.52;
+  color: var(--ink-2);
+}
+
+.llm__list li::before {
+  content: '\2192';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--ink-ghost);
+  font-size: 0.75rem;
+  line-height: 1.66;
+}
+
+/* a numbered list keeps its numbers, because the order is the content */
+.llm__list--n { counter-reset: llmn; }
+.llm__list--n li { counter-increment: llmn; }
+.llm__list--n li::before {
+  content: counter(llmn) '.';
+  font-variant-numeric: tabular-nums;
+}
+
 /* --- the head ------------------------------------------------------------ */
 
 /* ONE LINE, AND THE SMALLEST TYPE IN THE HEADER IS THE POINT. 12px wordmark,
@@ -12484,7 +12631,6 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
    still lands on the edge of the space the desk now has, rather than under the
    panel. */
 .tools { transition: translate 340ms var(--spring-soft); }
-.mute,
 .tmode { transition: translate 340ms var(--spring-soft); }
 /* the grid pod already transitions its on/off face — that list is restated
    here with the travel appended rather than replaced */
@@ -12519,63 +12665,12 @@ body[data-page='project'].llm-open .tools {
     translate 420ms var(--spring-soft),
     opacity 260ms var(--ease);
 }
-/* THE PODS TRAVEL RATHER THAN LEAVING, and that is a judgement rather than a
-   fallout. The panel covers the corner they sit in, so they have to go
-   somewhere — and the theme toggle in particular is a thing a reader may well
-   want WHILE the panel is open. Sliding them clear of its left edge keeps them
-   usable; hiding them would be tidier and worse. On a case study they are
-   already on the other side of the window and this does not reach them. */
-body.llm-open .mute,
-body.llm-open .tmode,
-body.llm-open .gridtog { translate: calc(-1 * var(--llm-clear)) 0; }
-
-/* --- ON A CASE STUDY THE THREE PODS ARE ON THE OTHER SIDE OF THE PAGE ------
-
-   THE CORNER HAS ONE OCCUPANT. Theme, grid and sound have always sat at 20, 60
-   and 100px from the right; IshaanLLM wants that corner, and the first answer
-   was to shift them along it — four controls in a row sharing a baseline. Which
-   works and reads as a toolbar: a strip of chrome along the bottom of the
-   window, with the one thing that matters competing against three things that
-   do not.
-
-   So on a case study they cross to the bottom LEFT, under the section rail,
-   where the column is short and the space below it is empty. That separates the
-   two jobs by putting them at opposite ends of the window: the assistant on the
-   right, the reader's own controls on the left, neither queued behind the other.
-
-   NOT ON THE SHELL, and that is a constraint rather than an inconsistency —
-   the bottom left of the shell is the brick tray. Pods there would land in the
-   pile.
-
-   The order reads left to right — grid, theme, sound — so the numbers invert:
-   the pod that was innermost from the right is outermost from the left.
-   `right: auto` is stated because the base rule sets `right` and one side has
-   to win. */
-body[data-page='project'] .mute,
-body[data-page='project'] .tmode,
-body[data-page='project'] .gridtog { right: auto; }
-
-body[data-page='project'] .gridtog { left: calc(20px + var(--sa-left)); }
-body[data-page='project'] .tmode { left: calc(60px + var(--sa-left)); }
-body[data-page='project'] .mute { left: calc(100px + var(--sa-left)); }
-
-/* AND THEY DO NOT TRAVEL WITH THE PANEL, which is the whole reason this needs a
-   rule rather than three numbers. The rule above shifts every fixed control
-   LEFT by the panel's clearance so it stays out from under the conversation —
-   correct for something anchored to the right edge, and exactly wrong for
-   something anchored to the left, where it would walk the pods off the side of
-   the screen. They are already nowhere near the panel. */
-body[data-page='project'].llm-open .mute,
-body[data-page='project'].llm-open .tmode,
-body[data-page='project'].llm-open .gridtog { translate: none; }
-
-/* the pods are 44px wide and 56 apart at this width rather than 40 and 40 —
-   see section 36 — so the left-hand ladder is restated with those numbers */
-@media (max-width: 48rem) {
-  body[data-page='project'] .gridtog { left: calc(20px + var(--sa-left)); }
-  body[data-page='project'] .tmode { left: calc(76px + var(--sa-left)); }
-  body[data-page='project'] .mute { left: calc(132px + var(--sa-left)); }
-}
+/* AND THEY DO NOT TRAVEL WITH THE PANEL. The dock above is shifted left by
+   the panel's clearance so it stays out from under the conversation, which is
+   right for something anchored to the right edge and exactly wrong for these —
+   anchored to the left, the same expression would walk them off the side of the
+   screen. They are already nowhere near the panel. The rule that used to move
+   them is gone rather than zeroed; this note is what is left of it. */
 
 /* THE AMBIENT HINT GIVES WAY, BECAUSE THE DESK IS NARROWER NOW. The rotating
    tip is anchored bottom-left of the desk and the shortcut legend bottom-right
@@ -12610,9 +12705,6 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 @media (max-width: 60rem) {
   /* narrow is the bottom sheet, so nothing travels sideways and nothing clips */
   body.llm-open .tools { translate: 0 -50%; }
-  body.llm-open .mute,
-  body.llm-open .tmode,
-  body.llm-open .gridtog { translate: none; }
   body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 0 0 0); }
 
   /* AND THEY STEP OUT ENTIRELY, WHICH IS A STACKING FACT RATHER THAN A CHOICE.
@@ -12644,7 +12736,16 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
       translate 320ms var(--spring-soft),
       opacity 200ms var(--ease);
   }
-  body.llm-open .mute,
+}
+
+/* AND THE PODS ONLY LEAVE WHEN THE PANEL ACTUALLY REACHES THEM, which is a
+   narrower band than it used to be. They stepped out below 60rem because the
+   panel was a full-width sheet there and a fixed control had nowhere to travel
+   to. It is not a sheet any more: between 40 and 60rem it is a 352px panel
+   inset 12px from the right edge, and these are three 32px circles at the left
+   — measured at 900 and at 768, they never touch. Only on a phone, where the
+   panel is `100vw - 24px`, is the corner genuinely taken. */
+@media (max-width: 40rem) {
   body.llm-open .tmode,
   body.llm-open .gridtog {
     translate: 0 calc(100% + 4rem);
