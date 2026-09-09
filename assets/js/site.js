@@ -461,6 +461,15 @@
          of the key means nobody has expressed a preference yet. */
       this.on = saved === null ? true : saved === '1';
       document.documentElement.classList.toggle('is-grid', this.on);
+      /* AND THE POD IS TOLD, because it was built before this ran and it does
+         not ask. `Shell.hud` creates it with `aria-pressed="false"` and paints
+         it immediately from `Grid.on`, which at that moment is still the
+         declared placeholder — `Grid.init` is a dozen lines further down the
+         boot. That was invisible while the default was off, because "false"
+         happened to be the truth; the moment the grid started on by default it
+         became a control announcing the opposite of the state it was in, to
+         exactly the visitors who cannot see the lines. */
+      this.paint();
 
       this.el = el('div', { class: 'gridlay', 'aria-hidden': 'true' });
       sheet.insertBefore(this.el, sheet.firstChild);
