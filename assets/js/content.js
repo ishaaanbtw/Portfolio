@@ -738,472 +738,555 @@ window.SITE = {
             facts: ['Product identity', 'Hardware · Mobile', '2026'],
             line: 'A new product category inside an ecosystem that already had one.',
           },
-          /* The dock opens with the study, as it does on a project page and as
-             Onefinnet does. `reading: true` collapses it to its tab instead. */
-          reading: false,
+          /* `true` COLLAPSES THE ANNOTATION DOCK TO ITS EDGE TAB, which is
+             what a film needs. `Rack.HOMES` mounts the dock on project pages
+             deliberately — a case study you can draw on — and on a black
+             frame a lavender 48x328 toolbar is a second thing competing for
+             the eye, which is the one rule the whole film rests on. Set this
+             back to `false` to have the dock out by default. */
+          reading: true,
           back: { label: 'BACK', href: 'index.html' },
-          sections: [
-            /* The opening stretch runs on a dark band — the framing, then the
-               strategy — so it reads as premise rather than argument, the same
-               way the Onefinnet study opens. Both carry tone: 'dark' and tile
-               into one continuous field. */
-            { id: 'x0-overview', nav: 'Overview', eyebrow: 'Overview', tone: 'dark',
-              heading: 'New enough to justify its own identity',
-              body: [
-                'Cypherock X1 had already established itself as a premium hardware wallet for advanced users. As the company prepared to launch X0 — a more accessible, mobile-first product — the challenge went <b>beyond designing new screens</b>.',
-                'How do you create a product that feels <b>new enough to justify its own identity</b>, while remaining unmistakably Cypherock? Everything below is the answer to that question.',
+          /* --- TWELVE CHAPTERS, NOT NINE SECTIONS -------------------------
+
+             WHAT THIS REPLACED. The study was a well-argued essay: nine
+             sections, each opening with two or three paragraphs, with the
+             artefacts arriving after the argument had already been made in
+             prose. Everything in it was true and most of it was good, and it
+             read as a document rather than as a project — you finished it
+             knowing what Ishaan concluded and not much about how he got there.
+
+             The shape now is a documented seven months. Every chapter answers
+             one question, the question is the heading, and the answer is
+             carried by a diagram, a comparison or a photograph wherever a
+             diagram, a comparison or a photograph can carry it. Where prose
+             is genuinely the right tool it is a sentence, not a paragraph.
+
+             THE NUMBERED EYEBROWS ARE LOAD-BEARING. A reader who lands mid-page
+             from a link needs to know where they are in a long argument, and
+             the rail on the left is a table of contents rather than a position
+             indicator. "04 — Decision #2" says both what this is and how far
+             in you are.
+
+             THE PHOTOGRAPH SLOTS ARE DELIBERATE AND THEY ARE NOT DECORATION.
+             Chapters 05, 06, 07, 09 and 10 are built around process artefacts
+             that do not exist in the repository yet — whiteboards, Figma
+             exports, review threads, component close-ups, home screens. Each
+             one is a `ph` block naming the exact file to save and carrying the
+             caption already written, so the page states honestly that it is
+             waiting for an image rather than papering over the gap with more
+             prose. Dropping a file at the named path is the whole of the work;
+             no code changes. See the checklist in the commit that added this. */
+          /* --- THE FILM ---------------------------------------------------
+
+             WHAT THIS REPLACED, AND WHY TWICE. The study was first a
+             nine-section essay, then a twelve-chapter documentary. Both were
+             documents: a measure of text in a column, with the artefacts
+             arriving after the argument had already been made in prose. You
+             finished either one knowing what was concluded and very little
+             about what it was like.
+
+             This is the same project directed instead of written. Twenty-six
+             scenes, each one a screen, each one spending a single idea and
+             handing the next one over. No scene has a paragraph longer than
+             forty-five words in it; several have no prose at all. Where the
+             document version explained a decision, this one shows the
+             alternative being rejected.
+
+             THE SPINE IS A QUESTION, and it is Ishaan's own: how do you
+             launch a new product without cannibalising the flagship it sits
+             next to? Scene 06 asks it, alone, on the only white frame in the
+             film. Every act after it is an answer.
+
+             HOW TO READ THE DATA. `kind` picks the renderer in site.js;
+             `dur` is how tall the scene's block is, in svh, and since the
+             stage inside it is one screen tall, `dur - 100` is how long the
+             scene holds while you scroll through it. A scene with eight
+             reveals wants around 15svh of hold per reveal — one comfortable
+             flick each — which is where these numbers come from. Trimming
+             the film is one number per scene and nothing else.
+
+             `act` on a scene puts it in the act rail on the right.
+
+             THE SHOTS THAT DO NOT EXIST YET SAY SO. Twenty of the frames in
+             this film are photographs and exports that are not in the
+             repository — a wall of four printed directions, an IA whiteboard,
+             a hand tapping a card, home screens on real devices. Each one is
+             a `shot` with a `label` and an `of`, which renders as a black
+             frame stating what it is waiting for. Add `src` to the same
+             object and the frame becomes the photograph, with no other
+             change. X0-IMAGE-CHECKLIST.md is the list.                     */
+          mode: 'film',
+          scenes: [
+
+            /* ==============================================================
+               ACT I — THE PREMISE (01–05)
+               Curiosity. The reader should not yet know this is a case study.
+               ============================================================== */
+
+            /* THE COLD OPEN. The card in front of its own name, the letters
+               cropping off both edges so the type reads as scale rather than
+               as a word. Nothing fades in — it is already there at rest,
+               which is what the first frame of a product page has to be. */
+            { id: 'x0-open', act: 'I · Premise', kind: 'object', dur: 130,
+              rest: true,
+              word: 'X0',
+              shot: { label: 'X0 card', ratio: 1.55,
+                of: 'The card, three-quarter view, one hard key light from the left, on black. Transparent PNG at 3x so it can sit in front of the letters.' },
+              kicker: 'Cypherock X0 · mobile beta',
+              h: 'Self-custody, without the seminar.',
+              meta: '7 months · Senior Product Designer' },
+
+            /* SUCCESS AS THE STARTING CONDITION. The three facts arrive as
+               beats and then there is a pause with nothing in it, so the
+               reader has time to conclude X1 is fine before being told the
+               market moved. The pause is the scene. */
+            { id: 'x0-x1', kind: 'object', dur: 150,
+              art: 'assets/img/x0/x1.webp',
+              alt: 'CySync, the X1 desktop app — dark, gold, dense',
+              still: true,
+              h: 'X1 was never the problem.',
+              facts: ['<b>$199</b>', '<b>Desktop-first</b>', '<b>Trusted</b>'],
+              turn: 'And competitors at the same price were shipping high-end devices.' },
+
+            /* THE BUSINESS PROBLEM, FELT AS A QUANTITY. Two scenes in the
+               first draft — the market, then the insight — merged here
+               because it is one gesture: the field of people ignites and
+               resolves into the device they are already holding. */
+            { id: 'x0-market', kind: 'field', dur: 170, count: 460, seed: 19,
+              art: 'assets/img/x0/onboarding/01-splash.webp',
+              h: 'Mobile isn’t a platform decision. It’s where the money already lives.',
+              p: 'Price and complexity were screening out the people self-custody was meant to protect.' },
+
+            /* THE PRODUCT'S ACTUAL REASON TO EXIST, AND IT IS A SUBTRACTION.
+               This is the strongest idea in the project and it was missing
+               from both earlier versions of the study. The vault device
+               leaves the frame slowly and does not come back; three costs are
+               struck through behind it. */
+            { id: 'x0-subtract', kind: 'strike', dur: 180,
+              gone: { label: 'X1 vault device', ratio: 1.3,
+                of: 'The X1 device on black, same key light as the card. This is the object that exits the frame and does not return.' },
+              stays: { label: 'Card + phone', ratio: 0.8,
+                of: 'The X0 card held against the back of a phone, mid-tap, same lighting. The two objects that are left.' },
+              h: 'The phone was already in their hand. So we stopped shipping a screen.',
+              items: ['Hardware to manufacture', 'Freight and returns', 'Certification, per market'],
+              p: 'The same distributed-key security, at a fraction of the price — because of what isn’t in the box.' },
+
+            /* THE TITLE CARD, and the one the reader will screenshot. The
+               fourth word holds because it is the one nobody expects to
+               survive the other three. */
+            { id: 'x0-brief', kind: 'words', dur: 140,
+              kicker: 'The brief, in four words',
+              items: ['Affordable.', 'Mobile-first.', 'Simple.', 'Secure.'],
+              p: 'The first three were the brief. The fourth was non-negotiable.' },
+
+            /* ==============================================================
+               ACT II — THE QUESTION (06–10)
+               Surprise. The altitude of the problem, and what it ruled out.
+               ============================================================== */
+
+            /* THE SPINE, and the only white frame in the film. Nothing moves
+               in it: after five scenes of motion, stillness is the effect,
+               and this is the one moment the reader is meant to stop
+               scrolling to read. */
+            { id: 'x0-question', act: 'II · Question', kind: 'ask', dur: 120,
+              white: true,
+              kicker: 'The actual question',
+              h: 'How do you launch a new product without cannibalising the flagship it sits next to?',
+              p: 'Not “how do you design an app?”' },
+
+            /* THE BRIEF AS IT ARRIVED, and then eight questions that nobody
+               had answered. The accumulation is the point — nothing leaves,
+               so by the eighth the frame is crowded, which is what the start
+               of the project felt like and is not something a paragraph can
+               do. The two in brass are the two that decide the rest. */
+            { id: 'x0-brief-real', kind: 'wall', dur: 170,
+              kicker: 'What was handed over',
+              quotes: [
+                'They didn’t say <em>can you make us some screens.</em>',
+                'They said <em>we are launching a completely new product.</em>',
               ],
-              blocks: [
-                /* The chips: the facts before the work. Keep the values short —
-                   each has to sit on one line at the column width, which is what
-                   makes the row scan. A long value wraps inside its pill and the
-                   tidy row falls apart. */
-                { type: 'facts', items: [
-                  { label: 'Team', values: ['Hardware', 'Consumer crypto'] },
-                  { label: 'Role', values: ['Product Designer'] },
-                  /* Live work. The em dash is what marks it as ongoing — it is
-                     the same signal the index table uses for the current role,
-                     so the two agree without a separate "in progress" badge. */
-                  { label: 'Timeline', values: ['2026 — ongoing'] },
-                  { label: 'Scope', values: ['Product identity', 'Mobile app', 'Design system'] },
-                  { label: 'Surfaces', values: ['iOS', 'Android', 'Marketing'] },
-                ] },
-
-                { type: 'callout',
-                  text: 'We weren’t building another app. We were introducing <b>an entirely new product category</b> within the Cypherock ecosystem — and everything else follows from that.' },
-
-                /* The one piece of real media in the study today. Same treatment
-                   as the Onefinnet job-creation clip: an H.264 file rather than a
-                   GIF, started when it scrolls into view and paused when it
-                   leaves. 1440px wide, no audio, ~830KB.
-
-                   When the full screen set exists, a `ticker` block here would
-                   match Onefinnet's opening exactly — see that entry for the
-                   shape it takes. */
-                { type: 'video', src: 'assets/media/x0/app-walkthrough.mp4',
-                  w: 1440, h: 918,
-                  poster: 'assets/media/x0/app-walkthrough.webp',
-                  alt: 'The X0 app in use — portfolio, asset detail and the '
-                     + 'card-tap confirmation',
-                  max: '960px',
-                  pill: true,
-                  caption: 'X0 — a second product in the Cypherock ecosystem' },
+              items: [
+                { t: 'Should it look like X1?' },
+                { t: 'Should it look different?', keep: true },
+                { t: 'What stays?' },
+                { t: 'What changes?' },
+                { t: 'What can we reuse?' },
+                { t: 'What deserves a new language?', keep: true },
+                { t: 'How do we prepare for features nobody has specced?' },
+                { t: 'How do we keep development scalable?' },
               ] },
 
-            /* --- 01. Product strategy ------------------------------------------
-               One page. What X0 is next to X1, and why that is a design brief
-               rather than a marketing one. */
-            { id: 'x0-strategy', nav: 'Product Strategy', eyebrow: 'Product Strategy',
-              tone: 'dark',
-              heading: 'Understanding the product strategy',
-              body: [
-                'X0 was never a replacement. It was a <b>second position in the same ecosystem</b> — and the two products had to be legible as different things to different people, without either looking like a compromised version of the other.',
+            /* FIVE REQUIREMENTS, TWO OF WHICH CANNOT BOTH BE TRUE. The
+               contradiction is drawn as a hairline between the two lines
+               rather than explained underneath them. */
+            { id: 'x0-five', kind: 'stack', dur: 160,
+              kicker: 'Five things at once',
+              items: [
+                { t: 'Approachable.' },
+                { t: 'Modern.' },
+                { t: 'For everyone.' },
+                { t: 'Different from X1.', fight: true, tie: true },
+                { t: 'Unmistakably Cypherock.', fight: true },
               ],
-              blocks: [
-                { type: 'head', title: 'The business problem' },
+              p: 'It had to look better than the flagship without embarrassing it.' },
 
-                { type: 'contrast',
-                  not: 'We wanted to redesign the app…',
-                  items: [
-                    { icon: 'building', text: 'One product served one end of the market.' },
-                    { icon: 'case', text: 'The experience assumed a desktop and a power user.' },
-                    { icon: 'chart', text: 'Growth depended on reaching first-time owners.' },
-                    { icon: 'person', text: 'Price and complexity screened out the people',
-                      sub: 'self-custody was supposed to protect.' },
-                    { icon: 'target', text: 'The ecosystem needed a new category, not a cheaper model.' },
-                  ] },
-
-                { type: 'chip',
-                  text: 'X1 — premium · desktop · power users · existing brand   //   X0 — affordable · mobile · everyday users · new audience' },
-
-                /* the 2x2 grid. `lift` is the one card a shade lighter. */
-                { type: 'cards', heading: 'What the split had to resolve',
-                  items: [
-                    { label: 'Audience',
-                      body: 'X1 speaks to someone who already knows what a passphrase is. X0 speaks to someone whose first question is <b>whether they are about to lose their money</b>.' },
-                    { label: 'Platform', lift: true,
-                      body: 'A desktop-first product asks people to come to it. <b>The phone is where money already lives</b>, and where a first-time owner starts.' },
-                    { label: 'Price',
-                      body: 'At the premium tier the wallet can cost more than the holdings it protects, which <b>screens out exactly the people it should reach</b>.' },
-                    { label: 'Identity',
-                      body: 'A second product needed <b>its own voice without fracturing the brand</b> — approachable, never cheapened.' },
-                  ] },
-              ] },
-
-            /* --- 02. Visual language --------------------------------------------
-               The identity chapter. This is the pivot the whole study turns on:
-               the design system is introduced as a LANGUAGE, not a component
-               library. The library comes later, under Scale. */
-            { id: 'x0-language', nav: 'Visual Language', eyebrow: 'Identity',
-              heading: 'Defining a new visual language',
-              body: [
-                'To differentiate X0 while maintaining brand consistency, I developed a <b>new design language</b> that established its own personality while inheriting the trust and familiarity of the Cypherock ecosystem.',
-                'The test was simple and unforgiving: the two products had to survive being <b>seen side by side</b> — on a shelf, in an app store, in the same hands — and still read as siblings rather than as an original and a knock-off.',
+            /* THE CONTRADICTION CONVERTED INTO A DIRECTION. Each connector
+               draws down and then its word appears, so the reader feels the
+               logic close rather than reading a list of five nouns. */
+            { id: 'x0-logic', kind: 'chain', dur: 150,
+              items: [
+                'Same brand',
+                'Different audience',
+                'Different product',
+                'Different experience',
+                'A different design language',
               ],
-              blocks: [
-                { type: 'head', title: 'Inherited, and its own' },
+              h: 'A unique identity wasn’t a preference. It was the only way both products survive.' },
 
-                { type: 'bullets',
-                  items: [
-                    '<b>Inherited</b> — the marks of trust: the restraint, the density of information, the seriousness a product holding someone’s savings has to carry.',
-                    '<b>Its own</b> — a warmer, lighter register: softer geometry, more air, and a tone that explains rather than assumes.',
-                  ] },
+            /* THE SET PIECE. The old interface comes apart in seven slices,
+               each on its own vector with its own lag, and the new one is
+               already underneath. Built from the two pictures the study
+               already had, and reversible: scrolling back reassembles X1,
+               because none of this is an animation with a direction. */
+            { id: 'x0-apart', kind: 'morph', dur: 180,
+              over: 'assets/img/x0/x1.webp',
+              under: 'assets/img/x0/x0.webp',
+              underAlt: 'X0 — lighter, quieter, more air, a guided path through every flow',
+              h: 'Nothing was carried over except the reason to trust it.',
+              cap: 'CySync (X1, desktop) coming apart over X0 (mobile). Scroll back to reassemble it.' },
 
-                { type: 'callout',
-                  text: 'Segmentation is not a discount. X0 had to be <b>visibly simpler without being visibly cheaper</b> — the security is identical, and the design could not imply otherwise.' },
+            /* ==============================================================
+               ACT III — THE DECISIONS (11–20)
+               Understanding. Each decision with the alternative taken
+               seriously, because that is what separates a decision from a
+               preference.
+               ============================================================== */
 
-                /* A draggable seam rather than two pictures side by side. The
-                   section's argument is that these are one family in two
-                   registers, and that only reads if the eye can hold both in
-                   the same place — a comparison split across two frames is one
-                   the reader has to do from memory.
+            /* The second of the film's two motionless scenes. A decision is
+               being announced, and the film slows down to announce it. */
+            { id: 'x0-dec-1', act: 'III · Decisions', kind: 'ask', dur: 110,
+              n: 'Decision 01',
+              h: 'Don’t reuse the design system that already existed.' },
 
-                   BOTH FILES MUST BE THE SAME DIMENSIONS. The seam is a clip,
-                   not a resize, so the pixel under it on one side has to be the
-                   same pixel on the other — mismatched crops slide against each
-                   other as the seam moves and the comparison stops meaning
-                   anything. These two are 1768x1128 as supplied, encoded to
-                   1600px WebP: 93KB and 67KB.
+            /* THE CASE AGAINST, THEN THE ANSWER, on one pin. The left column
+               fills while the right stays black — the asymmetry is
+               uncomfortable on purpose, and the reader starting to want the
+               answer is the scene's job. Then the left dims as the right
+               fills, which is the whole argument in one gesture. */
+            { id: 'x0-n45', kind: 'split', dur: 190,
+              left: {
+                title: 'Why not CySync',
+                items: [
+                  'Built for a desktop window, not a thumb.',
+                  'Component-heavy where X0 needed few clear parts.',
+                  'Interaction patterns from another platform.',
+                  'And carrying X1’s language into X0 would have made X0 look like a discount X1.',
+                ],
+                shot: { label: 'CySync components', ratio: 1.5,
+                  of: 'The existing CySync component sheet, desaturated. Redact anything non-public before this ships.' },
+              },
+              right: {
+                title: 'What replaced it',
+                name: 'N45',
+                items: [
+                  'Atomic.',
+                  'Mobile-specific, with no inheritance from CySync.',
+                  'Reusable.',
+                  'Built to scale to features nobody had specced.',
+                  'Developer friendly.',
+                ],
+                note: 'Argued with competitor analysis and a cost-to-effort case — not with taste.',
+              } },
 
-                   `ratio` is those files' own 1.567, so nothing is cropped —
-                   .cmp__img is object-fit: cover, and a container at a
-                   different ratio would quietly trim the edge screens.
-
-                   `max` widens the panel past the 630px default. These are
-                   grids of many screens rather than single shots; at the
-                   default they read as texture. */
-                { type: 'compare',
-                  a: { label: 'X1',
-                       src: 'assets/img/x0/x1.webp',
-                       alt: 'Cypherock X1 — the CySync app: dark, gold, dense, '
-                          + 'built for people who already know what they are doing' },
-                  b: { label: 'X0',
-                       src: 'assets/img/x0/x0.webp',
-                       alt: 'Cypherock X0 — lighter, quieter, more air, and a '
-                          + 'guided path through every flow' },
-                  ratio: '1.567', start: 50, max: '900px',
-                  pill: true,
-                  caption: 'Drag to compare — two personalities in one family' },
-              ] },
-
-            /* --- 03. Evolution ---------------------------------------------------
-               "Evolution", never "redesign". The earlier concepts were right
-               about priorities and wrong about system — that distinction is the
-               whole section, and it is also what makes it generous rather than
-               dismissive about work that came before. */
-            { id: 'x0-evolution', nav: 'Evolution', eyebrow: 'The Existing Experience',
-              heading: 'Evolving the mobile experience',
-              body: [
-                'Earlier mobile explorations already existed, and they were worth reading properly rather than replacing. They had <b>validated which features mattered</b> — the priorities in them were right, and that saved a great deal of guessing.',
+            /* THE ASSEMBLY, and the longest scene in the film. The system is
+               proved by building the product out of it on screen: eight parts
+               arrive around one button and none of them leave, and by the end
+               the accumulated parts are a screen. It should feel long. */
+            { id: 'x0-assembly', kind: 'asm', dur: 200,
+              hub: { label: 'Button', ratio: 1.2,
+                of: 'The primary button component, isolated, at 3x.' },
+              parts: [
+                { label: 'Spacing', x: '6%', y: '14%', ratio: 1.4,
+                  of: 'The 8pt spacing grid as an overlay, transparent background.' },
+                { label: 'Type scale', x: '66%', y: '10%', ratio: 1.3,
+                  of: 'The type scale specimen and its two weights, isolated.' },
+                { label: 'Colour', x: '4%', y: '58%', ratio: 1.6,
+                  of: 'The colour token swatch set, named.' },
+                { label: 'Icons', x: '70%', y: '62%', ratio: 1.4,
+                  of: 'The icon set, isolated on a transparent ground.' },
+                { label: 'Input', x: '20%', y: '74%', ratio: 1.7,
+                  of: 'Text input, every state, close crop.' },
+                { label: 'Card', x: '60%', y: '78%', ratio: 1.5,
+                  of: 'The card component, isolated.' },
+                { label: 'Navigation', x: '38%', y: '4%', ratio: 2,
+                  of: 'The navigation bar as rebuilt in month three, isolated.' },
+                { label: 'Home', x: '17%', y: '34%', ratio: 0.62,
+                  of: 'The assembled home screen — the frame all of the above resolves into.' },
               ],
-              blocks: [
-                { type: 'ph', label: 'Earlier explorations',
-                  src: 'assets/img/x0/x1-concepts.webp',
-                  ratio: '1.5',
-                  caption: 'The concepts that came before — read for priorities, not for pixels' },
+              h: 'The system wasn’t a deliverable. It was the product’s grammar.' },
 
-                { type: 'bullets', sub: 'What the audit surfaced',
-                  items: [
-                    '<b>Navigation</b> — the model changed depending on where you entered it, so nothing became familiar through repetition.',
-                    '<b>Visual hierarchy</b> — the most consequential action on a screen rarely looked like the most consequential thing on it.',
-                    '<b>Layout consistency</b> — spacing and component styles drifted between screens, which read as unfinished rather than as variety.',
+            /* THE SECOND DECISION AND ITS EVIDENCE IN ONE SCENE, because a
+               title card followed by its own proof is not two scenes. This is
+               also where the film's texture changes for the only time:
+               rendered black to a real wall, as a hard cut. */
+            { id: 'x0-dec-2', kind: 'photo', dur: 160,
+              n: 'Decision 02',
+              h: 'Four directions. Only one survived the people who’d have to sell it.',
+              p: 'The only way to argue about four directions is to see them at the same time.',
+              shot: { label: 'The wall',
+                of: 'Photograph — four shortlisted directions pinned up together, wide, shot straight on. Handheld and imperfect is right. Blur anything legible on the rejected three.' },
+              cap: 'Direction review — four candidates, one wall, everyone who had a say in the room' },
+
+            /* THE STRUCTURE WAS ARGUED BEFORE IT WAS DRAWN, and the
+               cross-dissolve is aligned so two or three boxes sit in the same
+               place in both frames. Those anchors are what make it read as
+               one piece of thinking cleaned up rather than two unrelated
+               pictures. */
+            { id: 'x0-ia', kind: 'cross', dur: 130,
+              a: { label: 'IA whiteboard',
+                of: 'Photograph — the information-architecture session with the PM. Boxes, arrows, crossings out. Shot square to the wall.' },
+              b: { label: 'The same thing, redrawn',
+                of: 'The clean IA diagram in the product’s own type, aligned so its key boxes land on the photograph’s.' },
+              cap: 'Information architecture and flow mapping, with the PM, before a single screen was drawn' },
+
+            /* HOW THE WORK ACTUALLY MOVED. Both tracks advance at once,
+               which is the point: the system churning and the low-fidelity
+               flows going out were parallel, and a reader shown them in
+               sequence would conclude one waited for the other. */
+            { id: 'x0-tracks', kind: 'tracks', dur: 170,
+              lanes: [
+                { t: 'The system, churning', stack: true,
+                  p: 'It went through rigorous back-and-forth. It was the foundation, so it had to.',
+                  shots: [
+                    { label: 'Component v1', ratio: 1.4, of: 'One component, first version.' },
+                    { label: 'v2', ratio: 1.4, of: 'The same component, second version.' },
+                    { label: 'v3', ratio: 1.4, of: 'Third version — the one that stayed.' },
                   ] },
-
-                { type: 'callout',
-                  text: 'The earlier concepts helped validate feature priorities but lacked <b>consistency, scalability and a clear visual identity</b> aligned with the upcoming X0 product.' },
-
-                /* --- WHERE IT LANDED ---------------------------------------
-                   The section's own argument, finished. The frame above is the
-                   concepts that came before; this is the flow they turned into,
-                   and putting the two in one section is what makes "evolution"
-                   a claim the page can actually support rather than a word in
-                   a heading.
-
-                   It walks itself: a stop per screen, each saying why that
-                   screen exists rather than what is on it, and each holding for
-                   as long as its own note takes to read. Five of the twelve
-                   mark a region — the ones that are genuinely about one part of
-                   the interface — and the rest mark nothing, because an
-                   onboarding screen carries a single idea and pointing at a
-                   corner of it promises a detail that is not there. */
-                { type: 'head', title: 'Where it landed' },
-
-                { type: 'tour', max: '900px', pill: true,
-                  label: 'X0 Wallet \u2014 Onboarding',
-                  base: 'assets/img/x0/onboarding/',
-                  caption: 'The onboarding flow as it shipped \u2014 twelve screens, and the reason for each one',
-                  stops: [
-                    { src: '01-splash.webp',
-                      screen: 'Splash',
-                      hold: 4350,
-                      mode: 'drift',
-                      side: 'r',
-                      ct: 20,
-                      point: [50, 46],
-                      title: 'Hold the first second',
-                      body: 'A cold start has real work to do. That second exists either way, so it is spent on the mark rather than on a progress bar.' },
-                    { src: '02-welcome.webp',
-                      screen: 'Welcome',
-                      hold: 4255,
-                      mode: 'morph',
-                      side: 'l',
-                      ct: 54,
-                      point: [50, 84],
-                      title: 'One decision, and no account',
-                      body: 'Most wallets open with a sign-up. This one opens with a button, because what identifies you here is a card, not an email address.' },
-                    { src: '03-meet.webp',
-                      screen: 'Meet Cypherock X0',
-                      hold: 4350,
-                      mode: 'drift',
-                      side: 'r',
-                      ct: 22,
-                      point: [48, 55],
-                      title: 'The object before the process',
-                      body: 'People arrive having just unboxed a metal card. The first slide says what it is, so everything after it has something physical to attach to.' },
-                    { src: '04-no-seed.webp',
-                      screen: 'No seed phrase',
-                      hold: 4255,
-                      mode: 'drift',
-                      side: 'r',
-                      ct: 14,
-                      point: [50, 14],
-                      title: 'Lead with the objection',
-                      body: 'The seed phrase is where wallet onboarding usually dies. Removing it is the strongest thing this product has to say, so it is said second.' },
-                    { src: '05-distributed.webp',
-                      screen: 'Distributed keys',
-                      hold: 4065,
-                      mode: 'drift',
-                      side: 'r',
-                      ct: 24,
-                      point: [50, 50],
-                      title: 'Answer the obvious question',
-                      body: '“No seed phrase” immediately raises “then what protects it”. The key is split across the cards, so no single place ever holds it.' },
-                    { src: '06-currencies.webp',
-                      screen: '22,000+ assets',
-                      hold: 4065,
-                      mode: 'drift',
-                      side: 'r',
-                      ct: 42,
-                      point: [50, 60],
-                      title: 'Will it hold mine?',
-                      body: 'After the security argument the last objection is coverage, and a wall of logos someone recognises answers that faster than a number does.' },
-                    { src: '07-consent.webp',
-                      screen: 'Consent',
-                      hold: 4350,
-                      mode: 'drift',
-                      side: 'l',
-                      ct: 50,
-                      focus: [4, 84.3, 92, 9.6],
-                      title: 'Ask before collecting',
-                      body: 'Consent comes before setup, in plain words, with what is never collected listed as clearly as what is. Refuse all is the same size as Accept all.' },
-                    { src: '08-card-stack.webp',
-                      screen: 'Card set',
-                      hold: 4540,
-                      mode: 'drift',
-                      side: 'l',
-                      ct: 20,
-                      point: [50, 55],
-                      title: 'Name what is about to happen',
-                      body: 'Setup is the one part of this flow that cannot be undone. Showing the four cards means nobody taps Continue without knowing what they are starting.' },
-                    { src: '09-tap-idle.webp',
-                      screen: 'Tap to approve',
-                      hold: 4920,
-                      mode: 'sheet',
-                      side: 'r',
-                      ct: 44,
-                      focus: [0.8, 36.4, 98.4, 65],
-                      title: 'A sheet, not a new screen',
-                      body: 'Approval rises over the page that asked for it, so the context never disappears. Where to hold the card is in the sheet, because that is what people get wrong.' },
-                    { src: '10-tap-loading.webp',
-                      screen: 'Holding',
-                      hold: 5000,
-                      mode: 'morph',
-                      side: 'r',
-                      ct: 44,
-                      focus: [0.8, 36.4, 98.4, 65],
-                      title: 'Hold is a state, so it has one',
-                      body: 'The read takes a moment and the card has to stay put for all of it. The spinner is the contract: it lasts exactly as long as the hold.' },
-                    { src: '11-tap-success.webp',
-                      screen: 'Approved',
-                      hold: 4635,
-                      mode: 'morph',
-                      side: 'r',
-                      ct: 44,
-                      focus: [0.8, 36.4, 98.4, 65],
-                      title: 'Confirm where it was asked',
-                      body: 'Success replaces the spinner in place. No screen change and no toast to miss — the surface that asked for the tap is the one that says it worked.' },
-                    { src: '12-user-type.webp',
-                      screen: 'New or existing',
-                      hold: 4540,
-                      mode: 'drift',
-                      side: 'l',
-                      ct: 18,
-                      focus: [4, 29.5, 92, 33],
-                      title: 'One fork, asked once',
-                      body: 'Two paths, and both of them need the cards. Asking after a tap has proven a card is present means the answer routes setup rather than gating it.' },
+                { t: 'Everyone else, unblocked', stack: true,
+                  p: 'Low-fidelity flows kept stakeholders and engineers moving. Most of the simplification in the shipped app started as somebody else’s comment.',
+                  shots: [
+                    { label: 'Low-fi flow', ratio: 1.6, of: 'The low-fidelity flow frames as presented to stakeholders.' },
+                    { label: 'A review thread', ratio: 1.5, of: 'A real design-review thread. Blur names, faces, and any unreleased feature names before this is public.' },
+                    { label: 'What changed', ratio: 1.5, of: 'The affected screen before and after, identical crop.' },
                   ] },
               ] },
 
-            /* --- 04. Principles ---------------------------------------------------
-               This section replaces what used to be a feature showcase. The
-               difference matters: a feature list says "I drew these"; a
-               principle with a screen under it says "this screen exists to
-               prove this idea". Every screen here is evidence for a claim.
+            /* A SECURITY PRODUCT FINDING SECURITY PROBLEMS IN ITS
+               COMPETITORS, sorted into groups — because sorting is what
+               analysis actually is. The fourth group is deliberately quiet:
+               crediting a competitor reads as confidence.
 
-               TO FINISH THIS SECTION: split the single `ph` below into four
-               `shot` blocks, one under each principle — portfolio, onboarding,
-               card interaction, wallet creation, in that order. */
-            { id: 'x0-principles', nav: 'Principles', eyebrow: 'Designing X0',
-              heading: 'Four principles, and the screens that prove them',
-              body: [
-                'Every screen in X0 resolves the same tension: the safest action and the easiest action are rarely the same one. The principles exist to <b>settle that argument the same way every time</b> — and each one is carried by a specific part of the product.',
+               AND IT IS DESCRIBED, NOT ACCUSED. No brand is named, nothing is
+               reproduced, and each finding is stated as a category rather
+               than as an exploit. This is the one scene in the film with
+               legal exposure and it is written to survive a lawyer. */
+            { id: 'x0-competitors', kind: 'pins', dur: 180,
+              kicker: 'Competitor teardown',
+              h: 'Some of it was carelessness. Some of it was on purpose.',
+              groups: [
+                { h: 'Real vulnerabilities',
+                  items: [
+                    'Recovery material recoverable from the device itself',
+                    'Confirmation screens that could be spoofed',
+                    'Sensitive state persisting after a session ended',
+                  ] },
+                { h: 'Plain UX failures',
+                  items: [
+                    'Setup that assumed vocabulary a first owner does not have',
+                    'Irreversible actions with no confirmation',
+                    'Error states that named a code and not a fix',
+                  ] },
+                { h: 'Clearly intentional',
+                  items: [
+                    'The safe path made slower than the convenient one',
+                    'Export and exit buried several levels down',
+                    'Defaults set in the company’s interest, not the owner’s',
+                  ] },
+                { h: 'And what they got right', quiet: true,
+                  items: [
+                    'Portfolio screens that opened fast and said one thing',
+                    'Honest language about what a device cannot protect you from',
+                  ] },
               ],
-              blocks: [
-                { type: 'head', title: 'Design principles' },
+              p: 'We fixed the first two in ours — and took the things they’d got right.' },
 
-                { type: 'cards', heading: 'Each idea, and where it is proved',
-                  items: [
-                    { label: 'Familiar — the portfolio',
-                      body: 'The first screen looks like <b>something you already know how to read</b>. Nothing about holding your own keys should announce itself here.' },
-                    { label: 'Guided — onboarding', lift: true,
-                      body: 'From an unopened box to a working wallet <b>without a step that has to be explained twice</b>. An unexplained wait reads as a failure.' },
-                    { label: 'Secure — card interaction',
-                      body: 'The tap is <b>understood before it is asked for</b>. People need to know the phone cannot do this alone — that is the reason they bought the card.' },
-                    { label: 'Effortless — wallet creation',
-                      body: 'Creating and restoring a wallet, <b>including recovery</b>, designed as a flow rather than documented as a warning.' },
-                  ] },
-
-                { type: 'chip',
-                  text: 'Familiar → Guided → Secure → Effortless' },
-
-                { type: 'ph', label: 'The four principles on screen',
-                  src: 'assets/img/x0/principles.webp',
-                  ratio: '1.45',
-                  pill: true,
-                  caption: 'Portfolio, onboarding, card interaction and wallet creation' },
-              ] },
-
-            /* --- 05. Scale --------------------------------------------------------
-               The system chapter, kept separate from the language chapter on
-               purpose: 02 is what X0 sounds like, this is what makes it
-               repeatable. Tokens and components belong here, not there. */
-            { id: 'x0-scale', nav: 'Building for Scale', eyebrow: 'The System',
-              heading: 'Building for scale',
-              body: [
-                'A visual language is an argument until something enforces it. The system is what turned the X0 identity into <b>decisions engineering could build from</b> and future products could inherit.',
+            /* ITERATION AS CRAFT RATHER THAN INDECISION, and it is credible
+               because it is small and specific. The one place in the film
+               where the reader's axis and the content's axis differ, which is
+               worth it because six versions of one component genuinely is a
+               horizontal idea. */
+            { id: 'x0-button', kind: 'rail', dur: 170, travel: '150vw',
+              items: [
+                { n: '01', label: 'v1', ratio: 1.2, of: 'Button, first version. Identical crop across all six.' },
+                { n: '02', label: 'v2', ratio: 1.2, of: 'Second version.' },
+                { n: '03', label: 'v3', ratio: 1.2, of: 'Third version.' },
+                { n: '04', label: 'v4', ratio: 1.2, of: 'Fourth version.' },
+                { n: '05', label: 'v5', ratio: 1.2, of: 'Fifth version.' },
+                { n: '06', label: 'shipped', ratio: 1.2, of: 'The sixth — the one every primary action in the product was built from.' },
               ],
-              blocks: [
-                { type: 'chip',
-                  text: 'Design tokens → components → templates → finished screens' },
+              h: 'Six versions. Then every primary action in the product was built from it.' },
 
-                { type: 'bullets',
-                  items: [
-                    '<b>Consistency</b> — one scale for type, colour, spacing and elevation, so no screen negotiates its own rhythm.',
-                    '<b>Tokens</b> — decisions held in one place, themed from one source, so changing one reaches everywhere it appears.',
-                    '<b>Components</b> — the controls, states and patterns the product repeats, with the anatomy documented rather than inferred.',
-                    '<b>Developer efficiency</b> — variables, auto layout and specifications, so the build matches the design without a translation step.',
-                    '<b>Future products</b> — built against two surfaces from the start rather than one, so the next surface inherits the system instead of negotiating with it.',
-                  ] },
-
-                { type: 'callout',
-                  text: 'A design system earns its keep the <b>second</b> time it is used — so it was built before the screens, not extracted from them.' },
-
-                { type: 'ph', label: 'Tokens, components and templates',
-                  src: 'assets/img/x0/system.webp',
-                  ratio: '1.45',
-                  caption: 'One decision, traced from token to finished screen' },
+            /* THE DEEPEST ARTEFACT IN THE FILM, and the only place the reader
+               handles a real flow. The device never moves; only what is
+               inside it changes, and the caption beside it swaps on the same
+               beat. Twelve screens and twelve reasons, all of them already
+               written. */
+            { id: 'x0-onboarding', kind: 'device', dur: 240,
+              screens: [
+                { src: 'assets/img/x0/onboarding/01-splash.webp',
+                  t: 'Hold the first second',
+                  b: 'A cold start has real work to do. That second exists either way, so it carries the mark rather than a spinner.' },
+                { src: 'assets/img/x0/onboarding/02-welcome.webp',
+                  t: 'One decision, and no account',
+                  b: 'No sign-up, no email. The first screen offers the only two things a new owner can want.' },
+                { src: 'assets/img/x0/onboarding/03-meet.webp',
+                  t: 'The object before the process',
+                  b: 'You are about to trust a piece of plastic with your savings. It gets introduced first.' },
+                { src: 'assets/img/x0/onboarding/04-no-seed.webp',
+                  t: 'Lead with the objection',
+                  b: 'Everyone who has held crypto knows the seed phrase problem. Naming it early is what buys the next four screens.' },
+                { src: 'assets/img/x0/onboarding/05-distributed.webp',
+                  t: 'Answer the obvious question',
+                  b: 'If there is no seed phrase, what is there? One sentence and one diagram, before any setup begins.' },
+                { src: 'assets/img/x0/onboarding/06-currencies.webp',
+                  t: 'Will it hold mine?',
+                  b: 'A hardware wallet that does not support your coin is an ornament. Asked and answered before setup.' },
+                { src: 'assets/img/x0/onboarding/07-consent.webp',
+                  t: 'Ask before collecting',
+                  b: 'The analytics question is asked plainly, once, with the default off.' },
+                { src: 'assets/img/x0/onboarding/08-card-stack.webp',
+                  t: 'Name what is about to happen',
+                  b: 'Four cards, and what each one is for, before the first tap is requested.' },
+                { src: 'assets/img/x0/onboarding/09-tap-idle.webp',
+                  t: 'A sheet, not a new screen',
+                  b: 'The tap is a physical act against a phone. It belongs on top of where you already are.' },
+                { src: 'assets/img/x0/onboarding/10-tap-loading.webp',
+                  t: 'Hold is a state, so it has one',
+                  b: 'The card has to stay against the phone. The screen says so for as long as it is true.' },
+                { src: 'assets/img/x0/onboarding/11-tap-success.webp',
+                  t: 'Confirm where it was asked',
+                  b: 'The confirmation lands in the same sheet the request was made in.' },
+                { src: 'assets/img/x0/onboarding/12-user-type.webp',
+                  t: 'One fork, asked once',
+                  b: 'The only branch in the flow, at the end, in the terms a first-time owner would use.' },
               ] },
 
-            /* --- 06. Across surfaces ------------------------------------------------
-               The identity leaving the app. This is what makes the claim in the
-               overview true rather than asserted: if X0 is a product category,
-               it has to hold together everywhere it appears.
+            /* ==============================================================
+               ACT IV — THE PRODUCT (21–27)
+               Admiration. What was built, what it cost, and what is next.
+               ============================================================== */
 
-               `eyebrow` says Across Surfaces rather than Launch while the work
-               is live — the section describes design that exists, not a release
-               that has happened. Switch it to 'Launch' when it ships. */
-            { id: 'x0-launch', nav: 'Bringing X0 to Life', eyebrow: 'Across Surfaces',
-              heading: 'Bringing X0 to life',
-              body: [
-                'An identity that only exists inside the app is a screen style. X0 has to hold on <b>both platforms and every surface around them</b> — the icon on a homescreen, the first frame after a tap, the page someone reads before they buy.',
+            /* THE EMOTIONAL PEAK, AND THE PAYOFF FOR SCENE 04. The video is
+               scrubbed by scroll, so the reader controls the tap and can hold
+               it at the moment of contact — and that control is the scene.
+               This is the interaction that replaced a whole device; letting
+               someone stop it half way is the only way a page can say so. */
+            { id: 'x0-tap', act: 'IV · Product', kind: 'video', dur: 170,
+              src: 'assets/media/x0/app-walkthrough.mp4',
+              poster: 'assets/media/x0/app-walkthrough.webp',
+              alt: 'The X0 card tapped against the back of a phone, and the confirmation that follows',
+              h: 'This is what replaced the hardware.',
+              p: 'Everything about it is designed around a hand doing something physical. Stand-in footage — the shot to take is the hand, the card and the phone on a tripod, one key light, dark ground.' },
+
+            /* THE PHILOSOPHY WHERE IT CAN BE CHECKED AGAINST EVIDENCE. One
+               line per principle, maximum, with a real screen beside it: a
+               principle that needs a paragraph to defend it was not a
+               principle. */
+            { id: 'x0-principles', kind: 'prin', dur: 180,
+              items: [
+                { w: 'Familiar', src: 'assets/img/x0/onboarding/12-user-type.webp',
+                  l: 'Patterns a first-time owner has already used somewhere else.' },
+                { w: 'Guided', src: 'assets/img/x0/onboarding/03-meet.webp',
+                  l: 'Never more than one thing to understand at a time.' },
+                { w: 'Secure', src: 'assets/img/x0/onboarding/05-distributed.webp',
+                  l: 'The safe path is the fast path, or the safe path loses.' },
+                { w: 'Minimal', src: 'assets/img/x0/onboarding/02-welcome.webp',
+                  l: 'One decision per screen. Where a screen had two, one of them wasn’t a decision.' },
+              ] },
+
+            /* THE PRODUCT LANDS IN REALITY AND STOPS BEING SCREENS. The dark
+               mode arrives as a wipe rather than a fade, because a fade says
+               the lights dimmed and a wipe says a second set of token values
+               was switched on — which is what dark mode is. */
+            { id: 'x0-world', kind: 'world', dur: 160,
+              icon: 'X0',
+              h: 'At 60 pixels it still has to be the one you trust.',
+              homes: [
+                { label: 'iOS home screen', ratio: 0.8,
+                  of: 'The X0 icon in place on a real iPhone home screen, among ordinary apps.' },
+                { label: 'Android home screen', ratio: 0.8,
+                  of: 'The same, on Android.' },
               ],
-              blocks: [
-                { type: 'bullets',
-                  items: [
-                    '<b>Android and iOS</b> — native icons, splash, status bars and safe areas, so neither platform feels like a port of the other.',
-                    '<b>The product surfaces</b> — the flows the principles are proved on, designed for both builds.',
-                    '<b>Marketing and website</b> — the same language carried outside the app, where most people meet the product first.',
-                  ] },
+              light: { label: 'Light', ratio: 1.4, of: 'One product screen in light mode.' },
+              dark: { label: 'Dark', ratio: 1.4, of: 'The same screen in dark mode, matched crop.' },
+              p: 'The icon had to survive being one of forty things on somebody’s home screen.' },
 
-                { type: 'ph', label: 'Android and iOS',
-                  src: 'assets/img/x0/platforms.webp',
-                  ratio: '1.6',
-                  caption: 'The same product, native on each platform' },
-
-                { type: 'ph', label: 'Marketing and website',
-                  src: 'assets/img/x0/marketing.webp',
-                  ratio: '1.6',
-                  pill: true,
-                  caption: 'The identity outside the app' },
+            /* SEVEN MONTHS, AND THE SHIPPED VERSION WAS THE FOURTH ANSWER
+               RATHER THAN THE FIRST. The two months where an earlier answer
+               was abandoned carry a brass dot, because those are the two the
+               reader should feel. */
+            { id: 'x0-timeline', kind: 'spine', dur: 180,
+              kicker: 'Seven months',
+              beats: [
+                { w: 'Month 1',
+                  t: 'Started by adapting X1. <span>The fastest route, and the one that made X0 look like a discount version of a product it wasn’t related to.</span>' },
+                { w: 'Month 2', turn: true,
+                  t: 'Abandoned the adapted components. <span>The reversal that cost the most and bought the most.</span>' },
+                { w: 'Month 3', turn: true,
+                  t: 'Rebuilt the navigation. <span>The second thing that turned out to be inherited rather than designed.</span>' },
+                { w: 'Month 5',
+                  t: 'N45 carrying surfaces it wasn’t written for. <span>The test of whether it was a system or a catalogue.</span>' },
+                { w: 'Month 6',
+                  t: 'Onboarding settled at twelve screens. <span>Down from more, and each one with a reason.</span>' },
+                { w: 'Month 7',
+                  t: 'Beta, on both platforms.' },
               ] },
 
-            /* --- Where it stands ----------------------------------------------------
-               THIS PROJECT IS LIVE. The section is written in the present tense
-               on purpose — claiming shipped outcomes on work still in flight is
-               the one thing a reader can check and catch. The Before/After
-               contrast reads as the direction the work is taking rather than as
-               a result already banked.
-
-               WHEN IT SHIPS: change `nav` and `eyebrow` back to 'Outcome',
-               rewrite the heading as a result, and add the `metrics` block from
-               the Onefinnet entry — four cards, each with a `trend` array that
-               draws its own sparkline. */
-            { id: 'x0-outcome', nav: 'Where it stands', eyebrow: 'Current State',
-              heading: 'Where the work stands today',
-              body: [
-                'X0 is in active design as of 2026. The identity, the system and the core experience are established; the sections above describe decisions already made and being built against, not a finished launch.',
+            /* THE MOST FORWARD-LOOKING CLAIM IN THE PROJECT, and the only
+               real number in the film. It is there at rest rather than
+               counting up: a counter would make it a statistic, and it is a
+               position. The generated output is shown unretouched, because
+               the imperfection is the honesty of the scene. */
+            { id: 'x0-67', kind: 'num', dur: 170,
+              n: '67%',
+              sub: 'accuracy of designs generated from N45 by prompt, today',
+              h: 'I’m building the system so it can be read by a model, not just by a designer.',
+              prompt: 'a portfolio screen using N45, one primary action',
+              out: [
+                { label: 'Naming convention', ratio: 1.5,
+                  of: 'Close crop of the component naming panel, showing the convention that makes this possible.' },
+                { label: 'What it generated', ratio: 0.62,
+                  of: 'The screen that prompt produced. Unretouched — the flaws are the point.' },
+                { label: 'Hand-corrected', ratio: 0.62,
+                  of: 'The same screen after correction, for the delta.' },
               ],
-              blocks: [
-                { type: 'contrast',
-                  notLabel: 'Before', insteadLabel: 'After',
-                  notItems: [
-                    { text: 'One product, one audience' },
-                    { text: 'Identity inherited, not designed' },
-                    { text: 'Inconsistent components and spacing' },
-                    { text: 'Handoff inferred from screenshots' },
-                    { text: 'Every new feature designed from scratch' },
-                  ],
-                  items: [
-                    { text: 'A second product category in the ecosystem' },
-                    { text: 'A distinct X0 identity inside the Cypherock family' },
-                    { text: 'One token-driven component library' },
-                    { text: 'Variables and specifications engineering can build from' },
-                    { text: 'New features assembled from the system' },
-                  ] },
+              p: 'It gets to about two-thirds right. That’s fine — as the app grows, the system has to grow with it.' },
 
-                { type: 'bullets', sub: 'What is established so far',
-                  items: [
-                    'A <b>visual foundation and identity</b> for Cypherock X0, distinct from X1 and legible as part of the same family.',
-                    'A <b>scalable design system</b> already carrying surfaces that did not exist when it was built.',
-                    'A <b>mobile-first experience</b> aligned with X0’s product vision, in design across both platforms.',
-                    'Fewer design inconsistencies, through <b>reusable components</b> rather than screen-by-screen decisions.',
-                    '<b>Faster collaboration</b> with engineering, on variables and specifications rather than screenshots.',
-                  ] },
+            /* THE ONLY REFLECTIVE SCENE, at reading size rather than poster
+               size, and the scale shift is the signal: this one is meant to
+               be read. After twenty-five scenes of cinema, near-stillness
+               reads as candour. */
+            { id: 'x0-back', kind: 'cards', dur: 140,
+              h: 'Looking back.',
+              items: [
+                { h: 'What worked',
+                  body: ['<b>Building the system before the screens.</b> Extracting a system from finished work produces a catalogue of what you already did; building it first produces something the next product can use — and by month six there were surfaces running on it that did not exist when it was written.'] },
+                { h: 'The biggest trade-off', lift: true,
+                  body: ['Two months in, <b>abandoning the adapted CySync components cost real time</b> — the fastest path was already half walked. It bought X0 an identity of its own, which is the thing the project was actually for.'] },
+                { h: 'What I’d improve',
+                  body: ['<b>Segmentation is a design problem before it is a marketing one.</b> Making X0 feel approachable without making it feel like the cheap option comes down to type, spacing and tone rather than a badge or a price — and that is the part I would keep pushing on with real users in front of it.'] },
               ] },
 
-            /* Written from the middle of the project rather than after it, so
-               these are what the work has taught so far — not a retrospective.
-               Worth revisiting when it ships; the last one in particular will
-               have an answer by then. */
-            { id: 'x0-learnings', nav: 'Learnings', eyebrow: 'Reflection',
-              heading: 'What the work has taught so far',
-              body: [
-                'Segmentation is a design problem before it is a marketing one. Making X0 feel approachable without making it feel like the cheap option comes down to type, spacing and tone — not to a badge or a price.',
-                'Evolution beats redesign. The earlier concepts were right about what mattered and wrong about how it held together, and saying so plainly is more useful than starting from nothing.',
-                'Build the system first. Extracting a system from finished screens produces a catalogue of what you already did; building it first produces something the next product can use.',
-                'Principles are only real if a screen proves them. Four ideas with four surfaces behind them say more about the work than the full set of screens does.',
-                'Handoff is part of the design. Variables, auto layout and specifications are not admin at the end of a project; they are the difference between a design that ships as drawn and one that ships as interpreted — which is the part still ahead of me.',
-              ] },
+            /* THE END CARD, closing the loop opened in scene 01: the same
+               card, the same light, the same position, and the giant letters
+               behind it gone. The object no longer needs the title. No
+               flourish on the last frame. */
+            { id: 'x0-end', kind: 'object', dur: 120,
+              shot: { label: 'X0 card', ratio: 1.55,
+                of: 'Scene 01’s render, reused exactly. The repetition is the point — do not reshoot it.' },
+              still: true,
+              h: 'Cypherock X0',
+              meta: '7 months · Senior Product Designer · Product strategy, UX, UI, design system, information architecture, engineering collaboration' },
           ],
         } },
       /* ------------------------------------------------------------ Onefinnet

@@ -364,6 +364,7 @@
        elements change colour together without any of them being animated the
        rest of the time. */
     set(mode) {
+      if (this.locked) return;   /* a project page has one design */
       this.chosen = true;
       try { sessionStorage.setItem(this.KEY, mode); } catch (e) { /* private mode */ }
       this.shift();
@@ -395,6 +396,17 @@
          it read the same two sources in the same order. This agrees with it
          rather than second-guessing it — but it is written out in full, so the
          module is correct on its own if that script ever fails to run. */
+      /* A CASE STUDY HAS ONE DESIGN. Project pages are dark, always, and
+         neither the clock nor a stored press applies to them — the page's
+         own head says so before the first paint and this agrees with it, so
+         the module is still correct if that script never runs. `locked` is
+         what stops `set()` undoing it; the pod that would have called `set()`
+         is hidden by the stylesheet, and this is the belt to that braces. */
+      if (document.body && document.body.dataset.page === 'project') {
+        this.locked = true;
+        this.apply('dark');
+        return;
+      }
       this.apply(this.chosen ? saved : this.fromClock());
     },
   };
@@ -2671,10 +2683,787 @@
       `</div>`;
     },
 
+    /* --- A CHAIN OF TERMS, WITH OR WITHOUT A SECOND ONE BESIDE IT --------
+
+       WHAT IT IS FOR. Some arguments are a sequence, not a paragraph. "Same
+       brand, different audience, different product, different experience,
+       different design language" is five words doing the work of two hundred,
+       and the reason it works is that the reader walks it. Written out as prose
+       it is a sentence with four commas in it and no shape at all.
+
+       ONE TYPE, TWO SHAPES, because they are the same object. `steps` alone is
+       a single chain — the argument as it unfolds. `cols` is two labelled
+       chains side by side, which is a comparison: X1 desktop-first, premium,
+       advanced users; X0 mobile-first, affordable, mass market. Reading down
+       gives you each product; reading across gives you the difference. Two
+       renderers for that would be two things to keep in step.
+
+       NO BOXES. The step is a word on paper with a hairline under it and a
+       chevron in the gap — the site has no card vocabulary and this is not the
+       place to invent one. The connector is drawn in CSS from the gap between
+       list items, so a chain of three and a chain of nine need no different
+       markup and nothing has to be told how long it is.
+
+       A step is either a string or `{ t, n }` — the term, and a note under it
+       for the one case where a term needs a figure attached ("Premium" wants
+       "$199" beneath it, and putting that in the term makes the term a
+       sentence). */
+    flow: (b) => {
+      const chain = (steps) =>
+        `<ol class="fl__chain">` + (steps || []).map((s, i) => {
+          const t = typeof s === 'string' ? s : (s.t || '');
+          const n = typeof s === 'string' ? '' : (s.n || '');
+          return `<li class="fl__step" style="--i:${i + 1}">` +
+            `<span class="fl__t">${t}</span>` +
+            (n ? `<span class="fl__n">${esc(n)}</span>` : '') +
+          `</li>`;
+        }).join('') + `</ol>`;
+
+      const cols = Array.isArray(b.cols) && b.cols.length
+        ? b.cols : [{ steps: b.steps }];
+
+      return `<div class="blk blk-flow${cols.length > 1 ? ' blk-flow--vs' : ''}">` +
+        `<div class="fl__cols">` +
+          cols.map((c) =>
+            `<div class="fl__col">` +
+              (c.label ? `<h5 class="fl__label">${esc(c.label)}</h5>` : '') +
+              chain(c.steps) +
+            `</div>`).join('') +
+        `</div>` +
+        (b.caption ? `<p class="blk__caption">${esc(b.caption)}</p>` : '') +
+      `</div>`;
+    },
+
+    /* --- WHAT CHANGED, AND WHEN -----------------------------------------
+
+       A project is not the shape it had at the end. The version of the X0 app
+       that shipped is the fourth answer to the question, and a case study that
+       shows only the fourth one is a portfolio of outcomes rather than of
+       decisions — which is the harder thing to read and the more useful thing
+       to show.
+
+       The month is set in the mono face and the rule runs through it, so the
+       column reads as a spine rather than as a list with dates on it. `note`
+       is the optional second line: what the month cost, or what it settled. */
+    timeline: (b) => `<div class="blk blk-tline">` +
+      `<ol class="tl">` + (b.items || []).map((it, i) =>
+        `<li class="tl__row" style="--i:${i + 1}">` +
+          `<span class="tl__when">${esc(it.when || '')}</span>` +
+          `<span class="tl__dot" aria-hidden="true"></span>` +
+          `<div class="tl__what">` +
+            `<p class="tl__t">${it.what || ''}</p>` +
+            (it.note ? `<p class="tl__n">${it.note}</p>` : '') +
+          `</div>` +
+        `</li>`).join('') + `</ol>` +
+      (b.caption ? `<p class="blk__caption">${esc(b.caption)}</p>` : '') +
+    `</div>`,
+
     code: (b) =>
       `<div class="blk blk-code"><ol>` +
       (b.lines || []).map((l) => `<li>${esc(l)}</li>`).join('') +
       `</ol></div>`,
+  };
+
+  /* ======================================================================
+     THE FILM — the scene renderer and the one number that drives it
+     ======================================================================
+
+     A case study can declare `mode: 'film'` and a list of `scenes` instead of
+     a list of `sections`. `Project.init` reads which one it has and builds
+     only that one; the document layout below is untouched by anything here.
+
+     WHAT A SCENE IS. A block as tall as the scene lasts, containing one
+     sticky stage as tall as the screen. The stage is the frame. Nothing in
+     the film listens to scroll: `Film` writes `--p` — how far through its own
+     scene you are, 0 to 1 — onto each scene element, and every reveal inside
+     is `clamp(0, (var(--p) - var(--at)) * 8, 1)` in the stylesheet. One style
+     write per scene per frame, and the timing of an element is declared next
+     to the element.
+
+     WHY NOT AN IntersectionObserver. An observer answers "is it on screen",
+     which is the wrong question — a pinned scene is on screen for two
+     viewports and the whole point is WHERE inside it you are. That is a
+     position, and a position wants a scroll handler with a rAF gate, which is
+     what this is. */
+
+  const FSHOT = (s) => {
+    if (!s) return '';
+    const r = ` style="--ratio:${+s.ratio || 1.6}"`;
+    /* A REAL PICTURE IF THERE IS ONE, AND A STATED SHOT IF THERE IS NOT.
+       The film needs frames that do not exist yet — a wall of four printed
+       directions, a whiteboard, a hand tapping a card. The alternative to a
+       reserved frame is dropping the scene, which would take the argument out
+       with it, so the frame says what it is waiting for. Swap in a `src` and
+       the same slot becomes the photograph with no other change. */
+    if (s.src) {
+      return `<img class="fg-img${s.full ? ' fg-img--full' : ''}" src="${url(s.src)}"` +
+        ` alt="${esc(s.alt || '')}" loading="lazy" decoding="async"${r}>`;
+    }
+    return `<div class="fg-shot${s.full ? ' fg-shot--full' : ''}"${r}>` +
+      `<span class="fg-shot__l">${esc(s.label || 'Shot')}</span>` +
+      (s.of ? `<p class="fg-shot__d">${esc(s.of)}</p>` : '') +
+    `</div>`;
+  };
+
+  /* WHEN A BEAT BELONGS, as a style attribute and nothing else. `at` is a
+     fraction of the scene; `to` closes the window for anything that swaps in
+     place. The class is written by the caller, because most of these
+     elements need a class of their own beside `beat` and an attribute
+     emitted twice is an attribute the parser throws away. */
+  const AT = (at, to) => ` style="--at:${(+at || 0).toFixed(3)}` +
+    `${to != null ? `;--to:${(+to).toFixed(3)}` : ''}"`;
+
+  /* n evenly spaced beats between `from` and `to` */
+  const SPREAD = (n, from, to) => {
+    const a = from == null ? 0.08 : from;
+    const b = to == null ? 0.8 : to;
+    if (n <= 1) return [a];
+    return Array.from({ length: n }, (_, i) => a + ((b - a) * i) / (n - 1));
+  };
+
+  /* A SEEDED RANDOM, so the dot field is the same field on every load and on
+     every machine. An unseeded one would redraw the composition each visit,
+     which for something that reads as a photograph of a market is wrong. */
+  const SEED = (s) => () => {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+
+  const SCENE = {
+    /* --- an object on the black, with the title behind it ----------------
+       Scenes 01, 02 and 27. The card sits in front of the letters and the
+       letters crop off both edges, so type and object share one z-space —
+       which is the single most expensive-looking thing the reference does. */
+    object: (s) => {
+      const b = SPREAD((s.facts || []).length, 0.22, 0.62);
+      return `<div class="fg-obj">` +
+          (s.word ? `<span class="fg-word" aria-hidden="true">${esc(s.word)}</span>` : '') +
+          (s.art ? `<img class="fg-obj__art${s.still ? ' fg-obj__art--still' : ''}"` +
+            ` src="${url(s.art)}" alt="${esc(s.alt || '')}" decoding="async">`
+            : `<div class="fg-obj__art fg-obj__art--still">${FSHOT(s.shot)}</div>`) +
+        `</div>` +
+        `<div class="scn__in scn__in--foot">` +
+          (s.kicker ? `<span${AT(0.04)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+          (s.h ? `<h2${AT(0.1)} class="fg-h fg-h--l beat beat--still">${s.h}</h2>` : '') +
+          (s.p ? `<p${AT(0.18)} class="fg-p beat">${s.p}</p>` : '') +
+          ((s.facts || []).length
+            ? `<ul class="fg-facts">` + s.facts.map((f, i) =>
+                `<li${AT(b[i])} class="beat">${f}</li>`).join('') + `</ul>`
+            : '') +
+          (s.turn ? `<p${AT(0.78)} class="fg-turn beat">${s.turn}</p>` : '') +
+          /* 0.7 AND NOT 0.86: on the cold open the meta line is one of only
+             three things in the frame, and a beat at 0.86 is still fading in
+             at 88% of the scene. */
+          (s.meta ? `<p${AT(0.7)} class="fg-meta beat">${s.meta}</p>` : '') +
+        `</div>`;
+    },
+
+    /* --- 03 · the market, as a field that becomes a phone ----------------
+       Six hundred people would be six hundred pictures. They are dots, and
+       the dots are generated here rather than drawn by hand, because the
+       thing being communicated is a quantity. Each one carries its own
+       arrival beat and its own destination on the phone's outline, and the
+       collapse is CSS interpolating between the two. No canvas, no per-frame
+       drawing. */
+    field: (s) => {
+      const rnd = SEED(s.seed || 7);
+      const N = s.count || 420;
+      const dots = [];
+      for (let i = 0; i < N; i += 1) {
+        const x = rnd() * 100;
+        const y = rnd() * 100;
+        /* the destination: a rounded rectangle in the middle of the frame,
+           which reads as a phone once it is the only thing left */
+        const t = rnd();
+        const w = 13, h = 34, cx = 50, cy = 50;
+        let tx; let ty;
+        if (t < 0.34) { tx = cx - w / 2; ty = cy - h / 2 + rnd() * h; }
+        else if (t < 0.68) { tx = cx + w / 2; ty = cy - h / 2 + rnd() * h; }
+        else if (t < 0.84) { tx = cx - w / 2 + rnd() * w; ty = cy - h / 2; }
+        else { tx = cx - w / 2 + rnd() * w; ty = cy + h / 2; }
+        /* the tight ring that is already reached — a few dozen out of the
+           several hundred, and it never grows */
+        const lit = Math.hypot(x - 14, y - 76) < 9;
+        dots.push(`<i class="fg-dot${lit ? ' lit' : ''}" style="--x:${x.toFixed(2)}` +
+          `;--y:${y.toFixed(2)};--tx:${tx.toFixed(2)};--ty:${ty.toFixed(2)}` +
+          `;--at:${(0.04 + rnd() * 0.34).toFixed(3)}"></i>`);
+      }
+      return `<div class="fg-dots" aria-hidden="true">${dots.join('')}` +
+          (s.art ? `<img class="fg-dots__end" src="${url(s.art)}" alt="" decoding="async">` : '') +
+        `</div>` +
+        `<div class="scn__in scn__in--foot">` +
+          (s.h ? `<h2${AT(0.3)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+          (s.p ? `<p${AT(0.46)} class="fg-p beat">${s.p}</p>` : '') +
+        `</div>`;
+    },
+
+    /* --- 04 · what was taken out -----------------------------------------
+       A subtraction, so the removal has to be visible as an event: the vault
+       device leaves and does not come back, and three costs are struck
+       through one at a time. The strike is a rule drawing to full width, not
+       a `line-through` that is simply present. */
+    strike: (s) => {
+      const b = SPREAD((s.items || []).length, 0.34, 0.72);
+      return `<div class="fg-obj">` +
+          `<div class="fg-gone">${FSHOT(s.gone)}</div>` +
+          `<div class="fg-stays">${FSHOT(s.stays)}</div>` +
+        `</div>` +
+        `<div class="scn__in scn__in--foot">` +
+          (s.h ? `<h2${AT(0.06)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+          `<ul class="fg-strikes">` + (s.items || []).map((t, i) =>
+            `<li${AT(b[i])} class="beat">${esc(t)}</li>`).join('') + `</ul>` +
+          (s.p ? `<p${AT(0.82)} class="fg-p beat beat--still">${s.p}</p>` : '') +
+        `</div>`;
+    },
+
+    /* --- 05 · four words -------------------------------------------------
+       The scene meant to be screenshotted. One word per beat, and the last
+       one holds, because it is the one nobody expects to survive the other
+       three. */
+    words: (s) => {
+      const b = SPREAD((s.items || []).length, 0.1, 0.66);
+      return `<div class="scn__in">` +
+        (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+        `<ul class="fg-words">` + (s.items || []).map((t, i) =>
+          `<li${AT(b[i])} class="beat">${esc(t)}</li>`).join('') + `</ul>` +
+        (s.p ? `<p${AT(0.8)} class="fg-p beat">${s.p}</p>` : '') +
+      `</div>`;
+    },
+
+    /* --- 06 / 11 · one thing, held --------------------------------------
+       Two scenes in this film have no motion in them at all and both are
+       load-bearing: they are where the reader is meant to slow down. After
+       five scenes of movement, stillness is the effect. */
+    ask: (s) => `<div class="scn__in${s.mid ? ' scn__in--mid' : ''}">` +
+        (s.n ? `<span${AT(0.02)} class="fg-dec__n beat">${esc(s.n)}</span>` : '') +
+        (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+        `<h2${AT(0.06)} class="fg-h fg-h--l fg-h--wide beat beat--still">${s.h}</h2>` +
+        (s.p ? `<p${AT(0.34)} class="fg-p beat">${s.p}</p>` : '') +
+      `</div>`,
+
+    /* --- 07 · the brief, and then eight questions ------------------------
+       The accumulation is the point. Nothing leaves, so by the eighth the
+       frame is crowded and uncomfortable — which is what the start of the
+       project felt like, and is not a thing a paragraph can do. */
+    wall: (s) => {
+      const q = s.quotes || [];
+      const b = SPREAD((s.items || []).length, 0.34, 0.88);
+      return `<div class="scn__in">` +
+        (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+        (q.length
+          ? `<div class="fg-swap">` +
+              `<p${AT(0.04, 0.2)} class="fg-quote beat beat--win">${q[0]}</p>` +
+              (q[1] ? `<p${AT(0.2, 0.33)} class="fg-quote beat beat--win">${q[1]}</p>` : '') +
+            `</div>`
+          : '') +
+        `<ul class="fg-wall">` + (s.items || []).map((it, i) => {
+          const t = typeof it === 'string' ? { t: it } : it;
+          return `<li${AT(b[i])} class="beat${t.keep ? ' keep' : ''}">${esc(t.t)}</li>`;
+        }).join('') + `</ul>` +
+      `</div>`;
+    },
+
+    /* --- 08 · five requirements, two of which fight ----------------------
+       The contradiction is drawn as a hairline between the two lines that
+       cannot both be true, rather than explained underneath them. */
+    stack: (s) => {
+      const items = s.items || [];
+      const b = SPREAD(items.length, 0.1, 0.62);
+      return `<div class="scn__in">` +
+        (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+        `<ul class="fg-stack">` + items.map((it, i) => {
+          const t = typeof it === 'string' ? { t: it } : it;
+          return `<li${AT(b[i])} class="beat${t.fight ? ' fight' : ''}">${esc(t.t)}</li>` +
+            (t.tie ? `<i${AT(0.7)} class="fg-tie beat beat--still" aria-hidden="true"></i>` : '');
+        }).join('') + `</ul>` +
+        (s.p ? `<p${AT(0.82)} class="fg-p beat">${s.p}</p>` : '') +
+      `</div>`;
+    },
+
+    /* --- 09 · the chain --------------------------------------------------
+       Each connector draws down and THEN its word appears, so the sequence
+       reads as consequence. A list with arrows in it would read as a list. */
+    chain: (s) => {
+      const items = s.items || [];
+      const b = SPREAD(items.length, 0.08, 0.66);
+      return `<div class="scn__in scn__in--mid">` +
+        `<ul class="fg-chain">` + items.map((t, i) =>
+          `<li${AT(b[i])} class="beat">${esc(t)}</li>`).join('') + `</ul>` +
+        (s.h ? `<h2${AT(0.76)} class="fg-h fg-h--wide fg-h--mid beat">${s.h}</h2>` : '') +
+      `</div>`;
+    },
+
+    /* --- 10 · one interface coming apart over another --------------------
+       THE SET PIECE, and it is built from the two pictures the study already
+       has. The old interface is laid down as seven vertical slices of one
+       image, each showing its own seventh through `background-position`, and
+       each leaves on its own vector with its own lag — so it disintegrates
+       unevenly rather than fading. Underneath, the new one is already there.
+       Scrolling back reassembles it, because nothing here is an animation
+       with a direction; it is a function of position. */
+    morph: (s) => {
+      const N = 7;
+      const art = `url(${url(s.over)})`;
+      return `<div class="fg-morph">` +
+          `<div class="fg-morph__under">` +
+            `<img class="fg-img" src="${url(s.under)}" alt="${esc(s.underAlt || '')}"` +
+            ` decoding="async" style="max-height:76svh;width:auto">` +
+          `</div>` +
+          `<div class="fg-morph__over" aria-hidden="true">` +
+            Array.from({ length: N }, (_, k) =>
+              `<i class="fg-morph__s" style="--k:${k};--art:${art}"></i>`).join('') +
+          `</div>` +
+        `</div>` +
+        `<div class="scn__in scn__in--foot">` +
+          `<h2${AT(0.72)} class="fg-h fg-h--wide beat beat--still">${s.h}</h2>` +
+        `</div>` +
+        (s.cap ? `<p class="fg-cap">${esc(s.cap)}</p>` : '');
+    },
+
+    /* --- 12 + 13 · the case against, then the answer ---------------------
+       One scene, two phases, one pin. The left column fills while the right
+       stays empty — the asymmetry is uncomfortable on purpose, and the
+       reader starting to want the answer is the scene's job. Then the left
+       dims as the right fills, which is the argument in one gesture. */
+    split: (s) => {
+      const L = s.left || {};
+      const R = s.right || {};
+      const lb = SPREAD((L.items || []).length, 0.08, 0.44);
+      const rb = SPREAD((R.items || []).length, 0.56, 0.86);
+      return `<div class="fg-split">` +
+          `<div class="fg-half fg-half--fades">` +
+            (L.title ? `<span${AT(0.02)} class="fg-lane__t beat">${esc(L.title)}</span>` : '') +
+            `<ul class="fg-reasons">` + (L.items || []).map((t, i) =>
+              `<li${AT(lb[i])} class="beat">${t}</li>`).join('') + `</ul>` +
+            (L.shot ? `<div${AT(0.1)} class="beat">${FSHOT(L.shot)}</div>` : '') +
+          `</div>` +
+          `<i class="fg-split__rule" aria-hidden="true"></i>` +
+          `<div class="fg-half">` +
+            (R.title ? `<span${AT(0.52)} class="fg-lane__t beat">${esc(R.title)}</span>` : '') +
+            (R.name ? `<p${AT(0.54)} class="fg-name beat beat--still">${esc(R.name)}</p>` : '') +
+            `<ul class="fg-ticks">` + (R.items || []).map((t, i) =>
+              `<li${AT(rb[i])} class="beat">${t}</li>`).join('') + `</ul>` +
+            /* 0.86 AND NOT 0.9. The reveal is `(p - at) * 8`, so a beat at
+               0.9 tops out at 0.8 opacity and never finishes arriving. 0.875
+               is the real boundary; 0.86 leaves it some room. */
+            (R.note ? `<p${AT(0.86)} class="fg-meta beat">${R.note}</p>` : '') +
+          `</div>` +
+        `</div>`;
+    },
+
+    /* --- 14 · the assembly ----------------------------------------------
+       The system is proved by building the product out of it on screen. Each
+       part arrives and STAYS — nothing in this scene leaves — and on the
+       last beat the hub has shrunk to the size the parts made room for. The
+       composition is authored: every part states its own corner, because a
+       computed ring of eight boxes looks like a diagram of a system rather
+       than a system. */
+    asm: (s) => {
+      const parts = s.parts || [];
+      const b = SPREAD(parts.length, 0.08, 0.74);
+      return `<div class="fg-asm">` +
+          parts.map((p, i) =>
+            `<div class="fg-asm__part beat" style="--at:${b[i].toFixed(3)}` +
+            `;left:${p.x};top:${p.y}">${FSHOT(p)}</div>`).join('') +
+          `<div class="fg-asm__hub">${FSHOT(s.hub)}</div>` +
+        `</div>` +
+        `<div class="scn__in scn__in--foot">` +
+          `<h2${AT(0.86)} class="fg-h fg-h--wide beat beat--still">${s.h}</h2>` +
+        `</div>`;
+    },
+
+    /* --- 15 · a decision, and the photograph that answers it -------------
+       The film's texture changes exactly once, here: rendered black to a real
+       wall. The title card holds motionless and then the photograph arrives
+       as a hard cut. No effect is applied to the photographs — the jump is
+       the effect. */
+    photo: (s) => `<div class="fg-frame-full">${FSHOT(Object.assign({ full: true }, s.shot))}</div>` +
+        `<div class="scn__in scn__in--foot">` +
+          (s.n ? `<span${AT(0.02)} class="fg-dec__n beat">${esc(s.n)}</span>` : '') +
+          (s.h ? `<h2${AT(0.05)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+          (s.p ? `<p${AT(0.42)} class="fg-p beat">${s.p}</p>` : '') +
+        `</div>` +
+        (s.cap ? `<p class="fg-cap">${esc(s.cap)}</p>` : ''),
+
+    /* --- 16 · the same thinking, cleaned up -----------------------------
+       A cross-dissolve rather than two pictures side by side, and the two
+       frames are aligned so a few boxes sit in the same place in both. That
+       alignment is what makes it read as one idea redrawn instead of two
+       unrelated images. */
+    cross: (s) => `<div class="fg-cross">` +
+          `<div>${FSHOT(Object.assign({ full: true }, s.a))}</div>` +
+          `<div class="fg-cross__b">${FSHOT(Object.assign({ full: true }, s.b))}</div>` +
+        `</div>` +
+        (s.cap ? `<p class="fg-cap">${esc(s.cap)}</p>` : ''),
+
+    /* --- 17 · two tracks, on purpose ------------------------------------
+       Both advance at once, which is the point: the system churning and the
+       low-fidelity flows going out were parallel, not sequential, and a
+       reader shown them in sequence would conclude one waited for the
+       other. */
+    tracks: (s) => {
+      const lanes = s.lanes || [];
+      return `<div class="fg-track2">` + lanes.map((L, li) => {
+        const b = SPREAD((L.shots || []).length, 0.2 + li * 0.04, 0.82);
+        return `<div class="fg-lane">` +
+          `<span${AT(0.02 + li * 0.03)} class="fg-lane__t beat">${esc(L.t)}</span>` +
+          (L.p ? `<p${AT(0.08 + li * 0.03)} class="fg-lane__p beat">${L.p}</p>` : '') +
+          (L.stack
+            ? `<div class="fg-vers">` + (L.shots || []).map((sh, i) =>
+                `<div${AT(b[i], i === L.shots.length - 1 ? 1.2 : b[i + 1] + 0.02)}` +
+                ` class="beat beat--win">${FSHOT(sh)}</div>`).join('') + `</div>`
+            : (L.shots || []).map((sh, i) =>
+                `<div${AT(b[i])} class="beat">${FSHOT(sh)}</div>`).join('')) +
+        `</div>`;
+      }).join('') + `</div>`;
+    },
+
+    /* --- 18 · the findings, sorting themselves --------------------------
+       Pins arrive scattered and then migrate into three groups, because
+       sorting is what analysis actually is. The fourth group — what the
+       competition got right — is deliberately quiet: crediting them reads as
+       confidence. */
+    pins: (s) => {
+      const g = s.groups || [];
+      return `<div class="scn__in">` +
+        (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+        (s.h ? `<h2${AT(0.05)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+        `<div class="fg-groups">` + g.map((grp, gi) => {
+          const b = SPREAD((grp.items || []).length, 0.24 + gi * 0.1, 0.84);
+          return `<div class="fg-group${grp.quiet ? ' fg-group--quiet' : ''}">` +
+            `<span${AT(0.18 + gi * 0.08)} class="fg-group__h beat">${esc(grp.h)}</span>` +
+            `<ul>` + (grp.items || []).map((t, i) =>
+              `<li${AT(b[i])} class="beat">${esc(t)}</li>`).join('') + `</ul>` +
+          `</div>`;
+        }).join('') + `</div>` +
+        (s.p ? `<p${AT(0.86)} class="fg-p beat">${s.p}</p>` : '') +
+      `</div>`;
+    },
+
+    /* --- 19 · six tries at one button -----------------------------------
+       Vertical scroll drives horizontal travel while the stage is pinned,
+       which is the one place in the film where the reader's axis and the
+       content's axis differ. It is worth it here because six versions of one
+       component IS a horizontal idea, and the travel stops before the end so
+       the survivor is held rather than swept past. */
+    rail: (s) => {
+      const items = s.items || [];
+      return `<div class="fg-rail" style="--travel:${s.travel || '120vw'}">` +
+          items.map((it, i) =>
+            (i ? `<i class="fg-arrow" aria-hidden="true"></i>` : '') +
+            `<div class="fg-rail__i">${FSHOT(it)}` +
+              `<span class="fg-rail__n">${esc(it.n || '')}</span>` +
+            `</div>`).join('') +
+        `</div>` +
+        `<div class="scn__in scn__in--foot">` +
+          `<h2${AT(0.82)} class="fg-h fg-h--wide beat beat--still">${s.h}</h2>` +
+        `</div>`;
+    },
+
+    /* --- 20 · twelve screens, one decision each -------------------------
+       The device never moves; only what is inside it changes, and the caption
+       beside it swaps on the same beat. This is the deepest artefact in the
+       film and the only place the reader handles a real flow, so it is the
+       longest scene after the assembly. */
+    device: (s) => {
+      const sc = s.screens || [];
+      const n = sc.length || 1;
+      const step = 0.9 / n;
+      return `<div class="fg-dev-wrap">` +
+          `<div>` +
+            `<div class="fg-dev">` + sc.map((c, i) =>
+              `<div${AT(0.04 + i * step, 0.04 + (i + 1) * step + (i === n - 1 ? 0.3 : 0))}` +
+              ` class="fg-dev__s beat beat--win">` +
+                `<img src="${url(c.src)}" alt="${esc(c.t || '')}" loading="lazy" decoding="async">` +
+              `</div>`).join('') + `</div>` +
+            /* THE RULE UNDERNEATH IS TWELVE SEGMENTS, all of them always
+               visible, with the brass filling in over the top — so it reads
+               as a length of twelve rather than as a number that grows out of
+               nothing. The segment is the track; the `b` inside it is the
+               ink. */
+            `<div class="fg-prog" aria-hidden="true">` + sc.map((c, i) =>
+              `<i><b${AT(0.04 + i * step)} class="beat beat--still"></b></i>`).join('') +
+            `</div>` +
+          `</div>` +
+          `<div class="fg-side">` + sc.map((c, i) =>
+            `<div${AT(0.04 + i * step, 0.04 + (i + 1) * step + (i === n - 1 ? 0.3 : 0))}` +
+            ` class="fg-side__i beat beat--win">` +
+              `<p class="fg-side__t">${c.t}</p>` +
+              (c.b ? `<p class="fg-side__b">${c.b}</p>` : '') +
+            `</div>`).join('') + `</div>` +
+        `</div>`;
+    },
+
+    /* --- 21 · the tap ---------------------------------------------------
+       Scroll-scrubbed, so the reader controls the tap and can hold it at the
+       moment of contact. That control IS the scene — this is the interaction
+       that replaced a whole device, and letting someone stop it half way is
+       the only way a page can say so. `Film` seeks the video off the same
+       `--p` everything else reads. */
+    video: (s) => `<div class="fg-vid" data-scrub>` +
+          `<video src="${url(s.src)}"${s.poster ? ` poster="${url(s.poster)}"` : ''}` +
+          ` muted playsinline preload="auto" aria-label="${esc(s.alt || '')}"></video>` +
+        `</div>` +
+        `<div class="scn__in scn__in--foot">` +
+          (s.h ? `<h2${AT(0.2)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+          (s.p ? `<p${AT(0.5)} class="fg-p beat">${s.p}</p>` : '') +
+        `</div>`,
+
+    /* --- 22 · four principles, four proofs ------------------------------
+       Each word pins while its screen holds beside it, then releases as the
+       next word arrives. No paragraph anywhere longer than a line: the
+       screen is the argument, and a principle that needs a paragraph to
+       defend it was not a principle. */
+    prin: (s) => {
+      const items = s.items || [];
+      const n = items.length || 1;
+      const step = 0.92 / n;
+      return `<div class="fg-prin">` +
+          `<div class="fg-prin__words">` + items.map((it, i) =>
+            `<div${AT(0.02 + i * step, 0.02 + (i + 1) * step)} class="beat beat--win">` +
+              `<p class="fg-prin__w">${esc(it.w)}</p>` +
+              (it.l ? `<p class="fg-prin__l">${it.l}</p>` : '') +
+            `</div>`).join('') + `</div>` +
+          `<div class="fg-prin__shots">` + items.map((it, i) =>
+            `<div${AT(0.02 + i * step, 0.02 + (i + 1) * step)} class="beat beat--win">` +
+              `<div class="fg-dev fg-dev--sm">` +
+                (it.src ? `<img src="${url(it.src)}" alt="" loading="lazy" decoding="async">`
+                        : FSHOT({ label: it.w, ratio: 0.487 })) +
+              `</div>` +
+            `</div>`).join('') + `</div>` +
+        `</div>`;
+    },
+
+    /* --- 23 · in the world ----------------------------------------------
+       The icon scales down into its place on a home screen in one continuous
+       move, and then the dark mode arrives as a WIPE. A fade would say the
+       lights dimmed; a wipe says a second set of token values was switched
+       on, which is what dark mode is. */
+    world: (s) => `<div class="scn__in">` +
+        (s.h ? `<h2${AT(0.03)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+        `<div class="fg-world">` +
+          `<div class="fg-icon" aria-hidden="true">${esc(s.icon || 'X0')}</div>` +
+          (s.homes || []).map((sh, i) =>
+            `<div${AT(0.3 + i * 0.12)} class="beat">${FSHOT(sh)}</div>`).join('') +
+          (s.dark
+            ? `<div${AT(0.5)} class="beat fg-wipe">${FSHOT(s.light || s.dark)}` +
+                `<div class="fg-wipe__b">${FSHOT(s.dark)}</div>` +
+              `</div>`
+            : '') +
+        `</div>` +
+        (s.p ? `<p${AT(0.8)} class="fg-p beat">${s.p}</p>` : '') +
+      `</div>`,
+
+    /* --- 24 · seven months ----------------------------------------------
+       The shipped version was the fourth answer, not the first. The two
+       months where an earlier answer was abandoned carry a brass dot and
+       hold a beat longer, because those are the two the reader should feel. */
+    spine: (s) => {
+      const beats = s.beats || [];
+      const b = SPREAD(beats.length, 0.08, 0.8);
+      return `<div class="scn__in">` +
+        (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+        `<div class="fg-spine">` + beats.map((it, i) =>
+          `<div${AT(b[i])} class="fg-beat beat${it.turn ? ' fg-beat--turn' : ''}">` +
+            `<span class="fg-beat__w">${esc(it.w)}</span>` +
+            `<p class="fg-beat__t">${it.t}</p>` +
+          `</div>`).join('') + `</div>` +
+      `</div>`;
+    },
+
+    /* --- 25 · sixty-seven per cent --------------------------------------
+       The only real number in the film, and it is there at rest rather than
+       counting up: a counter would make it a statistic, and it is a
+       position. The prompt types itself and its output assembles beside it,
+       visibly imperfect. The imperfection is the honesty of the scene. */
+    num: (s) => `<div class="scn__in">` +
+        `<p${AT(0.02)} class="fg-num beat beat--still">${esc(s.n)}</p>` +
+        (s.sub ? `<span${AT(0.06)} class="fg-kick fg-kick--brass beat">${esc(s.sub)}</span>` : '') +
+        (s.h ? `<h2${AT(0.12)} class="fg-h fg-h--wide beat beat--still">${s.h}</h2>` : '') +
+        (s.prompt
+          ? `<p${AT(0.14)} class="fg-prompt beat beat--still">&gt;&nbsp;` +
+            `<i style="--n:${s.prompt.length}">${esc(s.prompt)}</i></p>`
+          : '') +
+        ((s.out || []).length
+          ? `<div class="fg-out">` + s.out.map((sh, i) =>
+              `<div${AT(0.6 + i * 0.08)} class="beat">${FSHOT(sh)}</div>`).join('') + `</div>`
+          : '') +
+        (s.p ? `<p${AT(0.86)} class="fg-p beat">${s.p}</p>` : '') +
+      `</div>`,
+
+    /* --- 26 · looking back -----------------------------------------------
+       Reading size, not poster size, and almost no motion. After
+       twenty-five scenes of cinema, near-stillness reads as candour — and
+       this is the one scene a hiring manager reads every word of. */
+    cards: (s) => {
+      const items = s.items || [];
+      const b = SPREAD(items.length, 0.1, 0.4);
+      return `<div class="scn__in">` +
+        (s.h ? `<h2${AT(0.02)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+        `<div class="fg-cards">` + items.map((it, i) =>
+          `<div${AT(b[i])} class="fg-card beat${it.lift ? ' fg-card--lift' : ''}">` +
+            `<span class="fg-card__h">${esc(it.h)}</span>` +
+            (it.body || []).map((t) => `<p class="fg-card__b">${t}</p>`).join('') +
+          `</div>`).join('') + `</div>` +
+      `</div>`;
+    },
+  };
+
+  /* ----------------------------------------------------------------------
+     THE ENGINE
+     ---------------------------------------------------------------------- */
+
+  const Film = {
+    scenes: [],
+
+    build(p) {
+      const film = el('div', { class: 'film' });
+      const acts = [];
+
+      (p.scenes || []).forEach((s) => {
+        const render = SCENE[s.kind];
+        if (!render) return;
+
+        if (s.act) acts.push({ label: s.act, id: s.id });
+
+        const scn = el('section', {
+          class: `scn scn--${s.kind}${s.white ? ' scn--white' : ''}`
+            + `${s.rest ? ' scn--rest' : ''}`,
+          id: s.id,
+          style: `--dur:${s.dur || 120}svh`,
+        });
+        /* THE STAGE IS THE FRAME, and it is one element so that `overflow:
+           clip` on it can be trusted: anything a scene pushes past the edge
+           of the screen is gone rather than widening the document. */
+        const stage = el('div', { class: 'scn__stage' });
+        stage.innerHTML = render(s);
+        scn.appendChild(stage);
+        film.appendChild(scn);
+      });
+
+      /* the progress hairline, and the four acts as dots */
+      const bar = el('div', { class: 'film__bar', 'aria-hidden': 'true' }, '<i></i>');
+      film.appendChild(bar);
+      if (acts.length > 1) {
+        const nav = el('nav', { class: 'film__acts', 'aria-label': 'Acts' });
+        acts.forEach((a) => {
+          nav.appendChild(el('a', { class: 'film__act', href: `#${a.id}` },
+            `<s>${esc(a.label)}</s><i></i>`));
+        });
+        film.appendChild(nav);
+        this.acts = [...nav.children];
+      }
+      this.bar = $('i', bar);
+      return film;
+    },
+
+    bind(root) {
+      /* WITH MOTION OFF, NOTHING BINDS. `--p` keeps the 1 the stylesheet
+         declares for reduced motion, so every scene renders at its end
+         state and the film is a readable sequence of finished frames. */
+      if (REDUCED) return;
+
+      this.scenes = $$('.scn', root).map((n) => ({
+        n,
+        top: 0,
+        len: 1,
+        vid: $('.fg-vid[data-scrub] video', n),
+        p: -1,
+      }));
+      if (!this.scenes.length) return;
+
+      this.measure();
+
+      /* ONE HANDLER, ONE FRAME GATE. Twenty-seven scenes is twenty-seven
+         style writes in the worst case, so scenes more than a screen away
+         from the viewport are skipped and the ones in view are written only
+         when their own number has actually changed by enough to see. */
+      let queued = false;
+      const run = () => { queued = false; this.tick(); };
+      const onScroll = () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(run);
+      };
+      App.onScroll(onScroll);
+      addEventListener('resize', () => { this.measure(); onScroll(); }, { passive: true });
+
+      /* Images landing changes every scene's position, and a case study of
+         placeholder frames turning into photographs would otherwise leave
+         every measurement one layout behind. */
+      $$('img', root).forEach((im) => {
+        if (!im.complete) im.addEventListener('load', () => { this.measure(); onScroll(); }, { once: true });
+      });
+
+      this.tick();
+    },
+
+    measure() {
+      const y = App.y();
+      const vh = innerHeight || 800;
+      this.vh = vh;
+      this.scenes.forEach((s) => {
+        const r = s.n.getBoundingClientRect();
+        s.top = r.top + y;
+        /* how much scrolling the scene actually holds for. A scene exactly
+           one screen tall holds for nothing and passes through, which is the
+           right behaviour for the ones that are not pinned. */
+        s.len = Math.max(1, s.n.offsetHeight - vh);
+      });
+      const last = this.scenes[this.scenes.length - 1];
+      this.first = this.scenes[0] ? this.scenes[0].top : 0;
+      this.total = Math.max(1, (last ? last.top + last.n.offsetHeight : 0) - this.first - vh);
+    },
+
+    tick() {
+      const y = App.y();
+      const vh = this.vh || innerHeight;
+      let act = null;
+
+      this.scenes.forEach((s) => {
+        /* off screen by more than a screen in either direction — leave it
+           alone. Its last written value is already its end state. */
+        const rTop = s.top - y;
+        if (rTop > vh * 1.4 || rTop + s.n.offsetHeight < -vh * 0.4) return;
+
+        let p = (y - s.top) / s.len;
+        p = p < 0 ? 0 : p > 1 ? 1 : p;
+        if (Math.abs(p - s.p) > 0.002) {
+          s.p = p;
+          s.n.style.setProperty('--p', p.toFixed(4));
+          /* THE VIDEO IS SEEKED, NOT PLAYED. `fastSeek` where it exists,
+             because assigning `currentTime` on every frame of a scroll is
+             the one thing that makes a scrubbed video stutter. */
+          if (s.vid && s.vid.duration) {
+            const t = p * s.vid.duration;
+            if (s.vid.fastSeek) s.vid.fastSeek(t);
+            else s.vid.currentTime = t;
+          }
+        }
+        if (rTop <= vh * 0.5) act = s.n.id;
+      });
+
+      if (this.bar) {
+        const fp = Math.min(1, Math.max(0, (y - this.first) / this.total));
+        this.bar.style.setProperty('--fp', fp.toFixed(4));
+      }
+
+      /* the act dot lights when its own scene is the one on screen, and
+         stays lit until the next act's scene arrives */
+      if (this.acts && act !== this.act) {
+        this.act = act;
+        let on = null;
+        this.acts.forEach((a) => {
+          const id = a.getAttribute('href').slice(1);
+          const el2 = document.getElementById(id);
+          if (el2 && el2.getBoundingClientRect().top <= vh * 0.5) on = a;
+        });
+        this.acts.forEach((a) => {
+          if (a === on) a.setAttribute('aria-current', 'true');
+          else a.removeAttribute('aria-current');
+        });
+      }
+    },
   };
 
   const Project = {
@@ -2704,9 +3493,23 @@
     init(slug) {
       const p = this.find(slug);
       if (!p) return;
+
+      /* THE STUDY DECIDES WHETHER THE DOCK STARTS OUT. `Rack.applyScope`
+         has always tested `this.reading` and collapsed itself to its edge
+         tab when it is set — but nothing ever assigned it, so the `reading`
+         key in content.js and the comment beside it explaining what it does
+         were both decorative. This is that assignment. */
+      if (typeof Rack !== 'undefined') Rack.reading = !!p.reading;
+
       const item = this.item;
       const name = item ? item.title : p.title;
       document.title = `${name} — ${S.person.name}`;
+
+      /* ONE STUDY IS DIRECTED RATHER THAN WRITTEN, and it shares nothing
+         below this line: no measure, no section rail, no baseline rhythm, no
+         block types. `Film` builds the whole page from `scenes` and this
+         returns before any of the document layout is touched. */
+      if (p.mode === 'film' && (p.scenes || []).length) return this.film(p, item);
 
       /* the rail */
       const rail = $('#rail');
@@ -2862,6 +3665,33 @@
       /* ENTERING A PAGE STARTS AT THE TOP OF IT. A reload keeps the browser's
          restored offset and a deep link keeps its own anchor; a fresh arrival
          should not open halfway down because the last page was scrolled. */
+      if (!location.hash) requestAnimationFrame(() => App.to(0));
+    },
+
+    /* --- the film ---------------------------------------------------------
+
+       THE HERO IS THE SAME HERO. It is the one thing this page shares with
+       the document layout, and deliberately: every project on this site
+       opens with the same title card, so the reader knows they are still in
+       the same portfolio before the film starts one screen down.
+
+       WHAT IS NOT HERE. No `#rail` — twenty-six scenes as a table of
+       contents is a list nobody reads, and the film carries its own chrome
+       instead: a progress hairline and four act dots. No `videos()` either;
+       the one video in the film is seeked by scroll position and an
+       autoplay-on-visible binding would fight it for the same element. */
+    film(p, item) {
+      const main = $('#main');
+      const rail = $('#rail');
+      if (rail) rail.remove();
+
+      if (item) main.appendChild(this.hero(p, item));
+      const film = Film.build(p);
+      main.appendChild(film);
+      /* the project's own ending, after the film and outside it */
+      if (item) main.appendChild(this.onward());
+      Film.bind(film);
+
       if (!location.hash) requestAnimationFrame(() => App.to(0));
     },
 

@@ -3345,6 +3345,22 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
   background: #efece6;
   padding: 0.2rem 0.45rem;
   border-radius: 4px;
+
+  /* AND IT WRAPS, BECAUSE A PATH IS ONE UNBREAKABLE WORD.
+
+     `assets/img/x0/system/n45-library.webp` resolves to an absolute URL before
+     it is printed, and a URL has no spaces in it — so at 390px the `code`
+     element was wider than the frame around it and pushed its own section into
+     horizontal overflow. Measured: five sections on the X0 study, all of them
+     the ones built around placeholder frames. It never showed while the study
+     had five short paths in it; twenty longer ones made it obvious.
+
+     `anywhere` rather than `break-word`, because the break has to be allowed
+     mid-token — there is no other opportunity in a URL. */
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
 }
 
 /* --- outcome metrics ------------------------------------------------------
@@ -11972,6 +11988,238 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
 /* a dark ground carries more bloom before it reads as haze */
 .is-dark .llm { --sheen-bloom: 0.62; }
 
+/* ==========================================================================
+   THE CHAIN AND THE SPINE — two case-study blocks
+   ========================================================================== */
+
+/* --- `flow`: a chain of terms --------------------------------------------
+
+   EVERY COLOUR HERE IS A THEME TOKEN, which is the one decision worth
+   defending. The block beside this one (`.blk-vs`) states its hairlines as
+   `rgba(20, 16, 12, 0.09)` and then restates all of them for the dark band —
+   which works, and means the site's own dark MODE gets brown hairlines on a
+   dark ground. Reading `--line` and `--ink-2` instead costs nothing and
+   inverts for free; the dark band still gets one override at the bottom,
+   because a band is a surface change rather than a theme change. */
+.blk-flow {
+  max-width: var(--measure);
+  margin-top: var(--sp-5);
+}
+
+.fl__cols {
+  display: grid;
+  gap: var(--sp-6);
+}
+
+/* TWO COLUMNS ONLY WHEN THERE ARE TWO, and a rule between them rather than a
+   gap alone: the comparison is the point, so the seam should be visible. */
+.blk-flow--vs .fl__cols {
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3.25rem);
+}
+
+.blk-flow--vs .fl__col + .fl__col {
+  padding-left: clamp(1.5rem, 4vw, 3.25rem);
+  margin-left: calc(-1 * clamp(1.5rem, 4vw, 3.25rem) / 2);
+  box-shadow: inset 1px 0 0 var(--line);
+}
+
+.fl__label {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--mono);
+  font-size: var(--step--1);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.fl__chain {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* THE STEP, AND THE CONNECTOR IS THE GAP BETWEEN STEPS. Each step but the
+   first draws a chevron above itself in its own top padding — so the chain is
+   as long as the list is and no rule counts the items. */
+.fl__step {
+  position: relative;
+  padding: 0.7rem 0 0.7rem;
+  font-size: var(--step-0);
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.fl__step + .fl__step { padding-top: 2.15rem; }
+
+.fl__step + .fl__step::before {
+  content: '';
+  position: absolute;
+  left: 0.32rem;
+  top: 0.35rem;
+  width: 1px;
+  height: 1.1rem;
+  background: var(--line);
+}
+
+/* the chevron, drawn as two borders on a rotated square — no glyph, so it
+   cannot be affected by the font that happens to load */
+.fl__step + .fl__step::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1.15rem;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-right: 1px solid var(--ink-ghost);
+  border-bottom: 1px solid var(--ink-ghost);
+  rotate: 45deg;
+}
+
+.fl__t {
+  display: block;
+  font-weight: 500;
+  letter-spacing: -0.008em;
+}
+
+.fl__n {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--mono);
+  font-size: var(--step--1);
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- `timeline`: the spine ------------------------------------------------
+
+   The rule runs the full height of the list and the month sits on it, so the
+   eye follows one line down the page. `--i` is on every row for the reveal the
+   rest of the study uses. */
+.blk-tline {
+  max-width: var(--measure);
+  margin-top: var(--sp-5);
+}
+
+.tl {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  position: relative;
+}
+
+.tl__row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 5.5rem 1px minmax(0, 1fr);
+  align-items: start;
+  gap: 0 1.15rem;
+  padding: 0 0 var(--sp-5);
+}
+
+/* the spine: the middle track, drawn by the row so it stops with the last one
+   rather than running past it */
+.tl__row::before {
+  content: '';
+  position: absolute;
+  left: 5.5rem;
+  top: 0.45rem;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+
+.tl__row:last-child { padding-bottom: 0; }
+.tl__row:last-child::before { bottom: auto; height: 0.9rem; }
+
+.tl__when {
+  font-family: var(--mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  padding-top: 0.15rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tl__dot {
+  grid-column: 2;
+  width: 5px;
+  height: 5px;
+  margin-left: -2px;
+  margin-top: 0.42rem;
+  border-radius: 50%;
+  background: var(--ink-ghost);
+  position: relative;
+  z-index: 1;
+}
+
+/* the last beat is the one that shipped, so it is the one that is filled */
+.tl__row:last-child .tl__dot { background: var(--accent); }
+
+.tl__what { grid-column: 3; }
+
+.tl__t {
+  margin: 0;
+  font-size: var(--step-0);
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.008em;
+}
+
+.tl__n {
+  margin: 0.3rem 0 0;
+  font-size: var(--step-0);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* --- on the dark band ----------------------------------------------------
+   A band is a surface change, not a theme change, so the tokens above are
+   still right and only the two that read against paper are restated. */
+.sec--dark .fl__step,
+.sec--dark .tl__t { color: #eaf1f6; }
+.sec--dark .tl__n { color: #c3d2db; }
+.sec--dark .fl__label,
+.sec--dark .fl__n,
+.sec--dark .tl__when { color: #9fb3c0; }
+.sec--dark .fl__step + .fl__step::before,
+.sec--dark .tl__row::before,
+.sec--dark .blk-flow--vs .fl__col + .fl__col {
+  background: rgba(255, 255, 255, 0.1);
+}
+.sec--dark .blk-flow--vs .fl__col + .fl__col {
+  background: none;
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+.sec--dark .fl__step + .fl__step::after {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.sec--dark .tl__dot { background: rgba(255, 255, 255, 0.3); }
+
+/* --- narrow --------------------------------------------------------------
+   The two-column comparison stacks, and the seam becomes a rule above the
+   second chain rather than beside it. The spine's month column narrows but
+   stays a column: putting the month above the text would cost the alignment
+   that makes the list scannable. */
+@media (max-width: 46rem) {
+  .blk-flow--vs .fl__cols { grid-template-columns: 1fr; gap: var(--sp-5); }
+  .blk-flow--vs .fl__col + .fl__col {
+    padding-left: 0;
+    margin-left: 0;
+    padding-top: var(--sp-5);
+    box-shadow: inset 0 1px 0 var(--line);
+  }
+  .sec--dark .blk-flow--vs .fl__col + .fl__col {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  .tl__row { grid-template-columns: 3.6rem 1px minmax(0, 1fr); gap: 0 0.9rem; }
+  .tl__row::before { left: 3.6rem; }
+}
+
 /* --- a list inside an answer ---------------------------------------------
 
    THE MARKER IS THE SAME ARROW THE SUGGESTIONS USE, not a browser bullet. A
@@ -12755,3 +13003,1281 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
       opacity 200ms var(--ease);
   }
 }
+
+/* ==========================================================================
+   19. THE FILM — a case study directed rather than written
+   ==========================================================================
+
+   WHAT THIS IS. One case study on this site is not laid out as a document. It
+   is a sequence of scenes, each one a viewport tall, each one holding still
+   while you scroll through it and then handing over to the next. The reference
+   is a product launch page, not an article: one idea per screen, two to five
+   words of headline, and then picture.
+
+   WHY IT IS A SEPARATE SECTION AND NOT A THEME ON THE OTHER ONE. The document
+   layout is a measure of text in a column with a rail beside it, and every
+   decision in it — 66 characters, a baseline rhythm, a hairline between
+   blocks — is the right decision for reading. None of them are the right
+   decision for a title card. So the film gets its own ground, its own type
+   scale and its own container, and the two never share a rule. `Project.init`
+   picks one or the other off the data and builds only that one.
+
+   HOW THE MOTION WORKS, AND WHY THERE IS ALMOST NO JAVASCRIPT IN IT. Each
+   scene is a tall block containing one sticky stage. The stage is the frame;
+   the block's height is how long the scene lasts. A single scroll handler
+   writes ONE number per scene — `--p`, how far through that scene you are,
+   0 to 1 — and every reveal inside is arithmetic on that number in CSS:
+
+     opacity: clamp(0, calc((var(--p) - var(--at)) * 8), 1)
+
+   where `--at` is the beat the element belongs to. So a scene with eight
+   reveals costs one style write per frame, not eight, and the timing of every
+   element is declared next to the element instead of in a script. Nothing
+   here listens to scroll on its own.
+
+   AND IT IS NOT SCROLL-JACKING. The page scrolls at exactly the speed the
+   reader's input asks for; no scroll event is cancelled, no position is
+   assigned, no wheel is captured. What is pinned is pinned by `position:
+   sticky`, which is the browser's own mechanism and can be scrolled past at
+   any speed, backwards, with a scrollbar drag, or with a Home key. The
+   principle the rest of the site keeps — that the page never takes the
+   scroll away from you — is intact. What changes is that some scenes are
+   taller than what they show. */
+
+/* --- the ground ---------------------------------------------------------- */
+
+.film {
+  /* THE FILM'S OWN PALETTE, and it is darker than the site's dark theme on
+     purpose: this is a black field with objects lit on it, not a page with a
+     dark background. The brass is the site's accent — the one saturated
+     colour the chrome is allowed — so the film is unmistakably the same site
+     even though nothing else about it matches. */
+  --fg-ground: #080706;
+  --fg-panel: #12100e;
+  --fg-ink: #f4efe6;
+  --fg-dim: #9c9288;
+  --fg-quiet: #6b645c;
+  --fg-brass: #c9a06a;
+  --fg-line: rgba(244, 239, 230, 0.14);
+  --fg-line-soft: rgba(244, 239, 230, 0.07);
+
+  /* THE POSTER SCALE. Two sizes and a very large gap between them, which is
+     the whole typographic idea of the reference: hundred-pixel type butting
+     against eleven-pixel type, so the hierarchy is established before a word
+     is read. There is no `h3` in this file. */
+  /* AND THE CEILING IS IN `svh`, NOT `vw`, WHICH IS THE WHOLE DIFFERENCE
+     BETWEEN A PAGE AND A FRAME. A `clamp(3rem, 11vw, 10.5rem)` headline asks
+     how wide the window is; on a 1440x900 screen it answers 158px, and a
+     sixteen-word question set at 158px is 1093px tall inside a 900px stage.
+     Measured on scene 06, and on three others. A scene cannot get taller, so
+     the type has to know how tall the frame is. */
+  --fg-poster: min(clamp(2.5rem, 8.4vw, 7.5rem), 9.5svh);
+  --fg-poster-l: min(clamp(3rem, 11vw, 10.5rem), 12svh);
+  --fg-poster-xl: min(clamp(4.5rem, 22vw, 20rem), 30svh);
+  --fg-lede: clamp(1.0625rem, 1.55vw, 1.375rem);
+  --fg-label: 0.6875rem;
+
+  /* the reveal steepness — how many viewport-fractions a beat takes to
+     arrive. 8 means one eighth of the scene, which at a 130svh scene is about
+     16svh: fast enough to feel like a cut, slow enough to read as a move. */
+  --fg-rise: 8;
+
+  position: relative;
+  background: var(--fg-ground);
+  color: var(--fg-ink);
+  font-family: var(--sans);
+
+  /* FULL BLEED, out of the sheet's own padding. The film is the width of the
+     window; every inset inside it is stated by the scene. */
+  width: 100%;
+  margin-inline: 0;
+  overflow: clip;      /* clip, not hidden — sticky must survive it */
+  isolation: isolate;
+}
+
+/* Everything in the film is dark regardless of the shell's theme, and that is
+   a decision, not an oversight: the page has one design. See the note on the
+   theme pod in section 44. */
+.film ::selection { background: var(--fg-brass); color: #080706; }
+
+/* --- one scene ----------------------------------------------------------- */
+
+.scn {
+  /* HOW LONG THE SCENE LASTS. `--dur` is the height of the block, and the
+     stage inside it is one screen tall, so the scene holds for
+     `--dur - 100svh` of scrolling. A scene with `--dur: 100svh` does not hold
+     at all — it passes through, which is what the un-pinned scenes want. */
+  --dur: 120svh;
+  --p: 0;
+  position: relative;
+  height: var(--dur);
+}
+
+.scn__stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+  padding-inline: clamp(1.25rem, 5vw, 5.5rem);
+  padding-block: clamp(3.5rem, 7vh, 6rem);
+}
+
+/* The measure inside a stage. Wider than the document layout's 66 characters,
+   because nothing here is a paragraph you read for a minute. */
+.scn__in {
+  width: 100%;
+  max-width: 72rem;
+  display: grid;
+  gap: clamp(1rem, 2.2vh, 1.75rem);
+  justify-items: start;
+  align-content: center;
+}
+
+.scn__in--mid { justify-items: center; text-align: center; }
+
+/* THE ONE WHITE FRAME. Scene 06 is the film's only white field, and it is the
+   only place in the film where the type is dark. It exists so that the hard
+   cut into it lands. */
+.scn--white .scn__stage { background: #f6f3ed; color: #14100c; }
+.scn--white .fg-h { color: #14100c; }
+.scn--white .fg-p,
+.scn--white .fg-kick { color: #55504a; }
+
+/* --- the reveal ---------------------------------------------------------- */
+
+/* THE ONLY REVEAL MECHANISM IN THE FILM. `--at` is when this element belongs,
+   as a fraction of its scene. Everything else is arithmetic.
+
+   `--o` is named so a child can reuse the same 0..1 for something other than
+   opacity — a draw length, a rotation, a width. */
+.beat {
+  --at: 0;
+  --o: clamp(0, calc((var(--p) - var(--at)) * var(--fg-rise)), 1);
+  opacity: var(--o);
+  translate: 0 calc((1 - var(--o)) * 0.75rem);
+}
+
+/* NO `will-change` ON THIS. There are around a hundred beats in the film and
+   several hundred dots in scene 03; promoting every one of them to its own
+   compositor layer is how a page that was smooth at one scene becomes a page
+   that stutters at all of them. Opacity and translate are already handled off
+   the main thread without being asked. */
+
+/* A beat that leaves again. `--to` is when it goes; the window is open
+   between `--at` and `--to`. Used by anything that swaps in place — the
+   twelve screens in the device, the caption beside them. */
+.beat--win {
+  --to: 1;
+  --o: clamp(0, min(calc((var(--p) - var(--at)) * 24), calc((var(--to) - var(--p)) * 24)), 1);
+  translate: 0;
+}
+
+/* A beat that arrives and does not move at all — for type large enough that a
+   12px rise reads as a jolt. */
+.beat--still { translate: 0; }
+
+/* A SCENE THAT IS ALREADY COMPOSED WHEN YOU GET TO IT. Every other scene is
+   scrolled INTO, so starting its beats at nothing is right. The first one is
+   arrived at — the reader comes off the hero with `--p` at 0 — and a film
+   that opens on an empty black screen has not opened. Everything at rest,
+   and only the object's own rotation left to the scroll. */
+.scn--rest .beat { --o: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* THE FILM STILL WORKS WITH MOTION OFF, and it works by being finished.
+     `Film.bind` never runs, so `--p` stays at its declared value; declaring it
+     1 here means every scene renders at its end state and the whole study is
+     readable as a sequence of finished frames. Scenes that swap content in
+     place would all be at their last frame, so those are unstacked into a
+     column instead — see `.fg-dev` and `.fg-track` below. */
+  .film .scn { --p: 1; height: auto; }
+  .film .scn__stage { position: static; height: auto; min-height: 100svh; }
+  .beat, .beat--win { opacity: 1; translate: 0; }
+}
+
+/* --- the film's type ----------------------------------------------------- */
+
+.fg-kick {
+  font-family: var(--mono);
+  font-size: var(--fg-label);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--fg-quiet);
+  display: block;
+}
+
+.fg-kick--brass { color: var(--fg-brass); }
+
+.fg-h {
+  font-size: var(--fg-poster);
+  font-weight: 560;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  margin: 0;
+  text-wrap: balance;
+  max-width: 22ch;
+  color: var(--fg-ink);
+}
+
+.fg-h--l { font-size: var(--fg-poster-l); letter-spacing: -0.038em; max-width: 18ch; }
+.fg-h--wide { max-width: 34ch; }
+.fg-h--mid { text-align: center; max-width: 30ch; justify-self: center; }
+.fg-h em { font-style: normal; color: var(--fg-brass); }
+
+.fg-p {
+  font-size: var(--fg-lede);
+  line-height: 1.5;
+  color: var(--fg-dim);
+  margin: 0;
+  max-width: 42ch;
+  text-wrap: pretty;
+}
+
+.fg-p b, .fg-p strong { color: var(--fg-ink); font-weight: 520; }
+
+.fg-meta {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  color: var(--fg-quiet);
+  margin: 0;
+}
+
+/* THE CAPTION SITS BOTTOM-RIGHT, because the bottom-LEFT is where every
+   scene's copy sits — `.scn__in--foot` is anchored there — and a mono
+   caption underneath a poster headline is two things in the same corner. Two
+   scenes proved it: the morph's caption was printed through its own
+   headline. Right-aligned so it reads as a plate on the frame rather than as
+   a runt paragraph. */
+.fg-cap {
+  position: absolute;
+  right: clamp(1.25rem, 5vw, 5.5rem);
+  bottom: clamp(1.5rem, 4vh, 3rem);
+  text-align: right;
+  font-family: var(--mono);
+  font-size: var(--fg-label);
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+  max-width: 34ch;
+  line-height: 1.5;
+  z-index: 3;
+}
+
+/* --- a shot that has not been taken yet ---------------------------------- */
+
+/* THE RESERVED FRAME, and it is not the document layout's hatched box. This
+   one is black, hairlined, and states the shot: a frame that says "a
+   photograph goes here, and here is what it is of" reads as a storyboard,
+   which is honest. The alternative — dropping the scene until the photograph
+   exists — would leave the film with holes in its argument. */
+.fg-shot {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--ratio, 1.6);
+  border: 1px solid var(--fg-line);
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(135deg,
+      rgba(244, 239, 230, 0.028) 0 1px,
+      transparent 1px 9px),
+    var(--fg-panel);
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 0.5rem;
+  padding: clamp(1rem, 2.5vw, 2rem);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.fg-shot__l {
+  font-family: var(--mono);
+  font-size: var(--fg-label);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--fg-brass);
+}
+
+.fg-shot__d {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--fg-dim);
+  margin: 0;
+  max-width: 46ch;
+}
+
+.fg-shot--full {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  align-content: end;
+}
+
+/* a real picture, in the same slot */
+.fg-img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 3px;
+}
+
+.fg-img--full {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+/* --- 01 / 02 / 27 · an object on the black ------------------------------- */
+
+.fg-obj {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* THE TITLE BEHIND THE OBJECT. Set large enough to crop off both edges, which
+   is the point: type that runs out of the frame reads as scale rather than as
+   a word. `-webkit-text-stroke` is not used — a hollow letterform would be a
+   different, cheaper effect. */
+.fg-word {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  font-size: var(--fg-poster-xl);
+  font-weight: 620;
+  letter-spacing: -0.05em;
+  line-height: 0.8;
+  color: #241e19;
+  white-space: nowrap;
+  user-select: none;
+  scale: calc(1.04 - var(--p) * 0.04);
+  z-index: 1;
+}
+
+.fg-obj__art {
+  position: relative;
+  z-index: 2;
+  width: min(52vw, 30rem);
+  max-width: 100%;
+  height: auto;
+  rotate: calc(var(--p) * 6deg);
+  filter: drop-shadow(0 2.5rem 4rem rgba(0, 0, 0, 0.75));
+}
+
+.fg-obj__art--still { rotate: none; }
+
+/* the copy over an object scene sits at the bottom-left, out of the object's way */
+.scn__in--foot {
+  align-content: end;
+  min-height: 100%;
+  position: relative;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* --- 03 · the market as a field of people -------------------------------
+   SIX HUNDRED PEOPLE ARE NOT SIX HUNDRED PICTURES. What is being said is a
+   quantity — the several hundred outside the ring versus the few dozen
+   inside it — and a quantity wants to be counted, not illustrated. So the
+   field is generated: every dot carries its own arrival beat, its own start
+   and its own destination on the phone's outline, and the collapse is CSS
+   interpolating between the two positions off the scene's own progress.
+
+   No canvas and no per-frame drawing: this is four hundred elements whose
+   position is a function of one custom property, which the compositor can do
+   without waking the main thread. */
+
+.fg-dots { position: absolute; inset: 0; overflow: clip; }
+
+.fg-dot {
+  --c: clamp(0, calc((var(--p) - 0.55) * 2.4), 1);
+  position: absolute;
+  left: calc((var(--x) + (var(--tx) - var(--x)) * var(--c)) * 1%);
+  top: calc((var(--y) + (var(--ty) - var(--y)) * var(--c)) * 1%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #3a352f;
+  opacity: clamp(0, calc((var(--p) - var(--at)) * 10), 1);
+}
+
+/* the ring that self-custody had already reached. It never grows — that is
+   the argument. */
+.fg-dot.lit { background: var(--fg-brass); box-shadow: 0 0 5px rgba(201, 160, 106, 0.55); }
+
+/* and the device the field resolves into, arriving as the dots land */
+/* raised out of the headline's way — the copy in this scene sits at the
+   bottom-left and the device was landing on top of it */
+.fg-dots__end {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  translate: -50% -50%;
+  height: min(48svh, 22rem);
+  width: auto;
+  opacity: clamp(0, calc((var(--p) - 0.74) * 4), 1);
+  filter: drop-shadow(0 2rem 4rem rgba(0, 0, 0, 0.8));
+}
+
+/* --- 04 · the two objects, one of which leaves --------------------------- */
+
+.fg-gone,
+.fg-stays {
+  position: absolute;
+  width: min(30vw, 16rem);
+  max-width: 42%;
+}
+
+/* THE EXIT IS SLOW ON PURPOSE — the reader has to notice a thing being
+   REMOVED, which takes longer to register than a thing being added. Forty per
+   cent of the scene is spent on it. */
+.fg-gone {
+  left: 8%;
+  opacity: calc(1 - clamp(0, calc((var(--p) - 0.12) * 2.4), 1));
+  translate: calc(clamp(0, calc((var(--p) - 0.12) * 2.4), 1) * -3rem) 0;
+  filter: saturate(calc(1 - clamp(0, calc((var(--p) - 0.12) * 2.4), 1)));
+}
+
+.fg-stays { right: 8%; }
+
+/* --- a full-bleed frame inside a stage ----------------------------------- */
+
+.fg-frame-full { position: absolute; inset: 0; }
+
+/* the photographs get a scrim so type can sit over them, and nothing else —
+   no filter, no duotone. The jump from rendered black to a real room is the
+   effect, and processing the photograph is how you throw it away. */
+.fg-frame-full::after,
+.fg-cross::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(8, 7, 6, 0.9) 0%, rgba(8, 7, 6, 0.15) 55%, rgba(8, 7, 6, 0) 100%);
+  pointer-events: none;
+}
+
+/* --- a run of mono facts, one per beat ----------------------------------- */
+
+.fg-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  align-items: baseline;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  color: var(--fg-dim);
+}
+
+.fg-facts b { color: var(--fg-ink); font-weight: 500; }
+
+/* the line that changes what the facts above it mean */
+.fg-turn {
+  font-size: clamp(1rem, 1.9vw, 1.4rem);
+  line-height: 1.35;
+  color: var(--fg-brass);
+  margin: 0;
+  max-width: 34ch;
+  font-weight: 480;
+}
+
+/* --- 04 · costs struck through ------------------------------------------- */
+
+.fg-strikes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+  font-size: clamp(1.125rem, 2.4vw, 1.75rem);
+  font-weight: 500;
+  color: var(--fg-quiet);
+}
+
+.fg-strikes li { position: relative; display: inline-block; justify-self: start; }
+
+/* THE RULE DRAWS ITSELF, because a line that is simply there is a typographic
+   style and a line that draws is a deletion. The width is the beat's own
+   0..1. */
+.fg-strikes li::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 55%;
+  height: 2px;
+  width: calc(var(--o) * 100%);
+  background: var(--fg-brass);
+}
+
+/* --- 05 · four words ----------------------------------------------------- */
+
+.fg-words {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.1em;
+}
+
+.fg-words li {
+  font-size: var(--fg-poster-l);
+  font-weight: 580;
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+}
+
+.fg-words li:last-child { color: var(--fg-brass); }
+
+/* --- 07 · the wall of questions ------------------------------------------ */
+
+.fg-quote {
+  font-size: clamp(1.25rem, 3.1vw, 2.4rem);
+  line-height: 1.22;
+  font-weight: 460;
+  letter-spacing: -0.02em;
+  margin: 0;
+  max-width: 30ch;
+  color: var(--fg-ink);
+}
+
+.fg-quote--dim { color: var(--fg-dim); }
+
+/* the two quotes occupy the same place, so one replaces the other */
+.fg-swap { position: relative; display: grid; }
+.fg-swap > * { grid-area: 1 / 1; }
+
+.fg-wall {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.fg-wall li {
+  font-size: clamp(0.9375rem, 1.65vw, 1.25rem);
+  line-height: 1.3;
+  color: var(--fg-ink);
+  padding-inline-start: 1.4rem;
+  position: relative;
+  font-weight: 450;
+}
+
+.fg-wall li::before {
+  content: '?';
+  position: absolute;
+  left: 0;
+  top: 0.05em;
+  font-family: var(--mono);
+  font-size: 0.8em;
+  color: var(--fg-brass);
+}
+
+/* the two that survive into the next scene */
+.fg-wall li.keep { color: var(--fg-brass); }
+
+/* --- 08 · requirement stack, with the contradiction drawn ---------------- */
+
+.fg-stack {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15em;
+  width: 100%;
+}
+
+.fg-stack li {
+  font-size: clamp(1.5rem, 4.6vw, 3.6rem);
+  font-weight: 540;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: var(--fg-ink);
+}
+
+.fg-stack li.fight { color: var(--fg-brass); }
+
+/* the hairline between the two that fight — drawn, not stated */
+.fg-tie {
+  height: 1px;
+  width: calc(var(--o) * min(28rem, 60%));
+  background: var(--fg-brass);
+  margin-block: 0.35rem;
+  justify-self: start;
+}
+
+/* --- 09 · the chain ------------------------------------------------------ */
+
+.fg-chain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  width: 100%;
+}
+
+.fg-chain li {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  font-size: clamp(0.9375rem, 1.7vw, 1.25rem);
+  font-weight: 480;
+  color: var(--fg-dim);
+  text-align: center;
+}
+
+/* the connector reaches the word before the word appears, so the sequence
+   reads as consequence rather than as a list */
+.fg-chain li::before {
+  content: '';
+  width: 1px;
+  height: clamp(1rem, 2.6vh, 2rem);
+  background: var(--fg-line);
+  scale: 1 var(--o);
+  transform-origin: top;
+}
+
+.fg-chain li:first-child::before { display: none; }
+
+.fg-chain li:last-child {
+  color: var(--fg-brass);
+  font-size: min(clamp(1.5rem, 4vw, 3rem), 6svh);
+  font-weight: 560;
+  letter-spacing: -0.025em;
+  margin-top: 0.2em;
+}
+
+/* --- 10 · one interface coming apart over another ------------------------ */
+
+.fg-morph {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+}
+
+.fg-morph__under {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: clamp(0, calc((var(--p) - 0.25) * 2.2), 1);
+}
+
+.fg-morph__over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+/* EACH SLICE LEAVES ON ITS OWN VECTOR, which is what makes it read as coming
+   apart rather than as a fade. The slice count is fixed at seven and every
+   slice shows its own seventh of the same picture through
+   `background-position`, so this costs no new artwork. `--k` is the slice's
+   index; the arithmetic gives odd slices an upward exit and even ones a
+   downward one, with a stagger. */
+.fg-morph__s {
+  --k: 0;
+  --lag: calc(var(--k) * 0.055);
+  --q: clamp(0, calc((var(--p) - 0.18 - var(--lag)) * 3), 1);
+  flex: 1 1 0;
+  min-width: 0;
+  background-image: var(--art);
+  /* SEVEN SLICES OF ONE PICTURE, and the arithmetic is the only fiddly part
+     of it. At `background-size: 700%` the image is seven slice-widths wide,
+     so the whole interface spans the seven of them. A percentage
+     `background-position` interpolates between "left edges flush" and "right
+     edges flush", which across a 7× image is a travel of six slice-widths —
+     so slice k wants k/6 of that travel, not k × 100%. Height stays `auto`
+     so the shot is not stretched to the stage. */
+  background-size: 700% auto;
+  background-position: calc(var(--k) / 6 * 100%) center;
+  background-repeat: no-repeat;
+  opacity: calc(1 - var(--q));
+  translate: 0 calc(var(--q) * var(--dir, 1) * 22vh);
+  rotate: calc(var(--q) * var(--dir, 1) * 2deg);
+}
+
+.fg-morph__s:nth-child(even) { --dir: -1; }
+
+/* --- 11 / 15 · a decision card ------------------------------------------- */
+
+.fg-dec {
+  display: grid;
+  gap: clamp(1rem, 3vh, 2rem);
+  justify-items: start;
+}
+
+.fg-dec__n {
+  font-family: var(--mono);
+  font-size: var(--fg-label);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-brass);
+  border: 1px solid var(--fg-line);
+  border-radius: 2px;
+  padding: 0.35rem 0.6rem;
+}
+
+/* --- 12 / 13 / 17 · the split -------------------------------------------- */
+
+.fg-split {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  width: 100%;
+  max-width: 76rem;
+  align-items: start;
+}
+
+.fg-split__rule {
+  align-self: stretch;
+  background: var(--fg-line-soft);
+  min-height: 40svh;
+}
+
+.fg-half { display: grid; gap: clamp(0.75rem, 1.8vh, 1.25rem); align-content: start; }
+
+/* THE LEFT COLUMN DIMS AS THE RIGHT FILLS, and that dimming is the whole
+   argument of the pair of scenes: the case against, then the answer, with the
+   case against still legible behind it. */
+.fg-half--fades { opacity: calc(1 - clamp(0, calc((var(--p) - 0.5) * 3), 0.7)); }
+
+.fg-reasons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.fg-reasons li {
+  font-size: clamp(0.9375rem, 1.5vw, 1.125rem);
+  line-height: 1.42;
+  color: var(--fg-dim);
+  padding-inline-start: 1.25rem;
+  position: relative;
+}
+
+.fg-reasons li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 0.7rem;
+  height: 1px;
+  background: var(--fg-quiet);
+}
+
+/* the answers, ticked */
+.fg-ticks { display: grid; gap: 0.75rem; list-style: none; margin: 0; padding: 0; }
+
+.fg-ticks li {
+  font-size: clamp(0.9375rem, 1.5vw, 1.125rem);
+  line-height: 1.42;
+  color: var(--fg-ink);
+  padding-inline-start: 1.75rem;
+  position: relative;
+}
+
+/* the tick STROKES rather than fades, because a mark being made is a different
+   event from a mark appearing */
+.fg-ticks li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.28em;
+  width: 0.7rem;
+  height: 0.4rem;
+  border-left: 1.5px solid var(--fg-brass);
+  border-bottom: 1.5px solid var(--fg-brass);
+  rotate: -45deg;
+  clip-path: inset(0 calc((1 - var(--o)) * 100%) 0 0);
+}
+
+.fg-name {
+  font-size: clamp(2rem, 6vw, 4.5rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--fg-ink);
+  margin: 0;
+}
+
+/* --- 14 · the assembly --------------------------------------------------- */
+
+.fg-asm {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.fg-asm__hub {
+  position: relative;
+  z-index: 3;
+  scale: calc(1 - var(--p) * 0.28);
+}
+
+/* AND THE COMPOSITION STANDS DOWN FOR THE ONE LINE. Eight lit frames behind
+   a poster headline is two things competing, and the headline loses. It
+   arrives at 86% of the scene, so the parts dim from 80% — the reader has
+   already watched them assemble; they do not need to be at full brightness
+   while being told what they were for. */
+.scn--asm .fg-asm { opacity: calc(1 - clamp(0, calc((var(--p) - 0.8) * 3), 0.62)); }
+
+/* the parts arrive around the hub and stay. Each one states its own corner in
+   the data, so the composition is authored rather than computed. */
+.fg-asm__part {
+  position: absolute;
+  width: clamp(6rem, 15vw, 11rem);
+  z-index: 2;
+}
+
+.fg-asm__part .fg-shot { aspect-ratio: var(--ratio, 1.4); padding: 0.6rem; }
+.fg-asm__part .fg-shot__d { display: none; }
+.fg-asm__part .fg-shot__l { font-size: 0.5625rem; letter-spacing: 0.1em; }
+
+/* --- 16 · one photograph dissolving into its clean redraw ---------------- */
+
+.fg-cross { position: absolute; inset: 0; }
+.fg-cross > * { position: absolute; inset: 0; }
+.fg-cross__b { opacity: clamp(0, calc((var(--p) - 0.35) * 4), 1); }
+
+/* --- 17 · two tracks running at once ------------------------------------- */
+
+.fg-track2 { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.5rem, 4vw, 3.5rem); width: 100%; }
+
+.fg-lane { display: grid; gap: 0.9rem; align-content: start; }
+
+.fg-lane__t {
+  font-family: var(--mono);
+  font-size: var(--fg-label);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--fg-brass);
+}
+
+.fg-lane__p { font-size: 0.9375rem; line-height: 1.5; color: var(--fg-dim); margin: 0; }
+
+/* the version stack — each state sits slightly behind the last */
+.fg-vers { position: relative; display: grid; }
+.fg-vers > * { grid-area: 1 / 1; }
+
+/* --- 18 · pins sorting into groups --------------------------------------- */
+
+.fg-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: clamp(1rem, 2.5vw, 2rem);
+  width: 100%;
+}
+
+.fg-group { display: grid; gap: 0.6rem; align-content: start; }
+
+.fg-group__h {
+  font-family: var(--mono);
+  font-size: var(--fg-label);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--fg-brass);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--fg-line);
+}
+
+.fg-group--quiet .fg-group__h { color: var(--fg-quiet); }
+
+.fg-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+
+.fg-group li {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--fg-dim);
+  padding-inline-start: 0.9rem;
+  position: relative;
+}
+
+.fg-group li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--fg-brass);
+}
+
+.fg-group--quiet li::before { background: var(--fg-quiet); }
+
+/* --- 19 · horizontal travel --------------------------------------------- */
+
+.fg-rail {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: clamp(2rem, 6vw, 6rem);
+  padding-inline: 12vw;
+  /* THE TRAVEL IS THE SCENE'S OWN PROGRESS, and it stops before the end so
+     the last item is held rather than swept past. */
+  translate: calc(clamp(0, calc(var(--p) * 1.18), 1) * -1 * var(--travel, 120vw)) 0;
+  will-change: translate;
+}
+
+.fg-rail__i { flex: 0 0 auto; display: grid; gap: 0.75rem; justify-items: center; }
+.fg-rail__i .fg-shot { width: clamp(9rem, 20vw, 15rem); }
+.fg-rail__n { font-family: var(--mono); font-size: var(--fg-label); letter-spacing: 0.12em; color: var(--fg-quiet); }
+.fg-rail__i:last-child { scale: 1.12; }
+.fg-rail__i:last-child .fg-rail__n { color: var(--fg-brass); }
+
+.fg-arrow {
+  flex: 0 0 auto;
+  width: clamp(1.5rem, 3vw, 2.5rem);
+  height: 1px;
+  background: var(--fg-brass);
+  align-self: center;
+}
+
+/* --- 20 · the pinned device --------------------------------------------- */
+
+.fg-dev-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(1.5rem, 5vw, 5rem);
+  align-items: center;
+  width: 100%;
+  max-width: 68rem;
+}
+
+.fg-dev {
+  position: relative;
+  width: min(62vw, 22rem);
+  aspect-ratio: 0.487;
+  border-radius: 2.25rem;
+  border: 1px solid var(--fg-line);
+  background: #000;
+  overflow: clip;
+  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.8);
+  justify-self: center;
+}
+
+.fg-dev__s { position: absolute; inset: 0; }
+.fg-dev img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fg-dev .fg-shot { position: absolute; inset: 0; aspect-ratio: auto; border: 0; border-radius: 0; }
+
+/* THE TWELVE-SEGMENT RULE, all twelve of them visible from the start. The
+   segment is the track and the `b` inside it is the ink, so the reader sees
+   how long the flow is before seeing how far in they are — a bar that grows
+   out of nothing says neither. */
+.fg-prog { display: flex; gap: 3px; width: min(62vw, 22rem); justify-self: center; margin: 0.9rem auto 0; }
+.fg-prog i { flex: 1 1 0; height: 2px; background: var(--fg-line); }
+.fg-prog i b { display: block; height: 100%; background: var(--fg-brass); }
+.fg-dev--sm { width: min(46vw, 13.5rem); justify-self: end; }
+
+.fg-side { display: grid; gap: 0.6rem; align-content: center; min-height: 9rem; }
+.fg-side > * { grid-area: 1 / 1; }
+.fg-side__t { font-size: clamp(1.25rem, 2.6vw, 2rem); font-weight: 540; letter-spacing: -0.02em; line-height: 1.1; margin: 0; }
+.fg-side__b { font-size: 0.9375rem; line-height: 1.5; color: var(--fg-dim); margin: 0.5rem 0 0; max-width: 34ch; }
+.fg-side__i { display: grid; align-content: start; }
+
+/* --- 21 · the scrubbed tap ---------------------------------------------- */
+
+.fg-vid { position: absolute; inset: 0; }
+.fg-vid video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fg-vid::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(8, 7, 6, 0.85) 0%, rgba(8, 7, 6, 0) 45%);
+}
+
+/* --- 22 · four principles ----------------------------------------------- */
+
+.fg-prin { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(1.5rem, 5vw, 4rem); align-items: center; width: 100%; max-width: 68rem; }
+.fg-prin__words { display: grid; }
+.fg-prin__words > * { grid-area: 1 / 1; }
+.fg-prin__w { font-size: var(--fg-poster); font-weight: 580; letter-spacing: -0.035em; line-height: 1; margin: 0; }
+.fg-prin__l { font-size: 0.9375rem; line-height: 1.5; color: var(--fg-dim); margin: 0.75rem 0 0; max-width: 32ch; }
+.fg-prin__shots { display: grid; }
+.fg-prin__shots > * { grid-area: 1 / 1; }
+
+/* --- 23 · in the world -------------------------------------------------- */
+
+.fg-world { display: grid; gap: clamp(1rem, 3vw, 2.5rem); grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); width: 100%; align-items: center; }
+
+.fg-icon {
+  width: clamp(5rem, 14vw, 9rem);
+  aspect-ratio: 1;
+  border-radius: 22%;
+  border: 1px solid var(--fg-line);
+  background: var(--fg-panel);
+  display: grid;
+  place-items: center;
+  font-weight: 620;
+  font-size: clamp(1.5rem, 4vw, 2.75rem);
+  letter-spacing: -0.04em;
+  color: var(--fg-brass);
+  scale: calc(1.9 - clamp(0, calc(var(--p) * 2.4), 1) * 0.9);
+  justify-self: center;
+}
+
+/* THE WIPE, not a fade — dark mode is a second set of token values, and a
+   wipe says that a switch was thrown. */
+.fg-wipe { position: relative; overflow: clip; }
+.fg-wipe > .fg-wipe__b {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 calc((1 - clamp(0, calc((var(--p) - 0.55) * 3), 1)) * 100%) 0 0);
+}
+
+/* --- 24 · the spine ----------------------------------------------------- */
+
+.fg-spine { position: relative; display: grid; gap: clamp(0.75rem, 2.2vh, 1.5rem); width: 100%; max-width: 46rem; padding-inline-start: 6.5rem; }
+
+.fg-spine::before {
+  content: '';
+  position: absolute;
+  left: 5rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 1px;
+  background: var(--fg-line);
+  scale: 1 clamp(0, calc(var(--p) * 1.3), 1);
+  transform-origin: top;
+}
+
+.fg-beat { position: relative; display: grid; gap: 0.15rem; }
+
+.fg-beat__w {
+  position: absolute;
+  left: -6.5rem;
+  top: 0.1em;
+  width: 4.25rem;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--fg-quiet);
+  font-variant-numeric: tabular-nums;
+}
+
+.fg-beat::before {
+  content: '';
+  position: absolute;
+  left: -1.5rem;
+  top: 0.45em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--fg-quiet);
+}
+
+.fg-beat--turn::before { background: var(--fg-brass); box-shadow: 0 0 0 4px rgba(201, 160, 106, 0.14); }
+.fg-beat__t { font-size: clamp(0.9375rem, 1.5vw, 1.125rem); line-height: 1.45; color: var(--fg-ink); margin: 0; }
+.fg-beat__t span { color: var(--fg-dim); }
+
+/* --- 25 · the number --------------------------------------------------- */
+
+.fg-num {
+  font-size: var(--fg-poster-xl);
+  font-weight: 640;
+  letter-spacing: -0.055em;
+  line-height: 0.82;
+  margin: 0;
+  color: var(--fg-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.fg-prompt {
+  font-family: var(--mono);
+  font-size: clamp(0.75rem, 1.35vw, 0.9375rem);
+  letter-spacing: 0.01em;
+  color: var(--fg-brass);
+  border: 1px solid var(--fg-line);
+  border-radius: 3px;
+  padding: 0.7rem 0.9rem;
+  background: var(--fg-panel);
+  max-width: 100%;
+  overflow: clip;
+  white-space: nowrap;
+}
+
+/* IT TYPES ITSELF, and the whole mechanism is a width in `ch` driven by the
+   scene's own progress. `--n` is the character count, stated by the content. */
+.fg-prompt i {
+  font-style: normal;
+  display: inline-block;
+  overflow: clip;
+  vertical-align: bottom;
+  white-space: nowrap;
+  /* ONE CH MORE THAN THE CHARACTER COUNT. `1ch` is the mono advance width and
+     knows nothing about the 0.01em letter-spacing on the box, so 43ch is
+     narrower than forty-three spaced characters and the prompt lost its last
+     two. Measured on scene 25. */
+  width: calc(clamp(0, calc((var(--p) - 0.15) * 2.6), 1) * (var(--n, 40) + 1) * 1ch);
+}
+
+/* THE ROW HAS A HEIGHT, and the frames fill it rather than setting it. Two
+   of the three are portrait, and a portrait frame in a 370px column is 600px
+   tall — which is most of a 900px stage on its own. In a film the row states
+   how much of the frame it may take. */
+.fg-out {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  grid-auto-rows: minmax(0, 17svh);
+  gap: 1rem;
+  width: 100%;
+}
+
+/* SCENE 25 IS THE FULLEST FRAME IN THE FILM — a number at poster-xl, a
+   headline, a prompt, three output frames and a closing line, all in one
+   screen. Measured at 1440x900 it came to 986px in a 900px stage, so the
+   number and the gaps are tightened here rather than everywhere: this is the
+   only scene that carries all five at once. */
+.scn--num .fg-num { font-size: min(clamp(3rem, 14vw, 12rem), 20svh); }
+.scn--num .scn__in { gap: clamp(0.5rem, 1.4vh, 1rem); }
+
+.fg-out .fg-shot,
+.fg-out .fg-img { height: 100%; aspect-ratio: auto; object-fit: cover; }
+
+/* --- 26 · the three cards ---------------------------------------------- */
+
+.fg-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: clamp(1rem, 2.5vw, 1.75rem); width: 100%; }
+
+.fg-card {
+  border: 1px solid var(--fg-line);
+  border-radius: 4px;
+  background: var(--fg-panel);
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  display: grid;
+  gap: 0.7rem;
+  align-content: start;
+}
+
+.fg-card--lift { border-color: rgba(201, 160, 106, 0.4); translate: 0 -0.75rem; }
+.fg-card__h { font-family: var(--mono); font-size: var(--fg-label); letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-brass); }
+.fg-card__b { font-size: 0.9375rem; line-height: 1.55; color: var(--fg-dim); margin: 0; }
+
+/* --- the film's own chrome --------------------------------------------- */
+
+/* HOW FAR IN YOU ARE — the only persistent chrome the film has, because a
+   twenty-seven-scene sequence with no progress signal is a page with no
+   bottom. Two pixels, at the top, brass. */
+.film__bar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 2px;
+  width: 100%;
+  z-index: 40;
+  background: transparent;
+  pointer-events: none;
+}
+
+.film__bar i {
+  display: block;
+  height: 100%;
+  width: calc(var(--fp, 0) * 100%);
+  background: var(--fg-brass);
+  transform-origin: left;
+}
+
+/* THE FOUR ACTS, as dots, because the reader should be able to see the film
+   has a shape without being handed a table of contents. */
+/* ON THE LEFT EDGE, because the right one is taken. The annotation dock's
+   edge tab lives at the right margin at exactly this height, and two pieces
+   of chrome in the same 40px of screen is one of them being unreadable —
+   measured, the brass dot sat behind the tab. Nothing else is on the left
+   except the grid pod in the bottom corner. */
+.film__acts {
+  position: fixed;
+  left: clamp(0.75rem, 1.6vw, 1.5rem);
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 40;
+  display: grid;
+  gap: 0.85rem;
+  justify-items: start;
+}
+
+.film__act {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--fg-quiet, #6b645c);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.film__act s { text-decoration: none; opacity: 0; transition: opacity 200ms var(--ease); white-space: nowrap; }
+.film__act i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: 0 0 auto; order: -1; }
+.film__act:hover s, .film__act:focus-visible s { opacity: 1; }
+.film__act[aria-current='true'] { color: #c9a06a; }
+.film__act[aria-current='true'] i { scale: 1.5; }
+
+@media (max-width: 60rem) { .film__acts { display: none; } }
+
+/* --- narrow ------------------------------------------------------------- */
+
+@media (max-width: 46rem) {
+  .film {
+    --fg-poster: clamp(2rem, 9.5vw, 3rem);
+    --fg-poster-l: clamp(2.25rem, 12vw, 3.5rem);
+    --fg-poster-xl: clamp(3.5rem, 30vw, 7rem);
+  }
+
+  .scn__stage { padding-block: clamp(3rem, 6vh, 4rem); }
+
+  /* Everything that was two columns becomes one, and the columns keep their
+     order: the words before the picture, the case against before the answer. */
+  .fg-split { grid-template-columns: 1fr; gap: 1.5rem; }
+  .fg-split__rule { display: none; }
+  .fg-track2 { grid-template-columns: 1fr; }
+  .fg-dev-wrap { grid-template-columns: 1fr; gap: 1.25rem; }
+  .fg-prin { grid-template-columns: 1fr; gap: 1.25rem; }
+  .fg-dev { width: min(58vw, 13rem); }
+  .fg-prog { width: min(58vw, 13rem); }
+  .fg-spine { padding-inline-start: 4.5rem; }
+  .fg-spine::before { left: 3.25rem; }
+  .fg-beat__w { left: -4.5rem; width: 2.5rem; }
+  .fg-cap { position: static; margin-top: 0.75rem; text-align: left; }
+  .fg-obj__art { width: min(72vw, 18rem); }
+  .fg-asm__part { width: clamp(4.5rem, 26vw, 7rem); }
+  .fg-rail { padding-inline: 8vw; gap: 2rem; }
+}
+
+
+/* --- ONE DESIGN ON A CASE STUDY ------------------------------------------
+
+   Project pages do not have a light mode. The shell — home, about, play —
+   still follows the clock and still honours a press, and going back to it
+   from a study restores whatever it was. What that leaves behind is a theme
+   pod that would do nothing on this page, so it is not on this page. The grid
+   pod stays: the layout grid is as true here as anywhere.
+
+   `display: none` and not `opacity: 0`, because a control that is invisible
+   and still focusable is worse than a visible one that does nothing. The
+   decision is also made in the page's own head, before the first paint, and
+   again in `Theme.init` — see both. */
+
+body[data-page='project'] .tmode { display: none; }

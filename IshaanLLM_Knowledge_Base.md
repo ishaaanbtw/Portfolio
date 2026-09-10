@@ -334,7 +334,7 @@ His work spans product UI, interaction design, visual systems, hardware/software
 
 #### Responsibilities / documented scope
 
-- Led end-to-end product design of Cypherock X0 from concept to beta launch in four months.
+- Led end-to-end product design of Cypherock X0 from concept to beta launch over seven months.
 - Designed a mobile-first hardware wallet ecosystem spanning physical NFC card design, high-end packaging, manufacturing-ready assets, and the companion X0 Wallet application.
 - Architected the N45 Design System as the foundation for the X0 ecosystem, including reusable components, design tokens, interaction patterns, and documentation.
 - Defined the X0 Wallet product architecture and interaction model across wallet creation, recovery, transaction authorization, portfolio management, and NFC-based hardware interactions.
