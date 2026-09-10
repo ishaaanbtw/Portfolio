@@ -24,3 +24,11 @@ README.md
 node_modules/
 _to_delete/
 .DS_Store
+
+# the working screenshots, the knowledge base's own format guide, and the
+# double-clickable local preview launcher. All three are for whoever works on
+# this; none of them is part of what a visitor came for, and every one of them
+# would otherwise be fetchable at its own URL.
+Claude outputs/
+IshaanLLM_Knowledge_Base.FORMAT.md
+preview.command

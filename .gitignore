@@ -21,3 +21,11 @@ build/
 # of them; this catches any that land at the top level again.
 # (Deployment exclusions are separate and live in .vercelignore.)
 /*.mjs
+
+# THE SCREENSHOTS CLAUDE TAKES WHILE WORKING ARE NOT PART OF THE SITE.
+# `Claude outputs/` had 35 PNGs and 8.9MB of it committed — before/after frames
+# from theme, grid and panel work. They were useful in the conversation that
+# produced them and they are dead weight in the history of a static site, which
+# Vercel would also have served at their own public URLs. Kept on disk, out of
+# git. (Deployment exclusions are separate and live in .vercelignore.)
+Claude outputs/
