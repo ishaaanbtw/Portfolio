@@ -828,9 +828,9 @@ window.SITE = {
                as a word. Nothing fades in — it is already there at rest,
                which is what the first frame of a product page has to be. */
             { id: 'x0-open', act: 'I · Premise', kind: 'object', dur: 130,
-              rest: true,
+              rest: true, dark: true,
               word: 'X0',
-              shot: { label: 'X0 card', ratio: 1.55,
+              shot: { label: 'X0 card', treat: 'lift',
                 of: 'The card, three-quarter view, one hard key light from the left, on black. Transparent PNG at 3x so it can sit in front of the letters.' },
               kicker: 'Cypherock X0 · mobile beta',
               h: 'Self-custody, without the seminar.',
@@ -863,9 +863,9 @@ window.SITE = {
                leaves the frame slowly and does not come back; three costs are
                struck through behind it. */
             { id: 'x0-subtract', kind: 'strike', dur: 180,
-              gone: { label: 'X1 vault device', ratio: 1.3,
-                of: 'The X1 device on black, same key light as the card. This is the object that exits the frame and does not return.' },
-              stays: { label: 'Card + phone', ratio: 0.8,
+              gone: { label: 'X1 vault device', treat: 'lift',
+                of: 'The X1 device on a light ground, same key light as the card. This is the object that exits the frame and does not return.' },
+              stays: { label: 'Card + phone', ratio: 0.8, treat: 'lift',
                 of: 'The X0 card held against the back of a phone, mid-tap, same lighting. The two objects that are left.' },
               h: 'The phone was already in their hand. So we stopped shipping a screen.',
               items: ['Hardware to manufacture', 'Freight and returns', 'Certification, per market'],
@@ -874,7 +874,7 @@ window.SITE = {
             /* THE TITLE CARD, and the one the reader will screenshot. The
                fourth word holds because it is the one nobody expects to
                survive the other three. */
-            { id: 'x0-brief', kind: 'words', dur: 140,
+            { id: 'x0-brief', kind: 'words', dur: 140, dark: true,
               kicker: 'The brief, in four words',
               items: ['Affordable.', 'Mobile-first.', 'Simple.', 'Secure.'],
               p: 'The first three were the brief. The fourth was non-negotiable.' },
@@ -889,7 +889,6 @@ window.SITE = {
                and this is the one moment the reader is meant to stop
                scrolling to read. */
             { id: 'x0-question', act: 'II · Question', kind: 'ask', dur: 120,
-              white: true,
               kicker: 'The actual question',
               h: 'How do you launch a new product without cannibalising the flagship it sits next to?',
               p: 'Not “how do you design an app?”' },
@@ -948,7 +947,7 @@ window.SITE = {
                already underneath. Built from the two pictures the study
                already had, and reversible: scrolling back reassembles X1,
                because none of this is an animation with a direction. */
-            { id: 'x0-apart', kind: 'morph', dur: 180,
+            { id: 'x0-apart', kind: 'morph', dur: 180, dark: true,
               over: 'assets/img/x0/x1.webp',
               under: 'assets/img/x0/x0.webp',
               underAlt: 'X0 — lighter, quieter, more air, a guided path through every flow',
@@ -964,7 +963,7 @@ window.SITE = {
 
             /* The second of the film's two motionless scenes. A decision is
                being announced, and the film slows down to announce it. */
-            { id: 'x0-dec-1', act: 'III · Decisions', kind: 'ask', dur: 110,
+            { id: 'x0-dec-1', act: 'III · Decisions', kind: 'ask', dur: 110, dark: true,
               n: 'Decision 01',
               h: 'Don’t reuse the design system that already existed.' },
 
@@ -982,8 +981,6 @@ window.SITE = {
                   'Interaction patterns from another platform.',
                   'And carrying X1’s language into X0 would have made X0 look like a discount X1.',
                 ],
-                shot: { label: 'CySync components', ratio: 1.5,
-                  of: 'The existing CySync component sheet, desaturated. Redact anything non-public before this ships.' },
               },
               right: {
                 title: 'What replaced it',
@@ -996,32 +993,50 @@ window.SITE = {
                   'Developer friendly.',
                 ],
                 note: 'Argued with competitor analysis and a cost-to-effort case — not with taste.',
-              } },
+              },
+              /* the third track: full height, off the right edge of the window */
+              art: { label: 'CySync components',
+                of: 'The existing CySync component sheet. Redact anything non-public before this ships.' } },
 
             /* THE ASSEMBLY, and the longest scene in the film. The system is
                proved by building the product out of it on screen: eight parts
                arrive around one button and none of them leave, and by the end
                the accumulated parts are a screen. It should feel long. */
+            /* SEVEN PARTS, NOT EIGHT. The eighth was the assembled home
+               screen, which is the one thing in the list that is not a PART
+               — it is the outcome, and it already has two scenes of its own
+               later in the film. Its frame was also the only portrait one
+               here, so it fought the exploded view's geometry. Removed.
+
+               `x`/`y` are each part's centre and `ang` is the bearing of its
+               leader line back toward the hub, measured off the composition
+               at 1440x760 rather than computed: an exploded view is drawn,
+               not solved. */
             { id: 'x0-assembly', kind: 'asm', dur: 200,
-              hub: { label: 'Button', ratio: 1.2,
+              hub: { label: 'Button', ratio: 2.4,
                 of: 'The primary button component, isolated, at 3x.' },
               parts: [
-                { label: 'Spacing', x: '6%', y: '14%', ratio: 1.4,
-                  of: 'The 8pt spacing grid as an overlay, transparent background.' },
-                { label: 'Type scale', x: '66%', y: '10%', ratio: 1.3,
-                  of: 'The type scale specimen and its two weights, isolated.' },
-                { label: 'Colour', x: '4%', y: '58%', ratio: 1.6,
-                  of: 'The colour token swatch set, named.' },
-                { label: 'Icons', x: '70%', y: '62%', ratio: 1.4,
-                  of: 'The icon set, isolated on a transparent ground.' },
-                { label: 'Input', x: '20%', y: '74%', ratio: 1.7,
-                  of: 'Text input, every state, close crop.' },
-                { label: 'Card', x: '60%', y: '78%', ratio: 1.5,
-                  of: 'The card component, isolated.' },
-                { label: 'Navigation', x: '38%', y: '4%', ratio: 2,
+                { label: 'Navigation', x: '50%', y: '11%', ratio: 3.2,
+                  lead: '4rem', ang: 90,
                   of: 'The navigation bar as rebuilt in month three, isolated.' },
-                { label: 'Home', x: '17%', y: '34%', ratio: 0.62,
-                  of: 'The assembled home screen — the frame all of the above resolves into.' },
+                { label: 'Spacing', x: '16%', y: '21%',
+                  lead: '5.5rem', ang: 24,
+                  of: 'The 8pt spacing grid as an overlay, transparent background.' },
+                { label: 'Type scale', x: '83%', y: '19%', ratio: 1.3,
+                  lead: '5.5rem', ang: 152,
+                  of: 'The type scale specimen and its two weights, isolated.' },
+                { label: 'Colour', x: '11%', y: '58%',
+                  lead: '5.5rem', ang: -8,
+                  of: 'The colour token swatch set, named.' },
+                { label: 'Icons', x: '88%', y: '55%', ratio: 1.4,
+                  lead: '5.5rem', ang: 187,
+                  of: 'The icon set, isolated on a transparent ground.' },
+                { label: 'Input', x: '26%', y: '77%', ratio: 2.2,
+                  lead: '4.5rem', ang: -40,
+                  of: 'Text input, every state, close crop.' },
+                { label: 'Card', x: '75%', y: '79%', ratio: 1.5,
+                  lead: '4.5rem', ang: 218,
+                  of: 'The card component, isolated.' },
               ],
               h: 'The system wasn’t a deliverable. It was the product’s grammar.' },
 
@@ -1043,9 +1058,9 @@ window.SITE = {
                one piece of thinking cleaned up rather than two unrelated
                pictures. */
             { id: 'x0-ia', kind: 'cross', dur: 130,
-              a: { label: 'IA whiteboard',
+              a: { label: 'IA whiteboard', treat: 'paper',
                 of: 'Photograph — the information-architecture session with the PM. Boxes, arrows, crossings out. Shot square to the wall.' },
-              b: { label: 'The same thing, redrawn',
+              b: { label: 'The same thing, redrawn', treat: 'paper',
                 of: 'The clean IA diagram in the product’s own type, aligned so its key boxes land on the photograph’s.' },
               cap: 'Information architecture and flow mapping, with the PM, before a single screen was drawn' },
 
@@ -1108,7 +1123,12 @@ window.SITE = {
                     'Honest language about what a device cannot protect you from',
                   ] },
               ],
-              p: 'We fixed the first two in ours — and took the things they’d got right.' },
+              p: 'We fixed the first two in ours — and took the things they’d got right.',
+              /* the macro crop, enlarged past its frame and cut by the right
+                 edge of the window — so the scene has an object in it and is
+                 not three columns of prose */
+              shot: { label: 'One of theirs', treat: 'macro', ratio: 0.487,
+                of: 'A competitor setup screen, cropped close on the step that fails. No brand mark in frame.' } },
 
             /* ITERATION AS CRAFT RATHER THAN INDECISION, and it is credible
                because it is small and specific. The one place in the film
@@ -1117,12 +1137,12 @@ window.SITE = {
                horizontal idea. */
             { id: 'x0-button', kind: 'rail', dur: 170, travel: '150vw',
               items: [
-                { n: '01', label: 'v1', ratio: 1.2, of: 'Button, first version. Identical crop across all six.' },
-                { n: '02', label: 'v2', ratio: 1.2, of: 'Second version.' },
-                { n: '03', label: 'v3', ratio: 1.2, of: 'Third version.' },
-                { n: '04', label: 'v4', ratio: 1.2, of: 'Fourth version.' },
-                { n: '05', label: 'v5', ratio: 1.2, of: 'Fifth version.' },
-                { n: '06', label: 'shipped', ratio: 1.2, of: 'The sixth — the one every primary action in the product was built from.' },
+                { n: '01', label: 'v1', ratio: 1.2, treat: 'strip', of: 'Button, first version. Identical crop across all six.' },
+                { n: '02', label: 'v2', ratio: 1.2, treat: 'strip', of: 'Second version.' },
+                { n: '03', label: 'v3', ratio: 1.2, treat: 'strip', of: 'Third version.' },
+                { n: '04', label: 'v4', ratio: 1.2, treat: 'strip', of: 'Fourth version.' },
+                { n: '05', label: 'v5', ratio: 1.2, treat: 'strip', of: 'Fifth version.' },
+                { n: '06', label: 'shipped', ratio: 1.2, treat: 'strip', of: 'The sixth — the one every primary action in the product was built from.' },
               ],
               h: 'Six versions. Then every primary action in the product was built from it.' },
 
@@ -1181,7 +1201,7 @@ window.SITE = {
                it at the moment of contact — and that control is the scene.
                This is the interaction that replaced a whole device; letting
                someone stop it half way is the only way a page can say so. */
-            { id: 'x0-tap', act: 'IV · Product', kind: 'video', dur: 170,
+            { id: 'x0-tap', act: 'IV · Product', kind: 'video', dur: 170, dark: true,
               src: 'assets/media/x0/app-walkthrough.mp4',
               poster: 'assets/media/x0/app-walkthrough.webp',
               alt: 'The X0 card tapped against the back of a phone, and the confirmation that follows',
@@ -1212,13 +1232,13 @@ window.SITE = {
               icon: 'X0',
               h: 'At 60 pixels it still has to be the one you trust.',
               homes: [
-                { label: 'iOS home screen', ratio: 0.8,
+                { label: 'iOS home screen', ratio: 0.62,
                   of: 'The X0 icon in place on a real iPhone home screen, among ordinary apps.' },
-                { label: 'Android home screen', ratio: 0.8,
+                { label: 'Android home screen', ratio: 0.62,
                   of: 'The same, on Android.' },
+                { label: 'In dark mode', ratio: 0.62,
+                  of: 'One product screen in dark mode, matched crop to its light version.' },
               ],
-              light: { label: 'Light', ratio: 1.4, of: 'One product screen in light mode.' },
-              dark: { label: 'Dark', ratio: 1.4, of: 'The same screen in dark mode, matched crop.' },
               p: 'The icon had to survive being one of forty things on somebody’s home screen.' },
 
             /* SEVEN MONTHS, AND THE SHIPPED VERSION WAS THE FOURTH ANSWER
@@ -1281,8 +1301,8 @@ window.SITE = {
                card, the same light, the same position, and the giant letters
                behind it gone. The object no longer needs the title. No
                flourish on the last frame. */
-            { id: 'x0-end', kind: 'object', dur: 120,
-              shot: { label: 'X0 card', ratio: 1.55,
+            { id: 'x0-end', kind: 'object', dur: 120, dark: true, rest: true,
+              shot: { label: 'X0 card', treat: 'lift',
                 of: 'Scene 01’s render, reused exactly. The repetition is the point — do not reshoot it.' },
               still: true,
               h: 'Cypherock X0',

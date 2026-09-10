@@ -404,7 +404,7 @@
          is hidden by the stylesheet, and this is the belt to that braces. */
       if (document.body && document.body.dataset.page === 'project') {
         this.locked = true;
-        this.apply('dark');
+        this.apply('light');
         return;
       }
       this.apply(this.chosen ? saved : this.fromClock());
@@ -2788,18 +2788,28 @@
 
   const FSHOT = (s) => {
     if (!s) return '';
-    const r = ` style="--ratio:${+s.ratio || 1.6}"`;
+    /* NO DEFAULT HERE ANY MORE. An unstated ratio falls through to
+       `--fg-card` in the stylesheet — 1.586, the ID-1 card proportion — so
+       the film's default frame is the shape of the product. Stating 1.6 here
+       would have quietly overridden that on every shot. */
+    const r = s.ratio ? ` style="--ratio:${+s.ratio}"` : '';
     /* A REAL PICTURE IF THERE IS ONE, AND A STATED SHOT IF THERE IS NOT.
        The film needs frames that do not exist yet — a wall of four printed
        directions, a whiteboard, a hand tapping a card. The alternative to a
        reserved frame is dropping the scene, which would take the argument out
        with it, so the frame says what it is waiting for. Swap in a `src` and
        the same slot becomes the photograph with no other change. */
+    /* A TREATMENT, NAMED IN THE DATA. `lift`, `paper`, `macro`, `strip`,
+       `full` — an object presented with air under it, a photograph printed
+       and put down, a detail enlarged past its frame, a cell flush with its
+       neighbours, edge to edge. The frame is a flat tint; the treatment and
+       the placement are what make twenty-six of them not look like one. */
+    const t = s.treat ? ` fg--${s.treat}` : '';
     if (s.src) {
-      return `<img class="fg-img${s.full ? ' fg-img--full' : ''}" src="${url(s.src)}"` +
+      return `<img class="fg-img${s.full ? ' fg-img--full' : ''}${t}" src="${url(s.src)}"` +
         ` alt="${esc(s.alt || '')}" loading="lazy" decoding="async"${r}>`;
     }
-    return `<div class="fg-shot${s.full ? ' fg-shot--full' : ''}"${r}>` +
+    return `<div class="fg-shot${s.full ? ' fg-shot--full' : ''}${t}"${r}>` +
       `<span class="fg-shot__l">${esc(s.label || 'Shot')}</span>` +
       (s.of ? `<p class="fg-shot__d">${esc(s.of)}</p>` : '') +
     `</div>`;
@@ -3030,14 +3040,17 @@
       const R = s.right || {};
       const lb = SPREAD((L.items || []).length, 0.08, 0.44);
       const rb = SPREAD((R.items || []).length, 0.56, 0.86);
+      /* A MAGAZINE SPREAD, THREE TRACKS. Reasons in small type, the answer
+         at poster scale, and a full-height picture column that leaves the
+         stage's gutter and is cut by the window. The picture was inside the
+         left column in the first build, which made the scene two stacked
+         text blocks with a thumbnail. */
       return `<div class="fg-split">` +
           `<div class="fg-half fg-half--fades">` +
             (L.title ? `<span${AT(0.02)} class="fg-lane__t beat">${esc(L.title)}</span>` : '') +
             `<ul class="fg-reasons">` + (L.items || []).map((t, i) =>
               `<li${AT(lb[i])} class="beat">${t}</li>`).join('') + `</ul>` +
-            (L.shot ? `<div${AT(0.1)} class="beat">${FSHOT(L.shot)}</div>` : '') +
           `</div>` +
-          `<i class="fg-split__rule" aria-hidden="true"></i>` +
           `<div class="fg-half">` +
             (R.title ? `<span${AT(0.52)} class="fg-lane__t beat">${esc(R.title)}</span>` : '') +
             (R.name ? `<p${AT(0.54)} class="fg-name beat beat--still">${esc(R.name)}</p>` : '') +
@@ -3048,6 +3061,7 @@
                is the real boundary; 0.86 leaves it some room. */
             (R.note ? `<p${AT(0.86)} class="fg-meta beat">${R.note}</p>` : '') +
           `</div>` +
+          (s.art ? `<div${AT(0.16)} class="fg-half__art beat">${FSHOT(s.art)}</div>` : '') +
         `</div>`;
     },
 
@@ -3062,9 +3076,17 @@
       const parts = s.parts || [];
       const b = SPREAD(parts.length, 0.08, 0.74);
       return `<div class="fg-asm">` +
+          /* AN EXPLODED VIEW, NOT A SCATTER. `x`/`y` are the part's CENTRE
+             (the stylesheet translates it by -50%), and `lead`/`ang` are the
+             hairline that runs from it back toward the hub — which is the
+             difference between a drawing of one object taken apart and a
+             collage of seven pictures. Both are authored per part: a ring at
+             equal angles looks like a diagram OF a system. */
           parts.map((p, i) =>
             `<div class="fg-asm__part beat" style="--at:${b[i].toFixed(3)}` +
-            `;left:${p.x};top:${p.y}">${FSHOT(p)}</div>`).join('') +
+            `;left:${p.x};top:${p.y}` +
+            `${p.lead ? `;--lead:${p.lead}` : ''}` +
+            `${p.ang != null ? `;--ang:${p.ang}deg` : ''}">${FSHOT(p)}</div>`).join('') +
           `<div class="fg-asm__hub">${FSHOT(s.hub)}</div>` +
         `</div>` +
         `<div class="scn__in scn__in--foot">` +
@@ -3149,8 +3171,11 @@
     rail: (s) => {
       const items = s.items || [];
       return `<div class="fg-rail" style="--travel:${s.travel || '120vw'}">` +
-          items.map((it, i) =>
-            (i ? `<i class="fg-arrow" aria-hidden="true"></i>` : '') +
+          /* NO ARROWS BETWEEN THEM. There were six, and they said "and then"
+             to a reader already looking at six things in a row. The strip is
+             flush — one gap of a single pixel — so the run reads as one
+             length of film rather than as a row of cards. */
+          items.map((it) =>
             `<div class="fg-rail__i">${FSHOT(it)}` +
               `<span class="fg-rail__n">${esc(it.n || '')}</span>` +
             `</div>`).join('') +
@@ -3243,11 +3268,14 @@
         (s.h ? `<h2${AT(0.03)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
         `<div class="fg-world">` +
           `<div class="fg-icon" aria-hidden="true">${esc(s.icon || 'X0')}</div>` +
-          (s.homes || []).map((sh, i) =>
-            `<div${AT(0.3 + i * 0.12)} class="beat">${FSHOT(sh)}</div>`).join('') +
-          (s.dark
-            ? `<div${AT(0.5)} class="beat fg-wipe">${FSHOT(s.light || s.dark)}` +
-                `<div class="fg-wipe__b">${FSHOT(s.dark)}</div>` +
+          /* A STACK, NOT A ROW. Two home screens side by side read as a
+             comparison — which is not what this scene is about; it is about
+             the icon being one of forty things on somebody's phone. One
+             slightly behind and above the other is how two objects of the
+             same kind sit together without being compared. */
+          ((s.homes || []).length
+            ? `<div class="fg-world__stack">` + s.homes.map((sh, i) =>
+                `<div${AT(0.3 + i * 0.1)} class="beat">${FSHOT(sh)}</div>`).join('') +
               `</div>`
             : '') +
         `</div>` +
@@ -3317,7 +3345,8 @@
     scenes: [],
 
     build(p) {
-      const film = el('div', { class: 'film' });
+      const film = el('div', { class: 'film', 'data-tone': 'light' });
+      this.film = film;
       const acts = [];
 
       (p.scenes || []).forEach((s) => {
@@ -3327,7 +3356,18 @@
         if (s.act) acts.push({ label: s.act, id: s.id });
 
         const scn = el('section', {
-          class: `scn scn--${s.kind}${s.white ? ' scn--white' : ''}`
+          /* AND A HOOK PER SCENE, not just per kind. `scn--object` is shared
+             by the cold open, the flagship and the end card, so a rule
+             written for one of the three matched all three or, keyed to the
+             id, matched nothing — which is what happened to scene 02's
+             editorial split. `data-scene` is the address of one scene. */
+          'data-scene': s.id,
+          /* `dark` IS PUNCTUATION, NOT A THEME. Seven of the twenty-six
+             scenes are black and the rest are white; a scene redefines the
+             film's six colour tokens and nothing else in the stylesheet
+             knows it happened. The old `white` flag is gone — white is the
+             ground now, so a flag for it would name the default. */
+          class: `scn scn--${s.kind}${s.dark ? ' scn--dark' : ''}`
             + `${s.rest ? ' scn--rest' : ''}`,
           id: s.id,
           style: `--dur:${s.dur || 120}svh`,
@@ -3367,6 +3407,7 @@
         n,
         top: 0,
         len: 1,
+        dark: n.classList.contains('scn--dark'),
         vid: $('.fg-vid[data-scrub] video', n),
         p: -1,
       }));
@@ -3419,6 +3460,7 @@
       const y = App.y();
       const vh = this.vh || innerHeight;
       let act = null;
+      let tone = this.tone || 'light';
 
       this.scenes.forEach((s) => {
         /* off screen by more than a screen in either direction — leave it
@@ -3440,8 +3482,17 @@
             else s.vid.currentTime = t;
           }
         }
-        if (rTop <= vh * 0.5) act = s.n.id;
+        if (rTop <= vh * 0.5) { act = s.n.id; tone = s.dark ? 'dark' : 'light'; }
       });
+
+      /* THE CHROME TAKES THE SCENE'S TONE. The progress rule and the act dots
+         are fixed, so they sit over whichever scene is on screen — and no
+         single grey clears 4.5:1 on both white and near-black. Written once
+         per change, not per frame. */
+      if (this.film && tone !== this.tone) {
+        this.tone = tone;
+        this.film.dataset.tone = tone;
+      }
 
       if (this.bar) {
         const fp = Math.min(1, Math.max(0, (y - this.first) / this.total));

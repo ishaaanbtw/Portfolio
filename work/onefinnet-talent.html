@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Onefinnet Talent — Ishaan Gupta</title>
 <meta name="description" content="A B2B hiring platform that automates sourcing, shortlisting and screening.">
-<meta name="theme-color" content="#100e0c">
+<meta name="theme-color" content="#ffffff">
 <!-- The one font the page always needs, started before the stylesheet has been
      parsed. Without this the request only begins once the CSS is read and the
      first glyph is wanted, which is a swap you can see. The italic and the mono
@@ -119,7 +119,10 @@
      makes the same decision again, so the module is correct on its own if
      this ever fails to run, and the theme pod is not drawn on this page at
      all — see section 19 of the stylesheet. -->
-<script>document.documentElement.classList.add('is-dark');</script>
+<script>/* nothing to do: light is the ground, and `Theme.init` locks it.
+     This block is kept so the decision has a stated home in the page
+     itself — see the note above — rather than only in site.js, which
+     runs at the end of the body. */</script>
 </head>
 <body data-page="project" data-project="onefinnet-talent">
 
