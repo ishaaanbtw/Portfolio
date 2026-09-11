@@ -1,0 +1,11 @@
+Satoshi Variable — Indian Type Foundry (ITF)
+Version 2.000
+
+Licence terms: https://fontshare.com/terms
+
+This Font Software is protected under domestic and international trademark and copyright law. You agree to identify the ITF fonts by name and credit the ITF's ownership of the trademarks and copyrights in any design or production credits.
+
+Kept beside the font because the licence requires the ITF fonts to be
+identified by name and ITF credited as owner of the trademark and
+copyright. Text above is taken verbatim from the font file itself
+(name table IDs 13 and 14), not retyped.

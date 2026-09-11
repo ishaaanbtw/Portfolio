@@ -830,7 +830,7 @@ window.SITE = {
             { id: 'x0-open', act: 'I · Premise', kind: 'object', dur: 130,
               rest: true, dark: true,
               word: 'X0',
-              shot: { label: 'X0 card', treat: 'lift',
+              shot: { kind: 'render', dia: 'object', subject: 'The X0 card, lit from one side', treat: 'lift',
                 of: 'The card, three-quarter view, one hard key light from the left, on black. Transparent PNG at 3x so it can sit in front of the letters.' },
               kicker: 'Cypherock X0 · mobile beta',
               h: 'Self-custody, without the seminar.',
@@ -863,9 +863,9 @@ window.SITE = {
                leaves the frame slowly and does not come back; three costs are
                struck through behind it. */
             { id: 'x0-subtract', kind: 'strike', dur: 180,
-              gone: { label: 'X1 vault device', treat: 'lift',
+              gone: { kind: 'render', dia: 'object', subject: 'The X1 vault device', treat: 'lift',
                 of: 'The X1 device on a light ground, same key light as the card. This is the object that exits the frame and does not return.' },
-              stays: { label: 'Card + phone', ratio: 0.8, treat: 'lift',
+              stays: { kind: 'render', dia: 'tap', subject: 'The card held against a phone, mid-tap', ratio: 0.8, treat: 'lift',
                 of: 'The X0 card held against the back of a phone, mid-tap, same lighting. The two objects that are left.' },
               h: 'The phone was already in their hand. So we stopped shipping a screen.',
               items: ['Hardware to manufacture', 'Freight and returns', 'Certification, per market'],
@@ -992,10 +992,9 @@ window.SITE = {
                   'Built to scale to features nobody had specced.',
                   'Developer friendly.',
                 ],
-                note: 'Argued with competitor analysis and a cost-to-effort case — not with taste.',
               },
               /* the third track: full height, off the right edge of the window */
-              art: { label: 'CySync components',
+              art: { kind: 'figma', dia: 'gridmany', subject: 'The CySync component sheet', ratio: 0.74,
                 of: 'The existing CySync component sheet. Redact anything non-public before this ships.' } },
 
             /* THE ASSEMBLY, and the longest scene in the film. The system is
@@ -1013,28 +1012,26 @@ window.SITE = {
                at 1440x760 rather than computed: an exploded view is drawn,
                not solved. */
             { id: 'x0-assembly', kind: 'asm', dur: 200,
-              hub: { label: 'Button', ratio: 2.4,
-                of: 'The primary button component, isolated, at 3x.' },
+              hub: { kind: 'figma', dia: 'button', subject: 'The primary button', ratio: 2.4 },
               parts: [
-                { label: 'Navigation', x: '50%', y: '11%', ratio: 3.2,
+                { kind: 'figma', tight: true, dia: 'nav', subject: 'Navigation bar', x: '50%', y: '11%', ratio: 3.2,
                   lead: '4rem', ang: 90,
                   of: 'The navigation bar as rebuilt in month three, isolated.' },
-                { label: 'Spacing', x: '16%', y: '21%',
+                { kind: 'figma', tight: true, dia: 'spacing', subject: '8pt spacing grid', x: '16%', y: '21%',
                   lead: '5.5rem', ang: 24,
                   of: 'The 8pt spacing grid as an overlay, transparent background.' },
-                { label: 'Type scale', x: '83%', y: '19%', ratio: 1.3,
+                { kind: 'figma', tight: true, dia: 'typescale', subject: 'Type scale', x: '83%', y: '19%', ratio: 1.3,
                   lead: '5.5rem', ang: 152,
                   of: 'The type scale specimen and its two weights, isolated.' },
-                { label: 'Colour', x: '11%', y: '58%',
+                { kind: 'figma', tight: true, dia: 'swatches', subject: 'Colour tokens', x: '11%', y: '58%',
                   lead: '5.5rem', ang: -8,
                   of: 'The colour token swatch set, named.' },
-                { label: 'Icons', x: '88%', y: '55%', ratio: 1.4,
+                { kind: 'figma', tight: true, dia: 'iconset', subject: 'Icon set', x: '88%', y: '55%', ratio: 1.4,
                   lead: '5.5rem', ang: 187,
                   of: 'The icon set, isolated on a transparent ground.' },
-                { label: 'Input', x: '26%', y: '77%', ratio: 2.2,
-                  lead: '4.5rem', ang: -40,
-                  of: 'Text input, every state, close crop.' },
-                { label: 'Card', x: '75%', y: '79%', ratio: 1.5,
+                { kind: 'figma', tight: true, dia: 'input', subject: 'Text input, every state', x: '26%', y: '77%', ratio: 2.2,
+                  lead: '4.5rem', ang: -40 },
+                { kind: 'figma', tight: true, dia: 'cardcomp', subject: 'Card component', x: '75%', y: '79%', ratio: 1.5,
                   lead: '4.5rem', ang: 218,
                   of: 'The card component, isolated.' },
               ],
@@ -1048,7 +1045,7 @@ window.SITE = {
               n: 'Decision 02',
               h: 'Four directions. Only one survived the people who’d have to sell it.',
               p: 'The only way to argue about four directions is to see them at the same time.',
-              shot: { label: 'The wall',
+              shot: { kind: 'photo', dia: 'wall', subject: 'Four directions pinned up together', ratio: 1.778,
                 of: 'Photograph — four shortlisted directions pinned up together, wide, shot straight on. Handheld and imperfect is right. Blur anything legible on the rejected three.' },
               cap: 'Direction review — four candidates, one wall, everyone who had a say in the room' },
 
@@ -1058,9 +1055,9 @@ window.SITE = {
                one piece of thinking cleaned up rather than two unrelated
                pictures. */
             { id: 'x0-ia', kind: 'cross', dur: 130,
-              a: { label: 'IA whiteboard', treat: 'paper',
+              a: { kind: 'whiteboard', dia: 'board', subject: 'The IA session with the PM', ratio: 1.4, treat: 'paper',
                 of: 'Photograph — the information-architecture session with the PM. Boxes, arrows, crossings out. Shot square to the wall.' },
-              b: { label: 'The same thing, redrawn', treat: 'paper',
+              b: { kind: 'figma', dia: 'flow', subject: 'The same architecture, redrawn clean', ratio: 1.4, treat: 'paper',
                 of: 'The clean IA diagram in the product’s own type, aligned so its key boxes land on the photograph’s.' },
               cap: 'Information architecture and flow mapping, with the PM, before a single screen was drawn' },
 
@@ -1073,16 +1070,17 @@ window.SITE = {
                 { t: 'The system, churning', stack: true,
                   p: 'It went through rigorous back-and-forth. It was the foundation, so it had to.',
                   shots: [
-                    { label: 'Component v1', ratio: 1.4, of: 'One component, first version.' },
-                    { label: 'v2', ratio: 1.4, of: 'The same component, second version.' },
-                    { label: 'v3', ratio: 1.4, of: 'Third version — the one that stayed.' },
+                    { kind: 'figma', dia: 'versions', subject: 'One component, first version', ratio: 1.4 },
+                    { kind: 'figma', dia: 'versions', subject: 'The same component, second version', ratio: 1.4 },
+                    { kind: 'figma', dia: 'versions', subject: 'Third version — the one that stayed', ratio: 1.4 },
                   ] },
                 { t: 'Everyone else, unblocked', stack: true,
                   p: 'Low-fidelity flows kept stakeholders and engineers moving. Most of the simplification in the shipped app started as somebody else’s comment.',
                   shots: [
-                    { label: 'Low-fi flow', ratio: 1.6, of: 'The low-fidelity flow frames as presented to stakeholders.' },
-                    { label: 'A review thread', ratio: 1.5, of: 'A real design-review thread. Blur names, faces, and any unreleased feature names before this is public.' },
-                    { label: 'What changed', ratio: 1.5, of: 'The affected screen before and after, identical crop.' },
+                    { kind: 'figma', dia: 'flow', subject: 'The low-fidelity flow, as presented', ratio: 1.6, of: 'The low-fidelity flow frames as presented to stakeholders.' },
+                    { kind: 'thread', subject: 'A real design-review thread', ratio: 1.5,
+                      of: 'Blur names, faces and any unreleased feature names before this is public.' },
+                    { kind: 'screenshot', dia: 'beforeafter', subject: 'The affected screen, before and after', ratio: 1.5 },
                   ] },
               ] },
 
@@ -1127,22 +1125,28 @@ window.SITE = {
               /* the macro crop, enlarged past its frame and cut by the right
                  edge of the window — so the scene has an object in it and is
                  not three columns of prose */
-              shot: { label: 'One of theirs', treat: 'macro', ratio: 0.487,
-                of: 'A competitor setup screen, cropped close on the step that fails. No brand mark in frame.' } },
+              shot: { kind: 'device', dia: 'phonescreen', subject: 'A competitor setup screen, cropped close', treat: 'macro', ratio: 0.487,
+                of: 'On the step that fails. No brand mark in frame.' } },
 
             /* ITERATION AS CRAFT RATHER THAN INDECISION, and it is credible
                because it is small and specific. The one place in the film
                where the reader's axis and the content's axis differ, which is
                worth it because six versions of one component genuinely is a
                horizontal idea. */
-            { id: 'x0-button', kind: 'rail', dur: 170, travel: '150vw',
+            /* TRAVEL IS MEASURED, NOT GUESSED. It was 150vw, and at 1440 the
+               track is six 232px cells plus a 36vw lead-in — about 133vw
+               end to end. Sweeping it 150vw takes every one of the six off
+               the left edge, so the scene's last quarter was an empty frame
+               with a headline in it. 46vw brings the sixth to centre-right
+               and holds it there while the line arrives. */
+            { id: 'x0-button', kind: 'rail', dur: 170, travel: '46vw',
               items: [
-                { n: '01', label: 'v1', ratio: 1.2, treat: 'strip', of: 'Button, first version. Identical crop across all six.' },
-                { n: '02', label: 'v2', ratio: 1.2, treat: 'strip', of: 'Second version.' },
-                { n: '03', label: 'v3', ratio: 1.2, treat: 'strip', of: 'Third version.' },
-                { n: '04', label: 'v4', ratio: 1.2, treat: 'strip', of: 'Fourth version.' },
-                { n: '05', label: 'v5', ratio: 1.2, treat: 'strip', of: 'Fifth version.' },
-                { n: '06', label: 'shipped', ratio: 1.2, treat: 'strip', of: 'The sixth — the one every primary action in the product was built from.' },
+                { n: '01', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v1', ratio: 1.2, treat: 'strip', of: 'Button, first version. Identical crop across all six.' },
+                { n: '02', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v2', ratio: 1.2, treat: 'strip', of: 'Second version.' },
+                { n: '03', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v3', ratio: 1.2, treat: 'strip', of: 'Third version.' },
+                { n: '04', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v4', ratio: 1.2, treat: 'strip', of: 'Fourth version.' },
+                { n: '05', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v5', ratio: 1.2, treat: 'strip', of: 'Fifth version.' },
+                { n: '06', kind: 'figma', tight: true, dia: 'button', subject: 'The sixth — shipped', ratio: 1.2, treat: 'strip', of: 'The sixth — the one every primary action in the product was built from.' },
               ],
               h: 'Six versions. Then every primary action in the product was built from it.' },
 
@@ -1232,12 +1236,10 @@ window.SITE = {
               icon: 'X0',
               h: 'At 60 pixels it still has to be the one you trust.',
               homes: [
-                { label: 'iOS home screen', ratio: 0.62,
+                { kind: 'device', dia: 'homescreen', subject: 'X0 on a real iPhone home screen', ratio: 0.62,
                   of: 'The X0 icon in place on a real iPhone home screen, among ordinary apps.' },
-                { label: 'Android home screen', ratio: 0.62,
-                  of: 'The same, on Android.' },
-                { label: 'In dark mode', ratio: 0.62,
-                  of: 'One product screen in dark mode, matched crop to its light version.' },
+                { kind: 'device', dia: 'homescreen', subject: 'The same, on Android', ratio: 0.62 },
+                { kind: 'device', dia: 'phonescreen', subject: 'One product screen in dark mode', ratio: 0.62 },
               ],
               p: 'The icon had to survive being one of forty things on somebody’s home screen.' },
 
@@ -1273,14 +1275,18 @@ window.SITE = {
               h: 'I’m building the system so it can be read by a model, not just by a designer.',
               prompt: 'a portfolio screen using N45, one primary action',
               out: [
-                { label: 'Naming convention', ratio: 1.5,
+                { kind: 'figma', dia: 'namelist', subject: 'The component naming convention', ratio: 1.5,
                   of: 'Close crop of the component naming panel, showing the convention that makes this possible.' },
-                { label: 'What it generated', ratio: 0.62,
-                  of: 'The screen that prompt produced. Unretouched — the flaws are the point.' },
-                { label: 'Hand-corrected', ratio: 0.62,
+                { kind: 'device', dia: 'phonescreen', subject: 'The screen that prompt produced', ratio: 0.62,
+                  of: 'Unretouched — the flaws are the point.' },
+                { kind: 'device', dia: 'phonescreen', subject: 'The same screen, corrected', ratio: 0.62,
                   of: 'The same screen after correction, for the delta.' },
               ],
-              p: 'It gets to about two-thirds right. That’s fine — as the app grows, the system has to grow with it.' },
+              /* the closing line moved into the label under the number: the
+                 scene is a number, a claim and a prompt, and a fourth
+                 element restating the claim is the thing that made this
+                 frame feel busy. */
+              sub: 'accuracy of designs generated from N45 by prompt, today — and the system has to grow as the app does' },
 
             /* THE ONLY REFLECTIVE SCENE, at reading size rather than poster
                size, and the scale shift is the signal: this one is meant to
@@ -1302,7 +1308,7 @@ window.SITE = {
                behind it gone. The object no longer needs the title. No
                flourish on the last frame. */
             { id: 'x0-end', kind: 'object', dur: 120, dark: true, rest: true,
-              shot: { label: 'X0 card', treat: 'lift',
+              shot: { kind: 'render', dia: 'object', subject: 'The X0 card, lit from one side', treat: 'lift',
                 of: 'Scene 01’s render, reused exactly. The repetition is the point — do not reshoot it.' },
               still: true,
               h: 'Cypherock X0',

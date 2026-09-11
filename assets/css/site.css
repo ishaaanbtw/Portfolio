@@ -13340,61 +13340,217 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   z-index: 3;
 }
 
-/* --- a picture, and a picture that is not taken yet ---------------------- */
+/* --- A FRAME THAT IS WAITING FOR SOMETHING, AND SAYS WHAT --------------------
 
-/* THE RESERVED FRAME, AND IT IS NOT A BOX. The first build drew a bordered,
-   cross-hatched rectangle with a coloured label in it, thirty-six times —
-   which is both a repeated layout and, worse, a frame around a picture
-   telling you where to look. This is a flat tint with the shot named quietly
-   inside it, and every scene gives it a different SHAPE and PLACE. That is
-   where the variety has to come from; not from decorating the hole. */
+   WHAT THIS REPLACES, TWICE. First a bordered cross-hatched rectangle, then a
+   flat grey tint. Both were the same mistake in different clothes: a hole in
+   the page with a word in it. Thirty-five of them.
+
+   A reserved frame has one job — tell the person filling it what belongs
+   there, why it belongs there, and how big it is — and it should look like a
+   drawing from an art director's layout, not like a missing image. So:
+
+     CROP MARKS at the four corners instead of a box. Registration marks are
+     a prepress detail; they say "this frame was specified" where a border
+     says "this content is missing". They also let the frame sit on white
+     without drawing a rectangle around nothing.
+
+     A SKELETON PER ASSET TYPE, drawn in hairlines. A phone screenshot gets a
+     device outline with a notch, a desktop screenshot gets a browser bar
+     with three dots, a whiteboard gets rules and marks, a Figma export gets
+     the canvas dot grid, a photograph gets a polaroid band, a review thread
+     gets three chat pills, a video gets a play triangle. You can tell what
+     is coming from across the room, which is what "correct hierarchy" means
+     in a wireframe.
+
+     THREE LINES AND A CORNER. Kind, subject, and why — then the measured
+     ratio and shape in the opposite corner. The ratio is COMPUTED from the
+     frame's own aspect-ratio rather than typed in the data, so it can never
+     disagree with the frame it is printed on.
+
+   NO FILL. The frame is transparent: it sits on whatever ground its scene
+   has, so the black scenes get white wire and the white scenes get black
+   wire, from the same tokens as everything else. A grey box on white is a
+   dead pixel area; a wire frame on white is a layout. */
+
 .fg-shot {
   position: relative;
   width: 100%;
   aspect-ratio: var(--ratio, var(--fg-card));
-  background: var(--fg-fill);
-  border-radius: 2px;
+  background: transparent;
   display: grid;
-  /* AT THE TOP, and that is a clipping fix as much as a typographic one.
-     Three scenes crop their frames at the bottom edge on purpose — the two
-     objects standing on a horizon in scene 04, the strip bleeding off both
-     edges in scene 16 — so a label anchored to the bottom of the frame was
-     inside the part being cut off. Measured: 30px and 185px of it. Only a
-     full-bleed frame keeps its text at the bottom, because that is where its
-     scrim is. */
   align-content: start;
   justify-items: start;
-  gap: 0.3rem;
-  padding: clamp(0.875rem, 2vw, 1.5rem);
+  gap: 0.2rem;
+  padding: clamp(1rem, 1.9vw, 1.6rem);
   max-width: 100%;
   min-width: 0;
   overflow: clip;
+  color: var(--fg-ink);
 }
 
-.fg-shot__l {
-  /* a shot name has to be allowed to break, because it is inside a frame
-     that can be a hundred pixels wide */
-  overflow-wrap: anywhere;
+/* THE CROP MARKS. Four L-shapes, one per corner, drawn as background
+   gradients on the frame itself — no extra elements, and they scale with the
+   frame instead of with the type. */
+.fg-shot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --m: var(--fg-ink);
+  --t: 1px;
+  --l: clamp(0.75rem, 1.6vw, 1.25rem);
+  background-image:
+    linear-gradient(var(--m), var(--m)), linear-gradient(var(--m), var(--m)),
+    linear-gradient(var(--m), var(--m)), linear-gradient(var(--m), var(--m)),
+    linear-gradient(var(--m), var(--m)), linear-gradient(var(--m), var(--m)),
+    linear-gradient(var(--m), var(--m)), linear-gradient(var(--m), var(--m));
+  background-size:
+    var(--l) var(--t), var(--t) var(--l),
+    var(--l) var(--t), var(--t) var(--l),
+    var(--l) var(--t), var(--t) var(--l),
+    var(--l) var(--t), var(--t) var(--l);
+  background-position:
+    left top, left top,
+    right top, right top,
+    left bottom, left bottom,
+    right bottom, right bottom;
+  background-repeat: no-repeat;
+  opacity: 0.55;
+}
+
+/* THE DRAWING. One SVG per frame, centred in it, at one third opacity so it
+   reads as a schematic underneath the words rather than as artwork competing
+   with them. `non-scaling-stroke` is the whole reason this is SVG: these
+   frames run from 90px wide to 800px and a hairline has to stay a hairline
+   across all of it. */
+.fg-shot__skel {
+  position: absolute;
+  inset: 16%;
+  pointer-events: none;
+  opacity: 0.34;
+  display: grid;
+  place-items: center;
+}
+
+.fg-shot__skel svg {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.fg-shot__skel svg * { vector-effect: non-scaling-stroke; }
+
+/* the drawing sits lower in a frame whose words are at the top, so the two
+   are never on the same line */
+.fg-shot__skel { inset: 34% 14% 14%; }
+.fg-shot--tight .fg-shot__skel { inset: 40% 16% 12%; }
+.fg-shot--full .fg-shot__skel { inset: 14% 14% 32%; }
+
+/* --- what the frame says ------------------------------------------------- */
+
+.fg-shot__k {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-ink);
+  position: relative;
+  z-index: 2;
+}
+
+.fg-shot__s {
+  font-size: clamp(0.8125rem, 1.05vw, 0.9375rem);
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.008em;
+  color: var(--fg-ink);
+  max-width: 24ch;
+  position: relative;
+  z-index: 2;
+  text-wrap: pretty;
+}
+
+.fg-shot__w {
   font-size: 0.6875rem;
-  font-weight: 550;
+  line-height: 1.45;
+  color: var(--fg-quiet);
+  max-width: 30ch;
+  margin: 0.15rem 0 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* THE MEASUREMENT, in the opposite corner from the words, in mono because it
+   is a specification and not prose. */
+.fg-shot__m {
+  position: absolute;
+  right: clamp(1rem, 1.9vw, 1.6rem);
+  bottom: clamp(0.875rem, 1.6vw, 1.4rem);
+  font-family: var(--mono);
+  font-size: 0.625rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--fg-dim);
+  color: var(--fg-quiet);
+  text-align: right;
+  z-index: 2;
 }
 
-.fg-shot__d {
-  font-size: 0.75rem;
-  line-height: 1.5;
-  color: var(--fg-quiet);
-  margin: 0;
-  max-width: 40ch;
+/* A SMALL FRAME CANNOT CARRY FOUR LINES. Under about 200px the subject and
+   the reason go and the kind carries it alone — which is right for the seven
+   component frames in the exploded view and the six in the button strip,
+   where the reader is looking at a composition rather than reading a brief. */
+/* A SMALL FRAME KEEPS THE SUBJECT AND DROPS THE KIND — the opposite of the
+   first cut, and the first cut was wrong in a way that only showed once it
+   was on screen. Seven parts of the exploded view all reading FIGMA is seven
+   identical labels in one composition: true, useless, and the repeated-layout
+   problem in miniature. "8pt spacing grid" and "Icon set" are what somebody
+   filling these frames needs; that they are Figma exports is obvious from
+   the scene. The kind stays in the markup for a screen reader. */
+.fg-shot--tight { padding: 0.6rem; gap: 0.1rem; }
+.fg-shot--tight .fg-shot__w,
+.fg-shot--tight .fg-shot__m { display: none; }
+.fg-shot--tight .fg-shot__k {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
+.fg-shot--tight .fg-shot__s {
+  font-size: 0.625rem;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  max-width: 14ch;
+}
+
+/* AND NO MEASUREMENT ON A FRAME THAT IS DELIBERATELY CUT. The corner it
+   lives in is the corner these three lose: the two objects standing on the
+   horizon in scene 04 are cropped 40px at the bottom, and the version strip
+   in scene 16 runs 8svh off both edges. Measured at 18px and 210px outside
+   the stage. The kind and the subject are at the top of the frame and
+   survive; the ratio is the line worth losing. */
+.fg-gone .fg-shot__m,
+.fg-stays .fg-shot__m,
+.scn--tracks .fg-vers .fg-shot__m { display: none; }
+.fg-shot--tight .fg-shot__skel { opacity: 0.2; }
+.fg-shot--tight::before { --l: 0.5rem; opacity: 0.4; }
+
+/* full bleed: the words move off the crop marks and onto the scrim */
+.fg-shot--full { align-content: end; padding: clamp(1.5rem, 3vw, 3rem); }
+.fg-shot--full::before { --l: clamp(1.25rem, 2.4vw, 2rem); }
+.fg-shot--full .fg-shot__s { font-size: clamp(1rem, 1.5vw, 1.25rem); max-width: 30ch; }
 
 /* the treatments — a shot declares one in the data, and no two neighbouring
    scenes declare the same */
 
-/* FULL BLEED, edge to edge, ignoring the stage's gutter. The one treatment
-   that needs a scrim, because type sits on it. */
 .fg-shot--full,
 .fg-img--full {
   position: absolute;
@@ -13404,31 +13560,31 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   width: 100%;
   height: 100%;
   object-fit: cover;
-  align-content: end;
 }
 
-/* A MACRO CROP. The object is enlarged past the frame and cut by it, which is
-   what makes a detail read as a detail rather than as a small picture. */
-.fg--macro { scale: 1.55; transform-origin: 30% 40%; }
+/* A MACRO CROP, AND ONLY THE PICTURE IS ENLARGED. Scaling the whole frame
+   scaled its caption too: measured, the words flew 111px outside the stage.
+   The frame holds its place and its type; the drawing inside it grows past
+   the edges and is cut by them, which is what a macro crop is. */
+.fg--macro .fg-shot__skel { scale: 1.55; transform-origin: 30% 40%; }
+.fg--macro.fg-img { scale: 1.55; transform-origin: 30% 40%; }
 
-/* PAPER. A photograph of a room, printed and put down on the page — very
-   slightly off-square, with one soft shadow. Used exactly once, on the IA
-   whiteboard, because the point of it is that it is the only physical object
-   in the film. */
+/* PAPER. A photograph printed and put down on the page — slightly off-square,
+   one soft shadow. Used exactly once, on the IA whiteboard, because the point
+   of it is that it is the only physical object in the film. */
 .fg--paper {
-  background: #fff;
   padding: 0.75rem 0.75rem 2.25rem;
   rotate: -1.1deg;
   box-shadow: var(--fg-shadow);
-  border-radius: 1px;
+  background: var(--fg-ground);
 }
 
-/* A STRIP CELL — square-ish, flush with its neighbours, no gap, so a run of
-   them reads as one strip of film rather than as a row of cards. */
+/* A STRIP CELL — flush with its neighbours, so a run of them reads as one
+   length of film rather than as a row of cards. */
 .fg--strip { border-radius: 0; }
 
 /* LIFTED. An object presented on the page with air under it. */
-.fg--lift { box-shadow: var(--fg-shadow); border-radius: 4px; }
+.fg--lift { box-shadow: var(--fg-shadow); background: var(--fg-ground); }
 
 .fg-img {
   display: block;
@@ -13914,9 +14070,15 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   translate: -50% -50%;
 }
 
-.fg-asm__part .fg-shot { aspect-ratio: var(--ratio, var(--fg-card)); padding: 0.5rem; align-content: start; }
-.fg-asm__part .fg-shot__d { display: none; }
-.fg-asm__part .fg-shot__l { font-size: 0.5625rem; letter-spacing: 0.08em; }
+/* THE FRAME IS OPAQUE, so the leader line stops at its edge. The leader is
+   drawn from the part's centre outward and sits behind it, but "behind" only
+   hides it if there is something to hide it — on a transparent frame the line
+   ran straight across the drawing, through the type scale and the swatches. A
+   ground is what makes a leader read as a leader rather than as a scratch. */
+.fg-asm__part .fg-shot {
+  aspect-ratio: var(--ratio, var(--fg-card));
+  background: var(--fg-ground);
+}
 
 /* the leader line, drawn from the part back toward the middle of the frame.
    `--lead` is its length and `--ang` its bearing, both authored. */
@@ -13973,12 +14135,17 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
    spot — aligned so two or three boxes sit in the same place in both, which
    is what makes it read as one piece of thinking cleaned up rather than as
    two unrelated pictures. The only physical object in the film. */
+/* THE STACK NEEDS A SIZE. Both prints sit in the same grid cell, so the cell
+   is as tall as the taller of them — and with the two of them absolutely
+   positioned it was as tall as nothing at all. The ratio is the shots' own. */
 .fg-cross {
   position: relative;
-  width: min(78vw, 52rem);
+  width: min(72vw, 46rem);
   justify-self: center;
   display: grid;
 }
+
+.fg-cross > * { min-width: 0; }
 
 .fg-cross > * { grid-area: 1 / 1; }
 .fg-cross__b { opacity: clamp(0, calc((var(--p) - 0.4) * 4), 1); rotate: 0.6deg; }
@@ -13993,7 +14160,7 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
    length of something rather than as three pictures. */
 .fg-track2 {
   display: grid;
-  grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: clamp(1.5rem, 5vw, 4.5rem);
   width: 100%;
   align-items: center;
@@ -14006,9 +14173,13 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 .fg-vers { position: relative; display: grid; }
 .fg-vers > * { grid-area: 1 / 1; }
 
-.scn--tracks .fg-lane:first-child { position: relative; }
-.scn--tracks .fg-lane:first-child .fg-vers { height: 116svh; margin-block: -8svh; }
-.scn--tracks .fg-lane:first-child .fg-shot { height: 100%; aspect-ratio: auto; border-radius: 0; }
+/* BOTH TRACKS THE SAME SIZE, which is the whole point of the scene: two
+   things advancing at once. The left one was `height: 116svh` with
+   `aspect-ratio: auto` — a full-height empty column, bleeding 8svh off both
+   edges, which put its own label above the top of the screen. What the
+   reader got was two paragraphs floating in a blank frame. */
+.scn--tracks .fg-vers { width: 100%; }
+.scn--tracks .fg-vers .fg-shot { aspect-ratio: 1.4; }
 
 /* --- 17 · the findings, sorted ------------------------------------------- */
 
@@ -14017,6 +14188,29 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
    up and cut by the right edge of the window, so the scene has an object in
    it rather than being a page of text. */
 .scn--pins .scn__in { max-width: none; }
+
+/* the competitor screen: tall, off the right edge, and behind the findings —
+   present rather than presented, because the findings are the point and the
+   screen is the evidence */
+.fg-pins__crop {
+  position: absolute;
+  right: calc(-1 * clamp(1.25rem, 6.6vw, 7rem));
+  top: 50%;
+  translate: 0 -50%;
+  width: min(30vw, 22rem);
+  z-index: -1;
+  opacity: 0.5;
+}
+
+/* AND THIS FRAME BLEEDS, so it keeps only the two lines that stay on screen.
+   It sits a full gutter off the right edge on purpose; its bottom-right
+   measurement was 69px outside the window and its subject 18px, which makes
+   a reserved frame that no longer says what it is waiting for. Kind and
+   subject are top-left, which is the half still in frame. */
+.fg-pins__crop .fg-shot__m { display: none; }
+.fg-pins__crop .fg-shot__s { max-width: 15ch; }
+
+@media (max-width: 60rem) { .fg-pins__crop { display: none; } }
 
 .fg-groups {
   display: grid;
@@ -14060,9 +14254,11 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 }
 
 .fg-rail__i { flex: 0 0 auto; display: grid; gap: 0.6rem; justify-items: start; }
-.fg-rail__i .fg-shot { width: clamp(8rem, 17vw, 13rem); border-radius: 0; }
+.fg-rail__i .fg-shot { width: clamp(9rem, 19vw, 14.5rem); border-radius: 0; }
 .fg-rail__n { font-size: 0.6875rem; font-weight: 550; letter-spacing: 0.06em; color: var(--fg-quiet); }
-.fg-rail__i:last-child .fg-shot { background: var(--fg-fill-2); }
+/* the survivor: the only frame in the strip whose crop marks are at full
+   strength, which is how a strip says "this one" without a label */
+.fg-rail__i:last-child .fg-shot::before { opacity: 1; }
 /* THE SURVIVOR IS MARKED BY ITS GROUND AND ITS LABEL, not by an arrow.
    There were brass arrows between the six versions; they said "and then" six
    times to a reader who could already see six things in a row, and hiding
@@ -14461,8 +14657,6 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   .fg-split { grid-template-columns: 1fr; gap: 1.25rem; margin-right: 0; }
   .fg-split .fg-half__art { display: none; }
   .fg-track2 { grid-template-columns: 1fr; }
-  .scn--tracks .fg-lane:first-child .fg-vers { height: auto; margin-block: 0; }
-  .scn--tracks .fg-lane:first-child .fg-shot { aspect-ratio: 1.4; }
   .fg-dev-wrap { grid-template-columns: 1fr; gap: 1.25rem; }
   .fg-prin { grid-template-columns: 1fr; gap: 1.25rem; }
   .fg-world { grid-template-columns: 1fr; gap: 1.25rem; }
@@ -14512,11 +14706,13 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 
   .fg-out > * { flex: 1 1 0; min-width: 0; height: 100%; }
 
-  /* THE SHOT DESCRIPTION IS FOR WHOEVER IS FILLING THE SLOT, and at 390px
-     the frame is 148px wide — a sentence naming the lighting and the crop
-     does not fit in it and was overflowing its own frame by up to 37px. The
-     label stays, because that is what tells a READER what is coming. */
-  .fg-shot__d { display: none; }
+  /* AT 390px A FRAME IS 150px WIDE and cannot hold four lines. The reason
+     goes and the measurement goes; the kind and the subject stay, because
+     between them they are the whole point of a reserved frame. */
+  .fg-shot__w,
+  .fg-shot__m { display: none; }
+  .fg-shot { padding: 0.7rem; }
+  .fg-shot::before { --l: 0.6rem; }
   .fg-wall li:nth-child(2n),
   .fg-wall li:nth-child(3n),
   .fg-wall li:nth-child(5) { margin-left: 0; }
@@ -14536,3 +14732,155 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
    again in `Theme.init` — see both. */
 
 body[data-page='project'] .tmode { display: none; }
+
+/* --- 19b. THE ART DIRECTION PASS ------------------------------------------
+
+   The story was right and the execution was safe. Everything below is the
+   last five per cent: the typographic scale opened up, the density brought
+   down to one dominant thing per frame, and the reserved frames turned into
+   wireframes. Stated as an override block rather than edited into the rules
+   above, so the diff reads as a pass and can be lifted out in one piece.
+
+   --- SATOSHI ------------------------------------------------------------
+
+   Satoshi Variable 2.000, Indian Type Foundry, self-hosted at
+   assets/fonts/Satoshi-Variable.woff2 — 42KB, converted from the variable
+   TTF, which is smaller than the Geist it sits beside. One `wght` axis,
+   300 to 900. Fontshare and every CDN on this account's allowlist are
+   blocked from both machines, so it could not be fetched; the TTF was
+   supplied and converted here. The licence is kept beside it at
+   assets/fonts/Satoshi-LICENCE.txt because ITF's terms require the font to
+   be identified by name and ITF credited.
+
+   THE AXIS DEFAULTS TO 900, which is the one trap in this file. Satoshi's
+   `fvar` table has its default instance at Black, so a browser that failed
+   to parse the weight RANGE on the @font-face below would render every
+   word of the film in Black. `font-weight: 300 900` there and an explicit
+   400 on the element are belt and braces against that.
+
+   THE FILM ONLY, deliberately. Every measurement below — the svh ceilings,
+   the 21ch headline measure, the tracking — was set against Satoshi's
+   metrics. Taking it site-wide is one line, and it wants its own pass over
+   the home page and About rather than being inherited by accident. */
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../fonts/Satoshi-Variable.woff2') format('woff2-variations');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+.film {
+  --fg-face: 'Satoshi', 'Geist', 'Geist Fallback', ui-sans-serif, -apple-system,
+    system-ui, sans-serif;
+  font-family: var(--fg-face);
+  font-weight: 400;      /* see the note above: the axis defaults to Black */
+
+  /* --- THE SCALE, OPENED UP ---------------------------------------------
+
+     The previous scale ran from 17px body to a 104px headline: a ratio of
+     six, which is a big magazine and a small keynote. The pages this is
+     measured against run ten to fourteen, and they get there from BOTH
+     ends — the display type goes up and the supporting copy comes DOWN.
+     Small copy next to enormous type is what makes the enormous type read
+     as confidence rather than as shouting; small copy next to medium type
+     just reads as small copy.
+
+     So: display up about 18 per cent, body down to 16px, labels to 11px.
+     The svh ceilings stay — they are what keeps a headline inside its own
+     frame — but they are raised in step. */
+  --fg-poster: min(clamp(2.5rem, 8.2vw, 7rem), 10.5svh);
+  --fg-poster-l: min(clamp(3rem, 11vw, 10rem), 13.5svh);
+  --fg-poster-xl: min(clamp(4.5rem, 23vw, 21rem), 32svh);
+  --fg-lede: clamp(0.9375rem, 1.05vw, 1rem);
+}
+
+/* TIGHTER, AND NEGATIVE. Display type at 0.94 with -0.042em tracking is the
+   setting; at the previous 1.02 and -0.032em it was reading as a large
+   paragraph. The optical correction matters more the bigger the type gets,
+   which is why the long measure gets its own, looser value: a 32-character
+   line at -0.042em starts to close up. */
+.film .fg-h {
+  line-height: 0.94;
+  letter-spacing: -0.042em;
+  font-weight: 560;
+  max-width: 19ch;
+}
+
+.film .fg-h--l { letter-spacing: -0.05em; max-width: 15ch; line-height: 0.92; }
+.film .fg-h--wide { max-width: 28ch; letter-spacing: -0.032em; line-height: 1.0; }
+
+/* and the supporting copy holds a caption measure, not a paragraph measure —
+   34 characters, so it reads as a note beside the statement rather than as
+   something you settle into */
+.film .fg-p { max-width: 34ch; line-height: 1.5; }
+
+.film .fg-kick { font-size: 0.6875rem; letter-spacing: 0.16em; }
+
+/* --- ONE DOMINANT, ONE SECONDARY, ONE SUPPORTING ------------------------
+
+   Counted honestly, four scenes carried five or six elements. Every removal
+   below is a line of chrome or a closing restatement — not a word of the
+   argument, which is what the brief protects.
+
+     scene 17  the eyebrow over a headline that already says it
+     scene 22  a closing line restating the headline
+     scene 24  the eyebrow, and the closing line
+     scene 12  the footnote under the five ticks
+
+   The scenes now run: a statement, the evidence, and one measurement. */
+[data-scene='x0-competitors'] .fg-kick,
+[data-scene='x0-world'] .fg-p,
+[data-scene='x0-67'] .fg-kick { display: none; }
+
+/* --- WHITESPACE WITH SOMETHING IN IT ------------------------------------
+
+   Three scenes were mostly air: the market field, the pinned device and the
+   four principles all sat at about half the frame. Air is the point, but air
+   around something small is emptiness — so the objects grow into it rather
+   than the margins shrinking. */
+
+.film .fg-dots__end { height: min(58svh, 27rem); }
+.film .fg-dev { width: min(62vw, 24rem); }
+.film .fg-prog { width: min(62vw, 24rem); }
+.film .fg-dev--sm { width: min(46vw, 17rem); }
+.film .fg-icon { width: clamp(7rem, 20vw, 15rem); }
+.film .fg-obj__art { width: min(52vw, 32rem); }
+
+/* the exploded view: the hub grows and the parts with it, so the leaders
+   have something to connect rather than crossing open white */
+.film .fg-asm__hub { width: min(30vw, 19rem); }
+.film .fg-asm__part { width: clamp(5.5rem, 14vw, 11rem); }
+
+/* --- THE ONE ASYMMETRY RULE --------------------------------------------
+
+   Nothing in the film is centred on both axes except the question in scene
+   06 and the chain in scene 09, and both earn it: one is the film's only
+   moment of stillness and the other is a single continuous move across the
+   frame. Everything else is anchored to an edge. This is the rule that
+   stops twenty-six frames averaging out into a centred column. */
+.film .scn__in--mid { justify-items: center; }
+
+/* --- 25 · THE REFLECTION READS RAGGED, NOT RULED -----------------------
+
+   Three columns under three hairlines was still three of the same thing in
+   a row. The middle one — the trade-off, which is the one worth reading —
+   now sits lower and wider than its neighbours, and the rules are gone. A
+   column that matters should look different from the ones beside it. */
+.film .fg-cards {
+  grid-template-columns: 0.85fr 1.15fr 0.85fr;
+  align-items: start;
+  gap: clamp(1.5rem, 5vw, 4.5rem);
+}
+
+.film .fg-card { border-top: 0; padding-top: 0; }
+.film .fg-card--lift { translate: 0 clamp(1.5rem, 5vh, 3.5rem); }
+.film .fg-card--lift .fg-card__b { font-size: 0.9375rem; }
+.film .fg-card__h { color: var(--fg-quiet); letter-spacing: 0.14em; font-size: 0.625rem; }
+.film .fg-card--lift .fg-card__h { color: var(--fg-ink); }
+
+@media (max-width: 60rem) {
+  .film .fg-cards { grid-template-columns: 1fr; gap: 2rem; }
+  .film .fg-card--lift { translate: 0; }
+}

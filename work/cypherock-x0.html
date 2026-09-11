@@ -11,6 +11,11 @@
      first glyph is wanted, which is a swap you can see. The italic and the mono
      are not preloaded on purpose: one word on the home page is italic and only
      case studies set code, so both can arrive late without anything moving. -->
+<link rel="preload" href="../assets/fonts/Satoshi-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Geist stays preloaded too: the film is set in Satoshi but the hero and
+     the ending above and below it are the site's own furniture, and those
+     are Geist. Two faces on this one page, both self-hosted, both started
+     before the stylesheet is parsed. -->
 <link rel="preload" href="../assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT.
      What this is: site.js section 5c2c, site.css section 44. Why it cannot

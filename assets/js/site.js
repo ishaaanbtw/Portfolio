@@ -2786,13 +2786,213 @@
      position, and a position wants a scroll handler with a rAF gate, which is
      what this is. */
 
+
+  /* --- WHAT IS COMING, DRAWN --------------------------------------------
+
+     Sixteen schematics, one per kind of artefact. Each is a diagram of the
+     THING — three offset rectangles for a component's versions, boxes and
+     connectors for a flow, a ladder for a type scale — and not a picture of
+     the file it will arrive in.
+
+     SVG AND NOT CSS, for one reason that matters: `vector-effect:
+     non-scaling-stroke`. These frames run from 90px wide in the exploded
+     view to 800px in the two-track scene, and a drawing built from
+     percentage borders does not survive that — measured, a browser-chrome
+     dot that read at 150px was a 20px blob at 800px. A hairline here is one
+     device pixel at every size.
+
+     Each carries its own viewBox, so a navigation bar is drawn wide and a
+     phone screen is drawn tall, and `meet` centres it in whatever frame it
+     lands in. */
+  const SKEL = {
+    /* one component, presented */
+    button: '<svg viewBox="0 0 120 56"><rect x="26" y="16" width="68" height="24" rx="12"/>'
+      + '<line x1="46" y1="28" x2="74" y2="28"/></svg>',
+
+    /* a bar with four stops in it */
+    nav: '<svg viewBox="0 0 160 44"><rect x="3" y="9" width="154" height="26" rx="5"/>'
+      + '<circle cx="27" cy="22" r="3.2"/><circle cx="66" cy="22" r="3.2"/>'
+      + '<circle cx="105" cy="22" r="3.2"/><circle cx="144" cy="22" r="3.2"/></svg>',
+
+    /* bands and the gaps between them — the gaps are the subject */
+    spacing: '<svg viewBox="0 0 120 80"><rect x="10" y="12" width="100" height="10"/>'
+      + '<rect x="10" y="30" width="100" height="10"/><rect x="10" y="48" width="100" height="18"/>'
+      + '<line x1="6" y1="22" x2="6" y2="30" stroke-dasharray="1 2"/>'
+      + '<line x1="6" y1="40" x2="6" y2="48" stroke-dasharray="1 2"/></svg>',
+
+    /* a ladder: four sizes, largest first */
+    typescale: '<svg viewBox="0 0 120 80"><rect x="12" y="10" width="86" height="14"/>'
+      + '<rect x="12" y="32" width="62" height="10"/><rect x="12" y="50" width="44" height="7"/>'
+      + '<rect x="12" y="64" width="30" height="5"/></svg>',
+
+    /* six swatches in a row */
+    swatches: '<svg viewBox="0 0 132 48"><rect x="6" y="12" width="18" height="24"/>'
+      + '<rect x="28" y="12" width="18" height="24"/><rect x="50" y="12" width="18" height="24"/>'
+      + '<rect x="72" y="12" width="18" height="24"/><rect x="94" y="12" width="18" height="24"/>'
+      + '<rect x="116" y="12" width="12" height="24"/></svg>',
+
+    /* a grid of marks, each one different enough to read as an icon */
+    iconset: '<svg viewBox="0 0 120 80"><circle cx="20" cy="20" r="7"/>'
+      + '<rect x="45" y="13" width="14" height="14"/><path d="M79 27l7-14 7 14z"/>'
+      + '<path d="M13 47h14M20 40v14"/><circle cx="52" cy="47" r="7"/>'
+      + '<rect x="79" y="40" width="14" height="14" rx="7"/>'
+      + '<path d="M13 67l7 7 7-7"/><path d="M45 74l14-14"/><rect x="79" y="67" width="14" height="7"/></svg>',
+
+    /* a field, with its label above it */
+    input: '<svg viewBox="0 0 140 56"><rect x="10" y="10" width="34" height="6"/>'
+      + '<rect x="10" y="24" width="120" height="20" rx="4"/>'
+      + '<line x1="20" y1="34" x2="20" y2="34.1" stroke-width="2"/></svg>',
+
+    /* a card: a picture band and two lines under it */
+    cardcomp: '<svg viewBox="0 0 110 80"><rect x="10" y="8" width="90" height="64" rx="5"/>'
+      + '<rect x="10" y="8" width="90" height="32"/><rect x="18" y="48" width="54" height="6"/>'
+      + '<rect x="18" y="58" width="34" height="5"/></svg>',
+
+    /* three of the same thing, stacked back in time */
+    versions: '<svg viewBox="0 0 120 80"><rect x="26" y="10" width="66" height="40" rx="4"/>'
+      + '<rect x="20" y="18" width="66" height="40" rx="4"/>'
+      + '<rect x="14" y="26" width="66" height="40" rx="4"/>'
+      + '<line x1="24" y1="46" x2="52" y2="46"/></svg>',
+
+    /* boxes and the connectors between them */
+    flow: '<svg viewBox="0 0 150 80"><rect x="6" y="30" width="28" height="20" rx="3"/>'
+      + '<rect x="56" y="12" width="28" height="20" rx="3"/><rect x="56" y="48" width="28" height="20" rx="3"/>'
+      + '<rect x="112" y="30" width="28" height="20" rx="3"/>'
+      + '<path d="M34 40h12M46 40V22h10M46 40v18h10M84 22h14v18h14M84 58h14V40"/></svg>',
+
+    /* the same, but by hand: boxes off-square, a crossing out */
+    board: '<svg viewBox="0 0 150 80"><rect x="8" y="14" width="34" height="22" rx="1" transform="rotate(-1.5 25 25)"/>'
+      + '<rect x="58" y="22" width="34" height="22" rx="1" transform="rotate(1 75 33)"/>'
+      + '<rect x="108" y="12" width="34" height="22" rx="1" transform="rotate(-1 125 23)"/>'
+      + '<path d="M42 26h14M92 32h14"/><path d="M20 52l24 16M44 52L20 68"/>'
+      + '<path d="M64 58h50" stroke-dasharray="3 3"/></svg>',
+
+    /* four sheets pinned up together */
+    wall: '<svg viewBox="0 0 150 80"><rect x="8" y="14" width="30" height="42" transform="rotate(-1 23 35)"/>'
+      + '<rect x="45" y="18" width="30" height="42" transform="rotate(1.5 60 39)"/>'
+      + '<rect x="82" y="13" width="30" height="42" transform="rotate(-0.5 97 34)"/>'
+      + '<rect x="119" y="19" width="26" height="42" transform="rotate(1 132 40)"/>'
+      + '<circle cx="23" cy="18" r="1.6"/><circle cx="60" cy="22" r="1.6"/>'
+      + '<circle cx="97" cy="17" r="1.6"/><circle cx="132" cy="23" r="1.6"/></svg>',
+
+    /* somebody said something, somebody answered */
+    thread: '<svg viewBox="0 0 130 80"><circle cx="16" cy="18" r="7"/>'
+      + '<rect x="30" y="11" width="74" height="14" rx="7"/>'
+      + '<circle cx="114" cy="42" r="7"/><rect x="38" y="35" width="66" height="14" rx="7"/>'
+      + '<circle cx="16" cy="64" r="7"/><rect x="30" y="57" width="52" height="14" rx="7"/></svg>',
+
+    /* one screen, twice, with the change between them */
+    beforeafter: '<svg viewBox="0 0 150 80"><rect x="8" y="10" width="60" height="60" rx="4"/>'
+      + '<rect x="82" y="10" width="60" height="60" rx="4"/>'
+      + '<line x1="75" y1="6" x2="75" y2="74" stroke-dasharray="3 3"/>'
+      + '<rect x="18" y="24" width="40" height="8"/><rect x="18" y="40" width="28" height="8"/>'
+      + '<rect x="92" y="24" width="40" height="8"/><path d="M92 44h22"/></svg>',
+
+    /* a phone with something on it */
+    phonescreen: '<svg viewBox="0 0 60 110"><rect x="8" y="4" width="44" height="102" rx="7"/>'
+      + '<line x1="24" y1="9" x2="36" y2="9" stroke-width="2"/>'
+      + '<rect x="16" y="22" width="28" height="7"/><rect x="16" y="36" width="20" height="5"/>'
+      + '<rect x="16" y="50" width="28" height="20" rx="3"/>'
+      + '<rect x="16" y="90" width="28" height="9" rx="4.5"/></svg>',
+
+    /* a home screen: the icon among the other forty */
+    homescreen: '<svg viewBox="0 0 60 110"><rect x="6" y="4" width="48" height="102" rx="7"/>'
+      + '<rect x="14" y="20" width="10" height="10" rx="2.5"/><rect x="28" y="20" width="10" height="10" rx="2.5"/>'
+      + '<rect x="42" y="20" width="8" height="10" rx="2.5"/>'
+      + '<rect x="14" y="38" width="10" height="10" rx="2.5" stroke-width="2"/>'
+      + '<rect x="28" y="38" width="10" height="10" rx="2.5"/><rect x="42" y="38" width="8" height="10" rx="2.5"/>'
+      + '<rect x="14" y="56" width="10" height="10" rx="2.5"/><rect x="28" y="56" width="10" height="10" rx="2.5"/>'
+      + '<rect x="14" y="92" width="36" height="10" rx="5"/></svg>',
+
+    /* a naming convention is a tree */
+    namelist: '<svg viewBox="0 0 130 80"><rect x="10" y="10" width="46" height="7"/>'
+      + '<path d="M14 17v10h8M14 27v14h8M14 41v14h8"/>'
+      + '<rect x="24" y="24" width="40" height="6"/><rect x="24" y="38" width="52" height="6"/>'
+      + '<rect x="24" y="52" width="34" height="6"/>'
+      + '<path d="M28 30v8h8"/><rect x="38" y="63" width="44" height="6"/></svg>',
+
+    /* an object, lit, on a surface */
+    object: '<svg viewBox="0 0 140 90"><rect x="26" y="20" width="88" height="52" rx="6"/>'
+      + '<rect x="36" y="32" width="24" height="16" rx="2"/>'
+      + '<ellipse cx="70" cy="80" rx="52" ry="4" stroke-dasharray="2 3"/></svg>',
+
+    /* the tap: a card against the back of a phone */
+    tap: '<svg viewBox="0 0 110 110"><rect x="34" y="10" width="44" height="90" rx="7"/>'
+      + '<rect x="10" y="44" width="46" height="28" rx="4"/>'
+      + '<path d="M62 50c6 3 6 11 0 14" stroke-dasharray="2 2"/></svg>',
+
+    /* a sheet with a great many components on it */
+    gridmany: '<svg viewBox="0 0 130 90"><rect x="6" y="6" width="118" height="78"/>'
+      + '<path d="M6 30h118M6 54h118M45 6v78M84 6v78" stroke-dasharray="2 3"/>'
+      + '<rect x="14" y="14" width="22" height="8" rx="4"/><circle cx="64" cy="18" r="6"/>'
+      + '<rect x="93" y="13" width="22" height="10" rx="2"/>'
+      + '<rect x="14" y="38" width="22" height="8" rx="2"/><rect x="53" y="38" width="22" height="8" rx="4"/>'
+      + '<rect x="93" y="36" width="22" height="12" rx="2"/>'
+      + '<rect x="14" y="62" width="22" height="12" rx="2"/><circle cx="64" cy="68" r="6"/>'
+      + '<rect x="93" y="62" width="22" height="8" rx="4"/></svg>',
+
+    /* a prompt, and a caret waiting in it */
+    prompt: '<svg viewBox="0 0 140 50"><rect x="8" y="14" width="124" height="22" rx="4"/>'
+      + '<path d="M18 25h6"/><rect x="30" y="22" width="52" height="6"/>'
+      + '<line x1="90" y1="19" x2="90" y2="31" stroke-width="2"/></svg>',
+  };
+
+  /* the word for the kind of file. The DRAWING is chosen separately, off
+     `dia` in the data, because two Figma exports can be completely different
+     things — the colour tokens and the icon set are both 'figma' and neither
+     is served by drawing a canvas. */
+  const KIND = {
+    render:     'Render',
+    photo:      'Photo',
+    whiteboard: 'Whiteboard',
+    stickies:   'Sticky notes',
+    figma:      'Figma',
+    screenshot: 'Screenshot',
+    device:     'Screen',
+    thread:     'Thread',
+    video:      'Video',
+    sheet:      'Spec sheet',
+  };
+
+  /* what to draw when a frame does not name a drawing of its own */
+  const DIA = {
+    render: 'object', photo: 'wall', whiteboard: 'board', stickies: 'wall',
+    figma: 'gridmany', screenshot: 'beforeafter', device: 'phonescreen',
+    thread: 'thread', video: 'tap', sheet: 'namelist',
+  };
+
+  /* THE RATIO LABEL IS COMPUTED, NOT TYPED. A frame that prints "16:9" while
+     being cut to 1.5 is worse than a frame that prints nothing, and a number
+     in the data drifts the moment the frame is retuned. Nearest named ratio,
+     measured off the frame's own aspect-ratio. */
+  const NAMED = [
+    [3.2, '32:10'], [2.4, '12:5'], [2.2, '11:5'], [16 / 9, '16:9'],
+    [1.6, '8:5'], [1.586, 'ID-1 card'], [1.5, '3:2'], [1.4, '7:5'],
+    [4 / 3, '4:3'], [1.2, '6:5'], [1, '1:1'], [0.8, '4:5'],
+    [2 / 3, '2:3'], [0.62, '5:8'], [0.487, '19.5:9'],
+  ];
+
+  /* MEASURED, SO THE BOUNDARIES HAVE TO BE RIGHT. The first cut put the
+     square band at 0.9–1.25, which printed "6:5 · Square" on a frame that is
+     plainly landscape. A square reads as square to about a sixth either
+     side of 1:1 and no further. */
+  const SHAPE = (r) => (r >= 2.5 ? 'Wide strip'
+    : r >= 1.15 ? 'Landscape'
+    : r >= 0.87 ? 'Square'
+    : r >= 0.55 ? 'Portrait'
+    : 'Phone frame');
+
   const FSHOT = (s) => {
     if (!s) return '';
-    /* NO DEFAULT HERE ANY MORE. An unstated ratio falls through to
-       `--fg-card` in the stylesheet — 1.586, the ID-1 card proportion — so
-       the film's default frame is the shape of the product. Stating 1.6 here
-       would have quietly overridden that on every shot. */
+    const ratio = +s.ratio || 1.586;
     const r = s.ratio ? ` style="--ratio:${+s.ratio}"` : '';
+    let near = NAMED[0];
+    NAMED.forEach((n) => {
+      if (Math.abs(n[0] - ratio) < Math.abs(near[0] - ratio)) near = n;
+    });
+    const kind = KIND[s.kind] || 'Asset';
+    const dia = SKEL[s.dia] || SKEL[DIA[s.kind]] || SKEL.gridmany;
+    const measure = s.full ? 'Full bleed' : `${near[1]} · ${SHAPE(ratio)}`;
     /* A REAL PICTURE IF THERE IS ONE, AND A STATED SHOT IF THERE IS NOT.
        The film needs frames that do not exist yet — a wall of four printed
        directions, a whiteboard, a hand tapping a card. The alternative to a
@@ -2809,10 +3009,17 @@
       return `<img class="fg-img${s.full ? ' fg-img--full' : ''}${t}" src="${url(s.src)}"` +
         ` alt="${esc(s.alt || '')}" loading="lazy" decoding="async"${r}>`;
     }
-    return `<div class="fg-shot${s.full ? ' fg-shot--full' : ''}${t}"${r}>` +
-      `<span class="fg-shot__l">${esc(s.label || 'Shot')}</span>` +
-      (s.of ? `<p class="fg-shot__d">${esc(s.of)}</p>` : '') +
-    `</div>`;
+    /* `tight` is for a frame small enough that four lines would be noise —
+       the seven parts of the exploded view, the six cells of the button
+       strip. The kind carries it alone there. */
+    return `<figure class="fg-shot` +
+        `${s.full ? ' fg-shot--full' : ''}${s.tight ? ' fg-shot--tight' : ''}${t}"${r}>` +
+      `<i class="fg-shot__skel" aria-hidden="true">${dia}</i>` +
+      `<span class="fg-shot__k">${esc(kind)}</span>` +
+      `<span class="fg-shot__s">${esc(s.subject || s.label || 'Asset')}</span>` +
+      (s.of ? `<span class="fg-shot__w">${esc(s.of)}</span>` : '') +
+      `<span class="fg-shot__m">${esc(measure)}</span>` +
+    `</figure>`;
   };
 
   /* WHEN A BEAT BELONGS, as a style attribute and nothing else. `at` is a
@@ -3112,9 +3319,14 @@
        frames are aligned so a few boxes sit in the same place in both. That
        alignment is what makes it read as one idea redrawn instead of two
        unrelated images. */
+    /* NOT `full` HERE, and that was a real collapse. `full` means `position:
+       absolute; inset: 0` — it fills a frame that has its own size. These two
+       are PRINTED and put down: the paper treatment gives them padding, a
+       shadow and a degree of rotation, which needs a box of their own. Asking
+       for both left the scene as a 60px strip. */
     cross: (s) => `<div class="fg-cross">` +
-          `<div>${FSHOT(Object.assign({ full: true }, s.a))}</div>` +
-          `<div class="fg-cross__b">${FSHOT(Object.assign({ full: true }, s.b))}</div>` +
+          `<div>${FSHOT(s.a)}</div>` +
+          `<div class="fg-cross__b">${FSHOT(s.b)}</div>` +
         `</div>` +
         (s.cap ? `<p class="fg-cap">${esc(s.cap)}</p>` : ''),
 
@@ -3159,7 +3371,14 @@
           `</div>`;
         }).join('') + `</div>` +
         (s.p ? `<p${AT(0.86)} class="fg-p beat">${s.p}</p>` : '') +
-      `</div>`;
+      `</div>` +
+      /* THE MACRO CROP, off the right edge of the window. It was added to the
+         data and never rendered — the scene was three columns of findings and
+         nothing to look at, which is the one thing this film is not allowed
+         to be. Enlarged past its own frame and cut by the window, so the
+         reader is looking at a competitor's screen while reading what is
+         wrong with it. */
+      (s.shot ? `<div${AT(0.2)} class="fg-pins__crop beat">${FSHOT(s.shot)}</div>` : '');
     },
 
     /* --- 19 · six tries at one button -----------------------------------
