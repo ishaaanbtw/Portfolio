@@ -1,123 +1,107 @@
 # Cypherock X0 — the shots the film is waiting for
 
 Generated from the `scenes` array in `assets/js/content.js`. Regenerate rather
-than editing by hand.
+than editing by hand — if this file and the data disagree, the data is right.
 
-**26 scenes · ~4220 svh (about 42 screens) · 35 reserved frames.**
+**26 scenes · ~4340 svh (about 43 screens) · 27 reserved frames.**
 
-The film is white with 6 black scenes as punctuation (`x0-open`, `x0-brief`, `x0-apart`, `x0-dec-1`, `x0-tap`, `x0-end`).
-There is no accent colour anywhere in it — three measured ink tiers do all the
-work (19.0:1 / 7.3:1 / 4.6:1 on white). Every frame that does not state its own
-shape is cut to **1.586**, the ID-1 card proportion.
+The film is white with 6 black scenes as punctuation, and one dark stretch that
+is not punctuation: `x0-system`, the design-system table, which is dark because
+N45 is dark-mode only. **That scene needs nothing — every asset in it is a real
+file.** There is no accent colour anywhere else — three measured ink tiers do all
+the work (19.0:1 / 7.3:1 / 4.6:1 on white). Every frame that does not state its
+own shape is cut to **1.586**, the ID-1 card proportion.
 
-A reserved frame is not a broken image: it renders as a flat tint with the shot
-named in it. To fill one, add a `src` to that object — nothing else changes:
-
-```js
-{ label: 'The wall', src: 'assets/img/x0/process/wall.webp',
-  treat: 'full', of: '...' }
-```
-
-`treat` picks the treatment: `lift` (object with air under it), `paper` (printed
-and put down), `macro` (enlarged past its frame), `strip` (flush with its
-neighbours), `full` (edge to edge). No two neighbouring scenes use the same one.
+Two frames carry a redaction warning and they are not optional: the CySync
+component sheet in `x0-n45`, and the competitor scene in `x0-competitors`,
+which is the one place in this film with real legal exposure.
 
 ---
 
 ## 01 — `x0-open` · object · 130svh
 
-- **X0 card** — The card, three-quarter view, one hard key light from the left, on black. Transparent PNG at 3x so it can sit in front of the letters.
+- **The X0 card, lit from one side** — The card, three-quarter view, one hard key light from the left, on black. Transparent PNG at 3x so it can sit in front of the letters.  
+  `ratio 1.586 (ID-1 card)`
 
 ## 04 — `x0-subtract` · strike · 180svh
 
-- **X1 vault device** — The X1 device on a light ground, same key light as the card. This is the object that exits the frame and does not return.
-- **Card + phone** — The X0 card held against the back of a phone, mid-tap, same lighting. The two objects that are left.
+- **The X1 vault device** — The X1 device on a light ground, same key light as the card. This is the object that exits the frame and does not return.  
+  `ratio 1.586 (ID-1 card)`
+- **The card held against a phone, mid-tap** — The X0 card held against the back of a phone, mid-tap, same lighting. The two objects that are left.  
+  `ratio 0.8`
 
 ## 12 — `x0-n45` · split · 190svh
 
-- **CySync components** — The existing CySync component sheet. Redact anything non-public before this ships.
-
-## 13 — `x0-assembly` · asm · 200svh
-
-- **Button** — The primary button component, isolated, at 3x.
-- **Navigation** — The navigation bar as rebuilt in month three, isolated.
-- **Spacing** — The 8pt spacing grid as an overlay, transparent background.
-- **Type scale** — The type scale specimen and its two weights, isolated.
-- **Colour** — The colour token swatch set, named.
-- **Icons** — The icon set, isolated on a transparent ground.
-- **Input** — Text input, every state, close crop.
-- **Card** — The card component, isolated.
+- **The CySync component sheet** — The existing CySync component sheet. Redact anything non-public before this ships.  
+  `ratio 0.74`
 
 ## 14 — `x0-dec-2` · photo · 160svh
 
-- **The wall** — Photograph — four shortlisted directions pinned up together, wide, shot straight on. Handheld and imperfect is right. Blur anything legible on the rejected three.
+- **Four directions pinned up together** — Photograph — four shortlisted directions pinned up together, wide, shot straight on. Handheld and imperfect is right. Blur anything legible on the rejected three.  
+  `ratio 1.778`
 
 ## 15 — `x0-ia` · cross · 130svh
 
-- **IA whiteboard** — Photograph — the information-architecture session with the PM. Boxes, arrows, crossings out. Shot square to the wall.
-- **The same thing, redrawn** — The clean IA diagram in the product’s own type, aligned so its key boxes land on the photograph’s.
+- **The IA session with the PM** — Photograph — the information-architecture session with the PM. Boxes, arrows, crossings out. Shot square to the wall.  
+  `ratio 1.4`
+- **The same architecture, redrawn clean** — The clean IA diagram in the product’s own type, aligned so its key boxes land on the photograph’s.  
+  `ratio 1.4`
 
 ## 16 — `x0-tracks` · tracks · 170svh
 
-- **Component v1** — One component, first version.
-- **v2** — The same component, second version.
-- **v3** — Third version — the one that stayed.
-- **Low-fi flow** — The low-fidelity flow frames as presented to stakeholders.
-- **A review thread** — A real design-review thread. Blur names, faces, and any unreleased feature names before this is public.
-- **What changed** — The affected screen before and after, identical crop.
+- **One component, first version** — (no direction written yet)  
+  `ratio 1.4`
+- **The same component, second version** — (no direction written yet)  
+  `ratio 1.4`
+- **Third version — the one that stayed** — (no direction written yet)  
+  `ratio 1.4`
+- **The low-fidelity flow, as presented** — The low-fidelity flow frames as presented to stakeholders.  
+  `ratio 1.6`
+- **A real design-review thread** — Blur names, faces and any unreleased feature names before this is public.  
+  `ratio 1.5`
+- **The affected screen, before and after** — (no direction written yet)  
+  `ratio 1.5`
 
 ## 17 — `x0-competitors` · pins · 180svh
 
-- **One of theirs** — A competitor setup screen, cropped close on the step that fails. No brand mark in frame.
+- **A competitor setup screen, cropped close** — On the step that fails. No brand mark in frame.  
+  `ratio 0.487`
 
 ## 18 — `x0-button` · rail · 170svh
 
-- **v1** — Button, first version. Identical crop across all six.
-- **v2** — Second version.
-- **v3** — Third version.
-- **v4** — Fourth version.
-- **v5** — Fifth version.
-- **shipped** — The sixth — the one every primary action in the product was built from.
+- **Button, v1** — Button, first version. Identical crop across all six.  
+  `ratio 1.2`
+- **Button, v2** — Second version.  
+  `ratio 1.2`
+- **Button, v3** — Third version.  
+  `ratio 1.2`
+- **Button, v4** — Fourth version.  
+  `ratio 1.2`
+- **Button, v5** — Fifth version.  
+  `ratio 1.2`
+- **The sixth — shipped** — The sixth — the one every primary action in the product was built from.  
+  `ratio 1.2`
 
 ## 22 — `x0-world` · world · 160svh
 
-- **iOS home screen** — The X0 icon in place on a real iPhone home screen, among ordinary apps.
-- **Android home screen** — The same, on Android.
-- **In dark mode** — One product screen in dark mode, matched crop to its light version.
+- **X0 on a real iPhone home screen** — The X0 icon in place on a real iPhone home screen, among ordinary apps.  
+  `ratio 0.62`
+- **The same, on Android** — (no direction written yet)  
+  `ratio 0.62`
+- **One product screen in dark mode** — (no direction written yet)  
+  `ratio 0.62`
 
 ## 24 — `x0-67` · num · 170svh
 
-- **Naming convention** — Close crop of the component naming panel, showing the convention that makes this possible.
-- **What it generated** — The screen that prompt produced. Unretouched — the flaws are the point.
-- **Hand-corrected** — The same screen after correction, for the delta.
+- **The component naming convention** — Close crop of the component naming panel, showing the convention that makes this possible.  
+  `ratio 1.5`
+- **The screen that prompt produced** — Unretouched — the flaws are the point.  
+  `ratio 0.62`
+- **The same screen, corrected** — The same screen after correction, for the delta.  
+  `ratio 0.62`
 
-## 26 — `x0-end` · object · 120svh · BLACK
+## 26 — `x0-end` · object · 120svh
 
-- **X0 card** — Scene 01’s render, reused exactly. The repetition is the point — do not reshoot it.
+- **The X0 card, lit from one side** — Scene 01’s render, reused exactly. The repetition is the point — do not reshoot it.  
+  `ratio 1.586 (ID-1 card)`
 
----
-
-## Already real, nothing needed
-
-- All twelve onboarding screens — scene 19, the pinned device
-- Four of those twelve again — scene 21, the four principles
-- `x0/x1.webp` and `x0/x0.webp` — scenes 02 and 10
-- `01-splash.webp` — scene 03, what the dot field resolves into
-- `app-walkthrough.mp4` — scene 20, standing in for the tap until it is shot
-
-## Shoot day, highest value first
-
-1. **The X0 card**, one hard key light, three rotations — scenes 01 and 26 (black scenes, so light it on black)
-2. **The tap, on video** — hand, card, phone, tripod, one light — scene 20
-3. **Four directions on the wall**, wide, straight on — scene 14
-4. **The IA whiteboard**, square to the wall — scene 15 (printed, so shoot it flat)
-5. **Six button states**, identical crop — scene 18
-6. **iOS and Android home screens plus one dark-mode screen** — scene 22
-
-## Redact before any of these are public
-
-- The review thread (scene 16) — names, faces, unreleased feature names
-- The CySync component sheet (scene 12) — anything non-public
-- The rejected directions (scene 14) — anything legible on the three that lost
-- Scene 17 names no competitor and reproduces nothing, deliberately. It is still
-  the one scene with legal exposure. Read it before it ships.

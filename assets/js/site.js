@@ -3272,32 +3272,69 @@
         `</div>`;
     },
 
-    /* --- 14 · the assembly ----------------------------------------------
-       The system is proved by building the product out of it on screen. Each
-       part arrives and STAYS — nothing in this scene leaves — and on the
-       last beat the hub has shrunk to the size the parts made room for. The
-       composition is authored: every part states its own corner, because a
-       computed ring of eight boxes looks like a diagram of a system rather
-       than a system. */
-    asm: (s) => {
-      const parts = s.parts || [];
-      const b = SPREAD(parts.length, 0.08, 0.74);
-      return `<div class="fg-asm">` +
-          /* AN EXPLODED VIEW, NOT A SCATTER. `x`/`y` are the part's CENTRE
-             (the stylesheet translates it by -50%), and `lead`/`ang` are the
-             hairline that runs from it back toward the hub — which is the
-             difference between a drawing of one object taken apart and a
-             collage of seven pictures. Both are authored per part: a ring at
-             equal angles looks like a diagram OF a system. */
-          parts.map((p, i) =>
-            `<div class="fg-asm__part beat" style="--at:${b[i].toFixed(3)}` +
-            `;left:${p.x};top:${p.y}` +
-            `${p.lead ? `;--lead:${p.lead}` : ''}` +
-            `${p.ang != null ? `;--ang:${p.ang}deg` : ''}">${FSHOT(p)}</div>`).join('') +
-          `<div class="fg-asm__hub">${FSHOT(s.hub)}</div>` +
-        `</div>` +
-        `<div class="scn__in scn__in--foot">` +
-          `<h2${AT(0.86)} class="fg-h fg-h--wide beat beat--still">${s.h}</h2>` +
+    /* --- THE DESIGN SYSTEM, AS A TABLE -----------------------------------
+
+       There is no container renderer here any more and that is the entire
+       point: an asset is an <img> of a transparent SVG and nothing else. What
+       used to be a `lab` panel — glass, a lit edge, a computed aspect-ratio,
+       a slot label with the pixel count in it — is gone, because every one of
+       those was a frame drawn around somebody's finished artwork.
+
+       An object states where it is, how wide, when it arrives, how it enters
+       and how fast it drifts; the stylesheet turns those into motion off the
+       scene's single `--p`. The height is never stated. The file's own
+       proportion decides it, which is what it means to let a vector be a
+       vector.
+
+       THE PHONE IS NOT IN THE LIST. It is the product, not a sheet from the
+       file; it is there from the first frame and it never arrives. */
+    room: (s) => {
+      const dev = s.device || {};
+      const say = s.say || [];
+      const M = (m) => (m
+        ? `<span class="room__m room__m--${m.at || 'bl'}">` +
+            `<b>${esc(m.n)}</b>` + (m.s ? `<i>${esc(m.s)}</i>` : '') +
+          `</span>`
+        : '');
+      return `<div class="room" style="--gx:${dev.x || '50%'};--gy:${dev.y || '52%'}` +
+          `;--gat:${dev.at == null ? 0.33 : dev.at}">` +
+          (s.objects || []).map((o, i) =>
+            `<div class="room__o" style="--x:${o.x};--y:${o.y};--w:${o.w};--at:${o.at}` +
+              `;--dx:${o.dx || '0px'};--dy:${o.dy || '0px'};--dep:${o.dep || '0px'}` +
+              `;--rot:${o.rot || '0deg'};--spin:${o.spin || '0deg'}` +
+              `;--scl:${o.scl == null ? 0 : o.scl};--dim:${o.dim == null ? 1 : o.dim}` +
+              `;--z:${o.z == null ? 1 : o.z};--ord:${i + 2}` +
+              (o.nw ? `;--nw:${o.nw}` : '') + `">` +
+              `<img src="${url(o.src)}" alt="${esc(o.alt || '')}"` +
+                ` width="${o.pw}" height="${o.ph}" loading="lazy" decoding="async">` +
+              M(o.m) +
+            `</div>`).join('') +
+
+          `<div class="room__dev${dev.src ? '' : ' room__dev--wait'}"` +
+            ` style="--x:${dev.x || '51%'};--y:${dev.y || '50%'}` +
+            `;--w:${dev.w || '17.5rem'};--dep:${dev.dep || '-14px'}` +
+            `;--at:${dev.at == null ? 0 : dev.at};--z:${dev.z || 18}">` +
+            (dev.src
+              ? `<img src="${url(dev.src)}" alt="${esc(dev.alt || '')}"` +
+                ` width="${dev.pw}" height="${dev.ph}" decoding="async">`
+              : M(dev.m)) +
+          `</div>` +
+
+          `<div class="room__veil" style="--vat:${say.length ? say[say.length - 1].at : 0.78}"></div>` +
+          `<div class="room__say">` + say.map((l, i) =>
+            `<div class="room__line" style="--at:${l.at};--to:${l.to}` +
+              `;--sord:${i === 0 ? 0 : 99}">` +
+              (l.mark
+                ? `<span class="room__lockup">` +
+                    `<img class="room__mark" src="${url(l.mark)}" alt="N45"` +
+                    ` width="192" height="192">` +
+                    (l.n ? `<span class="lab-n">${esc(l.n)}</span>` : '') +
+                  `</span>`
+                : (l.n ? `<span class="lab-n">${esc(l.n)}</span>` : '')) +
+              (l.h ? `<h2 class="fg-h">${l.h}</h2>` : '') +
+              (l.p ? `<p class="fg-p">${l.p}</p>` : '') +
+            `</div>`).join('') +
+          `</div>` +
         `</div>`;
     },
 
@@ -3586,8 +3623,13 @@
              film's six colour tokens and nothing else in the stylesheet
              knows it happened. The old `white` flag is gone — white is the
              ground now, so a flag for it would name the default. */
+          /* `lab` IS AN ENVIRONMENT, not a tone. `dark` swaps six colour
+             tokens for one frame; the room additionally brings a ground with
+             glows, a masked grid and a grain, and it runs for eight scenes.
+             The two never apply together. */
           class: `scn scn--${s.kind}${s.dark ? ' scn--dark' : ''}`
-            + `${s.rest ? ' scn--rest' : ''}`,
+            + `${s.lab ? ' scn--lab' : ''}${s.room ? ' scn--room' : ''}` +
+            `${s.rest ? ' scn--rest' : ''}`,
           id: s.id,
           style: `--dur:${s.dur || 120}svh`,
         });
@@ -3626,7 +3668,8 @@
         n,
         top: 0,
         len: 1,
-        dark: n.classList.contains('scn--dark'),
+        dark: n.classList.contains('scn--dark') || n.classList.contains('scn--lab')
+          || n.classList.contains('scn--room'),
         vid: $('.fg-vid[data-scrub] video', n),
         p: -1,
       }));

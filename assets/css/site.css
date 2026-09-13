@@ -14044,68 +14044,6 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   margin: 0;
 }
 
-/* --- 13 · the exploded view ---------------------------------------------- */
-
-/* AN EXPLODED VIEW, NOT A COLLAGE. The eight parts sit off the centre with a
-   hairline leader running from each one back to the hub, which is what turns
-   a scatter of pictures into a drawing of one object taken apart. Every part
-   states its own corner and its own leader angle in the data, so the
-   composition is authored rather than computed — a ring of eight boxes at
-   equal angles looks like a diagram OF a system rather than a system. */
-.fg-asm { position: absolute; inset: 0; display: grid; place-items: center; }
-
-.fg-asm__hub {
-  position: relative;
-  z-index: 3;
-  width: min(26vw, 16rem);
-  scale: calc(1 - var(--p) * 0.18);
-}
-
-.fg-asm__hub .fg-shot { box-shadow: var(--fg-shadow); border-radius: 4px; }
-
-.fg-asm__part {
-  position: absolute;
-  width: clamp(5rem, 12.5vw, 9.5rem);
-  z-index: 2;
-  translate: -50% -50%;
-}
-
-/* THE FRAME IS OPAQUE, so the leader line stops at its edge. The leader is
-   drawn from the part's centre outward and sits behind it, but "behind" only
-   hides it if there is something to hide it — on a transparent frame the line
-   ran straight across the drawing, through the type scale and the swatches. A
-   ground is what makes a leader read as a leader rather than as a scratch. */
-.fg-asm__part .fg-shot {
-  aspect-ratio: var(--ratio, var(--fg-card));
-  background: var(--fg-ground);
-}
-
-/* the leader line, drawn from the part back toward the middle of the frame.
-   `--lead` is its length and `--ang` its bearing, both authored. */
-.fg-asm__part::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: var(--lead, 0px);
-  height: 1px;
-  /* a touch stronger than a divider: this line is doing structural work —
-     it is what turns seven pictures into one object taken apart */
-  background: rgba(16, 16, 18, 0.2);
-  transform-origin: left center;
-  rotate: var(--ang, 0deg);
-  scale: var(--o) 1;
-  z-index: -1;
-}
-
-/* and the whole composition stands down for the one line, because eight lit
-   frames behind a poster headline is two things competing */
-/* 0.86 AND NOT 0.72. Measured: at 0.72 the headline was legible over the
-   dimmed frames and the frames were still legible too, which is two things
-   competing — exactly what this scene spends 200svh earning the right to
-   stop doing. The composition has been watched; it can recede. */
-.scn--asm .fg-asm { opacity: calc(1 - clamp(0, calc((var(--p) - 0.78) * 3), 0.86)); }
-
 /* --- 14 · the photograph ------------------------------------------------- */
 
 .fg-frame-full { position: absolute; inset: 0; }
@@ -14684,9 +14622,6 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   .fg-tie { justify-self: start; }
   .fg-gone,
   .fg-stays { bottom: -1rem; width: 40vw; max-width: 42%; }
-  .fg-asm__part { width: clamp(4rem, 24vw, 6.5rem); }
-  .fg-asm__part::after { display: none; }
-  .fg-asm__hub { width: min(44vw, 11rem); }
   .fg-rail { padding-inline: 8vw; }
   .fg-num { margin-left: 0; }
   /* the fullest frame in the film — a number, a label, a headline, a prompt,
@@ -14848,11 +14783,6 @@ body[data-page='project'] .tmode { display: none; }
 .film .fg-icon { width: clamp(7rem, 20vw, 15rem); }
 .film .fg-obj__art { width: min(52vw, 32rem); }
 
-/* the exploded view: the hub grows and the parts with it, so the leaders
-   have something to connect rather than crossing open white */
-.film .fg-asm__hub { width: min(30vw, 19rem); }
-.film .fg-asm__part { width: clamp(5.5rem, 14vw, 11rem); }
-
 /* --- THE ONE ASYMMETRY RULE --------------------------------------------
 
    Nothing in the film is centred on both axes except the question in scene
@@ -14883,4 +14813,514 @@ body[data-page='project'] .tmode { display: none; }
 @media (max-width: 60rem) {
   .film .fg-cards { grid-template-columns: 1fr; gap: 2rem; }
   .film .fg-card--lift { translate: 0; }
+}
+
+/* --- 19c. THE DESIGN SYSTEM SECTION — eight scenes in a dark room ---------
+
+   WHAT THIS REPLACES. One scene: seven small wireframes scattered round a
+   button with the headline lying across two of them. It did not read as a
+   system, it read as scattered boxes, and the thing it was supposed to be
+   about — that the product was built OUT of this — was nowhere on screen.
+
+   This is that section rebuilt as its own sequence: eight scenes, a dark
+   room, and real containers cut to the exact proportions of the PNGs going
+   into them. The system is the protagonist and the screens are the result,
+   so the system gets the whole act and the product arrives at the end of it.
+
+   WHY IT IS DARK, AND WHY IT IS THE ONLY DARK STRETCH OF THIS LENGTH. N45 is
+   dark-mode only. Six of the film's other scenes are black for punctuation,
+   one frame at a time; this is eight in a row, which is not punctuation, it
+   is a room you walk into. The film goes light → dark → light around it, and
+   the transition is carried by scene 12 fading its ground rather than by a
+   hard cut, so it reads as walking in rather than as a different website.
+
+   THE GROUND IS NOT FLAT BLACK. #090909 with two radial glows, a grid on a
+   radial mask, and a grain — none of which you should be able to name while
+   looking at it. Flat black is a switched-off screen; this is a room with
+   the lights low. */
+
+.scn--lab {
+  --fg-ground: #090909;
+  --fg-fill: #131315;
+  --fg-fill-2: #1b1b1e;
+
+  /* measured on #090909: 18.3:1, 8.2:1, 5.1:1 */
+  --fg-ink: #f5f5f6;
+  --fg-dim: #a5a6ac;
+  --fg-quiet: #80818a;
+
+  --fg-line: rgba(245, 245, 246, 0.13);
+  --fg-line-soft: rgba(245, 245, 246, 0.06);
+  --fg-shadow: 0 2.5rem 5rem rgba(0, 0, 0, 0.75);
+
+  /* the glass a panel is made of */
+  --lab-glass: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
+  --lab-edge: rgba(255, 255, 255, 0.11);
+
+  color: var(--fg-ink);
+}
+
+/* THE ROOM. Three layers on the stage, none of them nameable while you look
+   at it: two soft glows at opposite corners so the frame has a light
+   direction, a grid that exists only in the middle distance, and a grain over
+   everything so the gradients do not band on an OLED. */
+.scn--lab .scn__stage {
+  background:
+    radial-gradient(120% 90% at 78% 8%, rgba(255, 255, 255, 0.055), transparent 62%),
+    radial-gradient(90% 70% at 8% 96%, rgba(150, 170, 255, 0.035), transparent 60%),
+    var(--fg-ground);
+}
+
+/* the grid, faded out at the edges by its own mask so it never meets a
+   border — a grid that reaches the edge of the frame is a table */
+.scn--lab .scn__stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 4.5rem 4.5rem;
+  -webkit-mask-image: radial-gradient(75% 65% at 50% 45%, #000 20%, transparent 78%);
+  mask-image: radial-gradient(75% 65% at 50% 45%, #000 20%, transparent 78%);
+  opacity: calc(0.5 + var(--p) * 0.5);
+}
+
+/* THE GRAIN. An SVG turbulence as a data URI — about 200 bytes, no request,
+   and the only thing standing between two very dark radial gradients and
+   visible banding on an OLED phone. */
+.scn--lab .scn__stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --- 19d. THE DESIGN SYSTEM — one table, and nothing on it in a box -------
+
+   WHAT CHANGED, AND WHY IT HAD TO. The last version put every artefact inside
+   a glass panel with a lit edge, a radius and a long shadow, and gave every
+   panel roughly the same weight. Eleven equal cards on a dark ground is a
+   dashboard. It is also the one thing a design-system section must not be,
+   because the artefacts ARE the design, and a container drawn around each of
+   them says they are not finished enough to stand on their own.
+
+   SO THERE ARE NO CONTAINERS IN HERE AT ALL. Every asset is an <img> of a
+   transparent SVG — no border, no radius, no fill, nothing behind it. They
+   are vectors and they stay vectors: no blur is ever applied to one, at rest
+   or in motion, so they resolve at whatever the display can draw.
+
+   DEPTH WITHOUT BOXES, WHICH IS THE WHOLE PROBLEM THIS SECTION HAD. It comes
+   from the four things that can carry it when nothing is framed: scale,
+   overlap, brightness and rate of drift.
+
+     THE PHONE     sharp, largest, dead centre of gravity, barely moves
+     THE SHEETS    large, behind, dimmed, drifting fastest, cropped by the frame
+     THE PARTS     small, full contrast, nearest, sitting on the phone's edges
+
+   Everything in the second plane is dimmed; everything in the third is at
+   full brightness. That difference, and not an edge, is what makes one thing
+   read as further away than another.
+
+   AND EVERY ONE OF THEM MOVES ON ITS OWN. `dep` is how far an object drifts
+   across the pin and no two share a value; `spin` turns a sheet a degree or
+   two over the same distance; `scl` lets one of them grow while the rest do
+   not. Independent rates over a fixed frame is the entire trick behind
+   "suspended" — one rate for everything is a slideshow. */
+
+.scn--room .scn__stage {
+  /* the background should disappear. The ground, the grid and the grain come
+     from `.scn--lab`; the only light in here is the pool behind the phone,
+     and that belongs to the phone, so it is drawn below rather than here. */
+  background: var(--fg-ground);
+  padding: 0;
+}
+
+.room {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+}
+
+/* the pool of light the phone stands in, centred on the phone itself rather
+   than on the frame — the composition is asymmetric and a glow centred on the
+   viewport would be the one thing in here that is not */
+.room::before {
+  content: '';
+  position: absolute;
+  left: var(--gx, 50%);
+  top: var(--gy, 52%);
+  width: min(62vw, 46rem);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle,
+    rgba(255, 255, 255, 0.075),
+    rgba(255, 255, 255, 0.022) 44%,
+    transparent 70%);
+  /* keyed to the phone, not to the scroll: the light in the room comes up a
+     breath before the thing it is lighting. A floor of 0.3 rather than 0,
+     because the sheets arrive for the first third of the pin and a room with
+     no light in it at all reads as a page that failed to load. */
+  opacity: clamp(0.42, calc((var(--p) - var(--gat, 0.33) + 0.08) * 6), 1);
+}
+
+/* --- one artefact on the table -------------------------------------------
+
+     --q      0 to 1, this object's own arrival, a quarter of the pin
+     --x/--y  where its centre sits, as a percentage of the frame
+     --w      how wide; the height is the file's own, never stated
+     --dx/dy  where it comes FROM, an offset that runs to zero
+     --dep    how far it drifts across the whole pin — never shared
+     --rot    how far off-square it starts
+     --spin   how far it turns across the pin, which is a different thing
+     --scl    how much it grows across the pin
+     --dim    its resting brightness, which is what puts it in a plane
+
+   It arrives from a distance — smaller, transparent, slightly turned — and
+   resolves as it comes. Nothing here fades in flat, and nothing is blurred. */
+
+.room__o {
+  /* a sixth of the pin, not a quarter. At the old rate the last component
+     was still resolving at 0.88 while the closing line had been rising since
+     0.78 — the heading was competing with the assembly instead of answering
+     it. Everything is now in place by 0.67, which buys the silence. */
+  --q: clamp(0, calc((var(--p) - var(--at, 0)) * 6), 1);
+
+  /* AND IT DECELERATES. `--q` is linear in the scroll, which is why the motion
+     read as mechanical: every object travelled at a constant speed and then
+     stopped dead. `--e` is smoothstep — q²(3−2q) — so each one eases out of
+     the distance and settles into its place instead of arriving at it. It is
+     three multiplications of unitless numbers, which is all calc() needs. */
+  --e: calc(var(--q) * var(--q) * (3 - 2 * var(--q)));
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  width: var(--w, 20vw);
+  z-index: var(--z, 1);
+  translate:
+    calc(-50% + (1 - var(--e)) * var(--dx, 0px))
+    calc(-50% + (1 - var(--e)) * var(--dy, 0px) + var(--p) * var(--dep, 0px));
+  scale: calc(0.86 + var(--e) * 0.14 + var(--p) * var(--scl, 0));
+  rotate: calc((1 - var(--e)) * var(--rot, 0deg) + var(--p) * var(--spin, 0deg));
+  opacity: var(--q);
+}
+
+/* THE DIM BELONGS TO THE ARTWORK, NOT TO THE OBJECT. On the wrapper it took
+   the annotation down with the sheet, so a artefact pushed back to 42% had a
+   label at 3:1. Here the picture recedes and the writing stays legible. */
+.room__o img {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: var(--dim, 1);
+}
+
+/* --- the annotation -------------------------------------------------------
+
+   NOT A LABEL AND NOT A CAPTION. Every sheet already carries its own title in
+   the artwork — TYPE SCALE, 4 PT SPACING GRID, NAVIGATION BAR — so repeating
+   it here would be the section talking over itself. These say only what the
+   drawing does not: the count, the base unit, the range. Set in Satoshi like
+   everything else in this film, at nine pixels, tracked wide, and measured to
+   6.8:1 and 4.6:1 on the room's ground — quiet, which is different from
+   unreadable. */
+
+.room__m {
+  position: absolute;
+  display: grid;
+  gap: 0.2rem;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1.25;
+
+  /* TIED TO ITS OWN ARTEFACT, BUT NOT ALL THE WAY. Dimming the label with the
+     sheet took it to 3:1; leaving it at full strength left bright writing
+     floating beside a picture you could barely see. Six tenths of the way
+     back is the relationship: the label is always quieter than the thing it
+     names and always brighter than a whisper. Measured on the room's ground,
+     the two labels in this scene sit at 6.8:1 and 4.6:1. */
+  opacity: calc(0.6 + var(--dim, 1) * 0.4);
+}
+
+.room__m b {
+  font-weight: 500;
+  font-size: 0.5625rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 246, 0.78);
+}
+
+.room__m i {
+  font-style: normal;
+  font-weight: 400;
+  font-size: 0.5625rem;
+  letter-spacing: 0.11em;
+  color: rgba(245, 245, 246, 0.62);
+}
+
+.room__m--bl { top: 100%; left: 0; margin-top: 0.75rem; }
+.room__m--br { top: 100%; right: 0; margin-top: 0.75rem; justify-items: end; text-align: right; }
+.room__m--tl { bottom: 100%; left: 0; margin-bottom: 0.75rem; }
+.room__m--tr { bottom: 100%; right: 0; margin-bottom: 0.75rem; justify-items: end; text-align: right; }
+.room__m--r { left: 100%; top: 0.35rem; margin-left: 1rem; }
+.room__m--l { right: 100%; top: 0.35rem; margin-right: 1rem; justify-items: end; text-align: right; }
+
+/* --- the phone ------------------------------------------------------------
+
+   The one object that is allowed to be an object rather than an artefact: it
+   is the product, not a sheet from the file, and a device is a real bound
+   rather than a box drawn round something. It is there from the first frame,
+   it never arrives, and it barely moves — the six pixels it drifts are the
+   camera leaning in, not the phone leaving.
+
+   It is still empty. Until the screen lands it holds its own size, in the
+   annotation type, and nothing else. */
+
+/* THE PRODUCT ARRIVES AFTER THE SYSTEM THAT MADE IT. It used to be in the
+   frame from the first pixel, which left the section nothing to reveal: you
+   were looking at the finished screen while the parts it was built from were
+   still turning up. Now it resolves at 0.33, once the six sheets are down.
+
+   It does not fly in. There is no entry offset and no rotation — it comes up
+   in place, in the middle of the parts, and the pool of light comes up just
+   ahead of it. A device that slides in from an edge is a slide; a device that
+   resolves where it stands is a reveal. */
+
+.room__dev {
+  --q: clamp(0, calc((var(--p) - var(--at, 0)) * 6), 1);
+  --e: calc(var(--q) * var(--q) * (3 - 2 * var(--q)));
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 52%);
+  width: var(--w, 17.5rem);
+  z-index: var(--z, 18);
+  translate: -50% calc(-50% + var(--p) * var(--dep, -14px));
+  scale: calc(0.93 + var(--e) * 0.07 + var(--p) * 0.03);
+
+  /* IT IS NEVER TRANSLUCENT WHILE ANYTHING IS BEHIND IT, which was the worst
+     thing in the section: the components were visible straight through the
+     screen and it stopped reading as a physical object. The opacity resolves
+     in a fourteenth of the pin — about 170px of scroll — while the scale keeps
+     settling for twice that, so it goes solid almost at once and then comes to
+     rest. Nothing arrives behind it until 0.42, by which time it is opaque. */
+  opacity: clamp(0, calc((var(--p) - var(--at, 0)) * 14), 1);
+}
+
+/* THE RENDER ARRIVED IN ITS OWN BEZEL, so there is no frame here. A CSS device
+   drawn around a device that already has one is two phones. The silhouette is
+   held by light alone: a long shadow underneath for weight, and a wide, very
+   faint white one for the rim — a drop-shadow follows the alpha, so both of
+   them take the shape of the phone rather than of a box. */
+.room__dev img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter:
+    drop-shadow(0 3.5rem 5rem rgba(0, 0, 0, 0.9))
+    drop-shadow(0 0 3rem rgba(255, 255, 255, 0.055));
+}
+
+/* the empty state, for as long as there is one */
+.room__dev--wait {
+  aspect-ratio: 0.462;
+  border-radius: 2.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  background: linear-gradient(168deg, #141417, #0b0b0d 62%, #101013);
+  box-shadow: 0 5rem 9rem rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  display: grid;
+  align-content: end;
+  padding: 1.4rem;
+}
+
+.room__dev--wait .room__m { position: static; }
+
+/* --- the lockup -----------------------------------------------------------
+
+   ONE OBJECT, NOT TWO. The mark and the name used to be two rows of a grid
+   with the name a long way below, which read as an icon that happened to have
+   some text under it. They are a brand lockup: the mark and the name sit on
+   one line, and the gap between them is smaller than the mark is tall, which
+   is the whole of what makes a lockup read as a single thing.
+
+   The optical adjustments are the point here. The mark's artwork is inset
+   inside its own tile, so centring the tile on the cap height leaves the name
+   sitting visually low — it is nudged up a pixel. And the name's letter-
+   spacing puts a gap after its last character that the mark does not have
+   before its first, so the flex gap is set from the left side and the eye
+   does the rest. */
+
+.room__lockup {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.room__mark {
+  display: block;
+  /* 40px, not 34. On a 1469px frame the lockup is the only thing in the
+     opening viewport and at 34 it read as a favicon; 40 gives it the presence
+     of a title card without turning it into a logo slide. */
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.64rem;
+  flex: none;
+}
+
+.room__lockup .lab-n {
+  translate: 0 -1px;
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+}
+
+/* --- what is said ---------------------------------------------------------
+
+   Two lines, same place, one at each end of the pin. Between them the table
+   has the frame to itself. */
+
+.room__say {
+  position: absolute;
+  left: clamp(1.25rem, 6.6vw, 7rem);
+  top: clamp(3rem, 9vh, 6rem);
+  width: min(30rem, 40vw);
+  z-index: 20;
+  display: grid;
+}
+
+.room__say > * { grid-area: 1 / 1; }
+
+.room__line {
+  --o: clamp(0, min(calc((var(--p) - var(--at)) * 9), calc((var(--to) - var(--p)) * 9)), 1);
+  opacity: var(--o);
+  translate: 0 calc((1 - var(--o)) * 0.75rem);
+  display: grid;
+  gap: 0.875rem;
+  justify-items: start;
+
+  /* THE 127-PIXEL HOLE IN THE LOCKUP. Both lines of copy share one grid cell
+     so they can cross-fade in place, which sizes that cell to the taller of
+     the two — and an auto-row grid with the default `align-content` stretches
+     its rows to fill. So the title card's two rows were being pushed apart by
+     the height of a headline that was not even visible yet. */
+  align-content: start;
+}
+
+/* 2.75rem, not 3.25. At 52px the headline was the brightest and largest
+   thing in the final frame and the phone was arguing with it; at 44px the
+   hero is unambiguous and the left stops outweighing the right. */
+.room__line .fg-h { font-size: min(var(--fg-poster), 2.75rem); max-width: 16ch; }
+.room__line .fg-p { font-size: min(var(--fg-lede), 1.0625rem); }
+
+/* SATOSHI, NOT THE MONO. The eyebrow was the last thing in this section set
+   in another face; everything in the room is now one family, which is what
+   makes the annotation type and the headline read as the same voice. */
+.lab-n {
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 246, 0.6);
+}
+
+/* --- the room gives way ---------------------------------------------------
+
+   At the end every artefact is at its own full brightness and the closing
+   line has to land somewhere. Moving it only moves the collision; by then
+   there is nowhere empty left, which is the point of the section. So the room
+   recedes instead — a wash of its own ground rises with the line — and the
+   phone stays above it. The last thing you see is the product, standing in a
+   room that has just gone quiet.
+
+   0.76 and not 0.9: at nine tenths the table is gone and the payoff of
+   watching it fill goes with it. At three quarters it is still a table, and
+   the worst case for the type over it computes at 10:1. */
+
+.room__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  /* THE WASH IS AROUND THE WORDS, NOT ACROSS THE FRAME. A flat veil was the
+     real reason the last frame measured 40% of its ink on the left and 20% on
+     the right: it took the whole room down to a quarter while the copy sat
+     above it at full strength, so no amount of moving objects about could
+     balance it. Raising their brightness did nothing either — 88% of a quarter
+     is still a quarter.
+
+     This is an ellipse centred on the copy column instead. Behind the headline
+     it is the ground, flat and opaque, and the type reads at 18:1; by the far
+     corner it has almost gone, so the system is still on the table over there.
+     The phone sits above it either way. #090909 is `--fg-ground` written out,
+     because a hex custom property cannot carry an alpha into a gradient. */
+  background: radial-gradient(69% 58% at 20% 24%,
+    rgba(9, 9, 9, 1) 0%,
+    rgba(9, 9, 9, 0.94) 45%,
+    rgba(9, 9, 9, 0.38) 75%,
+    rgba(9, 9, 9, 0.04) 100%);
+  opacity: clamp(0, calc((var(--p) - var(--vat, 0.78)) * 7), 1);
+}
+
+/* --- narrow ---------------------------------------------------------------
+
+   Twelve overlapping objects in a 390px frame is a pile, not a composition.
+   The pin is released, the table unstacks into a column in arrival order, and
+   the annotation goes under its artefact where a caption belongs. It loses
+   the depth and keeps the story, which is the right thing to lose. */
+
+@media (max-width: 60rem) {
+  .scn--room { height: auto; }
+  .scn--room .scn__stage {
+    position: static;
+    height: auto;
+    padding: clamp(3rem, 9vh, 5rem) clamp(1.25rem, 6vw, 3rem);
+  }
+
+  .room {
+    position: relative;
+    inset: auto;
+    display: grid;
+    gap: clamp(2rem, 6vh, 3.25rem);
+    justify-items: center;
+  }
+
+  .room::before { display: none; }
+  .room__veil { display: none; }
+
+  .room__o,
+  .room__dev {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    max-width: var(--nw, 100%);
+    translate: 0;
+    scale: 1;
+    rotate: none;
+    opacity: 1;
+    order: var(--ord, 2);
+  }
+
+  .room__dev { width: min(62vw, 15rem); order: 1; }
+
+  .room__m {
+    position: static;
+    margin: 0.6rem 0 0;
+    justify-items: start;
+    text-align: left;
+  }
+
+  /* `display: contents` drops the copy wrapper out of the layout so each line
+     becomes a grid item of the room in its own right and the closing line can
+     take its place at the end, after the sheets. The desktop rule that stacks
+     both lines in one cell has to be undone explicitly — it still matches,
+     and left in place it puts the whole section's copy on one line of type. */
+  .room__say { display: contents; }
+  .room__say > * { grid-area: auto; }
+  .room__line { position: relative; order: var(--sord, 0); opacity: 1; translate: 0; width: 100%; }
 }
