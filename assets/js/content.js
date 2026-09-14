@@ -758,8 +758,16 @@ window.SITE = {
             film2: 'assets/media/x0/hero-film.mp4',
             poster: 'assets/media/x0/hero-film.webp',
             ground: '#030303',
-            mark: 'Cypherock',
-            marksub: 'X0 · Product Design',
+            /* NO MARK IN THE CORNER AT ALL, WHICH IS THE THIRD ANSWER AND THE
+               RIGHT ONE. It was two lines of editorial type — "Cypherock" over
+               "X0 · Product Design" — which is a caption explaining a page that
+               says "Cypherock X0" in its own record four lines lower. It was
+               then the app icon, which says the same thing in one object and
+               still puts a small bright plate in the corner of a frame whose
+               entire composition is one product in the middle of black. The
+               corner is empty now. `filmHero` still renders `mark`/`marksub`
+               or `marklogo` if a study states either; this one states neither.
+               The identity is carried by the record and by the film. */
             /* TWO LINES, BROKEN WHERE THE SENTENCE BREATHES rather than
                wherever the measure runs out. `<br>` and not a width: the
                break is a typographic decision at this size and leaving it to
@@ -771,9 +779,18 @@ window.SITE = {
               { k: 'Role', v: 'Product Designer' },
               { k: 'Focus', v: 'UX · Design System · Product' },
             ],
-            anno: { id: 'X0 / 01', lines: ['Hardware wallet', 'Self-custody'] },
-            cue: 'Scroll to explore',
-            reel: '01',
+            /* NO ANNOTATION AND NO READOUT, AND BOTH WERE REMOVED FOR THE
+               SAME REASON. "X0 / 01 — Hardware wallet / Self-custody" named
+               the object on screen to a reader who has just read a headline
+               about self-custody and a record that says HARDWARE + DIGITAL
+               EXPERIENCE; and the reel counter measured a nine-second loop
+               nobody is timing. Two pieces of chrome competing with the film
+               for the only thing the frame is supposed to hold. The film is
+               the hero; the right half of it is now empty on purpose.
+               `prog: false` is read by `filmHero` — the film still runs, it
+               simply does not draw a ruler under itself. */
+            cue: 'Scroll',
+            prog: false,
           },
           /* `true` COLLAPSES THE ANNOTATION DOCK TO ITS EDGE TAB, which is
              what a film needs. `Rack.HOMES` mounts the dock on project pages

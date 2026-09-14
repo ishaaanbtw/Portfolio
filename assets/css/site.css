@@ -10098,6 +10098,38 @@ body[data-page='project'].phero-up .tools {
     opacity 260ms var(--ease);
 }
 
+/* AND ISHAANLLM STEPS OUT OF THE OPENING SCENE FOR THE SAME REASON THE DOCK
+   DOES, on the same threshold and off the same class.
+
+   The chip is a 164x40 paper-white rounded rectangle fixed to the bottom-right
+   corner, and a hero is one composition on the film's own black with four
+   pieces of flat white chrome on it. On every other page that corner is empty
+   and the chip is the brightest thing in it on purpose; over the first screen
+   of a case study it is the brightest thing in the FRAME, and the eye goes to
+   it before the product. So the opening screen is the film and nothing else,
+   and the chip arrives once the hero has gone — which is also the first moment
+   there is a page for it to be asked about.
+
+   HIDDEN, NOT UNMOUNTED. `Llm` is one global instance in `.hud` that outlives
+   every route change (see section 45), and it must stay mounted so the sidebar
+   row, the keyboard path and an open panel all keep working from the hero. So
+   this is opacity and pointer-events, with `.is-up` winning: if a reader opens
+   it from the rail and then scrolls back up into the film, the panel they have
+   open does not vanish out from under them.
+
+   THE SAME 60% OF THE VIEWPORT the dock waits for, not the cue's 40px. A chip
+   sliding back in over the artwork the instant somebody twitches a trackpad is
+   worse than one that was never hidden. */
+body[data-page='project'].phero-up .llm:not(.is-up) {
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 260ms var(--ease),
+    transform 420ms var(--spring-soft);
+}
+body[data-page='project'].phero-up .llm:not(.is-up),
+body[data-page='project'].phero-up .llm:not(.is-up) .llm__chip { animation: none; }
+
 /* --- on the field ---------------------------------------------------------
 
    A STUDY THAT STATES A COLOUR OWNS THE INK ON IT. Nothing in the caption sits
@@ -10344,7 +10376,30 @@ body[data-page='project'].phero-up .tools {
    not a letterbox. It is a film that got smaller. */
 .fhero__stage {
   position: absolute;
-  inset: 0;
+  /* THE FRAME IS TALLER THAN THE HERO AND HANGS OFF THE TOP OF IT, which is
+     how the product moves up without the film being scaled or repositioned as
+     a picture. `object-fit: cover` fits this box, so extending the box 12%
+     past the top edge moves the film's centre — and with it the card and the
+     hand — 6% of a window higher, and the composition reframes rather than
+     shifts. It is a crop decision, not a transform: nothing is stretched,
+     nothing is offset, and the film is still centred in its own frame.
+
+     `object-position` CANNOT DO THIS, and it is worth saying why. The film is
+     16:9 and the hero on a 1440x900 window is 1.6, so `cover` fits it by
+     height and crops the sides — the vertical axis has no slack at all, and a
+     `center 40%` does exactly nothing at that size. It would start working at
+     some other aspect ratio, which is worse than not working: an adjustment
+     you cannot see on the machine you are tuning it on. */
+  /* -22% / +6% RATHER THAN -22% / 0, AND THE SECOND NUMBER IS THE WHOLE
+     POINT. Hanging the frame further off the top alone makes it taller, and a
+     taller frame under `cover` is a BIGGER film — the product grows as it
+     rises, which is a different edit from the one being asked for and it eats
+     the sides of the shot. Pulling the bottom in by the same amount the top
+     goes out keeps the box exactly the height it was, so this is a pure
+     translation: identical crop, identical scale, the whole composition six
+     per cent of a window higher. The strip of hero left bare under the frame
+     is `--fh-ground`, which is the film's own black. */
+  inset: -22% 0 6% 0;
   z-index: 0;
   background: var(--fh-ground);
   /* NOT A CLICK TARGET, AND THIS IS THE LINE THAT GUARANTEES IT. A `<video>`
@@ -10406,12 +10461,122 @@ body[data-page='project'].phero-up .tools {
   }
 }
 
+/* --- the scrim ------------------------------------------------------------
+
+   ONE JOB: THE WORDS ARE LEGIBLE ON EVERY FRAME OF THE FILM, NOT ON MOST.
+
+   White type straight onto moving footage is a bet that the footage stays
+   dark, and this film does not: it is mostly black, and then a hand comes up
+   into the bottom third of the frame at full white and the record is lying
+   across it. Nothing in the type can fix that — a shadow around it is a
+   different design, and dropping the ink is the opposite of the goal — so the
+   picture gives instead, in the band where the words are and nowhere else.
+
+   AND IT IS THE FILM'S OWN BLACK, WHICH IS WHY THIS IS NOT A SCRIM OVER A
+   PICTURE. `--fh-ground` is measured off the video's corner pixel; the bottom
+   of this gradient is exactly that value at full opacity, so the darkest part
+   of it is indistinguishable from the letterbox and from the page. What the
+   reader sees is the film getting darker towards the bottom of the frame, not
+   a panel laid on top of it.
+
+   TEN STOPS AND NOT TWO, BECAUSE A LINEAR RAMP IS VISIBLE. Two stops put the
+   steepest part of the fade in the middle of the band, which on a near-black
+   picture reads as a soft horizontal edge travelling across the frame — and on
+   an 8-bit panel it bands. These stops follow an ease-out: almost all of the
+   change happens in the lower half, and the top of the gradient approaches
+   zero slowly enough that there is no line to find.
+
+   `color-mix` WITH A WRITTEN-OUT FALLBACK. The first declaration states the
+   measured #030303 directly so an engine without `color-mix` still gets the
+   right gradient for this study; the second re-states it in terms of
+   `--fh-ground` so a film with a different ground is correct without touching
+   this rule. Both are here on purpose — the fallback is not a guess, it is
+   this page's own value.
+
+   BELOW THE CHROME AND ABOVE THE FILM: z-index 1, between the stage's 0 and
+   every piece of type at 2. Not a click target, like everything else in here.
+   With motion off there is no film to darken and the poster is the hero — the
+   scrim still applies, because the poster is frame one and the hand is in it. */
+.fhero__scrim {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(18rem, 52%, 34rem);
+  pointer-events: none;
+
+  background: linear-gradient(
+    to top,
+    rgba(3, 3, 3, 1)    0%,
+    rgba(3, 3, 3, 0.98) 10%,
+    rgba(3, 3, 3, 0.94) 20%,
+    rgba(3, 3, 3, 0.86) 30%,
+    rgba(3, 3, 3, 0.75) 40%,
+    rgba(3, 3, 3, 0.6)  52%,
+    rgba(3, 3, 3, 0.42) 64%,
+    rgba(3, 3, 3, 0.24) 76%,
+    rgba(3, 3, 3, 0.09) 88%,
+    rgba(3, 3, 3, 0)    100%
+  );
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--fh-ground) 100%, transparent) 0%,
+    color-mix(in srgb, var(--fh-ground) 98%, transparent)  10%,
+    color-mix(in srgb, var(--fh-ground) 94%, transparent)  20%,
+    color-mix(in srgb, var(--fh-ground) 86%, transparent)  30%,
+    color-mix(in srgb, var(--fh-ground) 75%, transparent)  40%,
+    color-mix(in srgb, var(--fh-ground) 60%, transparent)  52%,
+    color-mix(in srgb, var(--fh-ground) 42%, transparent)  64%,
+    color-mix(in srgb, var(--fh-ground) 24%, transparent)  76%,
+    color-mix(in srgb, var(--fh-ground) 9%, transparent)   88%,
+    color-mix(in srgb, var(--fh-ground) 0%, transparent)   100%
+  );
+}
+
+/* IT ARRIVES WITH THE FILM, NOT WITH THE TYPE. The chrome fades in on a
+   stagger over the first second and a half; a scrim doing the same is a
+   shadow growing under the picture, which is the one thing in this hero that
+   would read as an effect. It is simply there from the first frame — it is
+   part of the photograph, not part of the entrance. */
+
+/* --- the hero's window on the field ---------------------------------------
+
+   THE SAME ATMOSPHERE, ONE WINDOW UP. Section 44b is the whole of what this
+   is; the only thing stated here is where this element's top edge sits
+   relative to the field's origin — 62svh above the hero's bottom, which is
+   this box's own height — so the gradient lands in exactly the same place it
+   does in the block below. Nothing is matched, faded or blended between the
+   two: it is one picture drawn twice.
+
+   UNDER THE CHROME, OVER THE FILM. z-index 1 puts it between the stage and
+   the type, so the record and the cue stay on top of the weather instead of
+   under it, and the film dissolves into the blue rather than being covered by
+   it. `--hb` still masks the stage as the hero leaves, which is the other half
+   of that dissolve.
+
+   AND IT IS INVISIBLE ON THE OPENING SCREEN. At `--bp: 0` the field's first
+   hint of blue sits below the fold; this box is painted and paints nothing. */
+.fhero__bloom {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 62svh;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse var(--bf-rh) var(--bf-rv) at 50% calc(62svh - var(--bf-c)),
+    var(--bf-stops-hero));
+}
+
 /* --- the chrome -----------------------------------------------------------
 
    Every piece of it is placed against the hero's own box rather than laid
    out in a flow, because what each one is doing is standing in a corner. The
    shared type is stated once here: the mono, uppercase, tracked out, and
    small enough that it reads as a mark on a frame rather than as writing. */
+.fhero__back,
 .fhero__mark,
 .fhero__anno,
 .fhero__meta,
@@ -10429,6 +10594,55 @@ body[data-page='project'].phero-up .tools {
   pointer-events: none;
 }
 
+/* --- 0 · the way out, top left -------------------------------------------
+
+   THE CORNER WAS EMPTY AND THIS IS THE ONE THING THAT BELONGS IN IT. Not a
+   mark — the study's identity is carried by the record and by the film, which
+   is why the icon came out — but the reader's way back, which every other case
+   study on this site already has and this one lost when the film layout
+   dropped the rail.
+
+   IT IS THE SAME NAVIGATION, NOT A NEW ONE. `.rail__back` in section 9 is the
+   site's language for this: the word, an arrow set as a `::before` so it is
+   punctuation rather than an element, and a hover that walks the whole thing
+   two or three pixels left on the shell's own spring. Everything here is that
+   rule re-stated in the hero's chrome type — 10px mono, tracked, at the ink
+   the quiet chrome uses — so it reads as part of the frame and not as a
+   button. `href` comes from the study's own `back` in the data, the same
+   value the rail would have used.
+
+   POINTER EVENTS BACK ON, AND ONLY HERE. The hero's whole chrome layer is
+   `pointer-events: none` so the film cannot be paused, scrubbed or clicked by
+   anything a visitor can reach. This is the single element in it that is
+   meant to be hit, so it turns them back on for itself alone. */
+.fhero__back {
+  top: var(--fh-pad);
+  left: var(--fh-pad);
+  pointer-events: auto;
+  color: rgba(255, 255, 255, 0.42);
+  text-decoration: none;
+  letter-spacing: 0.2em;
+  transition:
+    transform 480ms var(--spring),
+    color 240ms ease;
+}
+.fhero__back::before {
+  content: '←';
+  display: inline-block;
+  margin-right: 0.5em;
+  transition: transform 480ms var(--spring);
+}
+:root:not(.hover-cold) .fhero__back:hover {
+  color: rgba(255, 255, 255, 0.92);
+  transform: translateX(-3px);
+}
+:root:not(.hover-cold) .fhero__back:hover::before { transform: translateX(-2px); }
+.fhero__back:focus-visible {
+  outline: none;
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
 /* --- 1 · the identifier, top left --------------------------------------- */
 .fhero__mark {
   top: var(--fh-pad);
@@ -10438,6 +10652,33 @@ body[data-page='project'].phero-up .tools {
 }
 .fhero__mark-n { color: rgba(255, 255, 255, 0.88); letter-spacing: 0.2em; }
 .fhero__mark-s { color: rgba(255, 255, 255, 0.42); }
+
+/* AND WHEN THE MARK IS THE PRODUCT'S ICON IT IS A PICTURE, NOT TYPE.
+
+   40px, which is the size the two-line identifier it replaced occupied, so
+   nothing else in the corner had to move. The icon carries its own squircle
+   and its own dark ground — it is the app's real icon, rendered — so there is
+   no radius, no border and no plate under it here; the one thing added is a
+   hairline of white at 8%, which keeps the corner from dissolving into #030303
+   on an OLED panel where the two blacks are the same black.
+
+   IT DOES NOT ANNOUNCE ITSELF. 0.88 opacity at rest, full on hover for anybody
+   who goes looking — the same ink the wordmark had, because it is doing the
+   wordmark's job and the film is still the thing in the frame. */
+.fhero__mark--logo {
+  gap: 0;
+  line-height: 0;
+}
+.fhero__mark-i {
+  display: block;
+  width: clamp(2rem, 2.6vw, 2.5rem);
+  height: auto;
+  border-radius: 22%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  opacity: 0.88;
+  transition: opacity 260ms var(--ease);
+}
+.fhero__mark--logo:hover .fhero__mark-i { opacity: 1; }
 
 /* --- 2 · the annotation, right edge --------------------------------------
 
@@ -10474,8 +10715,27 @@ body[data-page='project'].phero-up .tools {
 .fhero__words {
   position: absolute;
   z-index: 2;
-  left: var(--fh-pad);
-  right: var(--fh-pad);
+  /* ONE AXIS, AND IT IS THE FILM'S.
+
+     THE COLUMN WAS THE PROBLEM, NOT ITS WIDTH. The headline was set from the
+     left margin while the film keeps its subject dead centre in every shot,
+     which is two compositions on one screen pulling the eye two ways — and
+     every fix for it was a negotiation over the same fifty pixels: a measure
+     on the headline, a ceiling on the record, a stack where a row used to be.
+     Centred, there is nothing to negotiate. The type sits on the axis the
+     picture already has, the product is above it and the words are under it,
+     and the whole screen reads as one object instead of two.
+
+     `left: 0; right: 0` WITH THE MARGIN AS PADDING, so the centring is done
+     against the window rather than against a box that has already had the
+     corner margin taken off each end — off-centre by half of `--fh-pad`
+     otherwise, which at 3rem is 24px and is visible on a 52px headline. */
+  left: 0;
+  right: 0;
+  padding: 0 var(--fh-pad);
+  display: grid;
+  justify-items: center;
+  text-align: center;
   /* THE GAP IS MEASURED OFF THE HEIGHT, NOT OFF A GUESS. Everything below
      this block is fixed to the bottom of the window and everything above it
      is the film; a constant would be a comfortable gap on a 1112px tablet
@@ -10487,13 +10747,30 @@ body[data-page='project'].phero-up .tools {
      to make room at the bottom only pushes the headline up into the card,
      and the two constraints then fight over the same fifty pixels. The type
      scale and the rule under `max-height` do the giving instead. */
-  bottom: calc(var(--fh-foot) + clamp(2.5rem, 8.2vh, 5.5rem));
+  /* THE WORDS SIT LOWER THAN THE AIR ABOVE THEM WOULD SUGGEST, AND THAT IS
+     THE FILM'S DOING RATHER THAN THE TYPE'S. The card is the subject of every
+     shot and it hangs in the middle of the frame; a headline set at a
+     comfortable distance from the bottom furniture lands across the bottom
+     third of it, so you read the sentence THROUGH the product. Dropping the
+     block to just above the foot clears the card's lower edge and puts the
+     type where a title belongs — under the thing it is titling — and the room
+     it gives up at the bottom is room nothing was using.
+
+     STILL MEASURED OFF `--fh-foot`, so it cannot land on the grid pod, the
+     chapter marker or the cue, whatever the safe area is doing. */
+  bottom: calc(var(--fh-foot) + clamp(0.5rem, 2vh, 1.75rem));
   pointer-events: none;
 }
 
 .fhero__h {
   margin: 0;
-  max-width: 18ch;
+  /* A MEASURE AGAIN, AND NOT A BOUNDARY. The `min(18ch, 42vw)` this replaces
+     was doing two jobs: setting a line length, and holding the type out of the
+     middle third of the frame where the product is. On the centre axis the
+     second job does not exist — the words are under the card, not beside it —
+     so this is only ever a measure, and it can be the one the two-line break
+     was written for. */
+  max-width: 24ch;
   font-family: var(--sans);
   /* 52px AT 1440, NOT 56. The film keeps its subject in the middle of the
      frame and the headline is set from the left margin; four pixels of size
@@ -10508,17 +10785,41 @@ body[data-page='project'].phero-up .tools {
   text-wrap: balance;
 }
 
-/* THREE PAIRS ON ONE LINE, label over value. A definition list because that
-   is what it is, and a row rather than a stack because three stacked pairs
-   in the corner of a film is a sidebar. */
+/* THREE PAIRS ON ONE LINE, AND NOW THE PAIR IS ON ONE LINE TOO.
+
+   A definition list, because that is what it is. What changed with the axis is
+   the shape of each pair: label over value stacks three two-line blocks and
+   gives the row a top and a bottom edge to align, which centred reads as a
+   little table under the headline. Label BESIDE value makes each pair one
+   line, the row one line, and the whole record a single centred rule of type —
+   a credit under a title card, which is what it has always been.
+
+   AND NO CEILING ON IT ANY MORE. The `min(62ch, 34vw)` that used to be here
+   existed to stop the row reaching the product from the left margin; on this
+   axis it runs out from the middle in both directions and the product is above
+   it, so the only thing that governs the width is the wrap. */
 .fhero__meta {
   position: static;
-  margin: clamp(1rem, 3vh, 2rem) 0 0;
+  /* THE GAP IS THE HIERARCHY, AND IT WAS A THIRD OF WHAT IT SHOULD BE.
+
+     At clamp(1rem, 3vh, 2rem) the record sat close enough to the headline to
+     read as its third line — a caption hanging off the sentence rather than a
+     separate layer of information. Roughly tripled, it becomes what it is: the
+     credits, a beat below the title, quiet and unmistakably its own thing.
+
+     STILL A PROPORTION OF THE HEIGHT, NOT A NUMBER. `vh` with a floor and a
+     ceiling holds the same relationship on a 1600px window and a 720px one;
+     a fixed 56px would be generous on the laptop and a collision on the
+     short window. The floor is what a phone gets, the ceiling stops the
+     record drifting toward the bottom furniture on a very tall screen. */
+  margin: clamp(2.25rem, 7vh, 5rem) 0 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem clamp(2rem, 5vw, 4.5rem);
+  justify-content: center;
+  /* and a little more air between the three pairs, for the same reason */
+  gap: 0.85rem clamp(2.5rem, 5.5vw, 5.25rem);
 }
-.fhero__meta div { display: grid; gap: 0.35rem; }
+.fhero__meta div { display: flex; align-items: baseline; gap: 0.6rem; }
 .fhero__meta dt { color: rgba(255, 255, 255, 0.34); }
 .fhero__meta dd { margin: 0; color: rgba(255, 255, 255, 0.72); }
 
@@ -10531,20 +10832,58 @@ body[data-page='project'].phero-up .tools {
    the same ↓ character section 47 settled on, for the same reason: a drawn
    triangle does not resolve at eight pixels. */
 .fhero__cue {
+  /* ON THE FLOOR, ON THE AXIS, AND AS SMALL AS IT CAN BE AND STILL BE READ.
+
+     It has been three things: a stack under the middle of the frame, then a
+     horizontal line against the right edge. Both were bigger than the job.
+     The cue's entire content is "there is more below", it is answered by the
+     first 40px of scroll, and it should cost the composition nothing until
+     then.
+
+     SO IT IS A VERTICAL HAIRLINE ON THE PAGE'S OWN CENTRE LINE, at the very
+     bottom of the window — the one place in this hero nothing else occupies:
+     the record sits a few pixels above it, the grid pod and the chapter
+     marker are out at the left corner, and the middle of the floor is empty.
+     The direction is the geometry now rather than a glyph or a travelling
+     rule: a vertical line, with a short bright segment falling down it.
+
+     9px AND 30% INK. Below the 10px the rest of the chrome is set at, and
+     dimmer than any of it, because this is the only piece of type in the
+     frame that is not telling you something about the work. */
   left: 50%;
-  bottom: calc(var(--fh-foot) - 2.5rem);
+  bottom: calc(var(--sa-bottom, 0px) + 1rem);
   translate: -50% 0;
   display: grid;
   justify-items: center;
-  gap: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.3);
 }
+
+/* THE HEAD, AND IT IS TWO BORDERS RATHER THAN A GLYPH. A ↓ set at this size
+   is a font's idea of an arrow — different weight and different proportions
+   in every face, and at 8px it resolves to a smudge. Two 1px borders on a
+   5px box turned 45° are the same hairline the shaft is made of, so the whole
+   mark is one weight at any zoom and on any display.
+
+   IT SITS ON THE END OF THE SHAFT, not under it: the negative margin pulls it
+   back by its own border so the point of the V lands where the line stops
+   rather than a pixel below, which is the difference between an arrow and a
+   line with a chevron near it. */
+.fhero__cue::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  margin-top: -3px;
+  border-left: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  rotate: -45deg;
+}
+
 .fhero__cue-l {
   position: relative;
   display: block;
   width: 1px;
-  height: 2.75rem;
-  background: rgba(255, 255, 255, 0.14);
+  height: 1.6rem;
+  background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
 }
 .fhero__cue-l i {
@@ -10552,21 +10891,19 @@ body[data-page='project'].phero-up .tools {
   left: 0;
   top: 0;
   width: 1px;
-  height: 0.9rem;
-  background: rgba(255, 255, 255, 0.85);
+  height: 45%;
+  background: rgba(255, 255, 255, 0.8);
   animation: fheroFall 3.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
 }
-.fhero__cue-a {
-  font-size: 0.5rem;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.3);
-}
 
+/* THE SEGMENT FALLS THE RULE AND LEAVES AT THE BOTTOM OF IT. Percentages of
+   the segment's own height, so the keyframes never need to know how long the
+   rule is at the size it is being read at. */
 @keyframes fheroFall {
   0%   { transform: translateY(-100%); opacity: 0; }
   22%  { opacity: 1; }
   78%  { opacity: 1; }
-  100% { transform: translateY(2.75rem); opacity: 0; }
+  100% { transform: translateY(230%); opacity: 0; }
 }
 
 /* --- 5 · how long the film is -------------------------------------------
@@ -10614,12 +10951,18 @@ body[data-page='project'].phero-up .tools {
    states which beat a thing is, never how many milliseconds late it is, so
    retiming the whole entrance is five numbers in one place. */
 /* `transform`, AND NOT `translate`, AND THAT IS A BUG FIX RATHER THAN A
-   PREFERENCE. Two pieces of this chrome are PLACED with `translate` — the
-   annotation is centred on the right edge with `0 -50%`, the cue on the
+   PREFERENCE. Pieces of this chrome are PLACED with `translate` — the
+   annotation was centred on the right edge with `0 -50%`, the cue on the
    bottom edge with `-50% 0` — and an entrance written in the same property
    does not add to that, it replaces it. Both landed half their own size off
    true. `transform` is a separate property, composed after `translate`, so
-   the placement and the animation stack instead of fighting. */
+   the placement and the animation stack instead of fighting.
+
+   NEITHER OF THOSE TWO IS DRAWN ON THIS STUDY ANY MORE — the annotation is
+   gone and the cue is held to a corner rather than centred — and the rule
+   stays exactly as it is. It is the section's rule, not that study's: the
+   next film hero that centres something on an edge inherits the fix instead
+   of rediscovering it. */
 .fhero [data-in] {
   opacity: 0;
   transform: translateY(8px);
@@ -10662,7 +11005,7 @@ body[data-page='project'].phero-up .tools {
     translate: none;
     transition: none;
   }
-  .fhero__cue-l i { animation: none; opacity: 0.5; }
+  .fhero__cue-l i { animation: none; opacity: 0.5; transform: none; }
   .fhero.is-past .fhero__cue,
   .fhero.is-past .fhero__prog { transition: none; }
 }
@@ -10707,17 +11050,27 @@ body[data-page='project'].phero-up .tools {
     font-size: clamp(1.625rem, 7.4vw, 2.125rem);
   }
   .fhero__prog { display: none; }
-  /* THE CUE CLIMBS OVER THE FURNITURE. IshaanLLM's chip is 164px wide in the
-     bottom-right and on a 390px screen the centre of the window is inside
-     it, so a cue hanging off the bottom edge lands on the launcher. It sits
-     above the whole row instead, and loses half its rule to pay for it. */
-  .fhero__cue { bottom: calc(var(--fh-foot) + 0.5rem); }
-  .fhero__cue-l { height: 1.5rem; }
+  /* THE CUE GIVES UP A LITTLE OF ITS RULE, and nothing else: it is on the
+     centre line at the bottom of the window, which is clear at every width —
+     the pods are in the left corner and IshaanLLM's chip is not painted over
+     a hero at all any more (see section 45). */
+  .fhero__cue-l { height: 1.4rem; }
   .fhero__words { bottom: calc(var(--fh-foot) + 6.5rem); }
-  /* three pairs stacked, because side by side at this width they are three
-     columns of two words each */
-  .fhero__meta { gap: 0.85rem 1.75rem; }
-  .fhero__meta div { min-width: 8.5rem; }
+  /* ONE PAIR PER LINE, AND STILL A ROW IN EVERY OTHER SENSE. At this width
+     the three pairs cannot share a line, and letting the flex wrap decide
+     gives two on the first and one alone on the second — a ragged block
+     under centred type. A column of three centred lines is the same record
+     read down instead of across, and it keeps the axis. */
+  .fhero__meta {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+  }
+  /* A TALLER SCRIM ON A PHONE, because the words own more of the screen: the
+     film is letterboxed into the top of the window and the whole record is
+     under it, so the band that has to stay legible is most of the lower half
+     rather than a third of it. */
+  .fhero__scrim { height: 60%; }
 }
 
 /* A SHORT WINDOW IS THE ONE CASE WHERE THE CHROME CAN REACH THE PRODUCT.
@@ -10728,12 +11081,154 @@ body[data-page='project'].phero-up .tools {
    only one that does not move anything sideways. */
 @media (max-height: 44rem) {
   .fhero__meta { margin-top: 0.75rem; }
-  .fhero__cue-l { height: 1.75rem; }
+  .fhero__cue-l { height: 1.25rem; }
 }
 
 @media (max-height: 34rem) and (orientation: landscape) {
   .fhero__meta,
   .fhero__cue { display: none; }
+}
+
+
+/* ==========================================================================
+   44b. THE FIELD — ONE ATMOSPHERE, PAINTED THROUGH THREE WINDOWS
+
+   WHAT THIS REPLACED, AND WHY EVERY EARLIER VERSION LOOKED PASTED ON. Each of
+   them built the transition as its own thing between two sections — a band, a
+   cap, a wash, a pinned frame. However carefully the ends were matched, the
+   eye still found it, because what it is looking at genuinely is a separate
+   object with its own edges. The rim of pale light under the blue was the
+   worst of it: a white layer over a blue one always peaks somewhere in the
+   middle, and that peak is a halo.
+
+   THE REFERENCE IS NOT BUILT THAT WAY. Measured off the recording — colour
+   sampled down its centre column, boundaries traced across its width — it is
+   ONE continuous field: an enormous ellipse of atmosphere whose iso-lines run
+   black, indigo, cobalt, electric, pale, white, with no peak and no rim
+   anywhere in it, and the picture simply moves through it as you scroll.
+
+   SO THIS IS ONE FIELD TOO, AND IT IS DEFINED EXACTLY ONCE. `--bf-stops` is
+   the whole ramp, `--bf-rh` and `--bf-rv` are its radii, `--bf-c` is where its
+   centre sits at this scroll position. Three elements paint it — the hero's
+   lower half, the short block between the sections, and the top of the study —
+   and each one states the SAME gradient with only its own centre offset,
+   because each knows where its own top edge is relative to the field's origin.
+   There is nothing to match up: it is one picture, and the section boundaries
+   happen to fall across it.
+
+   THE GEOMETRY IS THE REFERENCE'S. 108vw by 100svh puts the boundary's drop at
+   about 17svh from the sides of the window to its lowest point — 152px on a
+   900px screen, which is what the recording measures — and the drop falls to
+   11svh by the time the ramp is pale, so the bands flatten as they descend
+   exactly as atmosphere does. The radii are in viewport units, so the curve is
+   the same curve at every window size and aspect ratio.
+
+   NO EDGE ANYWHERE. The dark end holds to 66% of the radius and does not reach
+   full indigo until 78% — twelve svh of ramp at the centre column, over 100px,
+   which is far too long a fade to read as a boundary. There is no white layer
+   over the blue at any point; the ramp simply keeps brightening, so there is
+   no value it can peak at and no rim it can leave.
+
+   AND IT MOVES WITH THE SCROLL, FASTER THAN THE PAGE. `--bf-c` carries
+   `--bp` — the block's own progress across the window, written by
+   `Project.tick` onto the body so all three elements can read it — and lifts
+   the field's centre 55svh over the pass. The field therefore rises through
+   the window about a third faster than the content, which is what makes it
+   read as a surface being moved through rather than a picture going by. Stop
+   scrolling and it stops; scroll back and it comes back down. There is no
+   duration in it anywhere. */
+
+:root {
+  --bf-rh: 108vw;
+  --bf-rv: 100svh;
+
+  /* WHERE THE FIELD'S CENTRE SITS, MEASURED UPWARD FROM THE HERO'S BOTTOM
+     EDGE. 44svh at rest, which puts the first hint of blue below the fold on
+     the opening screen — the hero's first frame is untouched black, which is
+     the one thing that must stay true. 55svh of travel across the pass. */
+  --bf-c: calc(44svh + var(--bp, 0) * 55svh);
+
+  /* THE RAMP. Black to 66% of the radius, then indigo, cobalt, electric, and
+     out through pale to nothing — the alpha only ever falls at the far end,
+     where the study's own white is what remains. Thirteen stops because a
+     ramp this long bands on an 8-bit panel with fewer. */
+  --bf-stops:
+    #030303 0%,
+    #030303 66%,
+    #060c2e 70%,
+    #0a1240 73%,
+    #121c78 78%,
+    #1631b4 84%,
+    #1c46ea 90%,
+    #2a5cff 96%,
+    rgba(74, 123, 255, 0.94) 102%,
+    rgba(123, 165, 255, 0.74) 108%,
+    rgba(174, 203, 255, 0.46) 114%,
+    rgba(216, 230, 255, 0.22) 120%,
+    rgba(238, 243, 255, 0.07) 126%,
+    rgba(255, 255, 255, 0) 132%;
+
+  /* THE SAME RAMP WITH ITS DARK END TAKEN OUT, for the copy that is painted
+     inside the hero: there the black is the film, and covering it would be
+     covering the product. Identical from 73% down, which is the only part
+     that is ever on screen in both windows at once. */
+  --bf-stops-hero:
+    rgba(3, 3, 3, 0) 0%,
+    rgba(3, 3, 3, 0) 62%,
+    rgba(6, 12, 46, 0.45) 67%,
+    rgba(8, 16, 60, 0.85) 70%,
+    #0a1240 73%,
+    #121c78 78%,
+    #1631b4 84%,
+    #1c46ea 90%,
+    #2a5cff 96%,
+    rgba(74, 123, 255, 0.94) 102%,
+    rgba(123, 165, 255, 0.74) 108%,
+    rgba(174, 203, 255, 0.46) 114%,
+    rgba(216, 230, 255, 0.22) 120%,
+    rgba(238, 243, 255, 0.07) 126%,
+    rgba(255, 255, 255, 0) 132%;
+
+  /* fine, monochrome, and the same tile everywhere the field is painted */
+  --bf-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.05' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --- the block ------------------------------------------------------------
+
+   FOURTEEN SVH, AND THAT IS ALL THE LAYOUT THIS TRANSITION COSTS. The field is
+   large; the space it occupies in the document is not. Everything else it
+   covers is the hero's own lower half and the top of the study, which are
+   there anyway — which is also why there is no blue SECTION to scroll
+   through. Its background is the study's white, because white is what shows
+   wherever the field's far end has gone transparent. */
+.bridge {
+  position: relative;
+  z-index: 0;
+  height: 14svh;
+  overflow: clip;
+  isolation: isolate;
+  pointer-events: none;
+  background: #ffffff;
+}
+
+.bridge__field {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse var(--bf-rh) var(--bf-rv) at 50% calc(0px - var(--bf-c)),
+    var(--bf-stops));
+}
+
+.bridge__grain,
+.film__spill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.045;
+  mix-blend-mode: soft-light;
+  background-image: var(--bf-grain);
+  background-size: 180px 180px;
+  pointer-events: none;
 }
 
 
@@ -13615,6 +14110,39 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 }
 
 .film ::selection { background: var(--fg-ink); color: var(--fg-ground); }
+
+/* --- the study's window on the field --------------------------------------
+
+   THE THIRD WINDOW, AND THE REASON THE TWO SECTIONS FEEL LIKE ONE PLACE. A
+   transition that stops at the section boundary is two sections with a nice
+   edge between them; this one does not stop there, it simply continues into
+   the study and runs out somewhere in the first screen of it. Its top edge is
+   14svh below the field's origin — the block's height — and that offset is the
+   only thing here that differs from the block's own rule.
+
+   ABSOLUTE, NOT STICKY. The first scene's stage is sticky and holds while you
+   scroll; this scrolls away off it, so the atmosphere lifts OFF the content
+   rather than sitting on it, and the study emerges from the blue instead of
+   being revealed under it.
+
+   88svh TALL, WHICH IS A CALCULATION. The field goes transparent at 132% of
+   its radius; at the shallowest scroll position where this box is on screen at
+   all, that point is 74svh below its top edge. Any shorter and the box would
+   cut the field off mid-blue along its own bottom edge — a hard horizontal
+   line across the study, which is exactly the class of bug this whole
+   structure exists to make impossible. */
+.film__spill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 88svh;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse var(--bf-rh) var(--bf-rv) at 50% calc(-14svh - var(--bf-c)),
+    var(--bf-stops));
+}
 
 /* --- one scene ----------------------------------------------------------- */
 

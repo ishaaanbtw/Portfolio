@@ -4482,9 +4482,45 @@
       const rail = $('#rail');
       if (rail) rail.remove();
 
+      /* CLEARED BEFORE IT IS SET, because the router rebuilds `#main` in
+         place and a reference kept from the last study is a rect read off a
+         node that is no longer in the document. The two progress values are
+         reset with it so the first frame after a build writes rather than
+         matching a number from the previous page. */
+      this.bridgeEl = null;
+      this._bp = -1;
+      this._hb = -1;
+
       if (p.hero && p.hero.kind === 'film') main.appendChild(this.filmHero(p));
       else if (item) main.appendChild(this.hero(p, item));
+      /* --- THE BRIDGE ---------------------------------------------------
+
+         A BLOCK OF AIR BETWEEN THE FILM HERO AND THE STUDY, and it is in the
+         flow rather than layered over either of them. The hero ends on
+         #030303 and the study's first scene begins on #ffffff; the bridge is
+         the place where one becomes the other, painting the hero's own black
+         along its top edge and the film's own white along its bottom one so
+         that neither join exists to be softened. Section 44b of the
+         stylesheet is the whole of what it looks like; this is the whole of
+         what it is.
+
+         ONLY UNDER THE FILM HERO. The panel hero is a composition that ends
+         on paper already and has nothing to bridge to. */
+      if (p.hero && p.hero.kind === 'film') {
+        const bridge = el('div', { class: 'bridge', 'aria-hidden': 'true' },
+          '<div class="bridge__field"></div>'
+          + '<div class="bridge__grain"></div>');
+        main.appendChild(bridge);
+        this.bridgeEl = bridge;
+      }
       const film = Film.build(p);
+      /* THE OTHER HALF OF THE BRIDGE, INSIDE THE STUDY. The band above ends on
+         a pale blue rather than on white, and this is what continues it —
+         see `.film__spill` in section 46. Only under a film hero, because only
+         that hero has a band above it to continue from. */
+      if (p.hero && p.hero.kind === 'film') {
+        film.appendChild(el('div', { class: 'film__spill', 'aria-hidden': 'true' }));
+      }
       main.appendChild(film);
       /* the project's own ending, after the film and outside it */
       if (item) main.appendChild(this.onward());
@@ -4516,6 +4552,8 @@
          gets sensible answers for all of it. */
       const d = p.hero || {};
       const layout = d.layout || 'panel';
+      /* a panel hero ends on paper and has nothing to bridge to */
+      this.bridgeEl = null;
 
       const h = el('header', {
         class: 'phero', 'data-layout': layout,
@@ -4709,14 +4747,67 @@
       stage.appendChild(v);
       h.appendChild(stage);
 
+      /* THE BAND THE WORDS SIT IN, DARKENED — see section 44 for why it is the
+         film's own measured black and not a panel over it. A sibling of the
+         stage rather than a child of it: the stage is `pointer-events: none`
+         and z-index 0 as a pair with the video it holds, and the scrim belongs
+         between that and the chrome. */
+      h.appendChild(el('div', { class: 'fhero__scrim', 'aria-hidden': 'true' }));
+
+      /* AND THE WARM LAYER OVER IT, which is the first beat of the bridge
+         below rather than anything the hero needs for itself — see the note
+         on `.fhero__bloom` in section 44. It is invisible until the page
+         moves; `Project.tick` writes `--hb`. After the scrim in the DOM
+         because light goes over the darkening, not under it. */
+      h.appendChild(el('div', { class: 'fhero__bloom', 'aria-hidden': 'true' }));
+
+      /* --- 0. the way back, top left ------------------------------------
+         The one element in this hero a visitor is meant to click. It reuses
+         the site's own back language — see `.fhero__back` in section 44 — and
+         reads its destination from the study's `back`, which is the same
+         value the section rail uses on every other case study. A study that
+         states none still gets the index, because a page with no way out is
+         not a decision anybody makes on purpose. */
+      h.appendChild(el('a', {
+        class: 'fhero__back',
+        href: url((p.back && p.back.href) || 'index.html'),
+        'data-in': '1',
+      }, esc((p.back && p.back.label) || 'BACK')));
+
       /* --- 1. the identifier, top left ---------------------------------
-         Editorial metadata, not a logo: who made it on one line and what it
-         is on the next, both small enough that the eye passes over them on
-         the way to the product. */
-      if (d.mark) {
-        h.appendChild(el('div', { class: 'fhero__mark', 'data-in': '1' },
-          `<span class="fhero__mark-n">${esc(d.mark)}</span>`
-          + (d.marksub ? `<span class="fhero__mark-s">${esc(d.marksub)}</span>` : '')));
+         A MARK, AND NOW IT IS THE PRODUCT'S OWN. It was editorial metadata —
+         the company on one line, the project and the discipline on the next —
+         which is a caption explaining a page whose record already says both,
+         four lines lower and in the same typeface. The app icon is the
+         artefact instead of a description of it: one object, 40px, in the
+         corner a mark belongs in, and the eye is past it in the time it takes
+         to recognise it.
+
+         `<picture>` RATHER THAN `<img>`, for the same reason the film has two
+         encodings: WebP is 13KB against the PNG's 68KB for a picture that is
+         identical at this size, and the engines that cannot take it are
+         handed the PNG by the browser rather than by anything here.
+
+         THE TEXT MARK STILL RENDERS IF A PAGE STATES ONE. Nothing else in the
+         data model changed — a study that wants the old two-line identifier
+         sets `mark`, one that wants its icon sets `marklogo`, and a page that
+         sets neither simply has an empty corner. */
+      if (d.marklogo || d.mark) {
+        const mark = el('div', { class: 'fhero__mark', 'data-in': '1' });
+        if (d.marklogo) {
+          mark.classList.add('fhero__mark--logo');
+          mark.innerHTML =
+            '<picture>'
+            + (d.marklogo2 ? `<source srcset="${url(d.marklogo2)}" type="image/webp">` : '')
+            + `<img class="fhero__mark-i" src="${url(d.marklogo)}" alt="${esc(d.markalt || '')}"`
+            + ' width="40" height="40" decoding="async" fetchpriority="high">'
+            + '</picture>';
+        } else {
+          mark.innerHTML =
+            `<span class="fhero__mark-n">${esc(d.mark)}</span>`
+            + (d.marksub ? `<span class="fhero__mark-s">${esc(d.marksub)}</span>` : '');
+        }
+        h.appendChild(mark);
       }
 
       /* --- 2. the annotation, against the right edge --------------------
@@ -4755,11 +4846,25 @@
          site's other cue uses rather than a drawn triangle that does not
          resolve at 8px. It leaves on the first 40px of scroll, because by
          then it has been answered. */
+      /* THREE PARTS BECAME TWO, AND IT MOVED OUT OF THE MIDDLE. Centred at the
+         bottom it sat directly under the card the film holds in the middle of
+         every shot — a word, a falling rule and an arrow, stacked three high,
+         in the one column of the frame that had something in it. It is now a
+         single line against the right edge, where the readout used to be: the
+         word, then a short horizontal rule with the same bright segment
+         travelling along it. The glyph is gone; a rule that moves to the right
+         is already an arrow, and one that reads at any size. */
+      /* AND THE WORD IS GONE WITH THEM. "SCROLL" told a reader what every
+         first screen on the web has already taught them, in the only piece of
+         type in this frame that was not about the work — and it was the widest
+         thing in the cue, which is how a 9px label ends up being the object
+         you notice on the floor of the composition. What is left is the
+         gesture: a hairline with a bright segment falling down it and a small
+         head at the end. `d.cue` is still what decides whether a study draws
+         one at all; it just no longer supplies a label to draw. */
       if (d.cue) {
         h.appendChild(el('div', { class: 'fhero__cue', 'data-in': '5', 'aria-hidden': 'true' },
-          `<span class="fhero__cue-w">${esc(d.cue)}</span>`
-          + `<span class="fhero__cue-l"><i></i></span>`
-          + `<span class="fhero__cue-a">↓</span>`));
+          `<span class="fhero__cue-l"><i></i></span>`));
       }
 
       /* --- 5. how long the film is --------------------------------------
@@ -4768,13 +4873,31 @@
          hero's chrome layer is `pointer-events: none`. The duration is read
          off the file rather than authored, so it can never be a number the
          film does not actually run for. */
-      const prog = el('div', { class: 'fhero__prog', 'data-in': '5', 'aria-hidden': 'true' },
-        `<span class="fhero__prog-n">${esc(d.reel || '01')}</span>`
-        + `<span class="fhero__prog-t"><i></i></span>`
-        + `<span class="fhero__prog-d">--:--</span>`);
-      h.appendChild(prog);
+      /* AND A PAGE CAN DECLINE IT. `prog: false` in the data draws no readout
+         at all — which is what this study now does, because a ruler under a
+         nine-second loop is a measurement nobody asked for on the one screen
+         that is supposed to hold one thing. `bindFilm` takes the absence: the
+         film still starts, still pauses off screen, still retries a refused
+         autoplay. It simply has nothing to report to. */
+      let prog = null;
+      if (d.prog !== false) {
+        prog = el('div', { class: 'fhero__prog', 'data-in': '5', 'aria-hidden': 'true' },
+          `<span class="fhero__prog-n">${esc(d.reel || '01')}</span>`
+          + `<span class="fhero__prog-t"><i></i></span>`
+          + `<span class="fhero__prog-d">--:--</span>`);
+        h.appendChild(prog);
+      }
 
       this.heroEl = h;
+      /* THE OPENING SCENE IS DECLARED HERE, NOT ON THE FIRST FRAME OF THE
+         SCROLL LOOP. `Project.tick` owns `phero-up` — the class that holds the
+         annotation dock and IshaanLLM's chip off the hero — but it first runs a
+         frame or two after the page is built, and a chip that is painted once
+         and then fades out is worse than one that was never hidden. Stated at
+         build time it is simply true from the first paint. The guard is for a
+         reader who arrived on a hash and is already past the hero: `tick` will
+         correct either answer on its first pass regardless. */
+      if (App.y() < 40) document.body.classList.add('phero-up');
       this.bindFilm(h, v, prog);
       return h;
     },
@@ -4792,8 +4915,13 @@
        four times a second, which on a nine-second film is a hairline that
        visibly steps. The loop only runs while the hero is in view. */
     bindFilm(h, v, prog) {
-      const fill = $('.fhero__prog-t i', prog);
-      const read = $('.fhero__prog-d', prog);
+      /* NULL IS A VALID READOUT. A study that sets `prog: false` gets here with
+         nothing to write to, and every write below is guarded rather than the
+         whole function being — because the other three jobs (start it, pause it
+         off screen, retry a refused autoplay) are the film's and not the
+         readout's. */
+      const fill = prog ? $('.fhero__prog-t i', prog) : null;
+      const read = prog ? $('.fhero__prog-d', prog) : null;
 
       /* FLOOR, NOT ROUND. Every player anybody has used shows a nine-and-a-
          half second file as 0:09, and a readout that says 00:10 next to a
@@ -4802,9 +4930,11 @@
         const s = Math.max(0, Math.floor(t));
         return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
       };
-      const stamp = () => { if (v.duration) read.textContent = mmss(v.duration); };
-      if (v.readyState >= 1) stamp();
-      else v.addEventListener('loadedmetadata', stamp, { once: true });
+      const stamp = () => { if (read && v.duration) read.textContent = mmss(v.duration); };
+      if (read) {
+        if (v.readyState >= 1) stamp();
+        else v.addEventListener('loadedmetadata', stamp, { once: true });
+      }
 
       /* THE ENTRANCE IS A CLASS, SET ON THE FRAME AFTER THE ONE THAT LAID
          THE HERO OUT. Two frames, so the starting state is painted once
@@ -4818,12 +4948,16 @@
       let raf = 0;
       const draw = () => {
         raf = 0;
-        if (v.duration) {
+        if (fill && v.duration) {
           fill.style.setProperty('--vp', (v.currentTime / v.duration).toFixed(4));
         }
         if (!v.paused) raf = requestAnimationFrame(draw);
       };
-      const run = () => { if (!raf) raf = requestAnimationFrame(draw); };
+      /* NOTHING TO DRAW IS NOTHING TO RUN. With no readout the frame loop has
+         no output, so it is never armed — the film plays, the observer still
+         pauses it off screen, and there is no rAF alive behind a hero that
+         reports nothing. */
+      const run = () => { if (!fill) return; if (!raf) raf = requestAnimationFrame(draw); };
 
       /* Autoplay can be refused, and the refusal is a rejected promise rather
          than an error anybody sees. Retry once on the first gesture — a
@@ -4939,6 +5073,46 @@
         if (up !== this._dock) {
           this._dock = up;
           document.body.classList.toggle('phero-up', up);
+        }
+
+        /* THE HERO'S SHARE OF THE TRANSITION. `--hb` is 0 on the opening
+           screen — the first frame is the black frame and nothing else — and
+           reaches 1 after about 0.85 of a screen, which is a little before
+           the hero's own bottom edge passes the middle of the window. So the
+           film is already sitting in the bridge's light by the time any of
+           the bridge is on screen. Quantised to 3 decimals and written only
+           when it actually changes: this runs every frame of every scroll. */
+        const hb = REDUCED ? 0.55 : Math.min(1, Math.max(0, App.y() / (vh * 0.85)));
+        if (hb !== this._hb) {
+          this._hb = hb;
+          this.heroEl.style.setProperty('--hb', hb.toFixed(3));
+        }
+      }
+
+      /* THE FIELD'S POSITION, AND IT IS ONE NUMBER FOR THE WHOLE PAGE.
+
+         0 as the block appears from below the window, 1 as it leaves the top.
+         Section 44b turns it into `--bf-c`, the height of the field's centre
+         above the hero's bottom edge, and the three elements that paint the
+         field all read it — which is why it is written on the ROOT and not on
+         the block. It has to be the root specifically: `--bf-c` is declared on
+         `:root` and substitutes `--bp` there, so a value set anywhere lower in
+         the tree would be resolved after the fact and the field would sit
+         frozen at its `--bp: 0` position. One variable, one field, three
+         windows; nothing can drift out of step because there is only one
+         thing.
+
+         NO DURATION AND NO EASING. Stop scrolling and the field stops; scroll
+         back and it comes back down. */
+      if (this.bridgeEl) {
+        const r = this.bridgeEl.getBoundingClientRect();
+        const bp = REDUCED
+          ? 0.5
+          : Math.min(1, Math.max(0, (vh - r.top) / (r.height + vh)));
+        const q = Math.round(bp * 1000) / 1000;
+        if (q !== this._bp) {
+          this._bp = q;
+          document.documentElement.style.setProperty('--bp', q);
         }
       }
       if (!this.sections.length) return false;
