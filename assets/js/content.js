@@ -909,6 +909,7 @@ window.SITE = {
               id: 'x0-question', act: 'II · Question', kind: 'ask', dur: 120,
               kicker: 'The actual question',
               h: 'How do you launch a new product without cannibalising the flagship it sits next to?',
+            },
 
             /* THE BRIEF AS IT ARRIVED, and then eight questions that nobody
                had answered. The accumulation is the point — nothing leaves,
