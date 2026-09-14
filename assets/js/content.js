@@ -714,29 +714,66 @@ window.SITE = {
              here. `facts` is the metadata row, and it is deliberately three
              items rather than the study's five: the hero orients, the study
              is where the detail lives.                                     */
+          /* --- THE OPENING SCENE, AND IT IS THE FILM --------------------
+
+             WHAT THIS REPLACED. Two openings running back to back. First a
+             paper title card built by `Project.hero` — the name, three facts
+             and a line, with the tile's own artwork held still on paper —
+             and then, one screen down, the film's cold open: "Self-custody,
+             without the seminar." at 56px over a black frame that was
+             waiting for a render nobody had cut yet. A visitor arriving at a
+             hardware project therefore met two headlines, two title
+             treatments and no hardware.
+
+             It is one opening now and the product is in it. `kind: 'film'`
+             is what `Project.film` reads to build `filmHero` instead of the
+             paper card, so which opening a project gets is a value in its
+             data rather than a branch written about its slug — and the
+             Onefinnet study, which has no film, is untouched by any of this.
+
+             `ground` IS MEASURED OFF THE FILM, not chosen. #030303 is what
+             the video's own corner pixel reads, so the page's black and the
+             picture's black are the same black: on a portrait screen, where
+             a 16:9 film is letterboxed rather than cropped, there is no seam
+             to see. `poster` is frame one — the card already at rest — so
+             the first paint is that same black and never a white rectangle
+             waiting for a download.
+
+             EVERYTHING ELSE HERE IS CHROME, AND ALL OF IT IS LOAD-BEARING.
+             The mark says whose work this is; the headline says what the
+             work was; the record says what was done and over what; the
+             annotation names the object on screen; the cue says there is
+             more. Nothing was added to fill the frame — the frame is
+             supposed to be empty, because the thing in the middle of it is
+             the point of the page. */
           hero: {
-            layout: 'panel',
-            /* NO FIELD, AND THAT IS THE ART DIRECTION RATHER THAN AN OMISSION.
-
-               It was set to the tile's own blue, on the reasoning that the
-               piece the reader clicked should still be the piece in front of
-               them. But the ARTWORK is that blue — `.pv-search` paints the
-               field itself and sets the white lattice card on it — so a blue
-               wall behind a blue artifact put the same colour in two places
-               with a drop shadow between them, and a shadow between two
-               identical colours reads as a rendering fault.
-
-               Paper is the wall. The blue panel is the object on it, with air
-               all round and its own shadow under it, which is what `panel`
-               means and what an identity project wants: the artifact
-               presented, not the brand colour sprayed across the window.
-               `field` stays in the vocabulary for a project whose artwork has
-               no ground of its own. */
-            ink: '#f4f5ff',
-            scale: 0.62,
-            at: 'center',
-            facts: ['Product identity', 'Hardware · Mobile', '2026'],
-            line: 'A new product category inside an ecosystem that already had one.',
+            kind: 'film',
+            /* TWO ENCODINGS OF ONE FILM, BEST FIRST. VP9 is 350KB against
+               H.264's 877KB for a picture that measures 0.99998 SSIM against
+               it — nine seconds of mostly-black footage is exactly what VP9
+               is good at — so every engine that takes WebM gets the small
+               file and Safari takes the MP4. The browser picks; nothing here
+               sniffs anything. */
+            film: 'assets/media/x0/hero-film.webm',
+            film2: 'assets/media/x0/hero-film.mp4',
+            poster: 'assets/media/x0/hero-film.webp',
+            ground: '#030303',
+            mark: 'Cypherock',
+            marksub: 'X0 · Product Design',
+            /* TWO LINES, BROKEN WHERE THE SENTENCE BREATHES rather than
+               wherever the measure runs out. `<br>` and not a width: the
+               break is a typographic decision at this size and leaving it to
+               the container means it moves every time the window does. The
+               narrow rule in the stylesheet takes it back out again. */
+            h: 'Designing self-custody<br>for everyone.',
+            meta: [
+              { k: 'Cypherock X0', v: 'Hardware + Digital Experience' },
+              { k: 'Role', v: 'Product Designer' },
+              { k: 'Focus', v: 'UX · Design System · Product' },
+            ],
+            anno: { id: 'X0 / 01', lines: ['Hardware wallet', 'Self-custody'] },
+            cue: 'Scroll to explore',
+            reel: '01',
           },
           /* `true` COLLAPSES THE ANNOTATION DOCK TO ITS EDGE TAB, which is
              what a film needs. `Rack.HOMES` mounts the dock on project pages
@@ -823,24 +860,28 @@ window.SITE = {
                Curiosity. The reader should not yet know this is a case study.
                ============================================================== */
 
-            /* THE COLD OPEN. The card in front of its own name, the letters
-               cropping off both edges so the type reads as scale rather than
-               as a word. Nothing fades in — it is already there at rest,
-               which is what the first frame of a product page has to be. */
-            { id: 'x0-open', act: 'I · Premise', kind: 'object', dur: 130,
-              rest: true, dark: true,
-              word: 'X0',
-              shot: { kind: 'render', dia: 'object', subject: 'The X0 card, lit from one side', treat: 'lift',
-                of: 'The card, three-quarter view, one hard key light from the left, on black. Transparent PNG at 3x so it can sit in front of the letters.' },
-              kicker: 'Cypherock X0 · mobile beta',
-              h: 'Self-custody, without the seminar.',
-              meta: '7 months · Senior Product Designer' },
+            /* THE COLD OPEN IS THE HERO NOW, AND SCENE 01 HAS GONE WITH IT.
 
-            /* SUCCESS AS THE STARTING CONDITION. The three facts arrive as
+               It was `x0-open`: the card in front of its own name, a kicker,
+               a 56px headline and a meta line, over a `shot` that was still
+               waiting for a transparent render to be cut. Everything it was
+               doing — arriving, naming the piece, saying what the work was —
+               the film above does with the actual product moving, so keeping
+               it meant two cold opens in a row and the same sentence said
+               twice in two sizes. The renderer it used, `SCENE.object`, is
+               untouched: scenes 02 and 27 are still built by it.
+
+               ACT I THEREFORE STARTS HERE. `act` is stated on the first
+               scene of an act and nowhere else, and `Film.build` counts the
+               acts off those statements — so this line is what keeps the
+               chapter reading in the corner saying 01 / 04 through the
+               opening of the film.
+
+               SUCCESS AS THE STARTING CONDITION. The three facts arrive as
                beats and then there is a pause with nothing in it, so the
                reader has time to conclude X1 is fine before being told the
                market moved. The pause is the scene. */
-            { id: 'x0-x1', kind: 'object', dur: 150,
+            { id: 'x0-x1', act: 'I · Premise', kind: 'object', dur: 150,
               art: 'assets/img/x0/x1.webp',
               alt: 'CySync, the X1 desktop app — dark, gold, dense',
               still: true,

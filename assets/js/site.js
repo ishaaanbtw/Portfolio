@@ -4037,11 +4037,25 @@
     scenes: [],
 
     build(p) {
-      const film = el('div', { class: 'film', 'data-tone': 'light' });
+      /* DARK IS WHERE THE PAGE STARTS, and it is not a guess: the hero above
+         the film is the film's own black, and this chrome is fixed, so it is
+         drawn over that black from the first paint. The first scene states
+         its own tone the moment it reaches the line. */
+      const film = el('div', { class: 'film', 'data-tone': 'dark' });
       this.film = film;
+      this.tone = 'dark';
+
+      /* --- THE ACTS, COUNTED OFF THE SCENES THEMSELVES --------------------
+         `act` is stated on the first scene of each act and nowhere else, so
+         both the list of acts and the act a given scene belongs to are
+         derived here rather than authored a second time. Reordering the
+         film, or trimming a scene out of it, cannot put the chapter reading
+         out of step with what is on screen. */
+      const acts = [];
       (p.scenes || []).forEach((s) => {
         const render = SCENE[s.kind];
         if (!render) return;
+        if (s.act) acts.push(s.act);
 
         const scn = el('section', {
           /* AND A HOOK PER SCENE, not just per kind. `scn--object` is shared
@@ -4063,6 +4077,7 @@
             + `${s.lab ? ' scn--lab' : ''}${s.room ? ' scn--room' : ''}` +
             `${s.rest ? ' scn--rest' : ''}`,
           id: s.id,
+          'data-act': Math.max(0, acts.length - 1),
           /* `ndur` IS THE SAME FILM, RUN SHORTER. A scene that is composed for
              a portrait frame holds for a different length of scroll than the
              one composed for a landscape one — not a different sequence, the
@@ -4088,7 +4103,47 @@
       const bar = el('div', { class: 'film__bar', 'aria-hidden': 'true' }, '<i></i>');
       film.appendChild(bar);
       this.bar = $('i', bar);
+
+      /* --- WHERE YOU ARE IN THE FILM ---------------------------------------
+
+         AN ACT RAIL LIVED HERE ONCE AND WAS DELETED, for a reason that still
+         holds: four dots and a label down the left edge is a table of
+         contents for something that is meant to be watched rather than
+         navigated, and it competed at every scroll position. This is not
+         that. It is two lines in the corner furthest from the work which
+         change four times in the length of the page — the number, so a
+         reader who lands mid-film knows how far in they are, and the act's
+         name, so the number means something.
+
+         IT STARTS ON THE HERO AND NEVER MOVES. Fixed, so it is the same
+         object in the same corner from the first screen to the last, which
+         is the whole of what makes it read as a chapter system rather than
+         as a label on a hero. It sits ABOVE the reader's own two pods rather
+         than beside them, so that corner reads as one stack: the film's
+         position, then the controls, then the edge of the window. */
+      this.acts = acts;
+      if (acts.length) {
+        const chap = el('div', { class: 'film__chap', 'aria-hidden': 'true' },
+          '<span class="film__chap-n"></span><span class="film__chap-t"></span>');
+        film.appendChild(chap);
+        this.chapN = $('.film__chap-n', chap);
+        this.chapT = $('.film__chap-t', chap);
+        this.act = -1;
+        this.setAct(0);
+      }
       return film;
+    },
+
+    /* An act is written `I · Premise` in the data, because that is how it
+       reads in a rail. Here the number is set separately — and in the same
+       two digits the rest of the film's chrome uses — so the only part of the
+       string wanted is the name on the end of it. */
+    setAct(i) {
+      if (i === this.act || !this.chapN) return;
+      this.act = i;
+      this.chapN.textContent = String(i + 1).padStart(2, '0')
+        + ' / ' + String(this.acts.length).padStart(2, '0');
+      this.chapT.textContent = String(this.acts[i] || '').split('\u00b7').pop().trim();
     },
 
     bind(root) {
@@ -4103,6 +4158,7 @@
         len: 1,
         dark: n.classList.contains('scn--dark') || n.classList.contains('scn--lab')
           || n.classList.contains('scn--room'),
+        act: Number(n.dataset.act) || 0,
         vid: $('.fg-vid[data-scrub] video', n),
         p: -1,
       }));
@@ -4154,7 +4210,11 @@
     tick() {
       const y = App.y();
       const vh = this.vh || innerHeight;
-      let act = null;
+      /* WHICH ACT IS ON SCREEN, and it used to be dead. `act` was assigned
+         the scene's id on every frame and read by nothing — the last of the
+         act rail, left behind when the rail went. It carries the chapter
+         reading now. */
+      let act = -1;
       let tone = this.tone || 'light';
 
       this.scenes.forEach((s) => {
@@ -4177,7 +4237,7 @@
             else s.vid.currentTime = t;
           }
         }
-        if (rTop <= vh * 0.5) { act = s.n.id; tone = s.dark ? 'dark' : 'light'; }
+        if (rTop <= vh * 0.5) { act = s.act; tone = s.dark ? 'dark' : 'light'; }
       });
 
       /* THE CHROME TAKES THE SCENE'S TONE. The progress rule and the act dots
@@ -4188,6 +4248,8 @@
         this.tone = tone;
         this.film.dataset.tone = tone;
       }
+
+      if (act >= 0) this.setAct(act);
 
       if (this.bar) {
         const fp = Math.min(1, Math.max(0, (y - this.first) / this.total));
@@ -4401,22 +4463,27 @@
 
     /* --- the film ---------------------------------------------------------
 
-       THE HERO IS THE SAME HERO. It is the one thing this page shares with
-       the document layout, and deliberately: every project on this site
-       opens with the same title card, so the reader knows they are still in
-       the same portfolio before the film starts one screen down.
+       THE HERO IS NOT THE SAME HERO, and that is the one thing this page no
+       longer shares with the document layout. A study that has a film of its
+       own opens ON the film — see `filmHero` below — and a study that has
+       none still gets the paper title card every other project opens with.
+       Which one a project gets is a value in its data, not a branch written
+       about a slug.
 
        WHAT IS NOT HERE. No `#rail` — twenty-six scenes as a table of
        contents is a list nobody reads, and the film carries its own chrome
-       instead: a progress hairline and four act dots. No `videos()` either;
-       the one video in the film is seeked by scroll position and an
-       autoplay-on-visible binding would fight it for the same element. */
+       instead: a progress hairline along the top and the chapter reading in
+       the bottom-left corner. No `videos()` either; the one video inside the
+       film is seeked by scroll position and an autoplay-on-visible binding
+       would fight it for the same element. The hero's film is bound by
+       `bindFilm` instead, because it is played rather than scrubbed. */
     film(p, item) {
       const main = $('#main');
       const rail = $('#rail');
       if (rail) rail.remove();
 
-      if (item) main.appendChild(this.hero(p, item));
+      if (p.hero && p.hero.kind === 'film') main.appendChild(this.filmHero(p));
+      else if (item) main.appendChild(this.hero(p, item));
       const film = Film.build(p);
       main.appendChild(film);
       /* the project's own ending, after the film and outside it */
@@ -4554,6 +4621,243 @@
       h.appendChild(foot);
       this.heroEl = h;
       return h;
+    },
+
+
+    /* --- the first screen, when the project has a film of its own ---------
+
+       WHAT THIS REPLACED. Two openings, back to back. First a paper title
+       card — the name, three facts and a line, with the tile's artwork held
+       still — and then, one screen down, the cold open: a 56px headline over
+       a black frame waiting for a render that was never cut. A visitor
+       arriving at a hardware project met two headlines and no hardware.
+
+       So there is one opening and the product is in it. Nine and a half
+       seconds of the X0 on black, running the moment the page lands, and
+       five pieces of chrome around the edges of it. Every one of those five
+       says something a reader needs — what this is, what it is called, what
+       was done, how far through the film they are, and that there is more
+       below. Nothing is here to fill the frame; the frame is meant to be
+       empty, because the thing in the middle of it is the work.
+
+       THE FILM IS NOT A PLAYER AND CANNOT BE TURNED INTO ONE. No `controls`,
+       nothing focusable, and `pointer-events: none` the whole way up the
+       stage — so there is no target to click, no hover that can reveal one,
+       and no way to scrub, pause or mute something that is already silent.
+       `muted` is set as a PROPERTY as well as an attribute because that is
+       the one Safari reads when it decides whether an autoplay is allowed,
+       and `playsinline` is what stops iOS taking the video fullscreen the
+       moment it starts.
+
+       AND IT IS ALLOWED NOT TO PLAY. `play()` returns a promise that is
+       rejected under iOS Low Power Mode and under a few managed-device
+       policies. Nothing is drawn to say so: the poster is frame one of the
+       film on the film's own black, so a hero that never starts is a hero
+       that is simply still. One retry is armed on the first real gesture,
+       which is exactly what those engines are waiting for.
+
+       WITH MOTION OFF THE POSTER IS THE HERO. `prefers-reduced-motion` is a
+       system-level statement that moving pictures are a problem, and the one
+       honest answer to it is the still frame — which is also the mechanism
+       WCAG asks for, without drawing a pause button the brief rules out. */
+    filmHero(p) {
+      const d = p.hero || {};
+
+      const h = el('header', {
+        class: 'fhero',
+        style: d.ground ? `--fh-ground:${d.ground}` : null,
+      });
+
+      const stage = el('div', { class: 'fhero__stage', 'aria-hidden': 'true' });
+      const v = el('video', {
+        class: 'fhero__vid',
+        poster: d.poster ? url(d.poster) : null,
+        /* NO `autoplay` ATTRIBUTE, AND ITS ABSENCE IS THE REDUCED-MOTION
+           ANSWER. The attribute starts the film before any of this code gets
+           a say, which is why a visitor who had asked for less motion was
+           getting the whole loop anyway. Playback is started by `bindFilm`
+           instead — one place, which can decline. The page is built by
+           script from end to end, so there is no no-JS case that the
+           attribute would have been covering. */
+        loop: '', muted: '', playsinline: '',
+        'webkit-playsinline': '',
+        preload: 'auto',
+        tabindex: '-1',
+        disablepictureinpicture: '',
+        disableremoteplayback: '',
+        controlslist: 'nodownload noplaybackrate noremoteplayback nofullscreen',
+      });
+      v.muted = true;
+      v.defaultMuted = true;
+      v.playsInline = true;
+      v.controls = false;
+      /* `<source>` RATHER THAN `src`, so the engine chooses and nothing here
+         has to know which engine it is. Order is the preference: the small
+         file first, the universal one behind it. */
+      /* AND WITH MOTION OFF THEY ARE NOT ADDED AT ALL. A `<video>` with no
+         source shows its poster and downloads nothing, so a visitor who has
+         asked for less motion gets the still frame and keeps the 350KB. */
+      if (!REDUCED) {
+        [d.film, d.film2].forEach((f) => {
+          if (!f) return;
+          v.appendChild(el('source', {
+            src: url(f),
+            type: /\.webm$/i.test(f) ? 'video/webm' : 'video/mp4',
+          }));
+        });
+      }
+      stage.appendChild(v);
+      h.appendChild(stage);
+
+      /* --- 1. the identifier, top left ---------------------------------
+         Editorial metadata, not a logo: who made it on one line and what it
+         is on the next, both small enough that the eye passes over them on
+         the way to the product. */
+      if (d.mark) {
+        h.appendChild(el('div', { class: 'fhero__mark', 'data-in': '1' },
+          `<span class="fhero__mark-n">${esc(d.mark)}</span>`
+          + (d.marksub ? `<span class="fhero__mark-s">${esc(d.marksub)}</span>` : '')));
+      }
+
+      /* --- 2. the annotation, against the right edge --------------------
+         AN OVERLAY, NOT A CARD. No box, no blur, no radius, no shadow: an
+         identifier, a 1px rule and two lines of type, which is what a
+         product interface labels a part with. It sits on the right because
+         the film keeps its subject in the middle of the frame and the right
+         third is the emptiest part of every shot in it. */
+      const a = d.anno;
+      if (a) {
+        h.appendChild(el('div', { class: 'fhero__anno', 'data-in': '4', 'aria-hidden': 'true' },
+          `<span class="fhero__anno-i">${esc(a.id)}</span>`
+          + `<i class="fhero__anno-r"></i>`
+          + (a.lines || []).map((l) => `<span class="fhero__anno-l">${esc(l)}</span>`).join('')));
+      }
+
+      /* --- 3. the headline, and the record under it ---------------------
+         THE HEADLINE IS 56px AND NOT 96px. The one it replaces was set at
+         `--step-3` and was the largest thing on the screen by a long way,
+         which puts the writing in front of the work on the one screen where
+         the work should be in front of everything. At this size it is a
+         caption to a film rather than a poster over it, and the air around
+         it is doing as much as the type is. */
+      const words = el('div', { class: 'fhero__words' });
+      if (d.h) words.appendChild(el('h1', { class: 'fhero__h', 'data-in': '2' }, d.h));
+      if ((d.meta || []).length) {
+        words.appendChild(el('dl', { class: 'fhero__meta', 'data-in': '3' },
+          d.meta.map((m) => `<div><dt>${esc(m.k)}</dt><dd>${esc(m.v)}</dd></div>`).join('')));
+      }
+      h.appendChild(words);
+
+      /* --- 4. the way down ----------------------------------------------
+         NOT A BOUNCING ARROW. A word, a 1px rule under it, and a short
+         bright segment that falls down the rule on a slow loop — the motion
+         is the direction, and the glyph at the bottom is the same ↓ the
+         site's other cue uses rather than a drawn triangle that does not
+         resolve at 8px. It leaves on the first 40px of scroll, because by
+         then it has been answered. */
+      if (d.cue) {
+        h.appendChild(el('div', { class: 'fhero__cue', 'data-in': '5', 'aria-hidden': 'true' },
+          `<span class="fhero__cue-w">${esc(d.cue)}</span>`
+          + `<span class="fhero__cue-l"><i></i></span>`
+          + `<span class="fhero__cue-a">↓</span>`));
+      }
+
+      /* --- 5. how long the film is --------------------------------------
+         A READOUT, AND IT IS NOT A SCRUBBER. It cannot be clicked, focused
+         or dragged: it has no handler, it is `aria-hidden`, and the whole
+         hero's chrome layer is `pointer-events: none`. The duration is read
+         off the file rather than authored, so it can never be a number the
+         film does not actually run for. */
+      const prog = el('div', { class: 'fhero__prog', 'data-in': '5', 'aria-hidden': 'true' },
+        `<span class="fhero__prog-n">${esc(d.reel || '01')}</span>`
+        + `<span class="fhero__prog-t"><i></i></span>`
+        + `<span class="fhero__prog-d">--:--</span>`);
+      h.appendChild(prog);
+
+      this.heroEl = h;
+      this.bindFilm(h, v, prog);
+      return h;
+    },
+
+    /* --- keeping the film running, and the readout honest -----------------
+
+       THREE JOBS AND NOTHING ELSE. Start it; keep the hairline in step with
+       it; and stop paying for it once it is off screen. The last one is the
+       reason there is an observer here at all — twenty-six scenes of scroll
+       with a 1080p loop decoding behind them is a fan spinning up for a
+       picture nobody can see — and it is invisible either way, because the
+       film is only ever paused while it is out of frame.
+
+       THE READOUT IS DRIVEN BY rAF, NOT `timeupdate`. That event fires about
+       four times a second, which on a nine-second film is a hairline that
+       visibly steps. The loop only runs while the hero is in view. */
+    bindFilm(h, v, prog) {
+      const fill = $('.fhero__prog-t i', prog);
+      const read = $('.fhero__prog-d', prog);
+
+      /* FLOOR, NOT ROUND. Every player anybody has used shows a nine-and-a-
+         half second file as 0:09, and a readout that says 00:10 next to a
+         hairline which finishes early is a readout nobody trusts twice. */
+      const mmss = (t) => {
+        const s = Math.max(0, Math.floor(t));
+        return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+      };
+      const stamp = () => { if (v.duration) read.textContent = mmss(v.duration); };
+      if (v.readyState >= 1) stamp();
+      else v.addEventListener('loadedmetadata', stamp, { once: true });
+
+      /* THE ENTRANCE IS A CLASS, SET ON THE FRAME AFTER THE ONE THAT LAID
+         THE HERO OUT. Two frames, so the starting state is painted once
+         before anything transitions out of it — a single rAF here and the
+         browser is free to collapse both into the same style recalculation,
+         which shows up as the chrome simply being there. */
+      requestAnimationFrame(() => requestAnimationFrame(() => h.classList.add('is-in')));
+
+      if (REDUCED) return;
+
+      let raf = 0;
+      const draw = () => {
+        raf = 0;
+        if (v.duration) {
+          fill.style.setProperty('--vp', (v.currentTime / v.duration).toFixed(4));
+        }
+        if (!v.paused) raf = requestAnimationFrame(draw);
+      };
+      const run = () => { if (!raf) raf = requestAnimationFrame(draw); };
+
+      /* Autoplay can be refused, and the refusal is a rejected promise rather
+         than an error anybody sees. Retry once on the first gesture — a
+         pointer, a key or a scroll — which is the permission those engines
+         are actually waiting for. */
+      const start = () => {
+        const q = v.play();
+        if (q && q.catch) q.catch(() => {});
+        run();
+      };
+      const nudge = () => { if (v.paused) start(); };
+      ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach((e) => {
+        addEventListener(e, nudge, { once: true, passive: true });
+      });
+
+      /* off screen, off. `0` as the threshold with a 25% bottom margin means
+         it stops once the hero is genuinely gone rather than the moment its
+         last pixel leaves. */
+      if (typeof IntersectionObserver === 'function') {
+        new IntersectionObserver((es) => {
+          es.forEach((e) => {
+            if (e.isIntersecting) start();
+            else { v.pause(); if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+          });
+        }, { rootMargin: '0px 0px 25% 0px' }).observe(h);
+      } else start();
+
+      /* a backgrounded tab is the same question as an off-screen hero */
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) v.pause();
+        else if (h.getBoundingClientRect().bottom > 0) start();
+      });
+
+      v.addEventListener('play', run);
     },
 
     /* --- the way on ------------------------------------------------------- */

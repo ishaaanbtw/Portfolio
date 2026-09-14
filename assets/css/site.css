@@ -10281,6 +10281,463 @@ body[data-page='project'].phero-up .tools {
 }
 
 /* ==========================================================================
+   48. THE FILM'S OWN FIRST SCREEN
+
+   A case study whose subject is a physical object opens on the object, and
+   the honest way to show a small piece of hardware moving is to show it
+   moving. So this hero is a video and five pieces of chrome, and the chrome
+   is written to lose every argument it has with the picture.
+
+   WHAT IT REPLACED, AND THE MISTAKE IT WAS. The X0 study used to open twice:
+   the paper title card in section 47, and then the film's own cold open one
+   screen below it — a 56px headline over a frame reserved for a render that
+   was never cut. Two arrivals, two headlines, no product. Section 47 is not
+   deleted; the Onefinnet study still opens on it, and a project with no film
+   of its own still should.
+
+   THE RULES THIS IS BUILT TO, all of which are about restraint:
+
+     the film is the hero. Nothing on top of it is bigger, brighter or
+       busier than it is, and there is no element here whose job is to fill
+       space — empty is the composition, not a gap in it
+     no gradients, no glass, no radii, no shadows, no accent. Flat white ink
+       at four opacities on the film's own black, and 1px rules
+     nothing here is a control. The chrome layer is `pointer-events: none`
+       from the root down, so the film cannot be paused, scrubbed, muted or
+       fullscreened by anything a visitor can reach
+
+   #030303 IS MEASURED, NOT CHOSEN. It is what the video's corner pixel
+   reads, stated in the data as `ground` and arriving here as `--fh-ground`.
+   Every surface in the hero is that value, which is why the letterbox on a
+   portrait screen has no edge to see.
+   ========================================================================== */
+
+.fhero {
+  --fh-ground: #030303;
+  /* the margin every corner is set from, and it is one number so the four
+     corners cannot drift apart at a breakpoint */
+  --fh-pad: clamp(1.375rem, 3.2vw, 3rem);
+  /* THE FOOT CLEARS THE FURNITURE. The grid and theme pods are fixed 20px
+     off the bottom-left corner and 32px tall, and IshaanLLM's chip owns the
+     bottom-right; a chrome row on the baseline would land on both. 4.5rem
+     puts this row above them, so the left edge reads as one stack — the
+     film's position, then the reader's controls, then the window. */
+  --fh-foot: calc(4rem + var(--sa-bottom, 0px));
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--fh-ground);
+  color: #fff;
+  overflow: clip;
+}
+
+/* --- the film -------------------------------------------------------------
+
+   `cover` ON A LANDSCAPE WINDOW AND `contain` ON A PORTRAIT ONE, and the
+   second half of that is the reason the ground colour is measured. The film
+   is 16:9 and keeps its subject in the middle of the frame; cropping it to a
+   phone's 9:19.5 would scale the card up to fill the height and push it into
+   the type. `contain` letterboxes instead — and a letterbox made of exactly
+   the video's own black, on a page made of exactly the video's own black, is
+   not a letterbox. It is a film that got smaller. */
+.fhero__stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--fh-ground);
+  /* NOT A CLICK TARGET, AND THIS IS THE LINE THAT GUARANTEES IT. A `<video>`
+     with no `controls` still answers a click by toggling playback in some
+     engines, and a wrapper that cannot be hit cannot pass one on. */
+  pointer-events: none;
+}
+
+.fhero__vid {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  pointer-events: none;
+  /* Safari draws its own controls for a video it decides is user-facing;
+     these are the two shadow parts it uses, and neither has any business
+     existing on an ambient background. */
+}
+.fhero__vid::-webkit-media-controls,
+.fhero__vid::-webkit-media-controls-enclosure,
+.fhero__vid::-webkit-media-controls-panel,
+.fhero__vid::-webkit-media-controls-start-playback-button { display: none !important; }
+
+/* --- AND ON A PORTRAIT SCREEN IT IS A BAND, NOT A BACKGROUND -------------
+
+   A PHONE CANNOT HAVE BOTH, AND THIS IS THE HONEST HALF. Cropping the film
+   to a 9:19.5 window does make the card large — it is the only thing left in
+   frame — but it also drops that card straight onto the headline, and the
+   brief's one hard rule is that the chrome never sits on the product. So on
+   a portrait screen the film stops being a background and becomes a band in
+   the upper half, with the words on clean black underneath it. Nothing
+   overlaps anything, the negative space is deliberate rather than left over,
+   and the composition reads as a film with a caption under it.
+
+   THE BAND IS WIDER THAN THE WINDOW ON PURPOSE. `contain` inside the
+   viewport's own width would show the film at 219px tall on an 844px screen,
+   and the subject is small IN the frame — that is the film's composition,
+   not something to fix by re-cropping somebody's footage. Half a viewport of
+   overhang on each side scales the picture up by 50% and spends it on the
+   left and right thirds, which are black in every frame of the film. The
+   subject stays centred and stays whole. */
+@media (max-aspect-ratio: 1 / 1) {
+  .fhero__stage {
+    inset: 10vh -25% auto -25%;
+    height: 38vh;
+  }
+  .fhero__vid { object-fit: contain; }
+}
+
+/* A PORTRAIT TABLET IS NOT A TALL PHONE. There is enough width here for the
+   film to be most of the screen, so the band takes half the height and only
+   a tenth of a viewport of overhang — any more and the picture is larger
+   than the space between the top margin and the headline. */
+@media (max-aspect-ratio: 1 / 1) and (min-width: 46rem) {
+  .fhero__stage {
+    inset: 12vh -10% auto -10%;
+    height: 50vh;
+  }
+}
+
+/* --- the chrome -----------------------------------------------------------
+
+   Every piece of it is placed against the hero's own box rather than laid
+   out in a flow, because what each one is doing is standing in a corner. The
+   shared type is stated once here: the mono, uppercase, tracked out, and
+   small enough that it reads as a mark on a frame rather than as writing. */
+.fhero__mark,
+.fhero__anno,
+.fhero__meta,
+.fhero__cue,
+.fhero__prog {
+  position: absolute;
+  z-index: 2;
+  font-family: var(--mono);
+  font-size: 0.625rem;            /* 10px */
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* --- 1 · the identifier, top left --------------------------------------- */
+.fhero__mark {
+  top: var(--fh-pad);
+  left: var(--fh-pad);
+  display: grid;
+  gap: 0.3rem;
+}
+.fhero__mark-n { color: rgba(255, 255, 255, 0.88); letter-spacing: 0.2em; }
+.fhero__mark-s { color: rgba(255, 255, 255, 0.42); }
+
+/* --- 2 · the annotation, right edge --------------------------------------
+
+   AN OVERLAY, NOT A CARD. No box, no blur, no radius, no shadow — an
+   identifier, a rule and two lines, which is how a product interface labels
+   a part. `text-align: right` and nothing else holds it to the edge. */
+.fhero__anno {
+  top: 50%;
+  right: var(--fh-pad);
+  translate: 0 -50%;
+  display: grid;
+  justify-items: end;
+  gap: 0.45rem;
+  text-align: right;
+}
+.fhero__anno-i { color: rgba(255, 255, 255, 0.7); letter-spacing: 0.18em; }
+.fhero__anno-r {
+  display: block;
+  width: 2.75rem;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.22);
+  margin: 0.15rem 0;
+}
+.fhero__anno-l { color: rgba(255, 255, 255, 0.36); }
+
+/* --- 3 · the headline and the record ------------------------------------
+
+   56px AT 1440 AND NOT 96. The headline it replaced was the largest thing on
+   its screen by a long way, which puts the writing in front of the work on
+   the one screen where that is exactly backwards. At this size, with this
+   much air under it, it reads as the caption to a film rather than a poster
+   laid over one. Tight leading and a little negative tracking are what keep
+   two lines reading as one object. */
+.fhero__words {
+  position: absolute;
+  z-index: 2;
+  left: var(--fh-pad);
+  right: var(--fh-pad);
+  /* THE GAP IS MEASURED OFF THE HEIGHT, NOT OFF A GUESS. Everything below
+     this block is fixed to the bottom of the window and everything above it
+     is the film; a constant would be a comfortable gap on a 1112px tablet
+     and a collision on a 768px laptop, which is exactly what it was. `vh`
+     with a floor and a ceiling holds the same proportion of air at every
+     height the hero is used at.
+
+     AND WHEN IT IS TIGHT, THE BLOCK SHRINKS RATHER THAN MOVING. Dropping it
+     to make room at the bottom only pushes the headline up into the card,
+     and the two constraints then fight over the same fifty pixels. The type
+     scale and the rule under `max-height` do the giving instead. */
+  bottom: calc(var(--fh-foot) + clamp(2.5rem, 8.2vh, 5.5rem));
+  pointer-events: none;
+}
+
+.fhero__h {
+  margin: 0;
+  max-width: 18ch;
+  font-family: var(--sans);
+  /* 52px AT 1440, NOT 56. The film keeps its subject in the middle of the
+     frame and the headline is set from the left margin; four pixels of size
+     is the difference between the first line stopping short of the card's
+     column and running into it. Still inside the 48–64 the brief asks for,
+     and the extra air reads as more restraint rather than less presence. */
+  font-size: clamp(2rem, 1.1rem + 2.3vw, 3.25rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.026em;
+  color: rgba(255, 255, 255, 0.97);
+  text-wrap: balance;
+}
+
+/* THREE PAIRS ON ONE LINE, label over value. A definition list because that
+   is what it is, and a row rather than a stack because three stacked pairs
+   in the corner of a film is a sidebar. */
+.fhero__meta {
+  position: static;
+  margin: clamp(1rem, 3vh, 2rem) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem clamp(2rem, 5vw, 4.5rem);
+}
+.fhero__meta div { display: grid; gap: 0.35rem; }
+.fhero__meta dt { color: rgba(255, 255, 255, 0.34); }
+.fhero__meta dd { margin: 0; color: rgba(255, 255, 255, 0.72); }
+
+/* --- 4 · the way down ----------------------------------------------------
+
+   NOT A BOUNCING ARROW. A word, a 1px rule under it, and a short bright
+   segment that falls down the rule and fades out at the bottom of it — the
+   motion IS the direction, and it is slow enough (3.8s) that it reads as
+   something breathing rather than something demanding. The glyph under it is
+   the same ↓ character section 47 settled on, for the same reason: a drawn
+   triangle does not resolve at eight pixels. */
+.fhero__cue {
+  left: 50%;
+  bottom: calc(var(--fh-foot) - 2.5rem);
+  translate: -50% 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+.fhero__cue-l {
+  position: relative;
+  display: block;
+  width: 1px;
+  height: 2.75rem;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+.fhero__cue-l i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 0.9rem;
+  background: rgba(255, 255, 255, 0.85);
+  animation: fheroFall 3.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+.fhero__cue-a {
+  font-size: 0.5rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes fheroFall {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  22%  { opacity: 1; }
+  78%  { opacity: 1; }
+  100% { transform: translateY(2.75rem); opacity: 0; }
+}
+
+/* --- 5 · how long the film is -------------------------------------------
+
+   A READOUT AND NOT A SCRUBBER, and the difference is not a matter of
+   styling: it has no handler, it is `aria-hidden`, it is not in the tab
+   order and the layer it sits on cannot be hit. There is nothing to click
+   even if it looked like there were.
+
+   `--vp` is written by `bindFilm` off `currentTime / duration` on a frame
+   loop, and the loop only runs while the hero is on screen. The duration is
+   read off the file rather than authored, so the number on the right cannot
+   disagree with the film. */
+.fhero__prog {
+  right: var(--fh-pad);
+  bottom: var(--fh-foot);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: rgba(255, 255, 255, 0.34);
+}
+.fhero__prog-t {
+  display: block;
+  width: clamp(4rem, 9vw, 8.5rem);
+  height: 1px;
+  background: rgba(255, 255, 255, 0.16);
+}
+.fhero__prog-t i {
+  display: block;
+  height: 100%;
+  width: calc(var(--vp, 0) * 100%);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+/* --- the entrance ---------------------------------------------------------
+
+   ONE SCREEN ARRIVING, IN ORDER, AND NOTHING BOUNCES. The film is already
+   running when the first of these starts — it is the ground, not a
+   participant — and then the chrome settles onto it: who made this, what it
+   is, what was done, what the object is, and finally the two readouts. Eight
+   pixels of travel and a long fade each; the stagger is what makes it read
+   as a sequence rather than as a page that was slow.
+
+   `data-in` IS THE ORDER AND THE STYLESHEET OWNS THE TIMING. The markup
+   states which beat a thing is, never how many milliseconds late it is, so
+   retiming the whole entrance is five numbers in one place. */
+/* `transform`, AND NOT `translate`, AND THAT IS A BUG FIX RATHER THAN A
+   PREFERENCE. Two pieces of this chrome are PLACED with `translate` — the
+   annotation is centred on the right edge with `0 -50%`, the cue on the
+   bottom edge with `-50% 0` — and an entrance written in the same property
+   does not add to that, it replaces it. Both landed half their own size off
+   true. `transform` is a separate property, composed after `translate`, so
+   the placement and the animation stack instead of fighting. */
+.fhero [data-in] {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 900ms var(--ease),
+    transform 900ms var(--ease);
+}
+.fhero.is-in [data-in] { opacity: 1; transform: none; }
+
+.fhero [data-in='1'] { transition-delay: 260ms; }
+.fhero [data-in='2'] { transition-delay: 460ms; }
+.fhero [data-in='3'] { transition-delay: 760ms; }
+.fhero [data-in='4'] { transition-delay: 1020ms; }
+.fhero [data-in='5'] { transition-delay: 1240ms; }
+
+/* THE CUE'S ONE JOB IS TO BECOME UNNECESSARY, which it does the instant a
+   visitor has scrolled at all. `is-past` is set by `Project.tick` at 40px —
+   the same threshold, and the same class, section 47's cue uses. */
+.fhero.is-past .fhero__cue,
+.fhero.is-past .fhero__prog {
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 420ms var(--ease),
+    transform 420ms var(--ease);
+}
+
+/* --- with motion off ------------------------------------------------------
+
+   THE POSTER IS THE HERO. `prefers-reduced-motion` is a visitor stating that
+   moving pictures are a problem, and the honest answer is the still frame —
+   which is also the mechanism WCAG asks for around anything that moves for
+   more than five seconds, arrived at without drawing the pause button the
+   brief rules out. `bindFilm` returns before it starts anything; this is the
+   half of it that stops the chrome animating in. */
+@media (prefers-reduced-motion: reduce) {
+  .fhero [data-in],
+  .fhero.is-in [data-in] {
+    opacity: 1;
+    translate: none;
+    transition: none;
+  }
+  .fhero__cue-l i { animation: none; opacity: 0.5; }
+  .fhero.is-past .fhero__cue,
+  .fhero.is-past .fhero__prog { transition: none; }
+}
+
+/* --- narrower -------------------------------------------------------------
+
+   THE ORDER OF SURRENDER IS THE HIERARCHY, READ BACKWARDS. The annotation
+   goes first: it is the fifth thing on a screen that now has room for three,
+   and on a phone it would sit on top of the card. Then the readout, which is
+   a detail nobody came for. What never goes is the film, the headline, the
+   record and the way down. */
+@media (max-width: 64rem) {
+  .fhero__prog-t { width: 3.5rem; }
+}
+
+/* 56rem AND NOT 64rem. At 1024 the right third of the frame is still empty
+   and the annotation is still standing in it; it is only once the window is
+   narrower than the film's own subject that it has nowhere to be. */
+@media (max-width: 56rem) {
+  .fhero__anno { display: none; }
+}
+
+@media (max-width: 46rem) {
+  .fhero {
+    --fh-pad: 1.25rem;
+    --fh-foot: calc(4.25rem + var(--sa-bottom, 0px));
+  }
+  /* THE AUTHORED BREAK STAYS, AND TAKING IT OUT WAS A BUG. `display: none`
+     on a `<br>` removes the break and the word space with it, so the phone
+     read "self-custodyfor everyone." The break is also simply right at this
+     width: the first clause wraps to two lines and "for everyone." lands on
+     its own, which is the same shape the desktop has. */
+  /* NO MEASURE AT ALL DOWN HERE, AND THE SIZE COMES OFF THE WIDTH. 18ch is
+     a measure for 52px type in a 1348px column and it wraps the first clause
+     a word early in a 350px one. But the column alone was not enough: at the
+     32px floor "Designing self-custody" is about 352px against 350px of
+     room, so it broke anyway and left "custody" on a line by itself, two
+     pixels short. The floor comes off and the size is read from the viewport
+     instead, which holds that clause on one line from 360px up. */
+  .fhero__h {
+    max-width: none;
+    font-size: clamp(1.625rem, 7.4vw, 2.125rem);
+  }
+  .fhero__prog { display: none; }
+  /* THE CUE CLIMBS OVER THE FURNITURE. IshaanLLM's chip is 164px wide in the
+     bottom-right and on a 390px screen the centre of the window is inside
+     it, so a cue hanging off the bottom edge lands on the launcher. It sits
+     above the whole row instead, and loses half its rule to pay for it. */
+  .fhero__cue { bottom: calc(var(--fh-foot) + 0.5rem); }
+  .fhero__cue-l { height: 1.5rem; }
+  .fhero__words { bottom: calc(var(--fh-foot) + 6.5rem); }
+  /* three pairs stacked, because side by side at this width they are three
+     columns of two words each */
+  .fhero__meta { gap: 0.85rem 1.75rem; }
+  .fhero__meta div { min-width: 8.5rem; }
+}
+
+/* A SHORT WINDOW IS THE ONE CASE WHERE THE CHROME CAN REACH THE PRODUCT.
+   Laptops in the 1280x720 class, and phones in landscape: the film fills the
+   height, so the card is as large as it ever gets and the words are closer
+   to it than anywhere else. The type steps down and the air between the
+   headline and the foot closes, which is the cheapest of the fixes and the
+   only one that does not move anything sideways. */
+@media (max-height: 44rem) {
+  .fhero__meta { margin-top: 0.75rem; }
+  .fhero__cue-l { height: 1.75rem; }
+}
+
+@media (max-height: 34rem) and (orientation: landscape) {
+  .fhero__meta,
+  .fhero__cue { display: none; }
+}
+
+
+/* ==========================================================================
    45. THE ABOUT PAGE
 
    IT IS THE HOME PAGE'S LAYOUT WITH A DOCUMENT IN THE CANVAS.
@@ -15211,6 +15668,60 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 }
 
 .film[data-tone='dark'] .film__bar i { background: #7e7f86; }
+
+/* --- AND WHERE YOU ARE IN IT ---------------------------------------------
+
+   AN ACT RAIL LIVED HERE ONCE AND WAS DELETED. The reason still holds: four
+   dots and a chapter label down the left edge is a table of contents for
+   something meant to be watched rather than navigated, and it competed with
+   the work at every scroll position. This is a smaller claim. Two lines in
+   the corner furthest from the frame's subject, changing four times in
+   forty-six screens — the number, so a reader who lands mid-film knows how
+   far in they are, and the act's name, so the number means something.
+
+   IT BEGINS ON THE HERO. Fixed, built with the film, and reading 01 / 04
+   from the first paint — so it is one object in one corner from the opening
+   screen to the last, which is the whole of what makes it a chapter system
+   rather than a label on a hero.
+
+   ABOVE THE PODS, NOT BESIDE THEM. The grid and theme pods are 32px circles
+   fixed 20px off this corner; 4.5rem clears them, and the two together read
+   as one stack rather than as a row of unrelated furniture. It takes the
+   film's tone the same way the hairline does, because no single grey clears
+   4.5:1 on both white and near-black. */
+.film__chap {
+  position: fixed;
+  left: calc(20px + var(--sa-left, 0px));
+  /* THE SAME 4rem THE HERO'S OWN FOOT ROW SITS ON — see `--fh-foot` in
+     section 48 — so on the first screen the chapter reading, the scroll cue
+     and the readout share one baseline. It is stated rather than inherited
+     because this element is fixed to the window and outlives the hero by
+     forty-five screens. */
+  bottom: calc(4rem + var(--sa-bottom, 0px));
+  z-index: 40;
+  display: grid;
+  gap: 0.3rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  line-height: 1.5;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.film__chap-n { color: #57585e; }
+.film__chap-t { color: #8a8b91; }
+
+.film[data-tone='dark'] .film__chap-n { color: #6e6f76; }
+.film[data-tone='dark'] .film__chap-t { color: #a7a8ae; }
+
+/* A phone has one corner and IshaanLLM's chip and the two pods are already
+   in it. The chapter reading is the thing on this list a reader can most
+   afford to be without. */
+@media (max-width: 46rem) {
+  .film__chap { display: none; }
+}
 
 
 /* --- narrow -------------------------------------------------------------- */

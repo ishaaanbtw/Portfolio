@@ -3,7 +3,11 @@
 Generated from the `scenes` array in `assets/js/content.js`. Regenerate rather
 than editing by hand — if this file and the data disagree, the data is right.
 
-**26 scenes · ~4720 svh (about 47 screens) · 27 reserved frames.**
+**25 scenes · ~4620 svh (about 46 screens) · 26 reserved frames.**
+
+The film opens on the hero's own film — `assets/media/x0/hero-film.mp4`, a
+real asset, not a reserved frame — and scene 01 is therefore gone: the cold
+open it used to be is that video. Nothing below is waiting on it.
 
 The film is white with 6 black scenes as punctuation, and one dark stretch that
 is not punctuation: `x0-system`, the design-system table, which is dark because
@@ -17,11 +21,6 @@ component sheet in `x0-n45`, and the competitor scene in `x0-competitors`,
 which is the one place in this film with real legal exposure.
 
 ---
-
-## 01 — `x0-open` · object · 130svh
-
-- **The X0 card, lit from one side** — The card, three-quarter view, one hard key light from the left, on black. Transparent PNG at 3x so it can sit in front of the letters.  
-  `ratio 1.586 (ID-1 card)`
 
 ## 04 — `x0-subtract` · strike · 180svh
 
