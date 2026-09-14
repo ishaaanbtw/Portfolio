@@ -3274,56 +3274,241 @@
 
     /* --- THE DESIGN SYSTEM, AS A TABLE -----------------------------------
 
-       There is no container renderer here any more and that is the entire
-       point: an asset is an <img> of a transparent SVG and nothing else. What
-       used to be a `lab` panel — glass, a lit edge, a computed aspect-ratio,
-       a slot label with the pixel count in it — is gone, because every one of
-       those was a frame drawn around somebody's finished artwork.
+       There is no container renderer here and that is still the entire point:
+       an asset is an <img> of a transparent SVG and nothing else. What used to
+       be a `lab` panel — glass, a lit edge, a computed aspect-ratio, a slot
+       label with the pixel count in it — is gone, because every one of those
+       was a frame drawn around somebody's finished artwork.
 
-       An object states where it is, how wide, when it arrives, how it enters
-       and how fast it drifts; the stylesheet turns those into motion off the
-       scene's single `--p`. The height is never stated. The file's own
-       proportion decides it, which is what it means to let a vector be a
-       vector.
+       WHAT CHANGED IS THE ORDER, NOT THE ROOM. The composition, the tonal
+       hierarchy, the drift rates and the resting places are the ones that were
+       already here. Three things were added, and all three exist to tell the
+       same story in the right sequence:
 
-       THE PHONE IS NOT IN THE LIST. It is the product, not a sheet from the
-       file; it is there from the first frame and it never arrives. */
+         .room__orb  ONE PER OBJECT, and it is how an artefact orbits. The
+                     wrapper rotates a degree or two about the PHONE's centre
+                     across the pin and the artwork inside counter-rotates by
+                     the same amount, so the piece travels on an arc around the
+                     device while staying upright. No trigonometry, no
+                     keyframes, and every object can carry its own rate — which
+                     is the parallax.
+
+       .room__frame  the hardware, and it is a FILE. A transparent render of
+                     the device with its screen cut out, lying over the glass.
+                     Nothing in this codebase describes what a phone looks
+                     like — no rounded rects, no strokes, no bezel gradients.
+                     Whatever the render is, is what you see.
+
+       .room__glass  a plate of real black with the interface inside it, sized
+                     to the frame's aperture.
+
+       NOTHING IS DRAWN AND NOTHING IS BUILT. The device is revealed — it comes
+       up from 98%, a light travels once across its edges, and it is there. The
+       display is off while that happens, which is what an OLED at rest is: not
+       a dimmed screenshot, actual black. Then the interface fades up as ONE
+       layer, already finished, the way a phone wakes. No part of the hardware
+       and no part of the UI is ever assembled, sliced, or animated into
+       place. */
     room: (s) => {
       const dev = s.device || {};
       const say = s.say || [];
+      const num = (v, d) => (v == null ? d : v);
       const M = (m) => (m
         ? `<span class="room__m room__m--${m.at || 'bl'}">` +
             `<b>${esc(m.n)}</b>` + (m.s ? `<i>${esc(m.s)}</i>` : '') +
           `</span>`
         : '');
+
       return `<div class="room" style="--gx:${dev.x || '50%'};--gy:${dev.y || '52%'}` +
-          `;--gat:${dev.at == null ? 0.33 : dev.at}">` +
-          (s.objects || []).map((o, i) =>
-            `<div class="room__o" style="--x:${o.x};--y:${o.y};--w:${o.w};--at:${o.at}` +
-              `;--dx:${o.dx || '0px'};--dy:${o.dy || '0px'};--dep:${o.dep || '0px'}` +
-              `;--rot:${o.rot || '0deg'};--spin:${o.spin || '0deg'}` +
-              `;--scl:${o.scl == null ? 0 : o.scl};--dim:${o.dim == null ? 1 : o.dim}` +
-              `;--z:${o.z == null ? 1 : o.z};--ord:${i + 2}` +
-              (o.nw ? `;--nw:${o.nw}` : '') + `">` +
-              `<img src="${url(o.src)}" alt="${esc(o.alt || '')}"` +
-                ` width="${o.pw}" height="${o.ph}" loading="lazy" decoding="async">` +
-              M(o.m) +
-            `</div>`).join('') +
+          `;--gat:${dev.at == null ? 0.33 : dev.at};--dw:${dev.w || '17.5rem'}">` +
+
+          (s.objects || []).map((o, i) => {
+            return `<div class="room__orb" style="--orb:${o.orb || '0deg'}` +
+              `;--z:${o.z == null ? 1 : o.z}">` +
+              `<div class="room__o" style="--x:${o.x};--y:${o.y};--w:${o.w};--at:${o.at}` +
+                `;--sp:${num(o.sp, 12)};--orb:${o.orb || '0deg'}` +
+                `;--dx:${o.dx || '0px'};--dy:${o.dy || '0px'};--dep:${o.dep || '0px'}` +
+                `;--rot:${o.rot || '0deg'};--spin:${o.spin || '0deg'}` +
+                `;--scl:${o.scl == null ? 0 : o.scl};--dim:${o.dim == null ? 1 : o.dim}` +
+                `;--ord:${i + 2}` +
+                (o.nw ? `;--nw:${o.nw}` : '') + `">` +
+                `<img src="${url(o.src)}" alt="${esc(o.alt || '')}"` +
+                  ` width="${o.pw}" height="${o.ph}" loading="lazy" decoding="async">` +
+                M(o.m) +
+              `</div>` +
+            `</div>`;
+          }).join('') +
+
+          /* --- THE BLUEPRINT ---------------------------------------------
+
+             EVERY COORDINATE IN HERE WAS READ OFF THE MOCKUP'S ALPHA CHANNEL,
+             which is the only reason the dissolve at the end of it works. The
+             body is 1292 x 2658 with a 255px corner; the display aperture is
+             1179 x 2564 with a 190px corner, inset 56 / 47; the Dynamic Island
+             is 364 x 105 at 464, 90; the action button and the two volume keys
+             sit at y 547, 760 and 1011 on the left and the side button at 828
+             on the right. Those are not stylised positions — they are where
+             those things are in the photograph, so when the drawing fades out
+             and the render fades in, nothing moves.
+
+             IT IS DRAWN IN THE ORDER A DRAUGHTSMAN WOULD DRAW IT: centrelines,
+             then the outer envelope, then the corner radius with its
+             construction, then the cut-outs, then the controls, then the safe
+             area, then the baseline grid, then the dimensions. Each layer
+             carries its own `--a` (when it starts) and `--s` (how fast), and
+             each stroked path is normalised to `pathLength="1000"` so one
+             dash-offset rule draws all of them regardless of their real
+             length. */
+          `<svg class="room__cad" viewBox="-140 -140 1572 2938" aria-hidden="true"` +
+            ` style="--at:${num(s.draw && s.draw.at, 0.10)}` +
+            `;--sp:${num(s.draw && s.draw.sp, 7.15)}` +
+            `;--out:${num(s.draw && s.draw.out, 0.34)};--gone:${num(s.draw && s.draw.gone, 0.42)}` +
+            `;--dat:${num(dev.at, 0.34)};--ddep:${dev.dep || '-14px'}">` +
+
+            /* 1. the centrelines. A drawing starts from its axes. */
+            `<g class="cad-g cad-g--thin" style="--a:0.10;--s:26">` +
+              `<path pathLength="1000" d="M646 -130 V 2788"/>` +
+              `<path pathLength="1000" d="M-130 1329 H 1422"/>` +
+            `</g>` +
+
+            /* 2. the envelope */
+            `<g class="cad-g" style="--a:0.135;--s:7.6">` +
+              `<rect pathLength="1000" x="3" y="3" width="1286" height="2652"` +
+                ` rx="252" ry="252"/>` +
+            `</g>` +
+
+            /* NO CORNER CALLOUT. A radius crosshair, its extension lines,
+                  the leader and an R255 label sat in the top-left corner. It
+                  is correct drafting notation and it was wrong here: at this
+                  size it is five overlapping marks in the busiest corner of
+                  the drawing, competing with the island right next to it, and
+                  it tells the viewer a number they have no use for. The
+                  drawing is meant to read as precision, not to be dimensioned
+                  like a part going to a machine shop. */
+
+            /* 4. the cut-out */
+            `<g class="cad-g" style="--a:0.225;--s:20">` +
+              `<rect pathLength="1000" x="464" y="90" width="364" height="105"` +
+                ` rx="52" ry="52"/>` +
+            `</g>` +
+
+            /* 5. the controls, in the order they sit down the body */
+            `<g class="cad-g" style="--a:0.245;--s:22">` +
+              `<rect pathLength="1000" x="-5" y="547" width="19" height="121" rx="9"/>` +
+              `<rect pathLength="1000" x="-5" y="760" width="19" height="197" rx="9"/>` +
+              `<rect pathLength="1000" x="-5" y="1011" width="19" height="197" rx="9"/>` +
+              `<rect pathLength="1000" x="1278" y="828" width="19" height="312" rx="9"/>` +
+            `</g>` +
+
+            /* 6. the display aperture and the safe area inside it */
+            `<g class="cad-g cad-g--dash" style="--a:0.265;--s:14">` +
+              `<rect pathLength="1000" x="56" y="47" width="1179" height="2564"` +
+                ` rx="190" ry="190"/>` +
+            `</g>` +
+            `<g class="cad-g cad-g--dash cad-g--thin" style="--a:0.285;--s:16">` +
+              `<rect pathLength="1000" x="104" y="235" width="1083" height="2188"` +
+                ` rx="60" ry="60"/>` +
+            `</g>` +
+
+            /* 7. the baseline grid, which does not draw — it comes up */
+            `<g class="cad-g cad-g--grid">` +
+              Array.from({ length: 19 }, (_, i) =>
+                `<path style="--a:${(0.30 + i * 0.0022).toFixed(4)};--s:34"` +
+                  ` d="M104 ${235 + (i + 1) * 109.4} H 1187"/>`).join('') +
+            `</g>` +
+
+            /* 8. and the dimensions, last, the way they are added last */
+            `<g class="cad-g cad-g--thin" style="--a:0.315;--s:20">` +
+              `<path pathLength="1000" d="M-90 3 H -30 M-90 2655 H -30 M-60 3 V 2655"/>` +
+              `<path pathLength="1000" d="M3 -90 H 1289 M3 -120 V -60 M1289 -120 V -60"/>` +
+            `</g>` +
+            /* a dimension line with no dimension on it is just a line */
+            `<g class="cad-g cad-g--label" style="--a:0.335;--s:18">` +
+              `<text x="646" y="-108" text-anchor="middle">1292</text>` +
+              `<text x="-78" y="1329" text-anchor="middle"` +
+                ` transform="rotate(-90 -78 1329)">2658</text>` +
+            `</g>` +
+          `</svg>` +
 
           `<div class="room__dev${dev.src ? '' : ' room__dev--wait'}"` +
             ` style="--x:${dev.x || '51%'};--y:${dev.y || '50%'}` +
             `;--w:${dev.w || '17.5rem'};--dep:${dev.dep || '-14px'}` +
-            `;--at:${dev.at == null ? 0 : dev.at};--z:${dev.z || 18}">` +
+            `;--at:${dev.at == null ? 0 : dev.at};--z:${dev.z || 18}` +
+            `;--full:${num(dev.full, 0.87)}` +
+            /* WITH THE PER-CENT SIGNS. Without them these are bare numbers,
+               `inset` is invalid, the whole declaration is thrown away and the
+               glass falls back to sizing itself to the image inside it — which
+               is the interface hanging out of the bottom of the phone. */
+            (dev.screen
+              ? `;--st:${dev.screen.t}%;--sr:${dev.screen.r}%` +
+                `;--sb:${dev.screen.b}%;--sl:${dev.screen.l}%`
+              : '') +
+            (dev.srad ? `;--srx:${dev.srad.x}%;--sry:${dev.srad.y}%` : '') +
+            (dev.frame ? ';--framed:1' : '') + `">` +
             (dev.src
-              ? `<img src="${url(dev.src)}" alt="${esc(dev.alt || '')}"` +
-                ` width="${dev.pw}" height="${dev.ph}" decoding="async">`
+              ? /* THE GLASS. A plate of real black under the interface, so the
+                   display's off state is an off display and not a picture of
+                   one dimmed down. The UI sits inside it and is the only thing
+                   that fades: one layer, already finished, becoming visible —
+                   which is what waking a phone looks like. */
+                `<i class="room__glass">` +
+                  /* THE SAME IMAGE, TEN TIMES, EACH CLIPPED TO ONE ELEMENT.
+
+                     Not ten slices of a cut-up file — ten windows onto one
+                     file, at the same size and the same position, each one
+                     showing a different band of it. Nothing is re-ordered,
+                     nothing moves, nothing flies: every element is exactly
+                     where it has always been and the only thing that happens
+                     to it is that it stops being invisible. The browser
+                     decodes the image once.
+
+                     THE BOUNDARIES ARE THE INTERFACE'S OWN GUTTERS. They were
+                     found by scanning the export's ink per row and taking the
+                     midpoint of each empty band between blocks of content, so
+                     a cut never lands inside a card or a row of type, and
+                     consecutive windows share an edge exactly — no seam, no
+                     overlap. */
+                  [
+                    { t: 0.000,  b: 93.426, a: 0.460 },  /* status bar */
+                    { t: 6.574,  b: 86.332, a: 0.492 },  /* logo + actions */
+                    { t: 13.668, b: 48.097, a: 0.524 },  /* the portfolio card */
+                    { t: 51.903, b: 41.378, a: 0.556 },  /* swap / buy / stake */
+                    { t: 58.622, b: 37.630, a: 0.588 },  /* "Your Account" */
+                    { t: 62.370, b: 30.450, a: 0.620 },  /* bitcoin */
+                    { t: 69.550, b: 22.318, a: 0.652 },  /* ethereum */
+                    { t: 77.682, b: 16.263, a: 0.684 },  /* add account */
+                    { t: 83.737, b: 12.486, a: 0.716 },  /* "Crypto" */
+                    { t: 87.514, b: 0.000,  a: 0.748 },  /* the tab bar */
+                  ].map((n, i) =>
+                    `<img class="room__ui" src="${url(dev.src)}"` +
+                      ` alt="${i === 0 ? esc(dev.alt || '') : ''}"` +
+                      `${i === 0 ? '' : ' aria-hidden="true"'}` +
+                      ` style="--t:${n.t}%;--b:${n.b}%;--a:${n.a}"` +
+                      ` width="${dev.pw}" height="${dev.ph}" decoding="async">`).join('') +
+                `</i>` +
+                /* AND THE HARDWARE IS A PHOTOGRAPH, NOT A DRAWING. `frame` is a
+                   transparent render of the device with its screen cut out; it
+                   lies over the glass and the four `--s*` numbers are where its
+                   aperture is, measured off that file's own alpha. Nothing here
+                   describes a phone — the file does. */
+                (dev.frame
+                  ? `<i class="room__frame">` +
+                      `<img src="${url(dev.frame)}" alt="" aria-hidden="true"` +
+                        ` width="${dev.fw || ''}" height="${dev.fh || ''}" decoding="async">` +
+                    `</i>`
+                  : '') +
+                /* NO ISLAND ELEMENT. It used to be drawn here as a black
+                   pill at measured coordinates, which was one more piece of
+                   this codebase claiming to know what a phone looks like. The
+                   island is part of the hardware and the hardware is a file. */
+                `<i class="room__sweep" aria-hidden="true"></i>`
               : M(dev.m)) +
           `</div>` +
 
           `<div class="room__veil" style="--vat:${say.length ? say[say.length - 1].at : 0.78}"></div>` +
           `<div class="room__say">` + say.map((l, i) =>
-            `<div class="room__line" style="--at:${l.at};--to:${l.to}` +
-              `;--sord:${i === 0 ? 0 : 99}">` +
+            `<div class="room__line${l.big ? ' room__line--big' : ''}"` +
+              ` style="--at:${l.at};--to:${l.to};--sord:${i === 0 ? 0 : 99}">` +
               (l.mark
                 ? `<span class="room__lockup">` +
                     `<img class="room__mark" src="${url(l.mark)}" alt="N45"` +
@@ -3337,7 +3522,6 @@
           `</div>` +
         `</div>`;
     },
-
     /* --- 15 · a decision, and the photograph that answers it -------------
        The film's texture changes exactly once, here: rendered black to a real
        wall. The title card holds motionless and then the photograph arrives
@@ -3603,13 +3787,9 @@
     build(p) {
       const film = el('div', { class: 'film', 'data-tone': 'light' });
       this.film = film;
-      const acts = [];
-
       (p.scenes || []).forEach((s) => {
         const render = SCENE[s.kind];
         if (!render) return;
-
-        if (s.act) acts.push({ label: s.act, id: s.id });
 
         const scn = el('section', {
           /* AND A HOOK PER SCENE, not just per kind. `scn--object` is shared
@@ -3642,18 +3822,13 @@
         film.appendChild(scn);
       });
 
-      /* the progress hairline, and the four acts as dots */
+      /* the progress hairline, and nothing else. THE ACT RAIL IS GONE: four
+         dots and a chapter label fixed to the left edge, which is a table of
+         contents for a film that is meant to be watched rather than
+         navigated. It competed with the work at every scroll position and it
+         answered a question nobody was asking. */
       const bar = el('div', { class: 'film__bar', 'aria-hidden': 'true' }, '<i></i>');
       film.appendChild(bar);
-      if (acts.length > 1) {
-        const nav = el('nav', { class: 'film__acts', 'aria-label': 'Acts' });
-        acts.forEach((a) => {
-          nav.appendChild(el('a', { class: 'film__act', href: `#${a.id}` },
-            `<s>${esc(a.label)}</s><i></i>`));
-        });
-        film.appendChild(nav);
-        this.acts = [...nav.children];
-      }
       this.bar = $('i', bar);
       return film;
     },
@@ -3761,21 +3936,6 @@
         this.bar.style.setProperty('--fp', fp.toFixed(4));
       }
 
-      /* the act dot lights when its own scene is the one on screen, and
-         stays lit until the next act's scene arrives */
-      if (this.acts && act !== this.act) {
-        this.act = act;
-        let on = null;
-        this.acts.forEach((a) => {
-          const id = a.getAttribute('href').slice(1);
-          const el2 = document.getElementById(id);
-          if (el2 && el2.getBoundingClientRect().top <= vh * 0.5) on = a;
-        });
-        this.acts.forEach((a) => {
-          if (a === on) a.setAttribute('aria-current', 'true');
-          else a.removeAttribute('aria-current');
-        });
-      }
     },
   };
 

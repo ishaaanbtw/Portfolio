@@ -1002,165 +1002,221 @@ window.SITE = {
                arrive around one button and none of them leave, and by the end
                the accumulated parts are a screen. It should feel long. */
             /* ==============================================================
-               THE DESIGN SYSTEM — one table, one pin
+               THE DESIGN SYSTEM — one table, one pin, and now one story
 
-               THE CUT. The system arrives first, the product appears among it,
-               everything holds, and only then does the line land.
+               THE ROOM DID NOT CHANGE. Every resting place, every width, every
+               dim, every drift rate and the whole final composition are the
+               ones that were already here — this is the same table with the
+               same things on it, ending on the same frame. What changed is the
+               order they happen in, and what they do on the way.
 
-                 0.00 – 0.24   the mark and the section's name, nothing else
-                −0.04 – 0.44   the six sheets, one at a time
-                 0.33 – 0.53   THE PHONE, resolving in place among them
-                 0.39 – 0.67   the four components gather at its edges
-                 0.67 – 0.80   everything together, and not a word
-                 0.80 – 1.00   the line
+               THE CLAIM, STATED AS A SEQUENCE: the system existed before the
+               interface did.
 
-               380svh, so the pin runs about 2,520px at a 900px viewport and
-               that silence in the middle is roughly 330px of scroll. The
-               spacing sheet arrives at −0.04 rather than 0, which means it is
-               already a quarter of the way in on the very first frame: the
-               room is never an empty rectangle.
+                 0.00 – 0.04   a dark room, a grid, a glow. Nothing else.
+                 0.04 – 0.16   THE LOCKUP, at 96px, and a long hold on it
+                 0.13 – 0.27   THE DEVICE IS DRAFTED — one stroke, drawn from
+                               a corner all the way round. No interface.
+                 0.26 – 0.33   the body fills in behind the outline. Still no
+                               interface: an empty, opaque object.
+                 0.34 – 0.52   the system arrives and takes up its orbit
+                 0.52 – 0.86   EIGHT ROUND TRIPS. One piece leaves, goes in
+                               behind the phone, the band it authors comes on,
+                               the piece comes back to exactly where it was.
+                 0.86 – 0.90   everything home, the product finished, held
+                 0.90 – 1.00   the line
 
-               NOTHING IS IN A CONTAINER. Every artefact is an <img> of one of
-               Ishaan's transparent SVGs; the phone is the Home-screen render,
-               which came in its own bezel. Nothing is blurred, at rest or in
-               motion.
+               760svh, so about 5,940px of pin at a 900px viewport: roughly
+               250px of scroll per construction beat and a good deal more than
+               that on either side of them. Every one of those beats introduces
+               one thing and nothing else moves while it does.
 
-               THREE PLANES.
-                 the phone    sharp, the anchor, resolves in place, barely
-                              drifts, and it is the only thing still lit at the
-                              end
-                 the sheets   large, behind, dimmed 42% to 72%, four of six cut
-                              by an edge of the frame
-                 the parts    the four real components, small, full brightness,
-                              cut by the phone they belong to
+               WHY A ROUND TRIP RATHER THAN A ONE-WAY JOURNEY. Because the
+               ending is the point. If the pieces were consumed by the phone
+               the section would say "these were scaffolding"; coming back to
+               the exact pixel they left, and staying there under the closing
+               line, it says "these are what it is made of, and they are still
+               true". There is one resting position per object, not two, so
+               there is nothing to keep in sync.
 
-               THE POSITIONS WERE MEASURED, NOT GUESSED. Each SVG carries a
-               transparent margin round its artwork, so where the IMAGE sits
-               and where the INK sits are two different rectangles. The ink
-               boxes were read off the alpha channel and every number below was
-               checked against them at both ends of the pin, because `dep`
-               moves an object up to 176px.
-
-               No two objects share a `dep`, one drifts DOWN while the rest
-               rise, and three carry a `spin` or an `scl` nothing else has — so
-               no two objects in this room ever travel together.
+               THE PHONE IS NEVER TRANSPARENT. The empty device is the render
+               at five percent brightness — every pixel inside the bezel is a
+               pixel, only a very dark one — and every artefact travels BEHIND
+               it, so at no point is anything visible through the screen.
                ============================================================== */
 
-            { id: 'x0-system', kind: 'room', dur: 380, lab: true, room: true,
+            { id: 'x0-system', kind: 'room', dur: 620, lab: true, room: true,
 
               say: [
-                /* A TITLE CARD, NOT A HEADLINE. The section used to open with
-                   its thesis in 52px type, which meant the first thing you saw
-                   was a sentence rather than the system. The mark and the name
-                   are enough to say where you are; the sentence has somewhere
-                   better to be. */
-                /* the mark already says N45; the words say what it is. A lockup
-                   that repeats its own name is a logo with a caption. */
-                { at: -0.03, to: 0.24, n: 'The design system',
+                /* A TITLE CARD, AND IT IS ALLOWED TO BE ONE. The mark at 96px
+                   in the middle of an otherwise empty column, held for a sixth
+                   of the section, with the words on the same line and a gap
+                   smaller than the mark is tall. It is one object, it is the
+                   only object, and nothing happens until it has gone. */
+                { at: -0.02, to: 0.88, big: true, n: 'The design system',
                   mark: 'assets/img/x0/system/n45-mark.png' },
 
-                /* and it lands here, after you have watched the thing assemble
-                   and the product appear out of it */
-                { at: 0.80, to: 1.2,
+                /* and it lands here, after you have watched the thing build
+                   itself out of the parts standing around it */
+                { at: 0.90, to: 1.2,
                   h: 'We built the system before we built a single screen.',
                   p: 'Not a library extracted from finished work. A grammar, written first — atomic, mobile-first, no inheritance from CySync — and by month six it was carrying surfaces nobody had specced when it was written.' },
               ],
 
-              /* THE PRODUCT, AND IT IS NOT HERE AT THE START. 17.5rem rather
-                 than 22rem, which is the difference between an object in a
-                 room and a poster of a phone. The pool of light is centred on
-                 it rather than on the viewport, and comes up a breath ahead of
-                 it. */
-              device: { at: 0.30, x: '56%', y: '50%', w: 'min(22vw, 17.5rem)',
-                dep: '-14px', z: 18,
-                src: 'assets/img/x0/system/hero.webp', pw: 862, ph: 1772,
+              /* THE PRODUCT, and it is an empty one for a quarter of the
+                 section. `k` is how much of the frame's height it covers,
+                 which is what every flight path is computed from; `full` is
+                 when the shell comes up from five percent to the render as
+                 exported, once the bands have covered the screen anyway. */
+              /* THE ASSET IS THE INTERFACE ON ITS OWN NOW — no bezel, no
+                 frame, no mockup, corners cut in its own alpha. The phone
+                 around it is drawn in CSS, which is what lets it have a real
+                 edge, a real rail and a real power button, and what lets the
+                 blank state be a screen going dark rather than a contrast
+                 filter fighting a picture of a bezel.
+
+                 AND IT STAYS SMALL UNTIL IT HAS EARNED THE FRAME. It stands
+                 at a quarter of the width for the whole of the section, in the
+                 middle of the parts it was made from, because the subject of
+                 those nine tenths is the system and not the product. The frame
+                 is its reward, and the reward comes at the end. */
+              device: { at: 0.34, x: '56%', y: '50%', w: 'min(24vw, 19rem)',
+                dep: '-14px', z: 18, full: 0.46,
+                src: 'assets/img/x0/system/ui.webp', pw: 786, ph: 1734,
+
+                /* THE HARDWARE, AND IT IS A FILE. A transparent render of an
+                   iPhone 16 Pro with its screen cut clean out. Nothing in this
+                   codebase describes a phone any more; whatever this render
+                   is, is what you see.
+
+                   EVERY NUMBER BELOW WAS MEASURED OFF ITS OWN ALPHA CHANNEL,
+                   not estimated. Trimmed to its silhouette the file is
+                   1292 x 2658, and the hole in it is 1179 x 2564 — which is
+                   the iPhone 16 Pro's display to the pixel, so the aperture is
+                   the real one and the UI sits in it at the real size. */
+                frame: 'assets/img/x0/system/iphone.webp', fw: 1292, fh: 2658,
+                screen: { t: 1.768, r: 4.412, b: 1.768, l: 4.334 },
+                /* the hole's own corner: 190px on 1179 x 2564 */
+                srad: { x: 16.115, y: 7.410 },
+
+                /* and the draft, which is now the render's OWN silhouette:
+                   1292 x 2658 with a 255px corner, both read off the same
+                   alpha. It can cross-dissolve into the mockup without moving
+                   a pixel because it is the same outline. */
+                draw: { at: 0.10, sp: 7.15, out: 0.34, gone: 0.42 },
+
                 alt: 'The X0 Home screen — combined portfolio, balance, send and receive, accounts' },
 
+              /* THE TEN BANDS OF THE SCREEN. `from`/`to` are percentages down
+                 the render, measured at its dark gutters, and each one lands
+                 the moment the piece that authored it is behind the phone. The
+                 two vw it travels come from the direction that piece arrived
+                 from, so a band is not placed — it is put there, from the side
+                 the part came in on. */
+
+              /* THE TABLE, UNCHANGED. Same places, same widths, same dims,
+                 same entry vectors, same drifts. `orb` is new and it is how
+                 far each piece comes round the phone across the whole pin —
+                 under a degree for the far sheets, two and a half for the near
+                 components, so no two ever travel together. `tp`/`tb`/`ty` are
+                 the round trip: when it leaves, when it starts back, and which
+                 band of the render it goes to. Three of them never leave. */
               objects: [
                 /* --- the far plane: the six sheets ------------------------ */
 
-                /* already a quarter arrived on the first frame, so the room
-                   opens with something in it */
-                { at: 0.05, x: '12%', y: '86%', w: '30vw', z: 1, dim: 0.34,
-                  dx: '-9.13vw', dy: '0.23vh', dep: '-54px', spin: '0.6deg',
-                  src: 'assets/img/x0/system/spacing.svg', pw: 1164, ph: 695,
-                  alt: 'The N45 4-point spacing grid, 04 through 24' },
-
-                /* typography. By the end of the pin it has risen off the
-                   top-right corner entirely — you read a type scale by its
-                   first column, not its last. */
-                { at: -0.04, x: '86%', y: '26%', w: '39vw', z: 2, dim: 0.62,
+                /* typography, and the first to go in: a number set in the type
+                   scale is the first thing the type scale can prove */
+                { at: 0.400, sp: 22, x: '86%', y: '25%', w: '39vw', z: 2, dim: 0.62,
                   dx: '9.13vw', dy: '-0.10vh', rot: '-1.6deg', dep: '-40px', spin: '-0.8deg',
+                  orb: '0.9deg',
                   src: 'assets/img/x0/system/type-scale.svg', pw: 1366, ph: 764,
                   alt: 'Eleven type roles from Hero at 40px down to Micro at 10px' },
 
-                /* the tokens, off the left edge. The only object that grows
-                   across the pin, and the only sheet with a label — the title
-                   baked into its own artwork is the wrong one. */
-                { at: 0.12, x: '12%', y: '53%', w: '28vw', z: 1, dim: 0.42,
+                /* the grid the device was drawn on. It does not travel: it is
+                   already in the phone — it is the reason the phone is that
+                   shape — and sending it in would be sending it twice. */
+                { at: 0.414, sp: 22, x: '11%', y: '88%', w: '28vw', z: 1, dim: 0.34,
+                  dx: '-9.13vw', dy: '0.23vh', dep: '-54px', spin: '0.6deg',
+                  orb: '0.7deg',
+                  src: 'assets/img/x0/system/spacing.svg', pw: 1164, ph: 695,
+                  alt: 'The N45 4-point spacing grid, 04 through 24' },
+
+                /* the tokens, and the LAST thing in — the chart goes green on
+                   the final beat, which is the one moment of colour in the
+                   product and the right note to finish a build on */
+                { at: 0.428, sp: 22, x: '7%', y: '61%', w: '21vw', z: 1, dim: 0.42,
                   dx: '-8.36vw', dy: '-5.88vh', rot: '1.2deg', dep: '-30px', scl: 0.03,
+                  orb: '1.1deg',
                   src: 'assets/img/x0/system/colour.svg', pw: 1557, ph: 764,
                   m: { n: 'Colour', s: '10 tokens, named not numbered', at: 'br' },
                   alt: 'The N45 greyscale ramp — ten named steps with their hex values' },
 
-                /* components. Slides up into frame, turns nearly two degrees
-                   across the pin, travels further than anything else. NOT
-                   dimmed: the file is exported at 30% opacity, so the artwork
-                   is doing its own receding. */
-                { at: 0.17, x: '52%', y: '95%', w: '40vw', z: 2,
+                /* components. NOT dimmed: the file is exported at 30% opacity,
+                   so the artwork is doing its own receding. */
+                { at: 0.442, sp: 22, x: '43%', y: '101%', w: '30vw', z: 2,
                   dx: '-5.14vw', dy: '12.07vh', rot: '1.4deg', dep: '-96px', spin: '1.8deg',
+                  orb: '0.8deg',
                   src: 'assets/img/x0/system/buttons.svg', pw: 1354, ph: 712,
                   alt: 'Primary, secondary and tertiary buttons in every state' },
 
-                /* the icon set — smallest sheet, and the only one of the six
-                   not cut by anything, so it hangs in the right-hand air */
-                { at: 0.22, x: '78%', y: '54%', w: '20vw', z: 2, dim: 0.44,
+                /* the icon set — and what it goes in to build is the only part
+                   of the screen that is nothing but icons */
+                { at: 0.456, sp: 22, x: '94%', y: '52%', w: '15vw', z: 2, dim: 0.44,
                   dx: '7.69vw', dy: '7.88vh', rot: '-2.4deg', dep: '-26px',
+                  orb: '1.4deg',
                   src: 'assets/img/x0/system/icons.svg', pw: 1038, ph: 712,
                   alt: 'The N45 icon set, unfilled and filled' },
 
-                /* navigation, low right, off the edge. The last sheet down —
-                   the phone follows it. */
-                { at: 0.27, x: '89%', y: '78%', w: '36vw', z: 3, dim: 0.50,
+                /* navigation, low right, off the edge */
+                { at: 0.470, sp: 22, x: '89%', y: '79%', w: '36vw', z: 3, dim: 0.50,
                   dx: '5.35vw', dy: '11.84vh', rot: '-1deg', dep: '-38px',
+                  orb: '1.2deg',
                   src: 'assets/img/x0/system/tab-bar.svg', pw: 1247, ph: 612,
                   alt: 'The navigation bar, Home selected' },
 
-                /* --- the near plane, after the phone: the four real
-                       components, gathering at its edges ------------------- */
+                /* --- the near plane: the five real components ------------- */
 
-                /* the one object in the room that drifts DOWN */
-                { at: 0.42, x: '44%', y: '58%', w: '22vw', z: 12, dim: 0.62,
+                /* the one object in the room that drifts DOWN, and the one
+                   that authors two bands: the card and the rows under it */
+                { at: 0.484, sp: 22, x: '40%', y: '58%', w: '17vw', z: 12, dim: 0.62,
                   dx: '-6.38vw', dy: '-0.80vh', rot: '-1deg', dep: '38px',
+                  orb: '2deg',
                   src: 'assets/img/x0/system/snackbar.svg', pw: 376, ph: 76,
                   alt: 'The success snackbar — System synced successfully' },
 
-                { at: 0.46, x: '41%', y: '76%', w: '24vw', z: 12, dim: 0.62,
+                /* it stays. There is no slide-to-confirm on the Home screen,
+                   and sending a piece in to build something that is not there
+                   would be the one dishonest move in the section. */
+                { at: 0.498, sp: 22, x: '39%', y: '78%', w: '22vw', z: 12, dim: 0.62,
                   dx: '-6.01vw', dy: '3.53vh', rot: '0.8deg', dep: '-60px',
+                  orb: '2.3deg',
                   src: 'assets/img/x0/system/slide-to-pay.svg', pw: 360, ph: 48,
                   alt: 'The slide-to-confirm control' },
 
-                { at: 0.50, x: '31%', y: '48%', w: '11vw', z: 12, nw: '58%', dim: 0.62,
+                /* one shape, every primary action — and the primary action on
+                   this screen is the one at the bottom of the list */
+                { at: 0.512, sp: 22, x: '25%', y: '57%', w: '11vw', z: 12, nw: '58%', dim: 0.62,
                   dx: '-5.54vw', dy: '-5.12vh', dep: '-34px',
-                  src: 'assets/img/x0/system/button.svg', pw: 200, ph: 48,
+                  orb: '1.8deg',
+                  src: 'assets/img/x0/system/button.webp', pw: 400, ph: 96,
                   m: { n: 'The button', s: 'One shape, every primary action', at: 'bl' },
                   alt: 'The primary button — Continue' },
 
-                /* three pixels tall, running under the phone's left edge. Last
-                   thing in, and everything is still by 0.67. */
-                /* THE TOP-RIGHT CORNER WAS DEAD — 0.53 of ink against 19.9
-                   in the corner opposite. This is the one object added: small,
-                   bright, and lying across the type specimen the way the
-                   button lies across the colour ramp on the other side. */
-                { at: 0.56, x: '74%', y: '40%', w: '15vw', z: 12, nw: '70%', dim: 0.62,
-                  dx: '6.34vw', dy: '1.42vh', rot: '1.6deg', dep: '-46px',
-                  src: 'assets/img/x0/system/controls.svg', pw: 265, ph: 52,
-                  alt: 'Chip, toggle and stepper in their states' },
-
-                { at: 0.53, x: '77%', y: '45%', w: '16vw', z: 12, nw: '78%', dim: 0.68,
+                /* three pixels tall, and it stays: the Home screen has no
+                   progress bar either */
+                { at: 0.526, sp: 22, x: '77%', y: '59%', w: '16vw', z: 12, nw: '78%', dim: 0.68,
                   dx: '6.06vw', dy: '3.27vh', dep: '-20px',
+                  orb: '2.6deg',
                   src: 'assets/img/x0/system/progress.svg', pw: 357, ph: 4,
                   alt: 'The onboarding progress bar, five steps' },
+
+                /* chip, toggle and stepper — which is what the row of Swap,
+                   Buy and Stake is made of */
+                { at: 0.540, sp: 22, x: '75%', y: '54%', w: '15vw', z: 12, nw: '70%', dim: 0.62,
+                  dx: '6.34vw', dy: '1.42vh', rot: '1.6deg', dep: '-46px',
+                  orb: '2.2deg',
+                  src: 'assets/img/x0/system/controls.svg', pw: 265, ph: 52,
+                  alt: 'Chip, toggle and stepper in their states' },
               ] },
 
             /* THE SECOND DECISION AND ITS EVIDENCE IN ONE SCENE, because a

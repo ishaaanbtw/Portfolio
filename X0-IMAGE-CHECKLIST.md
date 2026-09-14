@@ -3,7 +3,7 @@
 Generated from the `scenes` array in `assets/js/content.js`. Regenerate rather
 than editing by hand — if this file and the data disagree, the data is right.
 
-**26 scenes · ~4340 svh (about 43 screens) · 27 reserved frames.**
+**26 scenes · ~4720 svh (about 47 screens) · 27 reserved frames.**
 
 The film is white with 6 black scenes as punctuation, and one dark stretch that
 is not punctuation: `x0-system`, the design-system table, which is dark because

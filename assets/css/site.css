@@ -14536,45 +14536,6 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 
 .film[data-tone='dark'] .film__bar i { background: #7e7f86; }
 
-/* THE FOUR ACTS AS DOTS. The reader should be able to see the film has a
-   shape without being handed a table of contents. On the LEFT edge, because
-   the annotation dock's tab sits at the right margin at exactly this height
-   and two pieces of chrome in the same forty pixels is one of them unread. */
-.film__acts {
-  position: fixed;
-  left: clamp(0.75rem, 1.6vw, 1.5rem);
-  top: 50%;
-  translate: 0 -50%;
-  z-index: 40;
-  display: grid;
-  gap: 0.85rem;
-  justify-items: start;
-}
-
-.film__act {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  /* 11px and not 10px: the platform minimum for small type is 11pt on
-     mobile and 10pt on desktop, and this label has to survive both. */
-  color: #74757c;
-  font-size: 0.6875rem;
-  font-weight: 550;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transition: color 220ms var(--ease);
-}
-
-.film__act s { text-decoration: none; opacity: 0; transition: opacity 200ms var(--ease); white-space: nowrap; }
-.film__act i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: 0 0 auto; order: -1; }
-.film__act:hover s, .film__act:focus-visible s { opacity: 1; }
-.film__act[aria-current='true'] { color: #101012; }
-.film__act[aria-current='true'] i { scale: 1.6; }
-.film[data-tone='dark'] .film__act { color: #7e7f86; }
-.film[data-tone='dark'] .film__act[aria-current='true'] { color: #f7f7f8; }
-
-@media (max-width: 60rem) { .film__acts { display: none; } }
 
 /* --- narrow -------------------------------------------------------------- */
 
@@ -14895,8 +14856,19 @@ body[data-page='project'] .tmode { display: none; }
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.035;
-  mix-blend-mode: overlay;
+
+  /* THE RINGS WERE THE GRID'S MASK, NOT THE GLOW. The grid is drawn at
+     rgba(255,255,255,0.028) — seven levels of luminance in total — and then
+     faded out through a radial mask, so its visibility has seven steps and
+     each step is a circle. That is what the concentric arcs are.
+
+     There is no dithering that away in `overlay`: on a near-black backdrop
+     overlay behaves like multiply and this layer was doing nothing at all.
+     In normal blend at two per cent the grain adds about two levels of
+     luminance and one of noise, which lifts #090909 to #0b0b0b — invisible as
+     a change of black, and enough to break every ring edge. */
+  opacity: 0.02;
+  mix-blend-mode: normal;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -14964,11 +14936,48 @@ body[data-page='project'] .tmode { display: none; }
     rgba(255, 255, 255, 0.075),
     rgba(255, 255, 255, 0.022) 44%,
     transparent 70%);
+
+  /* MEASURED OFF A FRAME OF THE RECORDING: the whole glow spanned luminance 8
+     to 15. Seven levels across five hundred pixels, so it stepped, and you
+     could see the rings. There is no dithering this away at that brightness —
+     8-bit simply has no levels left to work with down there. A blur is the
+     fix: the compositor filters at a higher precision than it stores, so the
+     steps come back out as a ramp. It costs nothing on a decorative shape. */
+  filter: blur(56px);
   /* keyed to the phone, not to the scroll: the light in the room comes up a
      breath before the thing it is lighting. A floor of 0.3 rather than 0,
      because the sheets arrive for the first third of the pin and a room with
      no light in it at all reads as a page that failed to load. */
   opacity: clamp(0.42, calc((var(--p) - var(--gat, 0.33) + 0.08) * 6), 1);
+}
+
+/* --- THE ORBIT ----------------------------------------------------------
+
+   HOW AN ARTEFACT CIRCLES THE PHONE, with no trigonometry and no keyframes.
+   The wrapper is the size of the whole stage and its transform origin is the
+   DEVICE's centre, so rotating it a degree or two across the pin swings
+   whatever is inside along an arc around the device. The artwork then
+   counter-rotates by exactly the same amount, so it travels on that arc while
+   staying upright.
+
+   Every object carries its own rate, and that difference is the parallax: the
+   near components come round at two and a half degrees over the whole section
+   and the far sheets at less than one, so nothing in the room ever moves with
+   anything else. Two degrees at four hundred pixels of radius is fourteen
+   pixels of travel — which is the point. It should not be possible to catch
+   it moving; it should only be obvious, a screen later, that it has.
+
+   The z-index lives HERE rather than on the artefact, because a rotated
+   wrapper is a stacking context and an index inside one is measured against
+   its siblings rather than against the room. */
+
+.room__orb {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z, 1);
+  pointer-events: none;
+  transform-origin: var(--gx, 50%) var(--gy, 52%);
+  rotate: calc(var(--p) * var(--orb, 0deg));
 }
 
 /* --- one artefact on the table -------------------------------------------
@@ -14991,7 +15000,7 @@ body[data-page='project'] .tmode { display: none; }
      was still resolving at 0.88 while the closing line had been rising since
      0.78 — the heading was competing with the assembly instead of answering
      it. Everything is now in place by 0.67, which buys the silence. */
-  --q: clamp(0, calc((var(--p) - var(--at, 0)) * 6), 1);
+  --q: clamp(0, calc((var(--p) - var(--at, 0)) * var(--sp, 12)), 1);
 
   /* AND IT DECELERATES. `--q` is linear in the scroll, which is why the motion
      read as mechanical: every object travelled at a constant speed and then
@@ -14999,17 +15008,40 @@ body[data-page='project'] .tmode { display: none; }
      the distance and settles into its place instead of arriving at it. It is
      three multiplications of unitless numbers, which is all calc() needs. */
   --e: calc(var(--q) * var(--q) * (3 - 2 * var(--q)));
+
   position: absolute;
   left: var(--x, 50%);
   top: var(--y, 50%);
   width: var(--w, 20vw);
-  z-index: var(--z, 1);
   translate:
     calc(-50% + (1 - var(--e)) * var(--dx, 0px))
     calc(-50% + (1 - var(--e)) * var(--dy, 0px) + var(--p) * var(--dep, 0px));
   scale: calc(0.86 + var(--e) * 0.14 + var(--p) * var(--scl, 0));
-  rotate: calc((1 - var(--e)) * var(--rot, 0deg) + var(--p) * var(--spin, 0deg));
-  opacity: var(--q);
+  /* the last term undoes the wrapper's orbit, so the piece rides the arc and
+     stays upright */
+  rotate: calc((1 - var(--e)) * var(--rot, 0deg) + var(--p) * var(--spin, 0deg)
+    - var(--p) * var(--orb, 0deg));
+
+  /* THE ROOM GOES QUIET FOR THE LAST WORD. The veil below is an ellipse over
+     the copy column, and it only ever solved the copy column: everything on
+     the right — the type scale, the icon set, the navigation bar — was still
+     at full strength while you were trying to read, and a field of small
+     high-contrast detail at that size is noise, not a system.
+
+     So the objects go down themselves, all of them, by the same amount, as
+     the screen wakes — not when the last line arrives. The reveal is the beat
+     the section has been building to, and the room should already be going
+     quiet as it lands rather than a fifth of a pin later. It runs from 0.72 to
+     0.90, so it is finished exactly as the interface finishes coming up.
+
+     A FIFTH, AND NOT NOTHING. They go to twenty percent: still legibly the
+     table you have just watched fill, which is the payoff of the section and
+     the thing the closing words are about — but far enough down that the only
+     thing with any contrast left in the frame is the phone. The phone is not
+     in this rule and never goes down. */
+  --hush: clamp(0, calc((var(--p) - 0.72) * 5.6), 1);
+  --hushE: calc(var(--hush) * var(--hush) * (3 - 2 * var(--hush)));
+  opacity: calc(var(--q) * (1 - var(--hushE) * 0.8));
 }
 
 /* THE DIM BELONGS TO THE ARTWORK, NOT TO THE OBJECT. On the wrapper it took
@@ -15046,7 +15078,10 @@ body[data-page='project'] .tmode { display: none; }
      back is the relationship: the label is always quieter than the thing it
      names and always brighter than a whisper. Measured on the room's ground,
      the two labels in this scene sit at 6.8:1 and 4.6:1. */
-  opacity: calc(0.6 + var(--dim, 1) * 0.4);
+  /* and it does NOT go with its artefact. A label is a caption on a thing in
+     a room; dragged across the frame and shrunk to a third it is neither. It
+     goes out as the piece leaves and comes back with it. */
+  opacity: calc((0.6 + var(--dim, 1) * 0.4) * (1 - var(--g, 0)));
 }
 
 .room__m b {
@@ -15100,33 +15135,344 @@ body[data-page='project'] .tmode { display: none; }
   left: var(--x, 50%);
   top: var(--y, 52%);
   width: var(--w, 17.5rem);
+  /* THE BOX STATES THE WHOLE DEVICE, NOT THE SCREEN. The asset is now the
+     interface on its own — 786 x 1734 with its corners already cut in the
+     alpha — and the phone around it is drawn here. Five percent of the
+     display's width of bezel on every side is the real ratio on an iPhone 16
+     ((71.6mm - 65.1mm) / 2, over a 65.1mm display), which puts the body at
+     864 x 1812 and its corner radius at 158. Every inset below is that
+     arithmetic and nothing else. */
+  /* the render's own proportion, trimmed to its silhouette */
+  aspect-ratio: 1292 / 2658;
   z-index: var(--z, 18);
-  translate: -50% calc(-50% + var(--p) * var(--dep, -14px));
-  scale: calc(0.93 + var(--e) * 0.07 + var(--p) * 0.03);
+  /* --- AND AT THE END IT TAKES THE FRAME ---------------------------------
+
+     For nine tenths of this section the phone is a quarter of the width,
+     standing in the middle of the parts it was made from, because for nine
+     tenths the subject is the system and not the product. Then the last line
+     lands, the room goes quiet behind it, and the thing the whole section has
+     been about doubles in size and turns twenty-two degrees into the light.
+
+     It is one move on one clock: `--zc` runs 0 to 1 over the last eighth of
+     the pin and drives the scale, the two translations and the last eleven
+     degrees of the turn together, smoothstepped, so it accelerates out of the
+     held frame and settles rather than stopping. It goes RIGHT and DOWN as it
+     grows: right so its leading edge clears the closing copy at 673px instead
+     of growing over the words, and down so the top bezel, the island and the
+     head of the interface stay in frame — a hero shot cropped through the
+     middle of the screen is a wallpaper, not a product. */
+  --zc: clamp(0, calc((var(--p) - 0.88) * 8.33), 1);
+  --ze: calc(var(--zc) * var(--zc) * (3 - 2 * var(--zc)));
+  translate:
+    calc(-50% + var(--ze) * 2vw)
+    calc(-50% + var(--p) * var(--dep, -14px) + var(--ze) * 16vh);
+  scale: calc(0.93 + var(--e) * 0.07 + var(--p) * 0.03 + var(--ze) * 0.42);
 
   /* IT IS NEVER TRANSLUCENT WHILE ANYTHING IS BEHIND IT, which was the worst
      thing in the section: the components were visible straight through the
      screen and it stopped reading as a physical object. The opacity resolves
-     in a fourteenth of the pin — about 170px of scroll — while the scale keeps
-     settling for twice that, so it goes solid almost at once and then comes to
-     rest. Nothing arrives behind it until 0.42, by which time it is opaque. */
-  opacity: clamp(0, calc((var(--p) - var(--at, 0)) * 14), 1);
+     in a fortieth of the pin — about a hundred pixels of scroll — while the
+     scale keeps settling for seven times that, so it goes solid almost at once
+     and then comes to rest.
+
+     A FOURTEENTH WAS NOT FAST ENOUGH. Three hundred pixels of scroll is four
+     or five seconds of a slow read, and for all of it the room's grid ran
+     straight through the middle of the phone — which is the one thing this
+     section is not allowed to do. Opacity is the only property here that can
+     make the device stop being an object, so it is the one property that does
+     not get to take its time. */
+  opacity: clamp(0, calc((var(--p) - var(--at, 0)) * 40), 1);
+
+  /* AND IT TURNS. A static tilt is a picture taken at an angle; a turn is an
+     object in a room, and it is the one thing in this section that gives the
+     device motion of its own rather than motion borrowed from the scroll.
+
+     Five degrees, from three and a fifth left of square to just under two
+     right of it, across the whole pin. At five degrees the horizontal
+     foreshortening is four thousandths — far too small to read as distortion,
+     and far too small to contradict the straight-on perspective the render
+     was made in, which is the constraint a flat asset puts on this. What you
+     see is the left rim highlight widening and the right edge coming round.
+
+     SMOOTHSTEPPED OVER THE WHOLE PIN, so it is slowest at both ends: still
+     while the outline draws, turning through the middle where the system
+     gathers, and coming to rest on the last frame. A turn that was still
+     moving at the end would fight the closing line for the eye. The raking
+     specular sweeps on the same clock, so the light rakes as the object
+     turns, which is the half of it that sells the material. */
+  /* NO TURN, AND NO 3D CONTEXT AT ALL. The render is a photograph taken
+     square on; every degree of rotateY was asking a flat photograph to behave
+     like a solid, and paying for it with a folded face, a perspective matrix
+     and a second element whose colours had to be matched to the file by hand.
+     It is a picture of a phone, shown as one. What is left is the reveal —
+     which is the only thing that was ever supposed to move. */
+
+
+  /* NO DRAWN BODY. There were forty lines of gradient here describing a
+     chamfer, a rail, a black glass surround and a rim — an illustration of a
+     phone, which is exactly what this section must not contain. The hardware
+     is `.room__frame`: a transparent render, lying over the glass. Nothing in
+     this file says what a phone looks like any more.
+
+     WHAT IS LEFT IS THE ROOM, not the device: the shadow it casts on the
+     ground and the light it picks up off the wall. Those belong to the scene
+     whatever the render is. */
+  box-shadow: none;
+  filter:
+    drop-shadow(0 3rem 3.5rem rgba(0, 0, 0, 0.85))
+    drop-shadow(0 0.75rem 1.25rem rgba(0, 0, 0, 0.6));
 }
 
-/* THE RENDER ARRIVED IN ITS OWN BEZEL, so there is no frame here. A CSS device
-   drawn around a device that already has one is two phones. The silhouette is
-   held by light alone: a long shadow underneath for weight, and a wide, very
-   faint white one for the rim — a drop-shadow follows the alpha, so both of
-   them take the shape of the phone rather than of a box. */
-.room__dev img {
+/* --- THE HARDWARE, THE GLASS AND THE WAKE --------------------------------
+
+   THE APERTURE IS DATA, NOT GEOMETRY. `--st/--sr/--sb/--sl` are where the
+   screen sits inside the frame render, as percentages of that file, measured
+   off its own alpha channel. Change the render and those four numbers change
+   with it; nothing else in here knows or cares what shape a phone is.
+
+   Until a render is supplied they fall back to the aperture of a bare UI
+   export, which is the whole box — so the section still runs, it just has no
+   hardware round the screen yet. */
+.room__frame,
+.room__glass {
+  position: absolute;
+  display: block;
+}
+
+.room__glass {
+  inset: var(--st, 0%) var(--sr, 0%) var(--sb, 0%) var(--sl, 0%);
+  z-index: 1;
+  /* AN OFF OLED IS BLACK. Not a screenshot at seven percent brightness, not a
+     contrast filter crushing an image flat — black, because that is what the
+     panel is when it is not lit, and it is the thing the wake has to come out
+     of for the wake to read. */
+  background: #000;
+  /* AND IT IS CLIPPED TO THE APERTURE'S OWN CORNER. 190px on the render's
+     1179 x 2564 hole, read off the same alpha channel as everything else —
+     16.115% across, 7.410% down. `overflow: clip` then makes this the mask:
+     the interface cannot reach the bezel, cannot round its own corners
+     differently from the hole it sits in, and cannot leave the phone. */
+  border-radius: var(--srx, 16.115%) / var(--sry, 7.410%);
+  overflow: clip;
+}
+
+.room__ui {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+
+  /* `fill`, NOT `cover`, AND THE 1.4% IS THE REASON. The Figma frame this was
+     exported from is 393 x 867pt; an iPhone 16 Pro's display is 393 x 852. So
+     the export is one and a half percent taller than the hole it goes in.
+     `cover` matches the width and crops eighteen pixels off each end — which
+     is where the status bar and the home indicator live. `fill` takes the
+     slack out of the height instead: a 1.4% squash, about a third of a pixel
+     on a line of body text, and nothing is lost. Every copy must resolve it
+     identically or the windows would not line up. */
+  object-fit: fill;
+
+  /* the window this copy shows */
+  clip-path: inset(var(--t, 0%) 0 var(--b, 0%) 0);
+
+  /* AND EACH ONE COMES UP ON ITS OWN CLOCK, DOWN THE SCREEN. Thirty-two
+     thousandths of the pin between one element and the next — about 130px of
+     scroll — so the interface populates from the status bar to the tab bar
+     over roughly a third of the section, which is the stretch that used to be
+     a dead black rectangle while the system gathered around it.
+
+     OPACITY ONLY. No offset, no scale, no rotation: a band that travels even
+     five pixels breaks the seam it shares with its neighbour, and an element
+     that arrives from somewhere is an element being assembled. These are
+     already in place. They are being switched on. */
+  --q: clamp(0, calc((var(--p) - var(--a, 0)) * 17), 1);
+  opacity: calc(var(--q) * var(--q) * (3 - 2 * var(--q)));
+}
+
+
+
+.room__frame {
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.room__frame img {
   display: block;
   width: 100%;
-  height: auto;
-  filter:
-    drop-shadow(0 3.5rem 5rem rgba(0, 0, 0, 0.9))
-    drop-shadow(0 0 3rem rgba(255, 255, 255, 0.055));
+  height: 100%;
+  object-fit: fill;
 }
 
+/* --- THE BLUEPRINT --------------------------------------------------------
+
+   It draws the way a drawing is drawn — centrelines, envelope, the corner
+   radius with the construction that defines it, the cut-out, the controls,
+   the safe area, the baseline grid, the dimensions — and every coordinate in
+   it came off the mockup's alpha channel, so when it dissolves the render
+   takes its place without anything moving.
+
+   THE VIEWBOX IS BIGGER THAN THE PHONE, because centrelines and dimension
+   lines run outside the part they describe. It extends 140 units past the
+   body on all four sides and stays centred on it, so the element is widened
+   by 1572/1292 and the device inside it still lands exactly on `.room__dev`.
+
+   ONE RULE DRAWS EVERYTHING. Every stroked path is normalised to
+   `pathLength="1000"`, so the same dash-offset expression draws a 2,652-unit
+   rectangle and a 250-unit tick at the same rate regardless of their length. */
+.room__cad {
+  --q: clamp(0, calc((var(--p) - var(--at, 0.10)) * 40), 1);
+  --dq: clamp(0, calc((var(--p) - var(--dat, 0.34)) * 6), 1);
+  --de: calc(var(--dq) * var(--dq) * (3 - 2 * var(--dq)));
+  --zc: clamp(0, calc((var(--p) - 0.88) * 8.33), 1);
+  --ze: calc(var(--zc) * var(--zc) * (3 - 2 * var(--zc)));
+  position: absolute;
+  left: var(--gx, 50%);
+  top: var(--gy, 52%);
+  width: calc(var(--dw, 17.5rem) * 1.21672);
+  height: auto;
+  aspect-ratio: 1572 / 2938;
+  z-index: 17;
+  pointer-events: none;
+  overflow: visible;
+  color: rgba(238, 240, 245, 0.72);
+  translate:
+    calc(-50% + var(--ze) * 2vw)
+    calc(-50% + var(--p) * var(--ddep, -14px) + var(--ze) * 16vh);
+  scale: calc(0.93 + var(--de) * 0.07 + var(--p) * 0.03 + var(--ze) * 0.42);
+
+  /* IT STEPS BACK WHEN THE RENDER ARRIVES AND THEN GOES. `--out` is where the
+     drawing drops to a third — the prototype is there, the drawing is still
+     over it — and `--gone` is where it leaves for good, which is the beat the
+     photograph is fully up. That window IS the crossfade. */
+  --go: clamp(0, calc((var(--p) - var(--gone, 0.42)) * 20), 1);
+  opacity: calc(var(--q)
+    * (1 - clamp(0, calc((var(--p) - var(--out, 0.34)) * 22), 1) * 0.66)
+    * (1 - var(--go) * var(--go) * (3 - 2 * var(--go))));
+}
+
+/* each layer carries its own start and rate; the grid's lines carry theirs
+   individually, which is what staggers them */
+.cad-g,
+.cad-g--grid path {
+  --q: clamp(0, calc((var(--p) - var(--a, 0)) * var(--s, 10)), 1);
+}
+
+.cad-g > * {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* IN PIXELS, AND THAT IS NOT PEDANTRY. `stroke-dashoffset` is a length, and
+     a unitless calc() is not a length — the declaration is thrown away and the
+     property falls back to its initial 0, which is a path already drawn. The
+     whole blueprint appeared finished on the first frame because of a missing
+     `px`. In SVG user space 1px is one user unit, so with pathLength normalised
+     to 1000 this counts in thousandths of the path either way. */
+  stroke-dasharray: 1000px;
+  stroke-dashoffset: calc(1000px * (1 - var(--q)));
+}
+
+/* construction lines are thinner and quieter than the part */
+.cad-g--thin > * { stroke-width: 3; opacity: 0.55; }
+
+/* A DASHED GUIDE CANNOT BE DRAWN BY ITS OWN DASH OFFSET — the dash pattern is
+   the thing being offset. Safe-area guides come up instead of drawing, which
+   is also how they behave on a real drawing: they are notation, not geometry. */
+.cad-g--dash > * {
+  stroke-dasharray: 24 18;
+  stroke-dashoffset: 0;
+  stroke-width: 3;
+  opacity: calc(var(--q) * 0.5);
+}
+
+.cad-g--grid path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  /* AND THE GRID DOES NOT DRAW. These paths are children of a `.cad-g` too, so
+     they were inheriting the dash rule — a 1000-unit dash on a 1083-unit line,
+     which drew five sixths of each one and stopped. A baseline grid is
+     notation rather than geometry: it comes up, it does not get ruled in. */
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  opacity: calc(var(--q) * 0.28);
+}
+
+/* the values. A drawing without its dimensions on it is a shape; with them it
+   is a specification, and these are the real numbers off the render's alpha. */
+.cad-g--label text {
+  fill: currentColor;
+  stroke: none;
+  font-family: var(--mono);
+  font-size: 46px;
+  letter-spacing: 0.08em;
+  opacity: calc(var(--q) * 0.6);
+}
+
+
+
+/* --- THE REVEAL, AND IT IS THE ONLY THING THAT HAPPENS TO THE HARDWARE ----
+
+   One light travels once across the device as it arrives: a narrow band at a
+   raking angle, screen-blended so it can only ever add, sweeping from one
+   side to the other over the same window in which the device resolves. It is
+   a light moving over an object, which is what a product reveal is — and it
+   is the opposite of a stroke tracing an outline, which is a drawing. */
+.room__sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  /* AND IT IS THE SHAPE OF THE PHONE. It was `inset: 0` with square corners
+     over a device whose corners are round, so at the moment the band reached a
+     corner a lit rectangle stuck out past the silhouette — the bleed on the
+     top right. 255px of corner on a 1292 x 2658 body is 19.737% across and
+     9.594% down, which is the render's own radius, so the light now stops
+     exactly where the aluminium does. */
+  border-radius: 19.737% / 9.594%;
+  mix-blend-mode: screen;
+  --sw: clamp(0, calc((var(--p) - var(--at, 0)) * 5.5), 1);
+  --swE: calc(var(--sw) * var(--sw) * (3 - 2 * var(--sw)));
+  /* it is brightest in the middle of its travel and gone at both ends, so it
+     never sits parked on the device before or after */
+  opacity: calc(var(--swE) * (1 - var(--swE)) * 2.6);
+  background: linear-gradient(108deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.10) 47%,
+    rgba(255, 255, 255, 0.20) 50%,
+    rgba(255, 255, 255, 0.08) 53%,
+    transparent 62%);
+  background-size: 320% 100%;
+  background-position: calc(100% - var(--swE) * 100%) 0;
+}
+
+/* --- ONE BAND OF THE FINISHED SCREEN ------------------------------------
+
+   The same image again, clipped to one horizontal band, stacked over the
+   shell. The band edges are the render's own dark gutters — measured off its
+   row-brightness profile — so the cut between a lit band and an unlit one
+   falls where the screen is already black and cannot be seen.
+
+   It SNAPS. A quartic ease out is ninety-four percent done in the first third
+   of its travel, and the two vw it travels come from the direction the piece
+   that authored it arrived from, so the band does not merely appear in place:
+   it is put there, from the side the part came in on. */
+
+/* --- THE DEVICE, BEFORE IT IS A DEVICE ----------------------------------
+
+   It is drafted. One rounded rect with `pathLength="1000"`, so the dash array
+   is in thousandths of its own perimeter whatever the geometry, and the offset
+   running to zero draws it from a corner all the way round. It is a stroke
+   being laid down, not a shape being faded up, and that difference is the
+   whole of why it reads as CAD.
+
+   It sits UNDER the device and matches its transform term for term, so when
+   the body comes up behind it the two are the same rectangle and the hand-off
+   is invisible. Then it goes, having said what it had to say: this object
+   existed as a measurement before it existed as a product. */
 /* the empty state, for as long as there is one */
 .room__dev--wait {
   aspect-ratio: 0.462;
@@ -15159,7 +15505,12 @@ body[data-page='project'] .tmode { display: none; }
 .room__lockup {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  /* THE OPTICAL GAP IS NOT THE FLEX GAP. The mark's artwork is inset inside
+     its own tile, so a nominal 18px between the two boxes reads as more than
+     thirty between the glyph and the first letter — a third of the mark's
+     height, which is where a lockup stops being one thing. Nine pixels of
+     flex gap lands it at about a quarter, which is the relationship. */
+  gap: 0.55rem;
 }
 
 .room__mark {
@@ -15167,16 +15518,22 @@ body[data-page='project'] .tmode { display: none; }
   /* 40px, not 34. On a 1469px frame the lockup is the only thing in the
      opening viewport and at 34 it read as a favicon; 40 gives it the presence
      of a title card without turning it into a logo slide. */
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.64rem;
+  /* 96px, not 40. It is the only thing on the screen for a sixth of the
+     section and it is being asked to read as a product mark rather than as a
+     favicon with a caption — two and a half times up is what that took. */
+  width: 6rem;
+  height: 6rem;
+  border-radius: 1.5rem;
   flex: none;
 }
 
 .room__lockup .lab-n {
   translate: 0 -1px;
-  font-size: 0.625rem;
+  /* it grew with the mark, because a 10px name beside a 96px mark is a mark
+     with a footnote */
+  font-size: 0.875rem;
   letter-spacing: 0.2em;
+  color: rgba(245, 245, 246, 0.88);
 }
 
 /* --- what is said ---------------------------------------------------------
@@ -15184,23 +15541,58 @@ body[data-page='project'] .tmode { display: none; }
    Two lines, same place, one at each end of the pin. Between them the table
    has the frame to itself. */
 
+/* THE TWO BLOCKS SHARE A COLUMN AND NOT A LINE. The closing line stays exactly
+   where it has always been — the head of the left column — because that frame
+   is the one this section was always ending on. The title card does not: on an
+   otherwise empty screen a lockup pinned to the top corner reads as a page
+   header, and it is supposed to read as a title. It takes the middle of the
+   same column instead. */
 .room__say {
   position: absolute;
   left: clamp(1.25rem, 6.6vw, 7rem);
-  top: clamp(3rem, 9vh, 6rem);
+  top: 0;
+  bottom: 0;
+  padding-block: clamp(3rem, 9vh, 6rem);
   width: min(30rem, 40vw);
   z-index: 20;
   display: grid;
 }
 
-.room__say > * { grid-area: 1 / 1; }
+.room__say > * { grid-area: 1 / 1; align-self: start; }
+/* AND IT SITS ABOVE THE OPTICAL CENTRE, NOT ON IT. Held to the end of the
+   dissolve, the lockup now shares the frame with the system rather than
+   having it to itself — and dead-centre put "THE DESIGN SYSTEM" on the same
+   baseline as the button's own label, six pixels apart, so the two read as
+   one run of text. Six rem up clears it, and a title card slightly above
+   centre is where the eye puts it anyway. */
+/* THE LOCKUP SITS IN THE UPPER THIRD, AND THE POSITION WAS SOLVED, NOT PICKED.
+   It was centred until the room filled up behind it: the colour sheet's ink
+   starts at 208px down the frame, and a centred lockup put the N45 mark across
+   the swatches for the whole middle of the section. Sweeping a 480x96 rectangle
+   over every frame from 0.42 to 0.82 with a 24px margin, the lowest clean top
+   at this left edge is 184px — so there is no centred position, and this is the
+   bottom of the clear band with a little air left under it. Upper third is the
+   stronger title placement anyway. */
+.room__line--big { align-self: start; margin-block-start: 6rem; }
 
 .room__line {
-  --o: clamp(0, min(calc((var(--p) - var(--at)) * 9), calc((var(--to) - var(--p)) * 9)), 1);
+  /* IT COMES UP FASTER THAN IT GOES DOWN, and the two used to be the same
+     number. At nine the title card was a fifth of its opacity on the very
+     first frame of the section and had started fading again a twentieth of
+     the way in — so the one thing that is supposed to be held was never fully
+     there and never held. Twenty-six in, sixteen out: present almost at once,
+     and then four hundred pixels of nothing happening to it. */
+  --o: clamp(0, min(calc((var(--p) - var(--at)) * 26),
+    calc((var(--to) - var(--p)) * 16)), 1);
   opacity: var(--o);
   translate: 0 calc((1 - var(--o)) * 0.75rem);
   display: grid;
-  gap: 0.875rem;
+  /* A HEADLINE AND ITS PARAGRAPH ARE TWO THINGS, NOT ONE BLOCK. At 0.875rem
+     the gap was smaller than the headline's own leading, so the paragraph
+     read as a fourth line of the heading rather than as the thing under it.
+     1.6rem is a little over one line of body copy, which is the distance at
+     which the eye reads them as related but separate. */
+  gap: 1.6rem;
   justify-items: start;
 
   /* THE 127-PIXEL HOLE IN THE LOCKUP. Both lines of copy share one grid cell
@@ -15292,6 +15684,68 @@ body[data-page='project'] .tmode { display: none; }
   .room::before { display: none; }
   .room__veil { display: none; }
 
+  /* the orbit, the draft and the bands are all things that happen in a
+     pinned frame with a device standing in it. In a column there is no frame,
+     no device to circle and nothing to draw around, so all three come off and
+     the phone is simply the finished render, once. */
+  .room__orb {
+    position: relative;
+    inset: auto;
+    rotate: none;
+    display: contents;
+  }
+
+  /* AT PHONE WIDTH THE DEVICE IS A PICTURE OF A DEVICE, and that is the
+     right answer here. The turn, the sweep and the depth all come off — a
+     phone at nine degrees in a 390px stack is a crooked picture, not a turned
+     object — and what is left is the render at rest with its screen on.
+
+     THE GLASS GOES STATIC, SO ITS INSET STOPS APPLYING. An inset that stops
+     applying is a screen printed over its own bezel, so the aperture comes
+     back as a margin, which is what positions a static box. */
+  .room__dev { aspect-ratio: auto; filter: none; }
+  .room__sweep, .room__cad { display: none; }
+
+  .room__frame { position: absolute; inset: 0; }
+
+  .room__glass {
+    position: relative;
+    inset: auto;
+    margin: var(--st, 0%) var(--sr, 0%) var(--sb, 0%) var(--sl, 0%);
+  }
+
+  /* ONE COPY, WHOLE, IN THE COLUMN. The ten windows are a reveal, and there
+     is no reveal here — the pin is released, so there is no `--p` to stagger
+     them against and all ten would simply stack. The first one loses its clip
+     and shows the interface; the other nine have nothing to do. */
+  .room__ui {
+    position: relative;
+    clip-path: none;
+    opacity: 1;
+    height: auto;
+  }
+
+  .room__ui:not(:first-of-type) { display: none; }
+
+  /* the pseudo goes back to being a soft halo holding the phone off a flat
+     stack, rather than the ground shadow it is on the desktop: a black
+     ellipse under a black phone on a black ground is three blacks. */
+  .room__dev::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 156%;
+    aspect-ratio: 1;
+    z-index: 0;
+    transform: none;
+    translate: -50% -50%;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(closest-side,
+      rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.022) 46%, transparent 72%);
+  }
+
   .room__o,
   .room__dev {
     position: relative;
@@ -15302,6 +15756,10 @@ body[data-page='project'] .tmode { display: none; }
     translate: 0;
     scale: 1;
     rotate: none;
+    /* the turn and the perspective come off with everything else. In a column
+       there is no room to be an object in, and a phone at three degrees in a
+       390px stack is a crooked picture rather than a turned one. */
+    transform: none;
     opacity: 1;
     order: var(--ord, 2);
   }
@@ -15320,6 +15778,14 @@ body[data-page='project'] .tmode { display: none; }
      take its place at the end, after the sheets. The desktop rule that stacks
      both lines in one cell has to be undone explicitly — it still matches,
      and left in place it puts the whole section's copy on one line of type. */
+  /* A 96PX MARK AND SEVENTEEN TRACKED CAPITALS DO NOT FIT IN 343 PIXELS —
+     measured, 20px over. The mark comes down to a third of the frame's width
+     and the name drops a step; the lockup keeps its proportion, which is the
+     part that matters. */
+  .room__mark { width: 3.5rem; height: 3.5rem; border-radius: 0.9rem; }
+  .room__lockup .lab-n { font-size: 0.5625rem; letter-spacing: 0.16em; }
+  .room__line--big { margin-block-start: 0; }
+
   .room__say { display: contents; }
   .room__say > * { grid-area: auto; }
   .room__line { position: relative; order: var(--sord, 0); opacity: 1; translate: 0; width: 100%; }

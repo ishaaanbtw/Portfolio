@@ -1,11 +1,23 @@
-# The Design System — one table, one pin
+# The Design System — one table, one pin, and now one story
 
-**Scene id** `x0-system` · **kind** `room` · **duration** `380svh`
-At a 900px viewport: **3,420px tall, of which 2,520px is pin.**
+**Scene id** `x0-system` · **kind** `room` · **duration** `760svh`
+At a 900px viewport: **6,840px tall, of which 5,940px is pin.**
 
 Nothing in this scene is in a container. Every artefact is an `<img>` of one of
 Ishaan's transparent SVGs; the phone is the Home-screen render, which came in
-its own bezel. Nothing is blurred, at rest or in motion.
+its own bezel.
+
+---
+
+## The room did not change. The order did.
+
+Every resting place, every width, every dim, every entry vector, every drift
+rate and the whole final composition are the ones that were already here. This
+is the same table with the same things on it, ending on the same frame.
+
+What changed is the sequence they happen in — and what they do on the way.
+
+**The claim, stated as a sequence: the system existed before the interface.**
 
 ---
 
@@ -13,186 +25,212 @@ its own bezel. Nothing is blurred, at rest or in motion.
 
 | | |
 |---|---|
-| **0.00 – 0.24** | the lockup, nothing else |
-| **−0.04 – 0.44** | the six sheets, one at a time |
-| **0.30 – 0.47** | **the phone**, resolving in place among them |
-| **0.42 – 0.72** | the five components gather at its edges |
-| **0.72 – 0.80** | everything together, and not a word |
-| **0.80 – 1.00** | the line |
+| **0.00 – 0.04** | a dark room, a grid, a glow. Nothing else. |
+| **0.04 – 0.16** | **the lockup**, at 96px, and a long hold on it |
+| **0.13 – 0.27** | **the device is drafted** — one stroke, from a corner, all the way round. No interface. |
+| **0.26 – 0.33** | the body fills in behind the outline. Still no interface: an empty, opaque object. |
+| **0.34 – 0.52** | the system arrives and takes up its orbit |
+| **0.52 – 0.86** | **eight round trips.** A piece leaves, goes in behind the phone, the band it authors comes on, the piece comes back to exactly where it was. |
+| **0.86 – 0.90** | everything home, the product finished, held |
+| **0.90 – 1.00** | the line |
 
-The spacing grid and the type scale arrive at −0.04, so the room is never an
-empty rectangle on the first frame.
+Roughly 250px of scroll per construction beat and a good deal more than that on
+either side of them. Every beat introduces one thing, and nothing else moves
+while it does.
 
 ---
 
-## The art-direction pass
+## The five mechanisms
 
-Eight notes came back. What each one turned into:
+### 1 · The orbit — `.room__orb`
 
-### The lockup was 127px apart
+One wrapper per object. It is the size of the whole stage and its transform
+origin is the **device's centre**, so rotating it a degree or two across the pin
+swings whatever is inside along an arc around the phone. The artwork then
+counter-rotates by exactly the same amount, so the piece rides that arc while
+staying upright. No trigonometry, no keyframes.
 
-Not a spacing choice — a bug. Both blocks of copy share one grid cell so they
-can cross-fade in place, which sizes that cell to the taller of the two, and an
-auto-row grid with the default `align-content` **stretches its rows to fill**.
-The title card's two rows were being pushed apart by the height of a headline
-that was not even on screen yet. `align-content: start` closed it.
+Every object carries its own rate, and that difference is the parallax: the near
+components come round at 2.6° over the whole section and the far sheets at 0.7°,
+so nothing in the room ever moves with anything else. Two degrees at 400px of
+radius is 14px of travel — which is the point. It should not be possible to
+catch it moving; it should only be obvious, a screen later, that it has.
 
-Then it became a lockup rather than an icon with text under it: **one flex row,
-34px mark, 10px gap** — smaller than the mark is tall, which is the whole of
-what makes two things read as one. The name dropped "N45 ·", because a lockup
-that repeats what its own mark says is a logo with a caption. Two optical
-adjustments: the name is nudged up 1px, because the mark's artwork is inset
-inside its tile and centring the tile leaves the text sitting visually low; and
-its tracking is trimmed to 0.2em so the gap after its last letter does not open
-up against the mark.
+The z-index lives on the wrapper rather than on the artefact, because a rotated
+wrapper is a stacking context and an index inside one is measured against its
+siblings rather than against the room.
 
-### The phone was translucent
+### 2 · The draft — `.room__cad`
 
-The worst thing in the section, and he was right that it broke the illusion.
-Its arrival was a straight opacity ramp over a sixth of the pin, and the
-components behind were visible straight through the screen.
+One rounded rect with `pathLength="1000"`, so the dash array is in thousandths
+of its own perimeter whatever the geometry, and the offset running to zero draws
+it from a corner all the way round. It is a stroke being laid down, not a shape
+being faded up, and that difference is the whole of why it reads as CAD.
 
-Now the **opacity resolves in a fourteenth of the pin — about 170px of scroll —
-while the scale keeps settling for twice that.** It goes solid almost at once
-and then comes to rest. Everything in the near plane was pushed back to 0.42,
-by which time it is opaque, so nothing is ever behind a see-through phone.
-Measured: at p=0.38 the phone is at opacity 1 and the first component arrives at
-0.42.
+It sits under the device and matches its transform term for term, so when the
+body comes up behind it the two are the same rectangle and the hand-off is
+invisible. Then it **steps back to a quarter and stays** all the way through the
+system gathering around it — it is the only thing holding an empty phone as an
+object while eleven brighter things collect in the room — and goes for good on
+the beat the first band lands.
 
-### The motion was mechanical
+### 3 · The blank screen — `.room__blank`
 
-`--q` is linear in the scroll: every object travelled at constant speed and
-stopped dead. There is now `--e` — smoothstep, q²(3−2q), three multiplications
-of unitless numbers, which is all `calc()` needs — and every translate, scale
-and rotation runs off it. Things **ease out of the distance and settle**.
+A separate layer, and it has to be, because it must not touch the bezel. The
+first attempt dimmed the whole render, which crushed the bezel with everything
+else — so every band that landed brought the real bezel back with it and left a
+step in the phone's edge above and below itself. Now the shell underneath is the
+render exactly as exported, bezel and rim intact and never altered, and this
+layer blanks only the glass. The clip is the screen's own rectangle, measured
+off the render (19px in from the left, 26 from the right, 14 from the top, 22
+from the bottom) with the corner radius the screen actually has.
 
-And they orbit. Every entry vector is computed from the phone outward along the
-line to the object's own place, plus a consistent tangential swing, so all
-eleven come in on the same arc toward the same centre of gravity instead of
-each flying in from whatever direction had been written down.
+**Brightness alone cannot empty a screen**, which took two attempts to learn.
+Multiplying every pixel by a small number keeps every *ratio* between them, so
+white type on a black screen stays white type on a black screen — a dimmer
+version of the same legible interface, and at any setting dark enough to hide it
+the phone has gone too. What empties it is **contrast**: collapsing the range to
+a fourteenth leaves a flat slab with the detail crushed out, and the brightness
+then only decides how dark that slab is. It is set to land a pixel value or two
+under the render's own dark areas, which is why the edge of a lit band cannot be
+seen against it.
 
-### The final frame was lopsided
+### 4 · The bands — `.room__p`
 
-Measured rather than argued. The 3×3 ink grid at p=0.97 read
+`hero.webp` is one flat render with no layers, so a part is that same image again
+— same box, same size, same position — clipped to one horizontal band and
+stacked over the blank. Light a band and that part of the interface exists.
+Because every copy is identical and identically placed, two adjacent bands are in
+perfect register: there is no seam to hide and no second mockup to keep in sync.
 
-```
-19.90   4.54   0.53      ← two dead corners,
- 4.23  16.53   2.32        on a diagonal
- 0.17   4.09   8.74
-```
+The band edges were measured off the render's own row-brightness profile — its
+dark gutters — so every cut falls where the screen is already black.
 
-left 45%, right 17%. Moving objects did nothing and raising their brightness did
-nothing either, because **the veil was the cause**: a flat wash took the whole
-room down to a quarter while the copy sat above it at full strength. 88% of a
-quarter is still a quarter.
+| band | from | to |
+|---|---|---|
+| status | 3.0% | 8.2% |
+| app bar | 8.2% | 15.0% |
+| card | 15.0% | 23.6% |
+| chart | 23.6% | 37.6% |
+| balance | 37.6% | 45.8% |
+| send | 45.8% | 53.0% |
+| actions | 53.0% | 59.3% |
+| accounts | 59.3% | 76.0% |
+| add new | 76.0% | 84.0% |
+| tab bar | 84.0% | 95.5% |
 
-The veil is now **an ellipse centred on the copy column**. Behind the headline
-it is the ground, flat and opaque, and the type reads at 18.3:1; by the far
-corner it has almost gone, so the system is still on the table over there. On
-top of that the phone moved to **56%**, making the last frame a two-column
-composition rather than a headline with a hole beside it, and the headline came
-down from 52px to **44px** so the hero is unambiguous.
+A band **snaps**: a quartic ease out is 94% done in the first third of its
+travel, and the 2vw it travels comes from the direction the piece that authored
+it arrived from. It is not placed — it is put there, from the side the part came
+in on.
 
-```
-19.91   4.51   4.33      left 34%  centre 40%  right 26%
- 2.75  16.46   3.41      L:R 1.33, from 2.53
- 1.47   6.92  11.69      no dead cell
-```
+### 5 · The round trip
 
-Held mid-frame, p=0.74: left 25% · centre 46% · right 29%, L:R **0.88**.
+`tp` is when an artefact leaves its place and `tb` is when it starts back; `--g`
+is one while it is away and zero at both ends, so the same two numbers carry it
+out and home again and it lands on exactly the pixel it left. **There is one
+resting position per object, not two, so there is nothing to keep in sync.**
 
-### Everything was as bright as the hero
+It goes out faster than it comes back — 55 against 40 — which is what makes it
+read as being fetched rather than as swinging. And it shrinks to a third on the
+way, so that by the time it reaches the device it is smaller than the device and
+passes cleanly **behind** it. The piece disappears into the phone, the band comes
+on, the piece comes back out.
 
-The one that mattered most, and the one I had been measuring myself out of
-seeing. Six objects sat at full brightness — the Continue button, the slider,
-the snackbar, the chips, the progress bar, the navigation sheet — all of them
-white UI on black, all of them as strong as the phone they were supposed to be
-supporting. That is why the eye had nowhere to land, and no amount of moving
-things around was going to fix it.
+Why a round trip rather than a one-way journey: **because the ending is the
+point.** If the pieces were consumed the section would say "these were
+scaffolding". Coming back to the exact pixel they left, and staying there under
+the closing line, it says "these are what it is made of, and they are still
+true".
 
-There is one tonal hierarchy now and **the phone is the only object in the room
-at full strength**:
+---
 
-| | |
+## The eight trips
+
+| | leaves | piece | band it authors |
+|---|---|---|---|
+| 1 | 0.520 | Typography | the balance |
+| 2 | 0.562 | Colour | the chart |
+| 3 | 0.604 | Buttons | Send / Receive |
+| 4 | 0.646 | Navigation | the tab bar |
+| 5 | 0.688 | Surfaces | the card, then the account rows |
+| 6 | 0.730 | Controls | Swap / Buy / Stake |
+| 7 | 0.772 | The primary button | + Add new or existing account |
+| 8 | 0.814 | Icons | the bell and the gear, then the clock |
+
+**Colour goes second and not last**, which was the plan until it was rendered:
+the balance sits *on* the chart's green fill, so the band that carries the number
+carries green with it whatever the order.
+
+**Three pieces never leave.** The spacing grid is already in the phone — it is
+the reason the phone is that shape — and sending it in would be sending it
+twice. The slide-to-confirm control and the progress bar do not appear anywhere
+on the Home screen, and sending a piece in to build something that is not there
+would be the one dishonest move in the section.
+
+---
+
+## The phone is never transparent
+
+The empty device is the render with its glass blanked, not faded: every pixel
+inside the bezel is a pixel. Every artefact travels **behind** it — all eleven
+orbit wrappers hold z-indices of 1 to 12 against the device's 18 — so at no point
+in the section is anything visible through the screen, and the occlusion is what
+sells the hand-off.
+
+---
+
+## Measured
+
+**Scroll cost**, in the same software rasteriser as the rest of the film, at
+1469 × 801:
+
+| | median frame |
 |---|---|
-| the phone | 1.00 |
-| the five real components | 0.62 – 0.68 |
-| the six sheets | 0.34 – 0.62 |
+| other scenes in the film | ~17ms |
+| **the version this replaces** | **175ms** |
+| **this one** | **63ms** |
 
-`--dim` also moved off the object wrapper onto the artwork, because on the
-wrapper it took each label down with its sheet — a sheet pushed back to 42%
-had a label at 3:1. The artwork recedes; the label is tied to it only six
-tenths of the way, so it is always quieter than the thing it names and always
-brighter than a whisper. Measured: 6.7:1 and 4.6:1.
+Nearly three times faster than the scene it replaces, despite doing a great deal
+more — and the reason is one invisible change. The long black shadow under the
+phone was a `drop-shadow`, which follows the alpha, which means blurring the
+silhouette of a 300 × 620 image at an 80px radius on every frame the transform
+changes; this section changes the transform on every frame there is. It is a
+radial gradient now, painted once and then merely moved. Under a phone standing
+in a pool of light the two are indistinguishable — the shadow's job is to darken
+the pool, not to trace the bezel. The rim stays a real drop-shadow, because that
+one does have to follow the silhouette.
 
-### Empty space had no reason
-
-The chip-and-toggle sheet came back off the bench and into the top right, small
-and bright, lying across the type specimen the way the button lies across the
-colour ramp on the other side — symmetry of kind, not of position. And the crop
-on the snackbar was flipped: cut by the phone's right edge all it had left was
-"…essfully ✕", the green bar and the sentence being the hidden half. It is cut
-by the **left** edge now, and it reads.
+**At phone width**, measured at 390 × 844: scene 3,072px, `scrollWidth` exactly
+390, nothing overflowing, everything visible. Same at 360.
 
 ---
 
-## The objects
+## At phone width, and with motion off
 
-| at | asset | w | x / y | dim | drift | other motion |
-|----|-------|---|-------|-----|-------|--------------|
-| −0.04 | `type-scale.svg` | 39vw | 86% / 26% | .62 | −40px | rot −1.6°, spin −0.8° |
-| 0.05 | `spacing.svg` | 30vw | 12% / 86% | .34 | −54px | spin +0.6° |
-| 0.12 | `colour.svg` | 28vw | 12% / 53% | .42 | −30px | rot +1.2°, **scale +3%** |
-| 0.17 | `buttons.svg` | 40vw | 52% / 95% | 1.0† | −96px | rot +1.4°, spin +1.8° |
-| 0.22 | `icons.svg` | 20vw | 78% / 54% | .44 | −26px | rot −2.4° |
-| 0.27 | `tab-bar.svg` | 36vw | 89% / 78% | .50 | −38px | rot −1° |
-| **0.30** | **`hero.webp`** | **min(22vw, 17.5rem)** | **56% / 50%** | 1.0 | −14px | resolves in place |
-| 0.42 | `snackbar.svg` | 22vw | 44% / 58% | .62 | **+38px** | rot −1° |
-| 0.46 | `slide-to-pay.svg` | 24vw | 41% / 76% | .62 | −60px | rot +0.8° |
-| 0.50 | `button.svg` | 11vw | 31% / 48% | .62 | −34px | — |
-| 0.53 | `progress.svg` | 16vw | 77% / 45% | .68 | −20px | — |
-| 0.56 | `controls.svg` | 15vw | 74% / 40% | .62 | −46px | rot +1.6° |
+The pin is released and the room unstacks into a column in arrival order, as it
+always did. The orbit, the draft and the bands all come off — they are things
+that happen in a pinned frame with a device standing in it, and in a column
+there is no frame, no device to circle and nothing to draw around. The phone is
+simply the finished render, once.
 
-† `buttons.svg` stays at 1.0 because the file itself is exported at 30%,
-which puts it in the sheet tier on its own.
+The ground shadow becomes a **light** here, and it had to be positioned under the
+phone rather than over it: a positioned pseudo-element paints above a static
+sibling whatever its z-index, so the black ellipse was covering the render
+outright.
 
-**No two share a `dep`**, one drifts down while the rest rise. Scales run 11vw
-to 39vw; five objects run off an edge in four directions.
-
-Positions are checked geometrically at **both ends of the pin** against each
-file's measured ink box — not its image box, which is a different rectangle,
-because every SVG carries a transparent margin round its artwork. The checks
-that pass: no annotation on another object's artwork, no sheet over another
-sheet, and nothing under either block of copy.
+With motion off the film holds `--p` at 1 and the scene renders its end state,
+which for this one is the right frame to be left on: the finished product with
+the whole system standing around it.
 
 ---
 
-## A note on the frame this was judged in
-
-The first three passes were art-directed at 1440 x 900. The screen recordings
-are 2938 x 1602, which is a 2x capture of **1469 x 801** — wider, and a hundred
-pixels shorter. Every vertical relationship in the composition is different in
-a frame that much shorter, which is part of why two rounds of balancing did not
-land. Everything here is now measured and rendered at 1469 x 801.
-
-Balance at that size: **centre 53% / 51% / 42%** across the assembly, the hold
-and the last frame — the phone owns the middle of the composition at every
-position — with L:R running 0.53 -> 0.73 -> 1.45 and no dead cell in the grid.
-
-## At phone width
-
-Pin released, scene height `auto`, one column in arrival order. Measured at
-390 × 844: scene 3,010px, `scrollWidth` exactly 390, nothing overflows, no text
-clipped at either width. All 26 scenes of the film still track.
-
----
-
-## Still outstanding, and still one line
+## Still outstanding
 
 `buttons.svg` opens with `<g opacity="0.3">` — a top-level group left at 30% in
 Figma. It is at `dim: 1.0` here, so 30% is all the file has to give.
-`colour.svg` still carries the wrong title, **"TEXT INPUT, EVERY STATE"**, over
-a greyscale ramp; the one label beside it is the patch until it is re-exported.
+`colour.svg` still carries the wrong title, **"TEXT INPUT, EVERY STATE"**, over a
+greyscale ramp; the one label beside it is the patch until it is re-exported.
 
 ---
 
