@@ -13256,6 +13256,30 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 /* type large enough that a 10px rise reads as a jolt rather than as a move */
 .beat--still { translate: 0; }
 
+/* --- ALREADY THERE WHEN THE SCENE ARRIVES -------------------------------
+
+   THIS IS THE FIX FOR THE WHITE BETWEEN TWO SCENES, and it is worth the
+   explanation because the gap is structural rather than a spacing mistake.
+
+   A stage is one screen tall and pinned, so `--p` runs from 0 to 1 across the
+   HOLD and is pegged at 0 for the whole screen of scrolling in which the next
+   stage slides up into place. The scene you are leaving is therefore at
+   `--p: 1` — fully drawn — right up to the moment it clears the top, and the
+   scene you are arriving at is at `--p: 0` — completely empty — for the whole
+   of its entrance. Two centred scenes in a row, and the join between them is
+   a screen of nothing: the outgoing one has gone up and the incoming one has
+   not started.
+
+   So the first line or two of a scene that follows a quiet one is declared
+   arrived. It rides in already set, the way a title on a page you scroll to
+   is already on the page, and the reader's eye has something to land on the
+   entire way down. Everything after it still arrives on the scroll. */
+.beat--lead { --o: 1; translate: 0; }
+/* one that still has to leave keeps its exit and loses only its entrance */
+.beat--lead.beat--win {
+  --o: clamp(0, calc((var(--to) - var(--p)) * 24), 1);
+}
+
 /* A SCENE THAT IS ALREADY COMPOSED WHEN YOU GET TO IT. Every other scene is
    scrolled INTO, so starting its beats at nothing is right. The first one is
    arrived at — the reader comes off the hero with `--p` at 0 — and a film
@@ -13304,6 +13328,77 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 .fg-h--wide { max-width: 32ch; }
 .fg-h--mid { text-align: center; max-width: 28ch; justify-self: center; }
 .fg-h em { font-style: normal; color: var(--fg-dim); }
+
+/* --- the question, and the one word it turns on -------------------------
+
+   THREE LINES. The same sentence at the full poster size ran six lines down
+   the frame, and a six-line headline is not read, it is scanned: the eye
+   takes the first two lines, decides it has the shape of the thing, and goes
+   looking for the next picture. Smaller type and a wider measure puts it in
+   three, which is one breath, and a sentence you finish is a sentence you
+   answer. */
+.film .fg-h--ask {
+  font-size: min(clamp(1.875rem, 5.1vw, 4.25rem), 8.4svh);
+  max-width: 29ch;
+  letter-spacing: -0.028em;
+  line-height: 1.07;
+}
+
+/* THE HIGHLIGHTER, AND IT IS THE ONLY WARM THING IN THE FILM. Not a colour
+   change on the word — colouring a word makes it a link. This is a marker
+   stroke laid over the paper: it multiplies, so the black glyphs stay black
+   and the ink only touches the white around them, and both of its ends are a
+   different shape because nobody draws two identical ends with a marker.
+
+   It is swiped, not switched on. The stroke scales out from its left edge
+   across a sixth of the pin as the sentence arrives, which is the gesture
+   somebody makes when they get to the word that matters. */
+/* --- a word at a time ---------------------------------------------------
+
+   Each word carries its own clock, so the sentence is built rather than
+   switched on. It rises a sixth of its own height and comes out of a hair of
+   blur, which is what makes a word read as landing rather than as fading: a
+   pure opacity ramp on type looks like a slow render, and the blur is the
+   difference between the two. `inline-block` so the rise and the blur have a
+   box to happen in; the words are still joined by real spaces, so the line
+   breaks exactly where the sentence wants them. */
+.fg-h--ask .fg-qw {
+  --wq: clamp(0, calc((var(--p) - var(--at, 0)) * 11), 1);
+  --we: calc(var(--wq) * var(--wq) * (3 - 2 * var(--wq)));
+  display: inline-block;
+  opacity: var(--we);
+  translate: 0 calc((1 - var(--we)) * 0.18em);
+  filter: blur(calc((1 - var(--we)) * 0.07em));
+}
+
+.fg-h mark {
+  --hq: clamp(0, calc((var(--p) - var(--hat, 0.2)) * 4.2), 1);
+  --he: calc(var(--hq) * var(--hq) * (3 - 2 * var(--hq)));
+  position: relative;
+  isolation: isolate;
+  background: none;
+  color: inherit;
+  /* the stroke belongs to the whole word, so the word does not break */
+  white-space: nowrap;
+}
+
+.fg-h mark::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: -0.11em;
+  right: -0.13em;
+  bottom: 0.055em;
+  height: 0.42em;
+  background: rgba(247, 192, 74, 0.55);
+  /* nearly flat, with both ends a slightly different shape — a stroke laid
+     down by a chisel tip, not a rounded pill behind the word */
+  border-radius: 0.06em 0.2em 0.09em 0.16em / 0.22em 0.1em 0.2em 0.09em;
+  rotate: -0.7deg;
+  mix-blend-mode: multiply;
+  transform-origin: 0% 60%;
+  scale: var(--he) 1;
+}
 
 .fg-p {
   font-size: var(--fg-lede);
@@ -14297,7 +14392,20 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
    place, and it reserves its own height so the thread below never jumps */
 .fg-msgs__lead { min-height: 2.7em; align-content: start; width: 100%; }
 
+/* --- the feed rises as it fills -----------------------------------------
+
+   A THREAD THAT ONLY FADES UP IN PLACE IS A LIST. What a conversation does
+   while you watch it is push: each message lands at the bottom and shoves the
+   older ones up the screen, so the thing your eye holds still on is the
+   newest line rather than the whole block. That push is this one translate —
+   the stack drifts a couple of messages' worth upward across exactly the span
+   in which the eight of them arrive, so the newest always lands around the
+   same height and everything said earlier has drifted above it. */
 .fg-thread {
+  --fq: clamp(0, calc((var(--p) - var(--fat, 0.3))
+                      / (var(--fto, 0.72) - var(--fat, 0.3))), 1);
+  --fe: calc(var(--fq) * var(--fq) * (3 - 2 * var(--fq)));
+
   list-style: none;
   margin: 0;
   padding: 0;
@@ -14307,6 +14415,9 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   /* no base gap at all: every space in this thread is authored per line by
      `pad`, because an even rhythm is the thing that reads as generated */
   gap: 0;
+  /* percentages resolve against the thread's own height, so the travel stays
+     proportional to how much conversation there is */
+  translate: 0 calc(10% - var(--fe) * 26%);
 }
 
 /* --- one message --------------------------------------------------------
@@ -14322,11 +14433,15 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
    that one line and the shadow being wide and weak rather than tight and
    dark. */
 .fg-msg {
-  --q: clamp(0, calc((var(--p) - var(--at, 0)) * 13), 1);
-  /* a small overshoot, then settle — one bounce, barely there. This is the
-     "arrived" of a message landing, and it is 1.5% of scale, not 10%. */
+  --q: clamp(0, calc((var(--p) - var(--at, 0)) * 17), 1);
+  /* IT POPS, AND IT POPS FROM THE CORNER IT CAME OUT OF. The first pass moved
+     one and a half percent of scale, which is a fade with a rumour of motion
+     in it; a message arriving is a small object appearing at size, and the
+     overshoot is the part that makes it feel typed rather than rendered. It
+     grows from the tail — bottom left — so the bubble looks like it is being
+     filled by the words rather than zoomed at the middle. */
   --e: calc(var(--q) * var(--q) * (3 - 2 * var(--q)));
-  --spring: calc(sin(var(--q) * 3.14159) * 0.012);
+  --spring: calc(sin(var(--q) * 3.14159) * 0.055);
 
   /* ITS OWN INDENT. This one line is what turns a chat log back into a
      scatter of thoughts: no two are the same and the sequence has no rule in
@@ -14338,9 +14453,9 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   width: fit-content;
   max-width: var(--bw, 84%);
   margin-block-start: var(--gap, 0rem);
-  opacity: var(--e);
-  translate: 0 calc((1 - var(--e)) * 0.85rem);
-  scale: calc(0.985 + var(--e) * 0.015 + var(--spring));
+  opacity: clamp(0, calc(var(--e) * 2.2), 1);
+  translate: 0 calc((1 - var(--e)) * 1.15rem);
+  scale: calc(0.86 + var(--e) * 0.14 + var(--spring));
   transform-origin: 0% 100%;
 }
 
@@ -14408,7 +14523,45 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
      words want to break; a justified or balanced bubble reads as typeset,
      and nobody typesets a message. */
   text-wrap: pretty;
+  /* THE WORDS ARRIVE A BEAT AFTER THE BUBBLE DOES, which is the whole of the
+     "it was typed" reading: for the first third of the pop there is a shape
+     and nothing in it, and then the line is there. */
+  opacity: clamp(0, calc((var(--q) - 0.32) * 2.6), 1);
 }
+
+/* --- a reaction, on four of the eight -----------------------------------
+
+   NOT ON EVERY MESSAGE. Four of them picked up a sticker and the other four
+   did not, and the four that did sit on four different corners — a reaction
+   in the same place on every bubble is a badge, and a badge is a component.
+   Each one lands a beat after its own message, pops harder than the bubble
+   did, and carries a ring of the page's own colour so it reads as sitting on
+   top of the blue rather than inside it. */
+.fg-react {
+  --rq: clamp(0, calc((var(--p) - var(--rat, 1)) * 20), 1);
+  --re: calc(var(--rq) * var(--rq) * (3 - 2 * var(--rq)));
+  --rs: calc(sin(var(--rq) * 3.14159) * 0.2);
+
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--fg-ground);
+  box-shadow: 0 0.2rem 0.55rem rgba(20, 44, 92, 0.16);
+  font-size: 0.84rem;
+  line-height: 1;
+  pointer-events: none;
+  opacity: var(--re);
+  scale: calc(0.35 + var(--re) * 0.65 + var(--rs));
+}
+
+/* each corner grows out of the bubble, not away from it */
+.fg-react--tr { top: 0; right: 0; translate: 40% -52%; transform-origin: 0% 100%; }
+.fg-react--tl { top: 0; left: 0; translate: -44% -52%; transform-origin: 100% 100%; }
+.fg-react--br { bottom: 0; right: 0; translate: 44% 46%; transform-origin: 0% 0%; }
 
 /* THE TWO THAT DECIDED THE REST: a step up in size and a shade deeper, so
    they carry more weight on the page as they did in the room. */
@@ -14539,7 +14692,9 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 
   .fg-msgs__head {
     order: -1;
-    max-width: 17rem;
+    /* smaller than it was: at this height the eight messages and the figure
+       are competing for one screen, and the conversation is the scene */
+    max-width: 13.5rem;
     aspect-ratio: 1 / 0.86;
   }
 
@@ -14558,6 +14713,9 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   /* the indents are a wide-frame device; at 390px a 46% indent leaves four
      words in a gutter, so every message comes back to the edge */
   .fg-msg { margin-inline-start: 0; max-width: 100%; }
+  /* less room to drift in, so the feed pushes about half as far */
+  .fg-thread { translate: 0 calc(3% - var(--fe) * 15%); }
+  .fg-react { width: 1.25rem; height: 1.25rem; font-size: 0.68rem; }
   .fg-bub p { font-size: 0.9375rem; }
   .fg-bub--keep p { font-size: 1.0625rem; }
 }

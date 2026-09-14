@@ -3202,8 +3202,31 @@
     ask: (s) => `<div class="scn__in${s.mid ? ' scn__in--mid' : ''}">` +
         (s.n ? `<span${AT(0.02)} class="fg-dec__n beat">${esc(s.n)}</span>` : '') +
         (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
-        `<h2${AT(0.06)} class="fg-h fg-h--l fg-h--wide beat beat--still">${s.h}</h2>` +
-        (s.p ? `<p${AT(0.34)} class="fg-p beat">${s.p}</p>` : '') +
+        /* --- THE SENTENCE ARRIVES A WORD AT A TIME ------------------------
+           This is the one frame in the film that the whole study hangs off,
+           and a headline that is simply THERE when you arrive is a headline
+           you skim. Set word by word against the scroll, the reader is made
+           to read at the speed of the sentence — and the word the sentence
+           turns on gets its mark the moment it lands, so the emphasis is
+           something that HAPPENS rather than something that was already
+           printed. The h2 itself is not a beat here: the words are. */
+        (s.tight
+          ? (() => {
+              const w = String(s.h).split(' ');
+              const b = SPREAD(w.length, 0.06, 0.6);
+              return `<h2 class="fg-h fg-h--l fg-h--wide fg-h--ask">` +
+                w.map((t, i) =>
+                  `<span class="fg-qw" style="--at:${b[i].toFixed(3)}` +
+                    /* the highlighter starts a beat after its own word, so
+                       the stroke reads as a hand coming back to it */
+                    `${t.indexOf('<mark') >= 0
+                      ? `;--hat:${(b[i] + 0.035).toFixed(3)}` : ''}">` +
+                    `${t}</span>`).join(' ') +
+              `</h2>`;
+            })()
+          : `<h2${AT(0.06)} class="fg-h fg-h--l fg-h--wide` +
+            ` beat beat--still">${s.h}</h2>`) +
+        (s.p ? `<p${AT(s.pat == null ? 0.34 : s.pat)} class="fg-p beat">${s.p}</p>` : '') +
       `</div>`,
 
     /* --- 07 · the brief, and then eight questions ------------------------
@@ -3290,13 +3313,16 @@
 
           /* --- the conversation ---------------------------------------- */
           `<div class="fg-msgs__talk">` +
-            (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+            /* declared arrived: this scene follows the one still frame in the
+               film, and the join between two centred scenes is otherwise a
+               screen of white — see `.beat--lead` */
+            (s.kicker ? `<span class="fg-kick beat beat--lead">${esc(s.kicker)}</span>` : '') +
             /* THE SETUP STILL SWAPS IN PLACE, because the two lines are one
                sentence with a turn in it and reading them side by side would
                throw the turn away. It clears before the first question. */
             (q.length
               ? `<div class="fg-swap fg-msgs__lead">` +
-                  `<p${AT(0.04, 0.19)} class="fg-quote beat beat--win">${q[0]}</p>` +
+                  `<p${AT(0.04, 0.19)} class="fg-quote beat beat--win beat--lead">${q[0]}</p>` +
                   (q[1] ? `<p${AT(0.17, 0.30)} class="fg-quote beat beat--win">${q[1]}</p>` : '') +
                 `</div>`
               : '') +
@@ -3306,14 +3332,31 @@
                texture that says "this took a morning" and that nobody has to
                read. The <li> carries the clock and the motion; the box inside
                it carries the colour. */
-            `<ol class="fg-thread">` + items.map((it, i) => {
+            /* THE THREAD RISES AS IT FILLS. `--fat` and `--fto` are the two
+               ends of the arrival window handed to the CSS, so the stack can
+               drift upward across exactly the span in which messages land —
+               which is what makes it read as a live feed being added to
+               rather than a list fading up in place. */
+            `<ol class="fg-thread" style="--fat:${b[0].toFixed(3)}` +
+              `;--fto:${b[b.length - 1].toFixed(3)}">` + items.map((it, i) => {
               const t = typeof it === 'string' ? { t: it } : it;
+              /* A FEW OF THEM PICKED UP A REACTION, and only a few: a sticker
+                 on every message is a pattern, and a pattern is the thing
+                 this section is trying not to be. Each lands a beat after its
+                 own bubble, on a corner chosen per message rather than by
+                 rule, so no two sit in the same place. */
+              const r = t.react;
               return `<li class="fg-msg" style="--at:${b[i].toFixed(3)}` +
                 `${t.ox ? `;--ox:${t.ox}` : ''}${t.w ? `;--bw:${t.w}` : ''}` +
                 `${t.pad ? `;--gap:${t.pad}` : ''}">` +
                 `<div class="fg-bub${t.keep ? ' fg-bub--keep' : ''}` +
                   `${t.sm ? ' fg-bub--sm' : ''}">` +
                   `<p>${esc(t.t)}</p>` +
+                  (r
+                    ? `<span class="fg-react fg-react--${r.c || 'tr'}"` +
+                      ` style="--rat:${(b[i] + (r.d == null ? 0.06 : r.d)).toFixed(3)}"` +
+                      ` aria-hidden="true">${r.e}</span>`
+                    : '') +
                 `</div>` +
                 (t.time ? `<time>${esc(t.time)}</time>` : '') +
               `</li>`;
