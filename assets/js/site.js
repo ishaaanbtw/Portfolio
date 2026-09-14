@@ -19523,6 +19523,16 @@
      first paint so there is no flash of the study underneath. */
   const Gate = {
     KEY: 'site:open',
+
+    /* WHICH STUDIES ARE BEHIND IT, BY SLUG. A list rather than a flag on every
+       study, because the list is the thing that changes: a study comes out
+       from behind the gate by being deleted from this line, and when the line
+       is empty the whole module can go. `onefinnet-talent` is finished and is
+       not in it — and it therefore has no head script either, since there is
+       nothing to hide before the first paint. */
+    LOCKED: ['cypherock-x0'],
+
+    covers(slug) { return this.LOCKED.indexOf(slug) !== -1; },
     /* h(s) of the password, and h of it reversed from the other seed */
     A: 2776390261,
     B: 1095359679,
@@ -19561,6 +19571,9 @@
       });
       wrap.innerHTML =
         '<div class="gate__box">'
+        + '<button class="gate__x" type="button" aria-label="Close">'
+        + '<svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">'
+        + '<path d="M1 1l10 10M11 1L1 11"/></svg></button>'
         + '<p class="gate__k">Protected</p>'
         + '<h2 class="gate__t" id="gate-title">This one is still being written.</h2>'
         + '<p class="gate__p">The case studies are in progress. Enter the password to read them.</p>'
@@ -19584,6 +19597,14 @@
          it is an error you stop reading */
       this.input.addEventListener('input', () => { this.err.hidden = true; });
 
+      /* THREE WAYS OUT AND THEY ALL DO THE SAME THING. A panel you cannot
+         dismiss is a wall, and this is a sign on a door. The button, the
+         ground around the box, and Escape. */
+      $('.gate__x', wrap).addEventListener('click', () => this.close());
+      wrap.addEventListener('click', (e) => {
+        if (e.target === wrap) this.close();
+      });
+
       App.mount(wrap);
       return wrap;
     },
@@ -19598,6 +19619,28 @@
     shut() {
       document.documentElement.classList.remove('gate-up');
       this.pending = null;
+    },
+
+    /* CLOSING MEANS TWO DIFFERENT THINGS AND THE DIFFERENCE IS WHAT IS BEHIND
+       THE PANEL. Opened by a click on the work grid, the grid is still there
+       and closing is simply going back to it. Opened by a URL, the study
+       behind the panel is the thing being withheld — so closing has to leave,
+       and it leaves for the work rather than into a blank page.
+
+       THE TEST IS THE REFERRER, NOT `history.length`, AND THAT IS A BUG I PUT
+       IN AND TOOK BACK OUT. A tab's history is 2 entries deep the moment it
+       has loaded anything at all — the blank page it started on counts — so
+       `history.length > 1` sent a reader who opened the URL cold back to
+       `about:blank`. A same-origin referrer is the actual question being
+       asked: it means they came from somewhere on this site, and going back
+       returns them to it at the scroll position they left. Anything else —
+       a bookmark, a link from outside, a cold tab — gets the index. */
+    close() {
+      if (this.pending) { this.shut(); return; }
+      let from = '';
+      try { from = document.referrer ? new URL(document.referrer).origin : ''; } catch (e) {}
+      if (from && from === location.origin) { history.back(); return; }
+      location.href = url('index.html');
     },
 
     try(v) {
@@ -19626,7 +19669,8 @@
         if (!a || a.target === '_blank') return;
         let path;
         try { path = new URL(a.href, location.href).pathname; } catch (err) { return; }
-        if (!/\/work\/[^/]+\.html?$/.test(path)) return;
+        const m = path.match(/\/work\/([^/]+)\.html?$/);
+        if (!m || !this.covers(m[1])) return;
         e.preventDefault();
         e.stopPropagation();
         this.open(a.href);
@@ -19634,14 +19678,15 @@
 
       /* 2 · the URL, typed or bookmarked. The head script has already hidden
          the page; this is what offers the way in. */
-      if (document.body.dataset.page === 'project' && locked()) this.open(null);
+      if (document.body.dataset.page === 'project'
+        && this.covers(document.body.dataset.project)
+        && locked()) this.open(null);
 
       addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
         if (!document.documentElement.classList.contains('gate-up')) return;
-        /* Escape backs out of a click on the grid; on a study there is nothing
-           behind the panel to back out to, so it stays. */
-        if (this.pending) { e.preventDefault(); this.shut(); }
+        e.preventDefault();
+        this.close();
       });
     },
   };

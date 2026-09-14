@@ -17616,6 +17616,8 @@ body[data-page='project'] .tmode { display: none; }
   position: fixed;
   inset: 0;
   z-index: 200;
+  /* the ground is a dismiss target; the box stops the click getting to it */
+  cursor: pointer;
   display: grid;
   place-items: center;
   padding: 1.5rem;
@@ -17641,6 +17643,8 @@ body[data-page='project'] .tmode { display: none; }
 }
 
 .gate__box {
+  position: relative;
+  cursor: auto;
   width: min(27rem, 100%);
   padding: 2rem 2rem 2.25rem;
   border-radius: 12px;
@@ -17653,6 +17657,45 @@ body[data-page='project'] .tmode { display: none; }
   transition: transform 320ms var(--spring-soft);
 }
 :root.gate-up .gate__box { transform: none; }
+
+/* THE WAY OUT. In the corner, at the ink the quiet type uses, and drawn as a
+   two-line SVG rather than a × glyph — a multiplication sign is a different
+   weight and a different size in every face, and at 10px it does not sit
+   square. `stroke-width: 1` against a 12-unit box is the same hairline the
+   rest of the site's chrome is drawn with. */
+.gate__x {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-3, #8a8a90);
+  cursor: pointer;
+  transition: color 180ms ease, background 180ms ease;
+}
+.gate__x svg {
+  width: 11px;
+  height: 11px;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-linecap: round;
+  fill: none;
+}
+:root:not(.hover-cold) .gate__x:hover {
+  color: var(--ink, #101012);
+  background: var(--surface-3, rgba(16, 16, 18, 0.05));
+}
+.gate__x:focus-visible {
+  outline: none;
+  color: var(--ink, #101012);
+  box-shadow: inset 0 0 0 1px var(--ink-dim, rgba(16, 16, 18, 0.3));
+}
 
 .gate__k {
   margin: 0 0 0.9rem;
