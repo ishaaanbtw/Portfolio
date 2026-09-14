@@ -468,24 +468,24 @@ window.SITE = {
        are never built, the same way a peel object opts out. Same canvas, same
        rules, fewer parts. */
     bricks: [
-      { kind: 'tee',     x: 75.4, y: 15.9, tone: 0, mobile: { x: 12.3, y: 41.7 } },
-      { kind: 'ell',     x: 83.8, y: 24.5, tone: 1, mobile: false },
-      { kind: 'conn',    x: 74.4, y: 33.2, tone: 2, mobile: { x: 55.9, y: 43.7 } },
-      { kind: 'sq2',     x: 77.8, y: 35.9, tone: 3, mobile: false },
-      { kind: 'conn',    x: 60.8, y: 48.0, tone: 4, mobile: { x: 23.6, y: 19.0 } },
-      { kind: 'sq2',     x: 66.2, y: 50.4, tone: 5, mobile: false },
-      { kind: 'br24',    x: 74.6, y: 50.7, tone: 6, mobile: { x: 34.9, y: 40.9 } },
-      { kind: 'long',    x: 42.5, y: 55.6, tone: 7, mobile: { x:  4.6, y: 33.4 } },
-      { kind: 'sq2',     x: 36.5, y: 56.7, tone: 0, mobile: false },
-      { kind: 'corner',  x: 71.1, y: 59.1, tone: 1, mobile: { x: 34.4, y: 16.6 } },
-      { kind: 'small',   x: 52.9, y: 59.3, tone: 2, mobile: false },
-      { kind: 'corner',  x: 80.5, y: 59.3, tone: 3, mobile: { x: 75.9, y: 33.8 } },
-      { kind: 'tee',     x: 41.7, y: 66.9, tone: 4, mobile: false },
-      { kind: 'br24',    x: 49.5, y: 69.6, tone: 5, mobile: { x: 20.8, y: 27.4 } },
-      { kind: 'ell',     x: 78.1, y: 70.0, tone: 6, mobile: false },
-      { kind: 'small',   x: 22.8, y: 73.0, tone: 7, mobile: false },
-      { kind: 'br24',    x: 53.4, y: 77.8, tone: 0, mobile: { x: 65.9, y: 40.2 } },
-      { kind: 'long',    x: 67.2, y: 81.3, tone: 1, mobile: false },
+      { kind: 'tee', x: 75.4, y: 15.9, tone: 0, mobile: { x: 12.3, y: 41.7 } },
+      { kind: 'ell', x: 83.8, y: 24.5, tone: 1, mobile: false },
+      { kind: 'conn', x: 74.4, y: 33.2, tone: 2, mobile: { x: 55.9, y: 43.7 } },
+      { kind: 'sq2', x: 77.8, y: 35.9, tone: 3, mobile: false },
+      { kind: 'conn', x: 60.8, y: 48.0, tone: 4, mobile: { x: 23.6, y: 19.0 } },
+      { kind: 'sq2', x: 66.2, y: 50.4, tone: 5, mobile: false },
+      { kind: 'br24', x: 74.6, y: 50.7, tone: 6, mobile: { x: 34.9, y: 40.9 } },
+      { kind: 'long', x: 42.5, y: 55.6, tone: 7, mobile: { x: 4.6, y: 33.4 } },
+      { kind: 'sq2', x: 36.5, y: 56.7, tone: 0, mobile: false },
+      { kind: 'corner', x: 71.1, y: 59.1, tone: 1, mobile: { x: 34.4, y: 16.6 } },
+      { kind: 'small', x: 52.9, y: 59.3, tone: 2, mobile: false },
+      { kind: 'corner', x: 80.5, y: 59.3, tone: 3, mobile: { x: 75.9, y: 33.8 } },
+      { kind: 'tee', x: 41.7, y: 66.9, tone: 4, mobile: false },
+      { kind: 'br24', x: 49.5, y: 69.6, tone: 5, mobile: { x: 20.8, y: 27.4 } },
+      { kind: 'ell', x: 78.1, y: 70.0, tone: 6, mobile: false },
+      { kind: 'small', x: 22.8, y: 73.0, tone: 7, mobile: false },
+      { kind: 'br24', x: 53.4, y: 77.8, tone: 0, mobile: { x: 65.9, y: 40.2 } },
+      { kind: 'long', x: 67.2, y: 81.3, tone: 1, mobile: false },
     ],
 
     /* Defaults for anything a sticker doesn't set for itself. */
@@ -613,7 +613,8 @@ window.SITE = {
          `preview` below stays set and is still the fallback: if either file
          goes missing the card drops back to the `search` panel, same as any
          card with still artwork.                                             */
-      { title: 'Designing the Digital Identity of Cypherock X0',
+      {
+        title: 'Designing the Digital Identity of Cypherock X0',
         meta: 'Product identity, 2026, Singapore', href: '#x0-identity',
         /* THE DOMINANT ONE. Widest stack, and the tallest proportion in the
            set — it is the newest work and the composition says so. */
@@ -827,57 +828,73 @@ window.SITE = {
                cropping off both edges so the type reads as scale rather than
                as a word. Nothing fades in — it is already there at rest,
                which is what the first frame of a product page has to be. */
-            { id: 'x0-open', act: 'I · Premise', kind: 'object', dur: 130,
+            {
+              id: 'x0-open', act: 'I · Premise', kind: 'object', dur: 130,
               rest: true, dark: true,
               word: 'X0',
-              shot: { kind: 'render', dia: 'object', subject: 'The X0 card, lit from one side', treat: 'lift',
-                of: 'The card, three-quarter view, one hard key light from the left, on black. Transparent PNG at 3x so it can sit in front of the letters.' },
+              shot: {
+                kind: 'render', dia: 'object', subject: 'The X0 card, lit from one side', treat: 'lift',
+                of: 'The card, three-quarter view, one hard key light from the left, on black. Transparent PNG at 3x so it can sit in front of the letters.'
+              },
               kicker: 'Cypherock X0 · mobile beta',
               h: 'Self-custody, without the seminar.',
-              meta: '7 months · Senior Product Designer' },
+              meta: '7 months · Senior Product Designer'
+            },
 
             /* SUCCESS AS THE STARTING CONDITION. The three facts arrive as
                beats and then there is a pause with nothing in it, so the
                reader has time to conclude X1 is fine before being told the
                market moved. The pause is the scene. */
-            { id: 'x0-x1', kind: 'object', dur: 150,
+            {
+              id: 'x0-x1', kind: 'object', dur: 150,
               art: 'assets/img/x0/x1.webp',
               alt: 'CySync, the X1 desktop app — dark, gold, dense',
               still: true,
               h: 'X1 was never the problem.',
               facts: ['<b>$199</b>', '<b>Desktop-first</b>', '<b>Trusted</b>'],
-              turn: 'And competitors at the same price were shipping high-end devices.' },
+              turn: 'And competitors at the same price were shipping high-end devices.'
+            },
 
             /* THE BUSINESS PROBLEM, FELT AS A QUANTITY. Two scenes in the
                first draft — the market, then the insight — merged here
                because it is one gesture: the field of people ignites and
                resolves into the device they are already holding. */
-            { id: 'x0-market', kind: 'field', dur: 170, count: 460, seed: 19,
+            {
+              id: 'x0-market', kind: 'field', dur: 170, count: 460, seed: 19,
               art: 'assets/img/x0/onboarding/01-splash.webp',
               h: 'Mobile isn’t a platform decision. It’s where the money already lives.',
-              p: 'Price and complexity were screening out the people self-custody was meant to protect.' },
+              p: 'Price and complexity were screening out the people self-custody was meant to protect.'
+            },
 
             /* THE PRODUCT'S ACTUAL REASON TO EXIST, AND IT IS A SUBTRACTION.
                This is the strongest idea in the project and it was missing
                from both earlier versions of the study. The vault device
                leaves the frame slowly and does not come back; three costs are
                struck through behind it. */
-            { id: 'x0-subtract', kind: 'strike', dur: 180,
-              gone: { kind: 'render', dia: 'object', subject: 'The X1 vault device', treat: 'lift',
-                of: 'The X1 device on a light ground, same key light as the card. This is the object that exits the frame and does not return.' },
-              stays: { kind: 'render', dia: 'tap', subject: 'The card held against a phone, mid-tap', ratio: 0.8, treat: 'lift',
-                of: 'The X0 card held against the back of a phone, mid-tap, same lighting. The two objects that are left.' },
+            {
+              id: 'x0-subtract', kind: 'strike', dur: 180,
+              gone: {
+                kind: 'render', dia: 'object', subject: 'The X1 vault device', treat: 'lift',
+                of: 'The X1 device on a light ground, same key light as the card. This is the object that exits the frame and does not return.'
+              },
+              stays: {
+                kind: 'render', dia: 'tap', subject: 'The card held against a phone, mid-tap', ratio: 0.8, treat: 'lift',
+                of: 'The X0 card held against the back of a phone, mid-tap, same lighting. The two objects that are left.'
+              },
               h: 'The phone was already in their hand. So we stopped shipping a screen.',
               items: ['Hardware to manufacture', 'Freight and returns', 'Certification, per market'],
-              p: 'The same distributed-key security, at a fraction of the price — because of what isn’t in the box.' },
+              p: 'The same distributed-key security, at a fraction of the price — because of what isn’t in the box.'
+            },
 
             /* THE TITLE CARD, and the one the reader will screenshot. The
                fourth word holds because it is the one nobody expects to
                survive the other three. */
-            { id: 'x0-brief', kind: 'words', dur: 140, dark: true,
+            {
+              id: 'x0-brief', kind: 'words', dur: 140, dark: true,
               kicker: 'The brief, in four words',
               items: ['Affordable.', 'Mobile-first.', 'Simple.', 'Secure.'],
-              p: 'The first three were the brief. The fourth was non-negotiable.' },
+              p: 'The first three were the brief. The fourth was non-negotiable.'
+            },
 
             /* ==============================================================
                ACT II — THE QUESTION (06–10)
@@ -888,37 +905,86 @@ window.SITE = {
                in it: after five scenes of motion, stillness is the effect,
                and this is the one moment the reader is meant to stop
                scrolling to read. */
-            { id: 'x0-question', act: 'II · Question', kind: 'ask', dur: 120,
+            {
+              id: 'x0-question', act: 'II · Question', kind: 'ask', dur: 120,
               kicker: 'The actual question',
               h: 'How do you launch a new product without cannibalising the flagship it sits next to?',
-              p: 'Not “how do you design an app?”' },
 
             /* THE BRIEF AS IT ARRIVED, and then eight questions that nobody
                had answered. The accumulation is the point — nothing leaves,
                so by the eighth the frame is crowded, which is what the start
                of the project felt like and is not something a paragraph can
                do. The two in brass are the two that decide the rest. */
-            { id: 'x0-brief-real', kind: 'wall', dur: 170,
+            /* THE EIGHT ARE A CONVERSATION AND THEY ARE SET AS ONE. Not a
+               requirements list — a list is answered and closed, and none of
+               these were. They are the things we kept saying to each other,
+               so they arrive one at a time, at a pace, with a time under each,
+               and the reader is over a shoulder rather than in a document.
+
+               THE WIDTHS ARE COMPOSED BY EYE AND THAT IS THE WHOLE TRICK.
+               Bubbles auto-sized to their text all come out within a few
+               percent of one another, and eight near-identical rectangles is
+               the exact tell that nothing was designed. So every `w` below is
+               set deliberately, no two neighbours alike: the two-word ones get
+               a third of the column, the long one about unspecced features
+               runs almost the full width, and `pad` opens a wider gap where
+               the real conversation paused to think. */
+            {
+              id: 'x0-brief-real', kind: 'msgs', dur: 190,
               kicker: 'What was handed over',
               quotes: [
                 'They didn’t say <em>can you make us some screens.</em>',
                 'They said <em>we are launching a completely new product.</em>',
               ],
+              /* the figure carries its own thought objects, so nothing is
+                 layered on top of it — see the renderer's note */
+              art: 'assets/img/x0/think/thinking.webp',
+              /* line-art out of the work itself, never pictograms */
+              bits: [
+                { k: 'grid', x: '10%', y: '18%', w: 'min(4.4vw, 2.9rem)', at: 0.10, rot: '-6deg', dep: '-14px', o: 0.16 },
+                { k: 'wire', x: '89%', y: '26%', w: 'min(5.2vw, 3.4rem)', at: 0.18, rot: '5deg', dep: '10px', o: 0.24 },
+                { k: 'chip', x: '14%', y: '74%', w: 'min(4.8vw, 3.1rem)', at: 0.26, rot: '-3deg', dep: '12px', o: 0.26 },
+                { k: 'dim', x: '80%', y: '86%', w: 'min(5.6vw, 3.6rem)', at: 0.34, rot: '2deg', dep: '-8px', o: 0.2 },
+                { k: 'stack', x: '5%', y: '52%', w: 'min(4.2vw, 2.7rem)', at: 0.42, rot: '4deg', dep: '-16px', o: 0.22 },
+                { k: 'mark', x: '95%', y: '60%', w: 'min(3.2vw, 2rem)', at: 0.50, rot: '-2deg', dep: '6px', o: 0.18 },
+              ],
+              /* THE STAGGER IS THE WHOLE THING, and the first pass lost it.
+                 Eight bubbles sharing a left edge is a chat log: a neat blue
+                 column with an image parked beside it and a dead lane down the
+                 middle. These did not arrive in a queue — they arrived over
+                 days, from different directions, some landing harder than
+                 others — so each one carries its OWN indent, and the indents
+                 are not a progression. 2, 28, 66, 38, 13, 48, 0, 33: the eye
+                 cannot find a rule in that, which is the point. The deepest
+                 ones reach into the middle of the frame, so the two halves
+                 interlock instead of sitting either side of a gap.
+
+                 AND THEY ARE SIZED TO WHAT THEY SAY. Width is the text's own
+                 width now, capped so the long ones wrap — three weights, not
+                 one: two asides set small and quiet, four at reading size, and
+                 the two that decided everything a clear step up. `gap` varies
+                 the silence between them, because a conversation that pauses
+                 before the hard question is a conversation and not a list. */
               items: [
-                { t: 'Should it look like X1?' },
-                { t: 'Should it look different?', keep: true },
-                { t: 'What stays?' },
-                { t: 'What changes?' },
-                { t: 'What can we reuse?' },
-                { t: 'What deserves a new language?', keep: true },
-                { t: 'How do we prepare for features nobody has specced?' },
-                { t: 'How do we keep development scalable?' },
-              ] },
+                { t: 'Should it look like X1?', ox: '2%', w: '78%', time: '9:12' },
+                { t: 'Should it look different?', ox: '28%', w: '72%', time: '9:14', keep: true, pad: '0.9rem' },
+                { t: 'What stays?', ox: '66%', w: '50%', time: '9:16', sm: true, pad: '0.45rem' },
+                { t: 'What changes?', ox: '38%', w: '50%', time: '9:17', sm: true, pad: '0.3rem' },
+                { t: 'What can we reuse?', ox: '13%', w: '62%', time: '9:20', pad: '0.75rem' },
+                { t: 'What deserves a new language?', ox: '48%', w: '80%', time: '9:22', keep: true, pad: '1rem' },
+                {
+                  t: 'How do we prepare for features nobody has specced?',
+                  ox: '0%', w: '84%', time: '9:24', pad: '0.9rem'
+                },
+                { t: 'How do we keep development scalable?', ox: '33%', w: '76%', time: '9:26', pad: '0.5rem' },
+              ]
+            },
 
             /* FIVE REQUIREMENTS, TWO OF WHICH CANNOT BOTH BE TRUE. The
                contradiction is drawn as a hairline between the two lines
                rather than explained underneath them. */
-            { id: 'x0-five', kind: 'stack', dur: 160,
+            {
+              id: 'x0-five', kind: 'stack', dur: 160,
               kicker: 'Five things at once',
               items: [
                 { t: 'Approachable.' },
@@ -927,12 +993,14 @@ window.SITE = {
                 { t: 'Different from X1.', fight: true, tie: true },
                 { t: 'Unmistakably Cypherock.', fight: true },
               ],
-              p: 'It had to look better than the flagship without embarrassing it.' },
+              p: 'It had to look better than the flagship without embarrassing it.'
+            },
 
             /* THE CONTRADICTION CONVERTED INTO A DIRECTION. Each connector
                draws down and then its word appears, so the reader feels the
                logic close rather than reading a list of five nouns. */
-            { id: 'x0-logic', kind: 'chain', dur: 150,
+            {
+              id: 'x0-logic', kind: 'chain', dur: 150,
               items: [
                 'Same brand',
                 'Different audience',
@@ -940,19 +1008,22 @@ window.SITE = {
                 'Different experience',
                 'A different design language',
               ],
-              h: 'A unique identity wasn’t a preference. It was the only way both products survive.' },
+              h: 'A unique identity wasn’t a preference. It was the only way both products survive.'
+            },
 
             /* THE SET PIECE. The old interface comes apart in seven slices,
                each on its own vector with its own lag, and the new one is
                already underneath. Built from the two pictures the study
                already had, and reversible: scrolling back reassembles X1,
                because none of this is an animation with a direction. */
-            { id: 'x0-apart', kind: 'morph', dur: 180, dark: true,
+            {
+              id: 'x0-apart', kind: 'morph', dur: 180, dark: true,
               over: 'assets/img/x0/x1.webp',
               under: 'assets/img/x0/x0.webp',
               underAlt: 'X0 — lighter, quieter, more air, a guided path through every flow',
               h: 'Nothing was carried over except the reason to trust it.',
-              cap: 'CySync (X1, desktop) coming apart over X0 (mobile). Scroll back to reassemble it.' },
+              cap: 'CySync (X1, desktop) coming apart over X0 (mobile). Scroll back to reassemble it.'
+            },
 
             /* ==============================================================
                ACT III — THE DECISIONS (11–20)
@@ -963,16 +1034,19 @@ window.SITE = {
 
             /* The second of the film's two motionless scenes. A decision is
                being announced, and the film slows down to announce it. */
-            { id: 'x0-dec-1', act: 'III · Decisions', kind: 'ask', dur: 110, dark: true,
+            {
+              id: 'x0-dec-1', act: 'III · Decisions', kind: 'ask', dur: 110, dark: true,
               n: 'Decision 01',
-              h: 'Don’t reuse the design system that already existed.' },
+              h: 'Don’t reuse the design system that already existed.'
+            },
 
             /* THE CASE AGAINST, THEN THE ANSWER, on one pin. The left column
                fills while the right stays black — the asymmetry is
                uncomfortable on purpose, and the reader starting to want the
                answer is the scene's job. Then the left dims as the right
                fills, which is the whole argument in one gesture. */
-            { id: 'x0-n45', kind: 'split', dur: 190,
+            {
+              id: 'x0-n45', kind: 'split', dur: 190,
               left: {
                 title: 'Why not CySync',
                 items: [
@@ -993,9 +1067,215 @@ window.SITE = {
                   'Developer friendly.',
                 ],
               },
-              /* the third track: full height, off the right edge of the window */
-              art: { kind: 'figma', dia: 'gridmany', subject: 'The CySync component sheet', ratio: 0.74,
-                of: 'The existing CySync component sheet. Redact anything non-public before this ships.' } },
+              /* THE THIRD TRACK, AND IT IS A SPECIFICATION RATHER THAN A
+                 PICTURE. Every number here was read out of the CySync file
+                 itself — 65 variables in two collections, 31 paint styles,
+                 1,664 components in 150 sets across 84 pages, and no text
+                 styles at all. A screenshot of a component sheet at a quarter
+                 of a column would say "there were a lot of things", which the
+                 sentence on the left already says better.
+
+                 THE HEADLINE IS THE SYSTEM'S OWN VARIABLE. `Mini Width` is
+                 1024 and `Mini Height` is 700: the smallest window CySync is
+                 prepared to be, written down, by CySync. There is no stronger
+                 way to say "built for a desktop window, not a thumb" than to
+                 quote the system saying it about itself — and nothing here is
+                 unkind, because none of it is an opinion. */
+              art: {
+                kind: 'spec', ratio: 0.74,
+                n: 'CySync · what we did not inherit',
+                head: {
+                  k: 'Minimum window', v: '1024 × 700',
+                  of: 'Not a guideline — two variables in the file. Mini Width, Mini Height.'
+                },
+                rows: [
+                  /* the real hexes, darkest to lightest: the sidebar, the
+                     ground, the inputs, the borders, the paragraph grey, the
+                     hover, and the three golds */
+                  {
+                    k: 'Colour', v: '46 variables · 2 modes',
+                    swatches: ['#1e1a15', '#211c18', '#27221d', '#2c2520', '#39322c',
+                      '#8b8682', '#ccc4be', '#e9b873', '#fedd8f', '#b78d51']
+                  },
+                  {
+                    k: 'Spacing', v: '14 steps · 8pt',
+                    ticks: [0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104]
+                  },
+                  {
+                    k: 'Type', v: 'No text styles',
+                    of: 'Typography lived in one frame of website headings. It was never tokenised, so there was nothing to inherit.'
+                  },
+                  {
+                    k: 'Components', v: '1,664 in 150 sets',
+                    of: '1,086 of them icons. 192 buttons across 27 sets. Eighty-four pages.'
+                  },
+                ],
+                foot: 'Read out of the CySync file, September 2026.'
+              },
+
+              /* --- THE OLD SYSTEM, STILL ON THE TABLE ---------------------
+
+                 NINE REAL ARTEFACTS OUT OF THE CYSYNC FILE, strewn across the
+                 bands the three text tracks do not use — above the reasons,
+                 below them, and off all four edges. They are not decoration
+                 and they are not a gallery: the argument on the left is that
+                 CySync was a finished desktop language, and a reader is owed
+                 the evidence while they are being asked to accept it. So the
+                 field fills through the whole first half of the pin, one
+                 piece at a time, WHILE the reasons are being read.
+
+                 AND THEN IT GOES BACK. At 0.5 — the exact frame the left
+                 column starts dimming and N45 starts arriving — the whole
+                 field recedes to a quarter on the same clock. Nothing is
+                 removed, nothing is mocked, nothing is redrawn worse than it
+                 is: the old system is simply put behind the new one, which is
+                 what actually happened and is a truer read of "legacy" than
+                 any amount of distressing would be. It is still legible over
+                 there, which is the point — you can see it was good, and you
+                 can see it was not this.
+
+                 EVERY PIECE IS CROPPED BY SOMETHING — the window, the stage,
+                 or another piece. A system you can see all of looks like a
+                 catalogue; a system running off every edge looks like one you
+                 inherited. `dia` is the interim drawing and `src` is the real
+                 export; adding the second changes nothing else about the
+                 composition.
+
+                 The nine are the curated set: the sidebar, the topbar, the
+                 button sheet, the range picker, the transactions table, the
+                 desktop Send window, the truncation rules, the type scale and
+                 the account dropdown. */
+              strew: [
+                /* --- THE FIELD IS TWELVE, AND IT USED TO BE FIFTEEN --------
+
+                   THE FIRST CUT OVERLAPPED. Every one of these exports carries
+                   its own soft drop shadow in its alpha, so a piece's box is a
+                   good deal bigger than the thing you can see in it; three of
+                   them crossing each other turned the bottom of the frame into
+                   grey haze rather than into depth. Depth needs one edge in
+                   front of another edge — not four translucent rectangles
+                   averaging out.
+
+                   So the count came down and the spacing went up. Pieces are
+                   now cropped by the WINDOW, which reads as a system running
+                   off the edges, rather than by each other, which reads as a
+                   rendering fault. Where two do meet it is a deliberate
+                   corner-over-corner, never a face over a face. */
+
+                /* --- the top band ---------------------------------------- */
+
+                /* FIRST IN, AND IT MAKES THE WHOLE ARGUMENT: 300px of screen
+                   the product assumed it would always have. */
+                {
+                  at: 0.030, sp: 9, x: '5%', y: '20%', w: 'min(9vw, 12rem)', ratio: 0.36, z: 2,
+                  src: 'assets/img/x0/cysync/cysync-navigation.png',
+                  dim: 0.95, dy: '-3vh', rot: '-1.2deg', dep: '-14px',
+                  alt: 'The CySync sidebar — nine permanent destinations in a 300px rail'
+                },
+
+                /* a 34:1 hairline along the very top edge */
+                {
+                  at: 0.065, sp: 9, x: '45%', y: '1.5%', w: 'min(46vw, 54rem)', ratio: 34.6, z: 1,
+                  src: 'assets/img/x0/cysync/cysync-notifications.png',
+                  dim: 0.85, dy: '-4vh', rot: '-0.2deg', dep: '-6px',
+                  alt: 'The CySync firmware update notification bar, 1384px wide'
+                },
+
+                /* 1416 x 100, and the least portable object in the system */
+                {
+                  at: 0.100, sp: 9, x: '72%', y: '7%', w: 'min(40vw, 48rem)', ratio: 14.16, z: 1,
+                  src: 'assets/img/x0/cysync/cysync-topbar.png',
+                  dim: 0.9, dx: '3vw', dy: '-3vh', rot: '0.4deg', dep: '-8px',
+                  alt: 'The CySync topbar at 1416px wide'
+                },
+
+                /* THE POINTER ARGUMENT, AND IT IS THE BEST ONE IN THE FILE.
+                   Five range tabs, a wallet dropdown and two tooltips pinned to
+                   a crosshair — every one of them something you do with a
+                   cursor you can rest somewhere and hold still. */
+                {
+                  at: 0.135, sp: 9, x: '27%', y: '15%', w: 'min(27vw, 32rem)', ratio: 2.52, z: 2,
+                  src: 'assets/img/x0/cysync/cysync-graph.png',
+                  dim: 0.95, dx: '-4vw', dy: '-3vh', rot: '-0.9deg', dep: '-20px',
+                  alt: 'The CySync portfolio graph — range tabs, wallet dropdown, hover tooltips'
+                },
+
+                /* THE HARDWARE, AND IT IS WHY A DESKTOP APP EXISTED AT ALL.
+                   The one object in the field X0 could not redraw smaller,
+                   because the thing it is about is physical and plugs in. */
+                {
+                  at: 0.170, sp: 9, x: '66%', y: '21%', w: 'min(17vw, 20rem)', ratio: 2.43, z: 2,
+                  src: 'assets/img/x0/cysync/cysync-x1-vault.png',
+                  dim: 1, dx: '4vw', dy: '-2vh', rot: '1.4deg', dep: '16px',
+                  alt: 'The Cypherock X1 vault'
+                },
+
+                /* the modal, cropped by the right edge above the spec sheet */
+                {
+                  at: 0.205, sp: 9, x: '93%', y: '9%', w: 'min(14vw, 17rem)', ratio: 1.393, z: 2,
+                  src: 'assets/img/x0/cysync/cysync-dialogue.png',
+                  dim: 0.9, dx: '5vw', dy: '-2vh', rot: '1.3deg', dep: '-16px',
+                  alt: 'A CySync error dialogue — the X1 Card has malfunctioned'
+                },
+
+                /* the small crisp accent: a range dragged across a month grid */
+                {
+                  at: 0.240, sp: 9, x: '48%', y: '26%', w: 'min(6vw, 7rem)', ratio: 0.875, z: 3,
+                  src: 'assets/img/x0/cysync/cysync-date-range.png',
+                  dim: 1, dy: '-2.5vh', rot: '-2.4deg', dep: '12px',
+                  alt: 'The CySync date range picker, a range dragged across a month grid'
+                },
+
+                /* the one confirmation the system ever drew — slotted into
+                   the clear line between the graph and the first reason */
+                {
+                  at: 0.275, sp: 9, x: '30%', y: '31%', w: 'min(16vw, 19rem)', ratio: 10.6, z: 2,
+                  src: 'assets/img/x0/cysync/cysync-success.png',
+                  dim: 0.95, dx: '-4vw', rot: '0.6deg', dep: '8px',
+                  alt: 'The CySync success message bar'
+                },
+
+                /* --- the bottom band ------------------------------------- */
+
+                /* five sortable columns, date group headers and asset names
+                   already truncating. There is no thumb-sized version of this
+                   object, only a different object. */
+                {
+                  at: 0.310, sp: 9, x: '11%', y: '90%', w: 'min(23vw, 28rem)', ratio: 1.46, z: 2,
+                  src: 'assets/img/x0/cysync/cysync-tables.png',
+                  dim: 0.95, dx: '-3vw', dy: '4vh', rot: '1.6deg', dep: '-16px',
+                  alt: 'The CySync transactions table — five sortable columns'
+                },
+
+                /* the pairing step, and the only picture in the section with
+                   physical objects in it */
+                {
+                  at: 0.345, sp: 9, x: '37%', y: '92%', w: 'min(15vw, 18rem)', ratio: 0.964, z: 3,
+                  src: 'assets/img/x0/cysync/cysync-enter-pin.png',
+                  dim: 1, dy: '5vh', rot: '-1.6deg', dep: '20px',
+                  alt: 'The X1 card and vault, entering a PIN on the device'
+                },
+
+                /* the whole product in one frame: a five-step rail down the
+                   left, a 400px modal in the middle of a 1440px window, and a
+                   great deal of chrome around both */
+                {
+                  at: 0.380, sp: 9, x: '63%', y: '95%', w: 'min(26vw, 31rem)', ratio: 1.6, z: 1,
+                  src: 'assets/img/x0/cysync/cysync-desktop-layout.png',
+                  dim: 0.9, dy: '5vh', rot: '-0.8deg', dep: '-22px',
+                  alt: 'The CySync Send window at 1440 x 900'
+                },
+
+                /* the densest single panel in the system, last in, bottom
+                   right, under the spec sheet rather than across it */
+                {
+                  at: 0.415, sp: 9, x: '88%', y: '94%', w: 'min(12vw, 15rem)', ratio: 0.904, z: 2,
+                  src: 'assets/img/x0/cysync/cysync-transaction-details.png',
+                  dim: 0.95, dx: '3vw', dy: '4vh', rot: '-1.4deg', dep: '-12px',
+                  alt: 'The CySync transaction details panel'
+                },
+              ]
+            },
 
             /* THE ASSEMBLY, and the longest scene in the film. The system is
                proved by building the product out of it on screen: eight parts
@@ -1045,7 +1325,15 @@ window.SITE = {
                it, so at no point is anything visible through the screen.
                ============================================================== */
 
-            { id: 'x0-system', kind: 'room', dur: 620, lab: true, room: true,
+            /* THE SAME FILM IN PORTRAIT, AND `ndur` IS THE ONLY THING ABOUT IT
+               THAT IS SHORTER. 620svh of pin at a 830px window is 4,300px of
+               scroll; 430 at an 844px phone is 2,800, which is the same twelve
+               beats at about two thirds of the travel — a flick each rather
+               than a flick and a half. Not one beat is dropped and not one
+               changes its place in the pin: every `at` below is a fraction of
+               the section, so the whole choreography compresses with it. */
+            {
+              id: 'x0-system', kind: 'room', dur: 620, ndur: 430, lab: true, room: true,
 
               say: [
                 /* A TITLE CARD, AND IT IS ALLOWED TO BE ONE. The mark at 96px
@@ -1053,14 +1341,18 @@ window.SITE = {
                    of the section, with the words on the same line and a gap
                    smaller than the mark is tall. It is one object, it is the
                    only object, and nothing happens until it has gone. */
-                { at: -0.02, to: 0.88, big: true, n: 'The design system',
-                  mark: 'assets/img/x0/system/n45-mark.png' },
+                {
+                  at: -0.02, to: 0.88, big: true, n: 'The design system',
+                  mark: 'assets/img/x0/system/n45-mark.png'
+                },
 
                 /* and it lands here, after you have watched the thing build
                    itself out of the parts standing around it */
-                { at: 0.90, to: 1.2,
+                {
+                  at: 0.90, to: 1.2,
                   h: 'We built the system before we built a single screen.',
-                  p: 'Not a library extracted from finished work. A grammar, written first — atomic, mobile-first, no inheritance from CySync — and by month six it was carrying surfaces nobody had specced when it was written.' },
+                  p: 'Not a library extracted from finished work. A grammar, written first — atomic, mobile-first, no inheritance from CySync — and by month six it was carrying surfaces nobody had specced when it was written.'
+                },
               ],
 
               /* THE PRODUCT, and it is an empty one for a quarter of the
@@ -1080,7 +1372,19 @@ window.SITE = {
                  middle of the parts it was made from, because the subject of
                  those nine tenths is the system and not the product. The frame
                  is its reward, and the reward comes at the end. */
-              device: { at: 0.34, x: '56%', y: '50%', w: 'min(24vw, 19rem)',
+              /* AND IN PORTRAIT IT IS CENTRED AND IT IS BIGGER, because the
+                 reason it stood at a quarter of the width — the parts are
+                 laid out around it and it must not crowd them — is a fact
+                 about a landscape frame. In a tall one the parts go above and
+                 below, the horizontal middle is the phone's to take, and the
+                 hero at half the screen's height is the smallest it can be
+                 and still be the hero. `min(52vw, 25vh)` is that half: the vh
+                 term governs on a tall phone and the vw term on a short one,
+                 so it lands at 49–52% of the viewport on everything from a
+                 360x640 to a 430x932 and never overflows the width. */
+              device: {
+                at: 0.34, x: '56%', y: '50%', w: 'min(24vw, 19rem)',
+                n: { x: '50%', y: '47%', w: 'min(52vw, 25vh)', dep: '-10px' },
                 dep: '-14px', z: 18, full: 0.46,
                 src: 'assets/img/x0/system/ui.webp', pw: 786, ph: 1734,
 
@@ -1105,7 +1409,8 @@ window.SITE = {
                    a pixel because it is the same outline. */
                 draw: { at: 0.10, sp: 7.15, out: 0.34, gone: 0.42 },
 
-                alt: 'The X0 Home screen — combined portfolio, balance, send and receive, accounts' },
+                alt: 'The X0 Home screen — combined portfolio, balance, send and receive, accounts'
+              },
 
               /* THE TEN BANDS OF THE SCREEN. `from`/`to` are percentages down
                  the render, measured at its dark gutters, and each one lands
@@ -1126,145 +1431,206 @@ window.SITE = {
 
                 /* typography, and the first to go in: a number set in the type
                    scale is the first thing the type scale can prove */
-                { at: 0.400, sp: 22, x: '86%', y: '25%', w: '39vw', z: 2, dim: 0.62,
+                {
+                  at: 0.400, sp: 22, x: '86%', y: '25%', w: '39vw', z: 2, dim: 0.62,
                   dx: '9.13vw', dy: '-0.10vh', rot: '-1.6deg', dep: '-40px', spin: '-0.8deg',
                   orb: '0.9deg',
+                  /* PORTRAIT. Still the first sheet in and still the largest
+                     thing on the far plane; it comes down from above the frame
+                     instead of in from the right, because above is where the
+                     room is. */
+                  n: { x: '68%', y: '19%', w: 'min(64vw, 30vh)', dx: '6vw', dy: '-13vh', dep: '-24px' },
                   src: 'assets/img/x0/system/type-scale.svg', pw: 1366, ph: 764,
-                  alt: 'Eleven type roles from Hero at 40px down to Micro at 10px' },
+                  alt: 'Eleven type roles from Hero at 40px down to Micro at 10px'
+                },
 
                 /* the grid the device was drawn on. It does not travel: it is
                    already in the phone — it is the reason the phone is that
                    shape — and sending it in would be sending it twice. */
-                { at: 0.414, sp: 22, x: '11%', y: '88%', w: '28vw', z: 1, dim: 0.34,
+                {
+                  at: 0.414, sp: 22, x: '11%', y: '88%', w: '28vw', z: 1, dim: 0.34,
                   dx: '-9.13vw', dy: '0.23vh', dep: '-54px', spin: '0.6deg',
                   orb: '0.7deg',
+                  n: { x: '24%', y: '88%', w: 'min(56vw, 26vh)', dx: '-6vw', dy: '12vh', dep: '-32px' },
                   src: 'assets/img/x0/system/spacing.svg', pw: 1164, ph: 695,
-                  alt: 'The N45 4-point spacing grid, 04 through 24' },
+                  alt: 'The N45 4-point spacing grid, 04 through 24'
+                },
 
                 /* the tokens, and the LAST thing in — the chart goes green on
                    the final beat, which is the one moment of colour in the
                    product and the right note to finish a build on */
-                { at: 0.428, sp: 22, x: '7%', y: '61%', w: '21vw', z: 1, dim: 0.42,
+                {
+                  at: 0.428, sp: 22, x: '7%', y: '61%', w: '21vw', z: 1, dim: 0.42,
                   dx: '-8.36vw', dy: '-5.88vh', rot: '1.2deg', dep: '-30px', scl: 0.03,
                   orb: '1.1deg',
+                  n: { x: '24%', y: '21%', w: 'min(40vw, 18vh)', dx: '-7vw', dy: '-11vh', dep: '-20px' },
                   src: 'assets/img/x0/system/colour.svg', pw: 1557, ph: 764,
                   m: { n: 'Colour', s: '10 tokens, named not numbered', at: 'br' },
-                  alt: 'The N45 greyscale ramp — ten named steps with their hex values' },
+                  alt: 'The N45 greyscale ramp — ten named steps with their hex values'
+                },
 
                 /* components. NOT dimmed: the file is exported at 30% opacity,
                    so the artwork is doing its own receding. */
-                { at: 0.442, sp: 22, x: '43%', y: '101%', w: '30vw', z: 2,
+                {
+                  at: 0.442, sp: 22, x: '43%', y: '101%', w: '30vw', z: 2,
                   dx: '-5.14vw', dy: '12.07vh', rot: '1.4deg', dep: '-96px', spin: '1.8deg',
                   orb: '0.8deg',
+                  /* it still runs off the bottom of the frame, which is the
+                     one thing about its placement that was never about width */
+                  n: { x: '58%', y: '101%', w: 'min(66vw, 30vh)', dx: '4vw', dy: '14vh', dep: '-52px' },
                   src: 'assets/img/x0/system/buttons.svg', pw: 1354, ph: 712,
-                  alt: 'Primary, secondary and tertiary buttons in every state' },
+                  alt: 'Primary, secondary and tertiary buttons in every state'
+                },
 
                 /* the icon set — and what it goes in to build is the only part
                    of the screen that is nothing but icons */
-                { at: 0.456, sp: 22, x: '94%', y: '52%', w: '15vw', z: 2, dim: 0.44,
+                {
+                  at: 0.456, sp: 22, x: '94%', y: '52%', w: '15vw', z: 2, dim: 0.44,
                   dx: '7.69vw', dy: '7.88vh', rot: '-2.4deg', dep: '-26px',
                   orb: '1.4deg',
+                  n: { x: '72%', y: '7%', w: 'min(40vw, 18vh)', dx: '7vw', dy: '-12vh', dep: '-16px' },
                   src: 'assets/img/x0/system/icons.svg', pw: 1038, ph: 712,
-                  alt: 'The N45 icon set, unfilled and filled' },
+                  alt: 'The N45 icon set, unfilled and filled'
+                },
 
                 /* navigation, low right, off the edge */
-                { at: 0.470, sp: 22, x: '89%', y: '79%', w: '36vw', z: 3, dim: 0.50,
+                {
+                  at: 0.470, sp: 22, x: '89%', y: '79%', w: '36vw', z: 3, dim: 0.50,
                   dx: '5.35vw', dy: '11.84vh', rot: '-1deg', dep: '-38px',
                   orb: '1.2deg',
+                  n: { x: '76%', y: '79%', w: 'min(58vw, 27vh)', dx: '6vw', dy: '10vh', dep: '-22px' },
                   src: 'assets/img/x0/system/tab-bar.svg', pw: 1247, ph: 612,
-                  alt: 'The navigation bar, Home selected' },
+                  alt: 'The navigation bar, Home selected'
+                },
 
                 /* --- the near plane: the five real components ------------- */
 
                 /* the one object in the room that drifts DOWN, and the one
                    that authors two bands: the card and the rows under it */
-                { at: 0.484, sp: 22, x: '40%', y: '58%', w: '17vw', z: 12, dim: 0.62,
+                {
+                  at: 0.484, sp: 22, x: '40%', y: '58%', w: '17vw', z: 12, dim: 0.62,
                   dx: '-6.38vw', dy: '-0.80vh', rot: '-1deg', dep: '38px',
                   orb: '2deg',
+                  /* the near plane tucks in against the phone's top and bottom
+                     edges rather than beside it — a component at 44vw beside a
+                     phone at 52vw is off the frame */
+                  n: { x: '46%', y: '14%', w: 'min(44vw, 20vh)', dx: '-5vw', dy: '-7vh', dep: '20px' },
                   src: 'assets/img/x0/system/snackbar.svg', pw: 376, ph: 76,
-                  alt: 'The success snackbar — System synced successfully' },
+                  alt: 'The success snackbar — System synced successfully'
+                },
 
                 /* it stays. There is no slide-to-confirm on the Home screen,
                    and sending a piece in to build something that is not there
                    would be the one dishonest move in the section. */
-                { at: 0.498, sp: 22, x: '39%', y: '78%', w: '22vw', z: 12, dim: 0.62,
+                {
+                  at: 0.498, sp: 22, x: '39%', y: '78%', w: '22vw', z: 12, dim: 0.62,
                   dx: '-6.01vw', dy: '3.53vh', rot: '0.8deg', dep: '-60px',
                   orb: '2.3deg',
+                  n: { x: '46%', y: '76%', w: 'min(52vw, 24vh)', dx: '-4vw', dy: '7vh', dep: '-30px' },
                   src: 'assets/img/x0/system/slide-to-pay.svg', pw: 360, ph: 48,
-                  alt: 'The slide-to-confirm control' },
+                  alt: 'The slide-to-confirm control'
+                },
 
                 /* one shape, every primary action — and the primary action on
                    this screen is the one at the bottom of the list */
-                { at: 0.512, sp: 22, x: '25%', y: '57%', w: '11vw', z: 12, nw: '58%', dim: 0.62,
+                {
+                  at: 0.512, sp: 22, x: '25%', y: '57%', w: '11vw', z: 12, dim: 0.62,
                   dx: '-5.54vw', dy: '-5.12vh', dep: '-34px',
                   orb: '1.8deg',
+                  n: { x: '26%', y: '84%', w: 'min(30vw, 14vh)', dx: '-6vw', dy: '6vh', dep: '-18px' },
                   src: 'assets/img/x0/system/button.webp', pw: 400, ph: 96,
                   m: { n: 'The button', s: 'One shape, every primary action', at: 'bl' },
-                  alt: 'The primary button — Continue' },
+                  alt: 'The primary button — Continue'
+                },
 
                 /* three pixels tall, and it stays: the Home screen has no
                    progress bar either */
-                { at: 0.526, sp: 22, x: '77%', y: '59%', w: '16vw', z: 12, nw: '78%', dim: 0.68,
+                {
+                  at: 0.526, sp: 22, x: '77%', y: '59%', w: '16vw', z: 12, dim: 0.68,
                   dx: '6.06vw', dy: '3.27vh', dep: '-20px',
                   orb: '2.6deg',
+                  n: { x: '72%', y: '88%', w: 'min(36vw, 17vh)', dx: '6vw', dy: '8vh', dep: '-12px' },
                   src: 'assets/img/x0/system/progress.svg', pw: 357, ph: 4,
-                  alt: 'The onboarding progress bar, five steps' },
+                  alt: 'The onboarding progress bar, five steps'
+                },
 
                 /* chip, toggle and stepper — which is what the row of Swap,
                    Buy and Stake is made of */
-                { at: 0.540, sp: 22, x: '75%', y: '54%', w: '15vw', z: 12, nw: '70%', dim: 0.62,
+                {
+                  at: 0.540, sp: 22, x: '75%', y: '54%', w: '15vw', z: 12, dim: 0.62,
                   dx: '6.34vw', dy: '1.42vh', rot: '1.6deg', dep: '-46px',
                   orb: '2.2deg',
+                  n: { x: '76%', y: '19%', w: 'min(34vw, 16vh)', dx: '7vw', dy: '-6vh', dep: '-24px' },
                   src: 'assets/img/x0/system/controls.svg', pw: 265, ph: 52,
-                  alt: 'Chip, toggle and stepper in their states' },
-              ] },
+                  alt: 'Chip, toggle and stepper in their states'
+                },
+              ]
+            },
 
             /* THE SECOND DECISION AND ITS EVIDENCE IN ONE SCENE, because a
                title card followed by its own proof is not two scenes. This is
                also where the film's texture changes for the only time:
                rendered black to a real wall, as a hard cut. */
-            { id: 'x0-dec-2', kind: 'photo', dur: 160,
+            {
+              id: 'x0-dec-2', kind: 'photo', dur: 160,
               n: 'Decision 02',
               h: 'Four directions. Only one survived the people who’d have to sell it.',
               p: 'The only way to argue about four directions is to see them at the same time.',
-              shot: { kind: 'photo', dia: 'wall', subject: 'Four directions pinned up together', ratio: 1.778,
-                of: 'Photograph — four shortlisted directions pinned up together, wide, shot straight on. Handheld and imperfect is right. Blur anything legible on the rejected three.' },
-              cap: 'Direction review — four candidates, one wall, everyone who had a say in the room' },
+              shot: {
+                kind: 'photo', dia: 'wall', subject: 'Four directions pinned up together', ratio: 1.778,
+                of: 'Photograph — four shortlisted directions pinned up together, wide, shot straight on. Handheld and imperfect is right. Blur anything legible on the rejected three.'
+              },
+              cap: 'Direction review — four candidates, one wall, everyone who had a say in the room'
+            },
 
             /* THE STRUCTURE WAS ARGUED BEFORE IT WAS DRAWN, and the
                cross-dissolve is aligned so two or three boxes sit in the same
                place in both frames. Those anchors are what make it read as
                one piece of thinking cleaned up rather than two unrelated
                pictures. */
-            { id: 'x0-ia', kind: 'cross', dur: 130,
-              a: { kind: 'whiteboard', dia: 'board', subject: 'The IA session with the PM', ratio: 1.4, treat: 'paper',
-                of: 'Photograph — the information-architecture session with the PM. Boxes, arrows, crossings out. Shot square to the wall.' },
-              b: { kind: 'figma', dia: 'flow', subject: 'The same architecture, redrawn clean', ratio: 1.4, treat: 'paper',
-                of: 'The clean IA diagram in the product’s own type, aligned so its key boxes land on the photograph’s.' },
-              cap: 'Information architecture and flow mapping, with the PM, before a single screen was drawn' },
+            {
+              id: 'x0-ia', kind: 'cross', dur: 130,
+              a: {
+                kind: 'whiteboard', dia: 'board', subject: 'The IA session with the PM', ratio: 1.4, treat: 'paper',
+                of: 'Photograph — the information-architecture session with the PM. Boxes, arrows, crossings out. Shot square to the wall.'
+              },
+              b: {
+                kind: 'figma', dia: 'flow', subject: 'The same architecture, redrawn clean', ratio: 1.4, treat: 'paper',
+                of: 'The clean IA diagram in the product’s own type, aligned so its key boxes land on the photograph’s.'
+              },
+              cap: 'Information architecture and flow mapping, with the PM, before a single screen was drawn'
+            },
 
             /* HOW THE WORK ACTUALLY MOVED. Both tracks advance at once,
                which is the point: the system churning and the low-fidelity
                flows going out were parallel, and a reader shown them in
                sequence would conclude one waited for the other. */
-            { id: 'x0-tracks', kind: 'tracks', dur: 170,
+            {
+              id: 'x0-tracks', kind: 'tracks', dur: 170,
               lanes: [
-                { t: 'The system, churning', stack: true,
+                {
+                  t: 'The system, churning', stack: true,
                   p: 'It went through rigorous back-and-forth. It was the foundation, so it had to.',
                   shots: [
                     { kind: 'figma', dia: 'versions', subject: 'One component, first version', ratio: 1.4 },
                     { kind: 'figma', dia: 'versions', subject: 'The same component, second version', ratio: 1.4 },
                     { kind: 'figma', dia: 'versions', subject: 'Third version — the one that stayed', ratio: 1.4 },
-                  ] },
-                { t: 'Everyone else, unblocked', stack: true,
+                  ]
+                },
+                {
+                  t: 'Everyone else, unblocked', stack: true,
                   p: 'Low-fidelity flows kept stakeholders and engineers moving. Most of the simplification in the shipped app started as somebody else’s comment.',
                   shots: [
                     { kind: 'figma', dia: 'flow', subject: 'The low-fidelity flow, as presented', ratio: 1.6, of: 'The low-fidelity flow frames as presented to stakeholders.' },
-                    { kind: 'thread', subject: 'A real design-review thread', ratio: 1.5,
-                      of: 'Blur names, faces and any unreleased feature names before this is public.' },
+                    {
+                      kind: 'thread', subject: 'A real design-review thread', ratio: 1.5,
+                      of: 'Blur names, faces and any unreleased feature names before this is public.'
+                    },
                     { kind: 'screenshot', dia: 'beforeafter', subject: 'The affected screen, before and after', ratio: 1.5 },
-                  ] },
-              ] },
+                  ]
+                },
+              ]
+            },
 
             /* A SECURITY PRODUCT FINDING SECURITY PROBLEMS IN ITS
                COMPETITORS, sorted into groups — because sorting is what
@@ -1275,40 +1641,52 @@ window.SITE = {
                reproduced, and each finding is stated as a category rather
                than as an exploit. This is the one scene in the film with
                legal exposure and it is written to survive a lawyer. */
-            { id: 'x0-competitors', kind: 'pins', dur: 180,
+            {
+              id: 'x0-competitors', kind: 'pins', dur: 180,
               kicker: 'Competitor teardown',
               h: 'Some of it was carelessness. Some of it was on purpose.',
               groups: [
-                { h: 'Real vulnerabilities',
+                {
+                  h: 'Real vulnerabilities',
                   items: [
                     'Recovery material recoverable from the device itself',
                     'Confirmation screens that could be spoofed',
                     'Sensitive state persisting after a session ended',
-                  ] },
-                { h: 'Plain UX failures',
+                  ]
+                },
+                {
+                  h: 'Plain UX failures',
                   items: [
                     'Setup that assumed vocabulary a first owner does not have',
                     'Irreversible actions with no confirmation',
                     'Error states that named a code and not a fix',
-                  ] },
-                { h: 'Clearly intentional',
+                  ]
+                },
+                {
+                  h: 'Clearly intentional',
                   items: [
                     'The safe path made slower than the convenient one',
                     'Export and exit buried several levels down',
                     'Defaults set in the company’s interest, not the owner’s',
-                  ] },
-                { h: 'And what they got right', quiet: true,
+                  ]
+                },
+                {
+                  h: 'And what they got right', quiet: true,
                   items: [
                     'Portfolio screens that opened fast and said one thing',
                     'Honest language about what a device cannot protect you from',
-                  ] },
+                  ]
+                },
               ],
               p: 'We fixed the first two in ours — and took the things they’d got right.',
               /* the macro crop, enlarged past its frame and cut by the right
                  edge of the window — so the scene has an object in it and is
                  not three columns of prose */
-              shot: { kind: 'device', dia: 'phonescreen', subject: 'A competitor setup screen, cropped close', treat: 'macro', ratio: 0.487,
-                of: 'On the step that fails. No brand mark in frame.' } },
+              shot: {
+                kind: 'device', dia: 'phonescreen', subject: 'A competitor setup screen, cropped close', treat: 'macro', ratio: 0.487,
+                of: 'On the step that fails. No brand mark in frame.'
+              }
+            },
 
             /* ITERATION AS CRAFT RATHER THAN INDECISION, and it is credible
                because it is small and specific. The one place in the film
@@ -1321,7 +1699,8 @@ window.SITE = {
                the left edge, so the scene's last quarter was an empty frame
                with a headline in it. 46vw brings the sixth to centre-right
                and holds it there while the line arrives. */
-            { id: 'x0-button', kind: 'rail', dur: 170, travel: '46vw',
+            {
+              id: 'x0-button', kind: 'rail', dur: 170, travel: '46vw',
               items: [
                 { n: '01', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v1', ratio: 1.2, treat: 'strip', of: 'Button, first version. Identical crop across all six.' },
                 { n: '02', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v2', ratio: 1.2, treat: 'strip', of: 'Second version.' },
@@ -1330,52 +1709,79 @@ window.SITE = {
                 { n: '05', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v5', ratio: 1.2, treat: 'strip', of: 'Fifth version.' },
                 { n: '06', kind: 'figma', tight: true, dia: 'button', subject: 'The sixth — shipped', ratio: 1.2, treat: 'strip', of: 'The sixth — the one every primary action in the product was built from.' },
               ],
-              h: 'Six versions. Then every primary action in the product was built from it.' },
+              h: 'Six versions. Then every primary action in the product was built from it.'
+            },
 
             /* THE DEEPEST ARTEFACT IN THE FILM, and the only place the reader
                handles a real flow. The device never moves; only what is
                inside it changes, and the caption beside it swaps on the same
                beat. Twelve screens and twelve reasons, all of them already
                written. */
-            { id: 'x0-onboarding', kind: 'device', dur: 240,
+            {
+              id: 'x0-onboarding', kind: 'device', dur: 240,
               screens: [
-                { src: 'assets/img/x0/onboarding/01-splash.webp',
+                {
+                  src: 'assets/img/x0/onboarding/01-splash.webp',
                   t: 'Hold the first second',
-                  b: 'A cold start has real work to do. That second exists either way, so it carries the mark rather than a spinner.' },
-                { src: 'assets/img/x0/onboarding/02-welcome.webp',
+                  b: 'A cold start has real work to do. That second exists either way, so it carries the mark rather than a spinner.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/02-welcome.webp',
                   t: 'One decision, and no account',
-                  b: 'No sign-up, no email. The first screen offers the only two things a new owner can want.' },
-                { src: 'assets/img/x0/onboarding/03-meet.webp',
+                  b: 'No sign-up, no email. The first screen offers the only two things a new owner can want.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/03-meet.webp',
                   t: 'The object before the process',
-                  b: 'You are about to trust a piece of plastic with your savings. It gets introduced first.' },
-                { src: 'assets/img/x0/onboarding/04-no-seed.webp',
+                  b: 'You are about to trust a piece of plastic with your savings. It gets introduced first.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/04-no-seed.webp',
                   t: 'Lead with the objection',
-                  b: 'Everyone who has held crypto knows the seed phrase problem. Naming it early is what buys the next four screens.' },
-                { src: 'assets/img/x0/onboarding/05-distributed.webp',
+                  b: 'Everyone who has held crypto knows the seed phrase problem. Naming it early is what buys the next four screens.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/05-distributed.webp',
                   t: 'Answer the obvious question',
-                  b: 'If there is no seed phrase, what is there? One sentence and one diagram, before any setup begins.' },
-                { src: 'assets/img/x0/onboarding/06-currencies.webp',
+                  b: 'If there is no seed phrase, what is there? One sentence and one diagram, before any setup begins.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/06-currencies.webp',
                   t: 'Will it hold mine?',
-                  b: 'A hardware wallet that does not support your coin is an ornament. Asked and answered before setup.' },
-                { src: 'assets/img/x0/onboarding/07-consent.webp',
+                  b: 'A hardware wallet that does not support your coin is an ornament. Asked and answered before setup.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/07-consent.webp',
                   t: 'Ask before collecting',
-                  b: 'The analytics question is asked plainly, once, with the default off.' },
-                { src: 'assets/img/x0/onboarding/08-card-stack.webp',
+                  b: 'The analytics question is asked plainly, once, with the default off.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/08-card-stack.webp',
                   t: 'Name what is about to happen',
-                  b: 'Four cards, and what each one is for, before the first tap is requested.' },
-                { src: 'assets/img/x0/onboarding/09-tap-idle.webp',
+                  b: 'Four cards, and what each one is for, before the first tap is requested.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/09-tap-idle.webp',
                   t: 'A sheet, not a new screen',
-                  b: 'The tap is a physical act against a phone. It belongs on top of where you already are.' },
-                { src: 'assets/img/x0/onboarding/10-tap-loading.webp',
+                  b: 'The tap is a physical act against a phone. It belongs on top of where you already are.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/10-tap-loading.webp',
                   t: 'Hold is a state, so it has one',
-                  b: 'The card has to stay against the phone. The screen says so for as long as it is true.' },
-                { src: 'assets/img/x0/onboarding/11-tap-success.webp',
+                  b: 'The card has to stay against the phone. The screen says so for as long as it is true.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/11-tap-success.webp',
                   t: 'Confirm where it was asked',
-                  b: 'The confirmation lands in the same sheet the request was made in.' },
-                { src: 'assets/img/x0/onboarding/12-user-type.webp',
+                  b: 'The confirmation lands in the same sheet the request was made in.'
+                },
+                {
+                  src: 'assets/img/x0/onboarding/12-user-type.webp',
                   t: 'One fork, asked once',
-                  b: 'The only branch in the flow, at the end, in the terms a first-time owner would use.' },
-              ] },
+                  b: 'The only branch in the flow, at the end, in the terms a first-time owner would use.'
+                },
+              ]
+            },
 
             /* ==============================================================
                ACT IV — THE PRODUCT (21–27)
@@ -1387,116 +1793,167 @@ window.SITE = {
                it at the moment of contact — and that control is the scene.
                This is the interaction that replaced a whole device; letting
                someone stop it half way is the only way a page can say so. */
-            { id: 'x0-tap', act: 'IV · Product', kind: 'video', dur: 170, dark: true,
+            {
+              id: 'x0-tap', act: 'IV · Product', kind: 'video', dur: 170, dark: true,
               src: 'assets/media/x0/app-walkthrough.mp4',
               poster: 'assets/media/x0/app-walkthrough.webp',
               alt: 'The X0 card tapped against the back of a phone, and the confirmation that follows',
               h: 'This is what replaced the hardware.',
-              p: 'Everything about it is designed around a hand doing something physical. Stand-in footage — the shot to take is the hand, the card and the phone on a tripod, one key light, dark ground.' },
+              p: 'Everything about it is designed around a hand doing something physical. Stand-in footage — the shot to take is the hand, the card and the phone on a tripod, one key light, dark ground.'
+            },
 
             /* THE PHILOSOPHY WHERE IT CAN BE CHECKED AGAINST EVIDENCE. One
                line per principle, maximum, with a real screen beside it: a
                principle that needs a paragraph to defend it was not a
                principle. */
-            { id: 'x0-principles', kind: 'prin', dur: 180,
+            {
+              id: 'x0-principles', kind: 'prin', dur: 180,
               items: [
-                { w: 'Familiar', src: 'assets/img/x0/onboarding/12-user-type.webp',
-                  l: 'Patterns a first-time owner has already used somewhere else.' },
-                { w: 'Guided', src: 'assets/img/x0/onboarding/03-meet.webp',
-                  l: 'Never more than one thing to understand at a time.' },
-                { w: 'Secure', src: 'assets/img/x0/onboarding/05-distributed.webp',
-                  l: 'The safe path is the fast path, or the safe path loses.' },
-                { w: 'Minimal', src: 'assets/img/x0/onboarding/02-welcome.webp',
-                  l: 'One decision per screen. Where a screen had two, one of them wasn’t a decision.' },
-              ] },
+                {
+                  w: 'Familiar', src: 'assets/img/x0/onboarding/12-user-type.webp',
+                  l: 'Patterns a first-time owner has already used somewhere else.'
+                },
+                {
+                  w: 'Guided', src: 'assets/img/x0/onboarding/03-meet.webp',
+                  l: 'Never more than one thing to understand at a time.'
+                },
+                {
+                  w: 'Secure', src: 'assets/img/x0/onboarding/05-distributed.webp',
+                  l: 'The safe path is the fast path, or the safe path loses.'
+                },
+                {
+                  w: 'Minimal', src: 'assets/img/x0/onboarding/02-welcome.webp',
+                  l: 'One decision per screen. Where a screen had two, one of them wasn’t a decision.'
+                },
+              ]
+            },
 
             /* THE PRODUCT LANDS IN REALITY AND STOPS BEING SCREENS. The dark
                mode arrives as a wipe rather than a fade, because a fade says
                the lights dimmed and a wipe says a second set of token values
                was switched on — which is what dark mode is. */
-            { id: 'x0-world', kind: 'world', dur: 160,
+            {
+              id: 'x0-world', kind: 'world', dur: 160,
               icon: 'X0',
               h: 'At 60 pixels it still has to be the one you trust.',
               homes: [
-                { kind: 'device', dia: 'homescreen', subject: 'X0 on a real iPhone home screen', ratio: 0.62,
-                  of: 'The X0 icon in place on a real iPhone home screen, among ordinary apps.' },
+                {
+                  kind: 'device', dia: 'homescreen', subject: 'X0 on a real iPhone home screen', ratio: 0.62,
+                  of: 'The X0 icon in place on a real iPhone home screen, among ordinary apps.'
+                },
                 { kind: 'device', dia: 'homescreen', subject: 'The same, on Android', ratio: 0.62 },
                 { kind: 'device', dia: 'phonescreen', subject: 'One product screen in dark mode', ratio: 0.62 },
               ],
-              p: 'The icon had to survive being one of forty things on somebody’s home screen.' },
+              p: 'The icon had to survive being one of forty things on somebody’s home screen.'
+            },
 
             /* SEVEN MONTHS, AND THE SHIPPED VERSION WAS THE FOURTH ANSWER
                RATHER THAN THE FIRST. The two months where an earlier answer
                was abandoned carry a brass dot, because those are the two the
                reader should feel. */
-            { id: 'x0-timeline', kind: 'spine', dur: 180,
+            {
+              id: 'x0-timeline', kind: 'spine', dur: 180,
               kicker: 'Seven months',
               beats: [
-                { w: 'Month 1',
-                  t: 'Started by adapting X1. <span>The fastest route, and the one that made X0 look like a discount version of a product it wasn’t related to.</span>' },
-                { w: 'Month 2', turn: true,
-                  t: 'Abandoned the adapted components. <span>The reversal that cost the most and bought the most.</span>' },
-                { w: 'Month 3', turn: true,
-                  t: 'Rebuilt the navigation. <span>The second thing that turned out to be inherited rather than designed.</span>' },
-                { w: 'Month 5',
-                  t: 'N45 carrying surfaces it wasn’t written for. <span>The test of whether it was a system or a catalogue.</span>' },
-                { w: 'Month 6',
-                  t: 'Onboarding settled at twelve screens. <span>Down from more, and each one with a reason.</span>' },
-                { w: 'Month 7',
-                  t: 'Beta, on both platforms.' },
-              ] },
+                {
+                  w: 'Month 1',
+                  t: 'Started by adapting X1. <span>The fastest route, and the one that made X0 look like a discount version of a product it wasn’t related to.</span>'
+                },
+                {
+                  w: 'Month 2', turn: true,
+                  t: 'Abandoned the adapted components. <span>The reversal that cost the most and bought the most.</span>'
+                },
+                {
+                  w: 'Month 3', turn: true,
+                  t: 'Rebuilt the navigation. <span>The second thing that turned out to be inherited rather than designed.</span>'
+                },
+                {
+                  w: 'Month 5',
+                  t: 'N45 carrying surfaces it wasn’t written for. <span>The test of whether it was a system or a catalogue.</span>'
+                },
+                {
+                  w: 'Month 6',
+                  t: 'Onboarding settled at twelve screens. <span>Down from more, and each one with a reason.</span>'
+                },
+                {
+                  w: 'Month 7',
+                  t: 'Beta, on both platforms.'
+                },
+              ]
+            },
 
             /* THE MOST FORWARD-LOOKING CLAIM IN THE PROJECT, and the only
                real number in the film. It is there at rest rather than
                counting up: a counter would make it a statistic, and it is a
                position. The generated output is shown unretouched, because
                the imperfection is the honesty of the scene. */
-            { id: 'x0-67', kind: 'num', dur: 170,
+            {
+              id: 'x0-67', kind: 'num', dur: 170,
               n: '67%',
               sub: 'accuracy of designs generated from N45 by prompt, today',
               h: 'I’m building the system so it can be read by a model, not just by a designer.',
               prompt: 'a portfolio screen using N45, one primary action',
               out: [
-                { kind: 'figma', dia: 'namelist', subject: 'The component naming convention', ratio: 1.5,
-                  of: 'Close crop of the component naming panel, showing the convention that makes this possible.' },
-                { kind: 'device', dia: 'phonescreen', subject: 'The screen that prompt produced', ratio: 0.62,
-                  of: 'Unretouched — the flaws are the point.' },
-                { kind: 'device', dia: 'phonescreen', subject: 'The same screen, corrected', ratio: 0.62,
-                  of: 'The same screen after correction, for the delta.' },
+                {
+                  kind: 'figma', dia: 'namelist', subject: 'The component naming convention', ratio: 1.5,
+                  of: 'Close crop of the component naming panel, showing the convention that makes this possible.'
+                },
+                {
+                  kind: 'device', dia: 'phonescreen', subject: 'The screen that prompt produced', ratio: 0.62,
+                  of: 'Unretouched — the flaws are the point.'
+                },
+                {
+                  kind: 'device', dia: 'phonescreen', subject: 'The same screen, corrected', ratio: 0.62,
+                  of: 'The same screen after correction, for the delta.'
+                },
               ],
               /* the closing line moved into the label under the number: the
                  scene is a number, a claim and a prompt, and a fourth
                  element restating the claim is the thing that made this
                  frame feel busy. */
-              sub: 'accuracy of designs generated from N45 by prompt, today — and the system has to grow as the app does' },
+              sub: 'accuracy of designs generated from N45 by prompt, today — and the system has to grow as the app does'
+            },
 
             /* THE ONLY REFLECTIVE SCENE, at reading size rather than poster
                size, and the scale shift is the signal: this one is meant to
                be read. After twenty-five scenes of cinema, near-stillness
                reads as candour. */
-            { id: 'x0-back', kind: 'cards', dur: 140,
+            {
+              id: 'x0-back', kind: 'cards', dur: 140,
               h: 'Looking back.',
               items: [
-                { h: 'What worked',
-                  body: ['<b>Building the system before the screens.</b> Extracting a system from finished work produces a catalogue of what you already did; building it first produces something the next product can use — and by month six there were surfaces running on it that did not exist when it was written.'] },
-                { h: 'The biggest trade-off', lift: true,
-                  body: ['Two months in, <b>abandoning the adapted CySync components cost real time</b> — the fastest path was already half walked. It bought X0 an identity of its own, which is the thing the project was actually for.'] },
-                { h: 'What I’d improve',
-                  body: ['<b>Segmentation is a design problem before it is a marketing one.</b> Making X0 feel approachable without making it feel like the cheap option comes down to type, spacing and tone rather than a badge or a price — and that is the part I would keep pushing on with real users in front of it.'] },
-              ] },
+                {
+                  h: 'What worked',
+                  body: ['<b>Building the system before the screens.</b> Extracting a system from finished work produces a catalogue of what you already did; building it first produces something the next product can use — and by month six there were surfaces running on it that did not exist when it was written.']
+                },
+                {
+                  h: 'The biggest trade-off', lift: true,
+                  body: ['Two months in, <b>abandoning the adapted CySync components cost real time</b> — the fastest path was already half walked. It bought X0 an identity of its own, which is the thing the project was actually for.']
+                },
+                {
+                  h: 'What I’d improve',
+                  body: ['<b>Segmentation is a design problem before it is a marketing one.</b> Making X0 feel approachable without making it feel like the cheap option comes down to type, spacing and tone rather than a badge or a price — and that is the part I would keep pushing on with real users in front of it.']
+                },
+              ]
+            },
 
             /* THE END CARD, closing the loop opened in scene 01: the same
                card, the same light, the same position, and the giant letters
                behind it gone. The object no longer needs the title. No
                flourish on the last frame. */
-            { id: 'x0-end', kind: 'object', dur: 120, dark: true, rest: true,
-              shot: { kind: 'render', dia: 'object', subject: 'The X0 card, lit from one side', treat: 'lift',
-                of: 'Scene 01’s render, reused exactly. The repetition is the point — do not reshoot it.' },
+            {
+              id: 'x0-end', kind: 'object', dur: 120, dark: true, rest: true,
+              shot: {
+                kind: 'render', dia: 'object', subject: 'The X0 card, lit from one side', treat: 'lift',
+                of: 'Scene 01’s render, reused exactly. The repetition is the point — do not reshoot it.'
+              },
               still: true,
               h: 'Cypherock X0',
-              meta: '7 months · Senior Product Designer · Product strategy, UX, UI, design system, information architecture, engineering collaboration' },
+              meta: '7 months · Senior Product Designer · Product strategy, UX, UI, design system, information architecture, engineering collaboration'
+            },
           ],
-        } },
+        }
+      },
       /* ------------------------------------------------------------ Onefinnet
          Replaces the old Warp Signals entry. The narrative is condensed from
          Ishaan's own case-study writing in Figma (file "App v2" -> page
@@ -1511,7 +1968,8 @@ window.SITE = {
          `meta` and the fact chips are taken from that title card, so the two
          now agree. Earlier values (2025, "Remote", "Product Designer") were
          placeholders written before the card existed.                        */
-      { title: 'Onefinnet Talent', meta: 'B2B SaaS, 2024–25, Noida (on-site)',
+      {
+        title: 'Onefinnet Talent', meta: 'B2B SaaS, 2024–25, Noida (on-site)',
         href: '#onefinnet-talent',
         /* THE COUNTER. Narrower stack and the widest proportion in the set, so
            it is plainly a different shape from the one beside it and its caption
@@ -1563,7 +2021,8 @@ window.SITE = {
             /* The opening stretch runs on a dark band — overview first, then the
                highlights — so it reads as summary rather than argument. Both
                sections carry tone: 'dark' and tile into one continuous band. */
-            { id: 'overview', nav: 'Overview', eyebrow: 'Overview', tone: 'dark',
+            {
+              id: 'overview', nav: 'Overview', eyebrow: 'Overview', tone: 'dark',
               heading: 'Helping teams hire faster and smarter with AI',
               body: [
                 'The Onefinnet Talent platform automates candidate sourcing, shortlisting and screening \u2014 so your team can focus on building great teams, not filtering resumes.',
@@ -1574,14 +2033,17 @@ window.SITE = {
                    short on purpose — each value has to sit on one line at the
                    column width, which is what makes the row scan. A long value
                    wraps inside its pill and the tidy row falls apart. */
-                { type: 'facts', items: [
-                  { label: 'Team', values: ['B2B SaaS', 'Enterprise'] },
-                  { label: 'Role', values: ['Team Lead', 'UI/UX Designer'] },
-                  { label: 'Timeline', values: ['Jan 2024 \u2013 Jun 2025'] },
-                  { label: 'Surfaces', values: ['Recruiter app', 'AI reports', 'Admin panel'] },
-                  { label: 'Research', values: ['8 recruiters', '5 founders', '10 candidates'] },
-                ] },
-                { type: 'ticker',
+                {
+                  type: 'facts', items: [
+                    { label: 'Team', values: ['B2B SaaS', 'Enterprise'] },
+                    { label: 'Role', values: ['Team Lead', 'UI/UX Designer'] },
+                    { label: 'Timeline', values: ['Jan 2024 \u2013 Jun 2025'] },
+                    { label: 'Surfaces', values: ['Recruiter app', 'AI reports', 'Admin panel'] },
+                    { label: 'Research', values: ['8 recruiters', '5 founders', '10 candidates'] },
+                  ]
+                },
+                {
+                  type: 'ticker',
                   /* Real product screens from "Framer export/Hero section",
                      shipped at their native 1488x1140 as WebP q90 with alpha —
                      2.2MB for all 26. Native rather than a fixed multiple of the
@@ -1612,22 +2074,25 @@ window.SITE = {
                   caption: 'Screens from across the platform \u2014 recruiter app, candidate reports and the admin panel.',
                   rows: [
                     [
-        '2fa.webp', '5-step.webp', '6-step.webp', 'ai-screening-criteria.webp',
-        'candidate-empty-states.webp', 'candidate-form-maker.webp', 'candidate-view.webp',
-        'candidates-listings.webp', 'career-portal.webp', 'create-mail.webp',
-        'create-interviews.webp', 'global-search.webp',
-        'job-creation.webp'
+                      '2fa.webp', '5-step.webp', '6-step.webp', 'ai-screening-criteria.webp',
+                      'candidate-empty-states.webp', 'candidate-form-maker.webp', 'candidate-view.webp',
+                      'candidates-listings.webp', 'career-portal.webp', 'create-mail.webp',
+                      'create-interviews.webp', 'global-search.webp',
+                      'job-creation.webp'
                     ],
                     [
-        'job-dialogue.webp', 'kanban-board.webp', 'legal-pages-for-policies.webp', 'mails.webp',
-        'meetings.webp', 'onboarding-steps.webp', 'organisation-setup.webp',
-        'public-job-view-form-2.webp', 'public-job-view-form.webp', 'publish-job.webp',
-        'resume-strengths-views.webp', 'settings.webp', 'sign-up.webp'
+                      'job-dialogue.webp', 'kanban-board.webp', 'legal-pages-for-policies.webp', 'mails.webp',
+                      'meetings.webp', 'onboarding-steps.webp', 'organisation-setup.webp',
+                      'public-job-view-form-2.webp', 'public-job-view-form.webp', 'publish-job.webp',
+                      'resume-strengths-views.webp', 'settings.webp', 'sign-up.webp'
                     ],
-                  ] },
-              ] },
+                  ]
+                },
+              ]
+            },
 
-            { id: 'problem', nav: 'The Problem', eyebrow: 'The Problem', tone: 'dark',
+            {
+              id: 'problem', nav: 'The Problem', eyebrow: 'The Problem', tone: 'dark',
               heading: 'Hiring inefficiency',
               body: [
                 'Startups often struggle to <b>find and hire the right talent</b> at the right time. Recruiters deal with too many applications, manual screening, and lack of coordination between hiring teams. <b>This leads to delayed hiring, mismatched candidates, and lost productivity</b> \u2014 all while startups are racing to scale fast.',
@@ -1639,7 +2104,8 @@ window.SITE = {
                    \u2014 the line breaks in the third statement are deliberate. */
                 { type: 'head', title: 'The business problem' },
 
-                { type: 'contrast',
+                {
+                  type: 'contrast',
                   not: 'We wanted to redesign\u2026',
                   /* one row per statement, each with its own mark — the fourth keeps
                      its second line as a quieter continuation, as in the reference */
@@ -1647,32 +2113,47 @@ window.SITE = {
                     { icon: 'building', text: 'The company had one major problem.' },
                     { icon: 'case', text: 'The product was entirely enterprise-driven.' },
                     { icon: 'chart', text: 'Growth depended on sales teams.' },
-                    { icon: 'person', text: 'Every customer required lengthy demos,',
-                      sub: 'manual onboarding, and high acquisition costs.' },
+                    {
+                      icon: 'person', text: 'Every customer required lengthy demos,',
+                      sub: 'manual onboarding, and high acquisition costs.'
+                    },
                     { icon: 'target', text: 'The business needed a scalable acquisition channel.' },
-                  ] },
+                  ]
+                },
 
                 /* the 2x2 grid from the deck. `lift` is the one card a shade
                    lighter, as in the reference. */
-                { type: 'cards', heading: 'Defining the gap',
+                {
+                  type: 'cards', heading: 'Defining the gap',
                   items: [
-                    { label: 'Communication gap',
-                      body: 'Hiring teams and recruiters often work in silos, leading to <b>misalignment on job roles, feedback loops, and priorities</b>.' },
-                    { label: 'Efficiency gap', lift: true,
-                      body: 'Recruiters spend hours manually <b>sourcing, shortlisting, and scheduling</b>, slowing down the entire hiring process.' },
-                    { label: 'Insight gap',
-                      body: 'Most decisions are <b>gut-based, not data-driven</b>, resulting in poor fits and repeated hiring efforts.' },
-                    { label: 'Experience gap',
-                      body: 'Candidates face <b>delays &amp; lack of updates</b>, leaving a negative impression of the company\u2019s brand.' },
-                  ] },
-              ] },
+                    {
+                      label: 'Communication gap',
+                      body: 'Hiring teams and recruiters often work in silos, leading to <b>misalignment on job roles, feedback loops, and priorities</b>.'
+                    },
+                    {
+                      label: 'Efficiency gap', lift: true,
+                      body: 'Recruiters spend hours manually <b>sourcing, shortlisting, and scheduling</b>, slowing down the entire hiring process.'
+                    },
+                    {
+                      label: 'Insight gap',
+                      body: 'Most decisions are <b>gut-based, not data-driven</b>, resulting in poor fits and repeated hiring efforts.'
+                    },
+                    {
+                      label: 'Experience gap',
+                      body: 'Candidates face <b>delays &amp; lack of updates</b>, leaving a negative impression of the company\u2019s brand.'
+                    },
+                  ]
+                },
+              ]
+            },
 
             /* Rebuilt to the old portfolio's hierarchy: an opener, then a
                major heading, then a quieter sub-head with bullets, then the next
                major heading. Previously "Solve for unstructured hiring
                decisions" was demoted into a bullet lead-in, which flattened the
                whole stretch into one level. */
-            { id: 'research', nav: 'Research', eyebrow: 'Research and Validation',
+            {
+              id: 'research', nav: 'Research', eyebrow: 'Research and Validation',
               preamble: {
                 title: 'Going back to how it started\u2026',
                 body: 'Let\u2019s walk through and validate the reasoning behind some of these design decisions together.',
@@ -1682,21 +2163,26 @@ window.SITE = {
                 'Every day without the right hire <b>slows progress</b>. Manual hiring <b>drains time, effort and focus</b> from what matters most \u2014 building the product.',
               ],
               blocks: [
-                { type: 'bullets', sub: 'Scoping down to data-backed recruitment',
+                {
+                  type: 'bullets', sub: 'Scoping down to data-backed recruitment',
                   lead: 'Recruiters and founders spend:',
                   items: [
                     'Over <b>40% of their week</b> on repetitive hiring tasks.',
                     'No feedback loops or real-time updates.',
                     'Over <b>70% of startups</b> lose top candidates because of <b>slow or disorganised hiring workflows</b>.',
-                  ] },
+                  ]
+                },
 
-                { type: 'head', title: 'Understanding the hiring ecosystem',
+                {
+                  type: 'head', title: 'Understanding the hiring ecosystem',
                   body: [
                     'We talked to <b>8 recruiters, 5 founders</b> and <b>10 candidates</b> across early-stage startups to uncover what really happens behind every hiring challenge.',
-                  ] },
+                  ]
+                },
 
-                { type: 'shot', src: 'assets/img/onefinnet/hiring-ecosystem.webp',
-                w: 1800, h: 1883,
+                {
+                  type: 'shot', src: 'assets/img/onefinnet/hiring-ecosystem.webp',
+                  w: 1800, h: 1883,
                   alt: 'Interview question board grouped by Recruiters, Founders / Hiring Managers and Candidates',
                   max: '900px',
                   /* Near square, so the width cap alone left it 941px tall — the
@@ -1709,73 +2195,90 @@ window.SITE = {
                     { kind: 'measure', text: '23 interviews', at: 'top:-11px;left:20px' },
                     { kind: 'note', text: 'grouped by who we\u2019d be designing for', at: 'right:-22px;top:26%' },
                     { kind: 'comment', text: 'the questions we kept coming back to', at: 'left:16px;bottom:-16px' },
-                  ] },
+                  ]
+                },
 
-                { type: 'bullets', sub: 'Key takeaways from interviews',
+                {
+                  type: 'bullets', sub: 'Key takeaways from interviews',
                   lead: 'Hiring isn\u2019t as easy as it looks.',
                   items: [
                     'Modern recruitment is <b>dependent on collaboration</b> between founders, recruiters and AI tools \u2014 all working in sync.',
                     'Misalignment at any stage leads to lost candidates and wasted time.',
                     'Tools that bridge <b>clarity, collaboration and speed</b> redefine hiring success.',
-                  ] },
+                  ]
+                },
 
-                { type: 'shot', src: 'assets/img/onefinnet/key-takeaway.webp',
-                w: 1268, h: 674,
+                {
+                  type: 'shot', src: 'assets/img/onefinnet/key-takeaway.webp',
+                  w: 1268, h: 674,
                   alt: 'Affinity map clustering the collected interview insights',
                   max: '634px',
                   caption: 'Affinity map of the collected insights.',
                   annos: [
                     { kind: 'note', text: 'three clusters, one conclusion', at: 'right:-22px;top:-14px' },
-                  ] },
+                  ]
+                },
 
-                { type: 'bullets', sub: 'The emotional toll on recruiters',
+                {
+                  type: 'bullets', sub: 'The emotional toll on recruiters',
                   items: [
                     'Recruiters often feel <b>pressured from both sides</b> \u2014 founders want speed, candidates want clarity.',
                     'They constantly juggle expectations, data and deadlines.',
                     'What they really want? <b>Control, visibility and confidence</b> in their decisions.',
-                  ] },
+                  ]
+                },
 
                 { type: 'head', title: 'Who are we designing for?' },
 
-                { type: 'shot', src: 'assets/img/onefinnet/personas.webp',
-                w: 1534, h: 544,
+                {
+                  type: 'shot', src: 'assets/img/onefinnet/personas.webp',
+                  w: 1534, h: 544,
                   alt: 'Three personas: Founders, Recruiters and Candidates, each with a quote and their needs',
                   max: '767px',
                   annos: [
                     { kind: 'measure', text: '3 personas', at: 'top:-11px;left:20px' },
                     { kind: 'note', text: 'all three want the same thing, differently', at: 'right:-22px;bottom:-14px' },
-                  ] },
-              ] },
+                  ]
+                },
+              ]
+            },
 
-            { id: 'benchmark', nav: 'Benchmarking', eyebrow: 'Competitive Audit',
+            {
+              id: 'benchmark', nav: 'Benchmarking', eyebrow: 'Competitive Audit',
               heading: 'Benchmarking the Best (and the Rest)',
               body: [
                 'I studied platforms like <b>Ashby, Workable, BambooHR</b> and <b>Lever</b> to understand how they handle hiring workflows, data migration and recruiter experience. The goal was to uncover usability gaps, workflow inefficiencies, and opportunities for Onefinnet Talent to introduce a more streamlined, AI-driven alternative.',
               ],
               blocks: [
-                { type: 'callout',
-                  text: '<b>While some</b> legacy platforms struggle to provide consistently, this becomes a <b>key differentiating factor</b>, especially for startups and fast-scaling teams that depend on speed, clarity, and automation.' },
+                {
+                  type: 'callout',
+                  text: '<b>While some</b> legacy platforms struggle to provide consistently, this becomes a <b>key differentiating factor</b>, especially for startups and fast-scaling teams that depend on speed, clarity, and automation.'
+                },
 
                 /* The supplied export is 1260px wide, so it is capped there \u2014
                    stretching it past its own pixels is what makes a table blurry.
                    The lightbox is how you read it properly. */
-                { type: 'taped', src: 'assets/img/onefinnet/benchmarking.webp',
-                w: 1800, h: 901,
+                {
+                  type: 'taped', src: 'assets/img/onefinnet/benchmarking.webp',
+                  w: 1800, h: 901,
                   alt: 'Benchmarking table comparing Ashby, Lever, Workable and BambooHR across five axes',
                   max: '900px',
                   caption: 'Ashby, Lever, Workable and BambooHR, scored on the same five axes \u2014 top capabilities, ease of use, AI features, customised reporting and pricing affordability \u2014 so the gaps were comparable rather than anecdotal. Click to enlarge.',
                   annos: [
                     { kind: 'measure', text: '4 tools \u00b7 5 axes', at: 'top:-11px;left:20px' },
                     { kind: 'note', text: 'the inconsistency was the opening', at: 'right:-22px;bottom:-14px' },
-                  ] },
+                  ]
+                },
 
-              ] },
+              ]
+            },
 
             /* --- The Product ------------------------------------------------
                Content lifted from the old portfolio. Every artifact is a `ph`
                placeholder: swap `type: 'ph'` for `type: 'shot'` and give it the
                real `src` once the export lands. */
-            { id: 'solution', nav: 'The Product', eyebrow: 'Introducing Onefinnet Talent',
+            {
+              id: 'solution', nav: 'The Product', eyebrow: 'Introducing Onefinnet Talent',
               heading: 'A single platform to automate hiring end to end',
               body: [
                 'An AI hiring assistant that works as hard as you do. Automated shortlisting, engagement tracking and real-time insights keep every team member in sync and in control.',
@@ -1788,44 +2291,60 @@ window.SITE = {
                    flattened image, so the copy is selectable and the screenshots
                    stay crisp. The first slide centres its copy, as the reference
                    does; the rest run copy-left / shot-right. */
-                { type: 'carousel', eyebrow: 'THE SHINY HIGHLIGHTS',
+                {
+                  type: 'carousel', eyebrow: 'THE SHINY HIGHLIGHTS',
                   path: 'assets/img/onefinnet/highlights/',
                   /* all four exports are this size; declared so the panel reserves
                      its height before the images arrive */
                   w: 892, h: 683,
                   slides: [
-                    { title: 'Manage candidates like it\u2019s a game', img: 'kanban.jpg', layout: 'stack',
-                      body: 'Use the <b>Kanban board to drag and drop</b> candidates across stages. Each candidate is AI-scored, and <b>moving them triggers smart actions</b> like sending rejection emails or scheduling interviews.' },
-                    { title: 'Sync up your calendar', img: 'calendar.jpg',
-                      body: 'Never let <b>unplanned interviews disrupt your schedule again</b> \u2014 your hiring pipeline keeps everything organised.' },
-                    { title: 'All need-to-know information in one place', img: 'dashboard.jpg',
-                      body: 'Spend less time searching for what you need \u2014 <b>your dashboard shows everything clearly</b> so you can take action without feeling stuck or delayed.' },
-                    { title: 'No need to manage emails elsewhere', img: 'mail.jpg',
-                      body: '<b>Integrate Google/Outlook</b> and let AI automate follow-ups, updates, and all candidate conversations.' },
-                  ] },
+                    {
+                      title: 'Manage candidates like it\u2019s a game', img: 'kanban.jpg', layout: 'stack',
+                      body: 'Use the <b>Kanban board to drag and drop</b> candidates across stages. Each candidate is AI-scored, and <b>moving them triggers smart actions</b> like sending rejection emails or scheduling interviews.'
+                    },
+                    {
+                      title: 'Sync up your calendar', img: 'calendar.jpg',
+                      body: 'Never let <b>unplanned interviews disrupt your schedule again</b> \u2014 your hiring pipeline keeps everything organised.'
+                    },
+                    {
+                      title: 'All need-to-know information in one place', img: 'dashboard.jpg',
+                      body: 'Spend less time searching for what you need \u2014 <b>your dashboard shows everything clearly</b> so you can take action without feeling stuck or delayed.'
+                    },
+                    {
+                      title: 'No need to manage emails elsewhere', img: 'mail.jpg',
+                      body: '<b>Integrate Google/Outlook</b> and let AI automate follow-ups, updates, and all candidate conversations.'
+                    },
+                  ]
+                },
 
                 { type: 'head', title: 'Recruiter\u2019s Application' },
 
-                { type: 'bullets', sub: 'High level goal',
+                {
+                  type: 'bullets', sub: 'High level goal',
                   items: [
                     'Our goal is to give recruiters the same clarity AI brings to every other business function \u2014 <b>so hiring feels strategic, not stressful</b>.',
                     '<b>Reduce time-to-hire with smart automation.</b>',
-                  ] },
+                  ]
+                },
 
                 /* The supplied "Highlevelgoal" export, 3200x1712. Encoded to
                    1260px — 2x the 630px it is shown at — with its alpha kept, so
                    the transparent corners are not flattened onto a colour. */
-                { type: 'shot', src: 'assets/img/onefinnet/goal-card.webp',
-                w: 1800, h: 963,
+                {
+                  type: 'shot', src: 'assets/img/onefinnet/goal-card.webp',
+                  w: 1800, h: 963,
                   alt: 'The high level goal: give recruiters the clarity AI brings to every other business function',
                   max: '900px',
                   annos: [
                     { kind: 'note', text: 'AI that supports your instinct \u2014 not replaces it.', at: 'right:-22px;top:-16px' },
-                  ] },
-              ] },
+                  ]
+                },
+              ]
+            },
 
             /* --- Job creation ------------------------------------------------- */
-            { id: 'jobs', nav: 'Job Creation', eyebrow: 'Adding Jobs',
+            {
+              id: 'jobs', nav: 'Job Creation', eyebrow: 'Adding Jobs',
               heading: 'Adding Jobs to start hiring',
               body: [
                 'Setting up jobs is one of the <b>most crucial steps</b>, as job descriptions serve as the <b>core representation</b> of what a role truly entails. It\u2019s essential to have complete clarity on all requirements from the start \u2014 because, in many cases, <b>the actual responsibilities extend far beyond what\u2019s stated in the JD</b>.',
@@ -1835,35 +2354,42 @@ window.SITE = {
                    as a GIF would be tens of megabytes and banded to 256 colours,
                    where H.264 is 2.0MB at full 1080p. It starts when it scrolls
                    into view and pauses when it leaves — see `videos()`. */
-                { type: 'video', src: 'assets/media/job-basic-details.mp4',
-                w: 1920, h: 1080,
+                {
+                  type: 'video', src: 'assets/media/job-basic-details.mp4',
+                  w: 1920, h: 1080,
                   poster: 'assets/media/job-basic-details.webp',
                   alt: 'Entering the basic details of a new job \u2014 title, type, '
-                     + 'experience, location and the AI-assisted description',
+                    + 'experience, location and the AI-assisted description',
                   max: '960px',
                   pill: true,
-                  caption: 'Adding jobs to start hiring.. coz thats what everyone wants' },
+                  caption: 'Adding jobs to start hiring.. coz thats what everyone wants'
+                },
 
-                { type: 'head', title: 'Stages of Job creation flow',
+                {
+                  type: 'head', title: 'Stages of Job creation flow',
                   body: [
                     'This flow isn\u2019t just about user experience \u2014 it\u2019s about <b>business conversion and trust</b>.',
                     'HRs already using other tools don\u2019t want to <i class="it">learn something new</i> \u2014 they want to <i class="it">do the same work faster and smarter</i>.',
-                  ] },
+                  ]
+                },
 
-                { type: 'bullets',
+                {
+                  type: 'bullets',
                   items: [
                     'Fit into existing habits \u2014 upload old JDs, save drafts, keep the settings customisable.',
                     'This flow was then optimised to reduce friction, automate repetitive tasks and deliver context-driven recommendations \u2014 ultimately shortening the turnaround time for job creation.',
-                  ] },
+                  ]
+                },
 
                 /* The supplied "Selected iteration" export, 1534x3266. Encoded to
                    1260px — 2x the 630px it shows at — with its alpha kept. A tall
                    diagram, so it renders 630x1342; the lightbox is where the
                    annotations are actually read. */
-                { type: 'shot', src: 'assets/img/onefinnet/job-flow-selected.webp',
-                w: 1534, h: 3266,
+                {
+                  type: 'shot', src: 'assets/img/onefinnet/job-flow-selected.webp',
+                  w: 1534, h: 3266,
                   alt: 'The selected job-creation flow, annotated across its four '
-                     + 'stages: basic details, description, screening and publish',
+                    + 'stages: basic details, description, screening and publish',
                   max: '767px',
                   /* 1:2.1, so a 760px cap like the others would squeeze it to 357px
                      wide. Taller cap here, and the lightbox for the detail. */
@@ -1872,59 +2398,75 @@ window.SITE = {
                   caption: 'Job creation flow \u2014 final design',
                   annos: [
                     { kind: 'measure', text: '4 stages', at: 'top:-11px;left:20px' },
-                  ] },
-              ] },
+                  ]
+                },
+              ]
+            },
 
             /* --- AI reports --------------------------------------------------- */
-            { id: 'reports', nav: 'AI Reports', eyebrow: 'Enhancing AI Candidate Reports',
+            {
+              id: 'reports', nav: 'AI Reports', eyebrow: 'Enhancing AI Candidate Reports',
               heading: 'Enhancing AI Candidate Reports',
               body: [
                 'Candidate results play the most crucial role in the hiring cycle \u2014 the <b>clearer and more detailed the insights</b>, the <b>faster and smarter decisions</b> recruiters can make to move candidates to the next stage.',
               ],
               blocks: [
-                { type: 'bullets', sub: 'Understanding the need',
+                {
+                  type: 'bullets', sub: 'Understanding the need',
                   items: [
                     '<b>Clarity that drives action</b> \u2014 each report section was restructured to highlight the most relevant data first, reducing information overload and enabling recruiters to make faster, data-backed decisions.',
                     '<b>Built for cognitive ease</b> \u2014 every visual and content block was designed to minimise cognitive load, so insights are absorbed effortlessly and recruiters can focus on evaluating talent rather than decoding reports.',
-                  ] },
+                  ]
+                },
 
                 /* The supplied "Rejected" export, 2048x1897 — encoded to 1260px,
                    2x the 630px it shows at, alpha kept. */
-                { type: 'shot', src: 'assets/img/onefinnet/reports-rejected.webp',
-                w: 1800, h: 1667,
+                {
+                  type: 'shot', src: 'assets/img/onefinnet/reports-rejected.webp',
+                  w: 1800, h: 1667,
                   alt: 'The rejected report layout \u2014 a long textual page where the '
-                     + 'decision-driving insights sat below the fold',
+                    + 'decision-driving insights sat below the fold',
                   max: '900px',
                   maxh: '760px',
                   pill: true,
-                  caption: 'Rejected due to multiple user-related issues identified during scheduled interviews' },
+                  caption: 'Rejected due to multiple user-related issues identified during scheduled interviews'
+                },
 
-                { type: 'callout',
-                  text: 'Categorizing and prioritizing information based on its <b>relevance to HR and recruiters</b> was missing. A significant amount of space was occupied by details that weren\u2019t valuable to them, while the crucial, decision-driving insights were less prominent. So we had to go back to the drawing board.' },
+                {
+                  type: 'callout',
+                  text: 'Categorizing and prioritizing information based on its <b>relevance to HR and recruiters</b> was missing. A significant amount of space was occupied by details that weren\u2019t valuable to them, while the crucial, decision-driving insights were less prominent. So we had to go back to the drawing board.'
+                },
 
                 { type: 'bullets', sub: 'Putting things back together!' },
 
                 /* The content inventory, the aside about how the direction was
                    reached, then the iteration it produced — in that order, because
                    the chip narrates the step between the two artifacts. */
-                { type: 'shot', src: 'assets/img/onefinnet/reports-content-inventory.webp',
-                w: 1800, h: 1757,
+                {
+                  type: 'shot', src: 'assets/img/onefinnet/reports-content-inventory.webp',
+                  w: 1800, h: 1757,
                   alt: 'The content inventory \u2014 every element of the report sorted '
-                     + 'by how much it mattered to a recruiter',
-                  max: '900px', maxh: '760px' },
+                    + 'by how much it mattered to a recruiter',
+                  max: '900px', maxh: '760px'
+                },
 
-                { type: 'chip',
+                {
+                  type: 'chip',
                   text: '\u2733 After a lot of back-and-forth with PMs and stakeholders, '
-                      + 'and several whiteboarding sessions to bring clarity, we reached '
-                      + 'a solid direction.' },
+                    + 'and several whiteboarding sessions to bring clarity, we reached '
+                    + 'a solid direction.'
+                },
 
-                { type: 'shot', src: 'assets/img/onefinnet/reports-updated-iteration.webp',
-                w: 1600, h: 2048,
+                {
+                  type: 'shot', src: 'assets/img/onefinnet/reports-updated-iteration.webp',
+                  w: 1600, h: 2048,
                   alt: 'The updated and selected iteration \u2014 scores at a glance on '
-                     + 'the left, actionable items to move a candidate through the '
-                     + 'pipeline, and the option to regenerate the report',
-                  max: '800px', maxh: '760px' },
-              ] },
+                    + 'the left, actionable items to move a candidate through the '
+                    + 'pipeline, and the option to regenerate the report',
+                  max: '800px', maxh: '760px'
+                },
+              ]
+            },
 
             /* The older portfolio's Admin section, in this portfolio's hierarchy.
                Its order was: "Admin Control app", "High Level Goals", the goal
@@ -1932,58 +2474,71 @@ window.SITE = {
                eyebrow and section heading come first, as every other section does,
                and the two sub-topics follow as blocks — same content, one
                consistent hierarchy rather than two competing headings. */
-            { id: 'admin', nav: 'Admin Panel', eyebrow: 'Admin Control App',
+            {
+              id: 'admin', nav: 'Admin Panel', eyebrow: 'Admin Control App',
               heading: 'Laying the foundation of the admin panel',
               body: [],
               blocks: [
-                { type: 'callout',
+                {
+                  type: 'callout',
                   text: 'Every complex product needs a <b>defined control structure</b> '
-                      + 'that shares information on a <b>need-to-know basis</b>. This led '
-                      + 'to the creation of the <b>Onefinnet Admin Panel</b> \u2014 a single '
-                      + 'space to <b>manage people, roles, and access</b> across the '
-                      + 'organisation effortlessly.' },
+                    + 'that shares information on a <b>need-to-know basis</b>. This led '
+                    + 'to the creation of the <b>Onefinnet Admin Panel</b> \u2014 a single '
+                    + 'space to <b>manage people, roles, and access</b> across the '
+                    + 'organisation effortlessly.'
+                },
 
                 { type: 'head', title: 'High level goals' },
 
-                { type: 'shot', src: 'assets/img/onefinnet/admin-goal.webp',
-                w: 1800, h: 881,
+                {
+                  type: 'shot', src: 'assets/img/onefinnet/admin-goal.webp',
+                  w: 1800, h: 881,
                   alt: 'The admin goal card \u2014 giving complete control back to the '
-                     + 'organisation\u2019s core, the admins, through Role-Based Access Control',
+                    + 'organisation\u2019s core, the admins, through Role-Based Access Control',
                   max: '900px',
                   annos: [
-                    { kind: 'note', text: 'Every B2B app needs a defined control structure',
-                      at: 'right:-18px;top:-14px' },
-                  ] },
+                    {
+                      kind: 'note', text: 'Every B2B app needs a defined control structure',
+                      at: 'right:-18px;top:-14px'
+                    },
+                  ]
+                },
 
-                { type: 'bullets', sub: 'Quick highlights of Admin',
+                {
+                  type: 'bullets', sub: 'Quick highlights of Admin',
                   lead: 'With the <b>Onefinnet Admin Control Panel</b>, admins can:',
                   items: [
                     'Invite <b>recruiters, hiring managers and teammates</b> into the organisation.',
                     'Give each person the right access and visibility through <b>Role-Based Access Control</b>.',
                     'Manage <b>people, roles and access</b> from a single space.',
                     'Scale to <b>hundreds of recruiters and thousands of candidates</b> without losing speed.',
-                  ] },
+                  ]
+                },
 
                 /* The portal itself, under NDA like the benchmarking table. Two
                    strips: a third through the middle was tried and dropped — on an
                    image this dense it crossed the content rather than the edges and
                    read as damage instead of tape. */
-                { type: 'taped', src: 'assets/img/onefinnet/admin-portal.webp',
-                w: 1800, h: 2012,
+                {
+                  type: 'taped', src: 'assets/img/onefinnet/admin-portal.webp',
+                  w: 1800, h: 2012,
                   alt: 'The admin portal \u2014 user manager with per-person roles and '
-                     + 'access, subscription plans, and the AI credit ledger',
+                    + 'access, subscription plans, and the AI credit ledger',
                   max: '900px', maxh: '760px',
                   pill: true,
                   caption: 'User manager, subscriptions and AI credits \u2014 one place to '
-                         + 'manage people, roles and access' },
-              ] },
+                    + 'manage people, roles and access'
+                },
+              ]
+            },
 
             /* The same four outcomes the paragraphs described, as cards. `trend` is
                a plain list of numbers and the sparkline is drawn from it — so the
                line always agrees with the figure above it, and the first card draws
                DOWNWARD because less recruiter effort is the win. Edit the numbers
                and the drawing follows. */
-            { id: 'metrics', nav: 'Outcome', eyebrow: 'Metrics',
+            {
+              id: 'metrics', nav: 'Outcome', eyebrow: 'Metrics',
               heading: 'Metrics to measure success',
               body: [],
               blocks: [
@@ -1992,7 +2547,8 @@ window.SITE = {
                    two lists that answer each other row for row. No heading of its
                    own — the section heading already covers it, and the two labels
                    inside the card say what it is. */
-                { type: 'contrast',
+                {
+                  type: 'contrast',
                   notLabel: 'Before', insteadLabel: 'After',
                   notItems: [
                     { text: 'Fragmented workflows' },
@@ -2007,34 +2563,47 @@ window.SITE = {
                     { text: 'Real-time insights' },
                     { text: 'Faster hiring' },
                     { text: 'High user satisfaction' },
-                  ] },
+                  ]
+                },
 
-                { type: 'metrics',
+                {
+                  type: 'metrics',
                   note: 'Impact observed over 6 months after the new experience was released.',
                   items: [
-                    { value: '40%', label: 'Less recruiter effort', icon: 'down',
+                    {
+                      value: '40%', label: 'Less recruiter effort', icon: 'down',
                       c: '#2f9e6e', wash: '#e8f5ee',
                       body: 'Automation and AI assistance reduced manual tasks significantly.',
-                      trend: [62, 60, 55, 52, 46, 44, 39, 36, 33, 28, 24, 21] },
+                      trend: [62, 60, 55, 52, 46, 44, 39, 36, 33, 28, 24, 21]
+                    },
 
-                    { value: '15%', label: 'Higher trial-to-paid conversion', icon: 'up',
+                    {
+                      value: '15%', label: 'Higher trial-to-paid conversion', icon: 'up',
                       c: '#6d4dd8', wash: '#eeeafc',
                       body: 'A smoother experience helped more teams convert and stay longer.',
-                      trend: [22, 25, 24, 31, 34, 38, 42, 47, 52, 58, 66, 74] },
+                      trend: [22, 25, 24, 31, 34, 38, 42, 47, 52, 58, 66, 74]
+                    },
 
-                    { value: '18%', label: 'Increase in task completion', icon: 'up',
+                    {
+                      value: '18%', label: 'Increase in task completion', icon: 'up',
                       c: '#3b82f6', wash: '#e8f0fe',
                       body: 'Users completed key actions faster, with fewer drops in between.',
-                      trend: [30, 33, 37, 36, 44, 48, 52, 55, 61, 64, 70, 78] },
+                      trend: [30, 33, 37, 36, 44, 48, 52, 55, 61, 64, 70, 78]
+                    },
 
-                    { value: '+7', label: 'NPS score improvement', icon: 'star',
+                    {
+                      value: '+7', label: 'NPS score improvement', icon: 'star',
                       c: '#d99a1a', wash: '#fdf3dd',
                       body: 'A consistent increase in satisfaction and overall user sentiment.',
-                      trend: [34, 36, 35, 41, 44, 43, 50, 54, 58, 57, 64, 69] },
-                  ] },
-              ] },
+                      trend: [34, 36, 35, 41, 44, 43, 50, 54, 58, 57, 64, 69]
+                    },
+                  ]
+                },
+              ]
+            },
 
-            { id: 'learnings', nav: 'Learnings', eyebrow: 'Reflection',
+            {
+              id: 'learnings', nav: 'Learnings', eyebrow: 'Reflection',
               heading: 'Finally, my top learnings',
               body: [
                 'Designing for admins versus recruiters. Admins care about control, structure and security; recruiters want speed and simplicity. Making both efficient at once was the hardest part.',
@@ -2042,18 +2611,24 @@ window.SITE = {
                 'The importance of trust. Hiring data is sensitive, so every number, insight and automation had to be trustworthy through transparency, feedback loops and a clean audit trail.',
                 'Using AI responsibly. The challenge was not to automate blindly but to assist intelligently, keeping humans in control while AI handled the heavy lifting.',
                 'Designing for scale and change. Teams, roles and data all grow, so the admin panel had to be a system that absorbs that rather than an interface that breaks under it.',
-              ] },
+              ]
+            },
           ],
-        } },
-      { title: 'Today, around the world', meta: 'Design, 2024, Everywhere', href: '#',
+        }
+      },
+      {
+        title: 'Today, around the world', meta: 'Design, 2024, Everywhere', href: '#',
         /* the tall one. A fan of passports wants the height. */
         col: 'a', ratio: 1.06,
-        preview: 'fan' },
-      { title: 'Magic Extractor', meta: 'Design, 2025, Bengaluru', href: '#',
+        preview: 'fan'
+      },
+      {
+        title: 'Magic Extractor', meta: 'Design, 2025, Bengaluru', href: '#',
         /* short and wide, under the tall one, so the right-hand stack ends on a
            different line again */
         col: 'b', ratio: 1.5,
-        preview: 'ring', line: 'Extracting', stat: '672/897 files parsed' },
+        preview: 'ring', line: 'Extracting', stat: '672/897 files parsed'
+      },
     ],
   },
 
@@ -2075,37 +2650,46 @@ window.SITE = {
     back: { label: 'BACK', href: 'index.html' },
 
     sections: [
-      { id: 'overview', nav: 'Overview', eyebrow: 'Overview',
+      {
+        id: 'overview', nav: 'Overview', eyebrow: 'Overview',
         heading: 'A no-code surface for semantic search',
         body: [
           'Websets lets anyone write a query, set criteria, add enrichments and export a list without touching code. This is a self-directed exploration of what happens when that list needs to run on its own.',
         ],
         blocks: [
           { type: 'tiles', count: 44 },
-          { type: 'facts', items: [
-            { label: 'Role', values: ['Product Designer'] },
-            { label: 'Timeline', values: ['September – October 2025'] },
-            { label: 'Team', values: ['Solo Exploration'] },
-            { label: 'Software', values: ['Figma', 'Warp', 'Rive', 'Exa'] },
-          ] },
-        ] },
+          {
+            type: 'facts', items: [
+              { label: 'Role', values: ['Product Designer'] },
+              { label: 'Timeline', values: ['September – October 2025'] },
+              { label: 'Team', values: ['Solo Exploration'] },
+              { label: 'Software', values: ['Figma', 'Warp', 'Rive', 'Exa'] },
+            ]
+          },
+        ]
+      },
 
-      { id: 'problem', nav: 'The Problem', eyebrow: 'The Problem',
+      {
+        id: 'problem', nav: 'The Problem', eyebrow: 'The Problem',
         heading: 'Core Issue: Extensibility for enterprise teams',
         body: [
           'The no-code dashboard covers the core loop well. The issue starts when you want Websets to run on its own or talk to other tools — reacting to a monitored event, keeping a list fresh on a schedule, or piping results into Clay, Slack, or a CRM.',
           'These aren’t niche edge cases. The people who’d get the most out of Websets — account executives, recruiters, outbound leads, GTM operators — generally aren’t engineers. The automation layer, the part that turns Websets into a sales pipeline, is locked behind a skill its target users don’t have.',
         ],
         blocks: [
-          { type: 'row', caption: 'Each surface stops at the same wall: full functionality needs API scripting.',
+          {
+            type: 'row', caption: 'Each surface stops at the same wall: full functionality needs API scripting.',
             panels: [
               { preview: 'list', rows: ['Create a Webhook', 'Choose which events', 'Send a POST request', 'Verify the signature'] },
               { preview: 'ring', line: 'Create a Webset', stat: 'Search, import, enrich' },
               { preview: 'list', rows: ['Create a Monitor', 'Find new content', 'Update existing content', 'Automated scheduling'] },
-            ] },
-        ] },
+            ]
+          },
+        ]
+      },
 
-      { id: 'research', nav: 'Research', eyebrow: 'Research and Validation',
+      {
+        id: 'research', nav: 'Research', eyebrow: 'Research and Validation',
         heading: 'Interview with GTM staff @ Cursor',
         body: [
           'To validate, I ran an interview with a member of GTM staff at Cursor to understand how they currently build sales pipelines, where the friction is, and how they’d react to Websets’ core value proposition.',
@@ -2115,48 +2699,62 @@ window.SITE = {
         blocks: [
           { type: 'quote', text: '“Find any F500 outside of NYC or SF, and ask them to explain their CRM. They probably tell you they don’t know how to do automations.”' },
           { type: 'panel', preview: 'words', line: 'Signal', caption: 'Mapping the existing stack, tool by tool, to find where the handoffs break.' },
-        ] },
+        ]
+      },
 
-      { id: 'explorations', nav: 'Explorations', eyebrow: 'Explorations',
+      {
+        id: 'explorations', nav: 'Explorations', eyebrow: 'Explorations',
         heading: 'Ideation, whiteboarding, and early flows',
         body: [
           'How might we extend Websets to cover more of the sales pipeline for enterprise clients, giving non-technical users a complete no-code path from filter → enrich → trigger → output?',
         ],
         blocks: [
-          { type: 'row', caption: 'Three directions, each trading configurability against how much you have to understand up front.',
+          {
+            type: 'row', caption: 'Three directions, each trading configurability against how much you have to understand up front.',
             panels: [
               { preview: 'fan' },
               { preview: 'bloom', line: 'Flows' },
               { preview: 'search', line: 'Trigger → enrich → output' },
-            ] },
-        ] },
+            ]
+          },
+        ]
+      },
 
-      { id: 'prototyping', nav: 'Prototyping', eyebrow: 'Prototyping',
+      {
+        id: 'prototyping', nav: 'Prototyping', eyebrow: 'Prototyping',
         heading: 'From whiteboard to a working surface',
         body: [
           'Specify where the webset should output the enriched data, and the columns that should be enriched.',
         ],
         blocks: [
-          { type: 'panel', preview: 'list',
+          {
+            type: 'panel', preview: 'list',
             rows: ['Data source: Google Calendar', 'Criteria: Sales Call', 'After January 14 2026', 'Enrichments for Google Calendar'],
-            caption: 'The trigger builder, kept to one column so the whole rule reads top to bottom.' },
-          { type: 'panel', preview: 'ring', line: 'Webset output', stat: 'Column mapping · 14 fields',
-            caption: 'Example output, from Gcal webhook to Slack channel. An AE who used to spend 15 minutes researching the company before a call now gets this automatically the moment the event is created. No API setup. No scripting.' },
-          { type: 'code', lines: [
-            '{',
-            '  "event_title": "Prospective Meeting: Cursor",',
-            '  "start_time": "2026-10-13T14:00:00-04:00",',
-            '  "end_time": "2026-10-13T14:30:00-04:00",',
-            '  "description": "Inbound demo from GTM @ Cursor",',
-            '  "organizer_email": "you@company.com",',
-            '  "organizer_name": "you@company.com",',
-            '  "attendee_name": "John Smith",',
-            '  "company_summary": "AI code editor, Series C",',
-            '}',
-          ] },
-        ] },
+            caption: 'The trigger builder, kept to one column so the whole rule reads top to bottom.'
+          },
+          {
+            type: 'panel', preview: 'ring', line: 'Webset output', stat: 'Column mapping · 14 fields',
+            caption: 'Example output, from Gcal webhook to Slack channel. An AE who used to spend 15 minutes researching the company before a call now gets this automatically the moment the event is created. No API setup. No scripting.'
+          },
+          {
+            type: 'code', lines: [
+              '{',
+              '  "event_title": "Prospective Meeting: Cursor",',
+              '  "start_time": "2026-10-13T14:00:00-04:00",',
+              '  "end_time": "2026-10-13T14:30:00-04:00",',
+              '  "description": "Inbound demo from GTM @ Cursor",',
+              '  "organizer_email": "you@company.com",',
+              '  "organizer_name": "you@company.com",',
+              '  "attendee_name": "John Smith",',
+              '  "company_summary": "AI code editor, Series C",',
+              '}',
+            ]
+          },
+        ]
+      },
 
-      { id: 'outcomes', nav: 'Outcomes', eyebrow: 'Outcomes',
+      {
+        id: 'outcomes', nav: 'Outcomes', eyebrow: 'Outcomes',
         heading: 'What the extension unlocks',
         body: [
           'A complete no-code path from filter to output means the automation layer stops being an engineering task. The list becomes a pipeline, and the people who need it can build it themselves.',
@@ -2164,7 +2762,8 @@ window.SITE = {
         ],
         blocks: [
           { type: 'panel', preview: 'bloom', line: 'Shipped', caption: 'The end state: one surface, no scripting.' },
-        ] },
+        ]
+      },
     ],
   },
 
@@ -2275,17 +2874,25 @@ window.SITE = {
            permanent as those shares, so if a row stops resolving the fix is to
            drop its `href`, not to hunt for a mirror. */
         rows: [
-          { year: '2023', name: '24hr Design Hackathon',
-            meta: '2nd Runner Up · School of Design, Doon University' },
-          { year: '2022', name: 'CII Young Designer Awards',
+          {
+            year: '2023', name: '24hr Design Hackathon',
+            meta: '2nd Runner Up · School of Design, Doon University'
+          },
+          {
+            year: '2022', name: 'CII Young Designer Awards',
             meta: 'Winner, Service Design · Confederation of Indian Industry',
-            href: 'https://drive.google.com/file/d/1ahByNMiM3IJy4mup0QUE6OQUBHGVCQQt/view?usp=sharing' },
-          { year: '2022', name: 'D’Source-DIC BHU SDGs Design Challenge',
+            href: 'https://drive.google.com/file/d/1ahByNMiM3IJy4mup0QUE6OQUBHGVCQQt/view?usp=sharing'
+          },
+          {
+            year: '2022', name: 'D’Source-DIC BHU SDGs Design Challenge',
             meta: 'Merit Award · IDC School of Design, IIT Bombay',
-            href: 'https://drive.google.com/file/d/1r91OBZFxG8fNR8-DEMyLDbrJWl2SyfLF/view?usp=sharing' },
-          { year: '2022', name: 'SSDC 2022',
+            href: 'https://drive.google.com/file/d/1r91OBZFxG8fNR8-DEMyLDbrJWl2SyfLF/view?usp=sharing'
+          },
+          {
+            year: '2022', name: 'SSDC 2022',
             meta: 'Honorable Mention · Service Design College',
-            href: 'https://eu.badgr.com/public/assertions/KDCSPP0jTLCqw3v8BbVXVw?action=download' },
+            href: 'https://eu.badgr.com/public/assertions/KDCSPP0jTLCqw3v8BbVXVw?action=download'
+          },
         ],
       },
     ],
@@ -2421,18 +3028,18 @@ window.SITE = {
           + 'and the CySync clients behind it.',
         wins: [
           'Took X0 from concept to beta in four months: a mobile-first hardware '
-            + 'wallet spanning the physical NFC card, the packaging, the '
-            + 'manufacturing-ready assets and the companion app.',
+          + 'wallet spanning the physical NFC card, the packaging, the '
+          + 'manufacturing-ready assets and the companion app.',
           'Architected the N45 design system — components, tokens, interaction '
-            + 'patterns and the documentation that made handoff repeatable across '
-            + 'platforms.',
+          + 'patterns and the documentation that made handoff repeatable across '
+          + 'platforms.',
           'Designed the NFC and BLE interaction flows across CySync Desktop, '
-            + 'Mobile and the X1 Vault, with the firmware, hardware and frontend teams.',
+          + 'Mobile and the X1 Vault, with the firmware, hardware and frontend teams.',
           'Led the CySync v2 redesign: a forecast +40% engagement, 25% fewer '
-            + 'interaction steps and +70% daily actives.',
+          + 'interaction steps and +70% daily actives.',
           'Built the affiliate ecosystem end to end — landing page, partner '
-            + 'dashboard and admin portal, with the onboarding and commission '
-            + 'workflows under them.',
+          + 'dashboard and admin portal, with the onboarding and commission '
+          + 'workflows under them.',
         ],
         tags: ['Product Design', 'Interaction Design', 'Design Systems', 'Hardware', 'Crypto'],
       },
@@ -2446,15 +3053,15 @@ window.SITE = {
           + 'directing a cross-functional team of seven.',
         wins: [
           'Created a new core revenue stream in Onefinnet Talent, driving 12% '
-            + 'growth in enterprise adoption inside six months.',
+          + 'growth in enterprise adoption inside six months.',
           'Shipped a freemium acquisition model: +23% monthly actives and a 15% '
-            + 'improvement in lead conversion.',
+          + 'improvement in lead conversion.',
           'Designed the flagship AI assistant for job creation and interview '
-            + 'scheduling — 40% less manual recruiter effort, +18% retention.',
+          + 'scheduling — 40% less manual recruiter effort, +18% retention.',
           'Launched an integrated meeting scheduler MVP in a 60-day sprint; 180 '
-            + 'early adopters and a 90% positive usability score.',
+          + 'early adopters and a 90% positive usability score.',
           'Built a design system from scratch with 100+ reusable components, '
-            + 'cutting handoff time 30% and inconsistencies 40%.',
+          + 'cutting handoff time 30% and inconsistencies 40%.',
         ],
         tags: ['Product Design', 'B2B SaaS', 'Design Systems', 'Research', 'Prototyping'],
       },

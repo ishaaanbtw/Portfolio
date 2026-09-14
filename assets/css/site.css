@@ -13995,11 +13995,20 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 
 .fg-split__rule { display: none; }
 
-.fg-half { display: grid; gap: clamp(0.75rem, 1.8vh, 1.25rem); align-content: center; }
+.fg-half {
+  display: grid;
+  gap: clamp(0.75rem, 1.8vh, 1.25rem);
+  align-content: center;
+  /* ABOVE THE EVIDENCE. The strewn field is an absolutely positioned sibling
+     that comes first in the source, so the three text tracks have to be
+     positioned themselves to be sure of painting over it. */
+  position: relative;
+  z-index: 1;
+}
 
 .fg-half--fades { opacity: calc(1 - clamp(0, calc((var(--p) - 0.5) * 3), 0.68)); }
 
-.fg-half__art { align-self: stretch; display: grid; }
+.fg-half__art { align-self: stretch; display: grid; position: relative; z-index: 1; }
 .fg-half__art .fg-shot { height: 100%; aspect-ratio: auto; border-radius: 0; }
 
 .fg-reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
@@ -14035,6 +14044,211 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   clip-path: inset(0 calc((1 - var(--o)) * 100%) 0 0);
 }
 
+/* --- the spec sheet ------------------------------------------------------
+
+   A SPECIFICATION, SET AS ONE. Left-aligned keys in tracked micro-caps, the
+   value on the same line at reading size, and the evidence — a ramp, a ruler
+   — under whichever row has any. It is the densest thing in the scene and it
+   is the only thing in the scene that is entirely numbers, which is what
+   makes it read as the file rather than as a picture of the file. */
+
+.fg-spec {
+  position: relative;
+  width: 100%;
+  display: grid;
+  align-content: start;
+  gap: clamp(0.7rem, 1.5vh, 1.05rem);
+  padding: clamp(1rem, 1.9vw, 1.5rem);
+  margin: 0;
+  color: var(--fg-ink);
+  border: 1px solid var(--fg-line);
+  border-radius: 0.25rem;
+  background: var(--fg-ground);
+  overflow: clip;
+}
+
+.fg-spec__n {
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-quiet);
+}
+
+/* THE HEADLINE IS THE ONE NUMBER THE READER SHOULD LEAVE WITH, so it is the
+   only thing on the sheet set above caption size. */
+.fg-spec__head {
+  display: grid;
+  gap: 0.3rem;
+  padding-block-end: clamp(0.6rem, 1.4vh, 0.95rem);
+  border-block-end: 1px solid var(--fg-line);
+}
+
+.fg-spec__big {
+  /* ONE LINE, ALWAYS. The pair is a single measurement and a measurement
+     broken across two lines stops being one. The art column is the narrowest
+     track in the spread, so the size is set from that, not from the page. */
+  font-size: clamp(1.25rem, 2.05vw, 1.75rem);
+  font-weight: 620;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.fg-spec__r { display: grid; gap: 0.3rem; }
+
+.fg-spec__k {
+  font-size: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-quiet);
+}
+
+.fg-spec__v {
+  font-size: 0.875rem;
+  line-height: 1.3;
+  color: var(--fg-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.fg-spec__o {
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--fg-dim);
+  max-width: 34ch;
+}
+
+/* the ramp, flush — ten real values off the file, edge to edge, because a
+   palette with gaps in it is a swatch card and this is a ramp */
+.fg-spec__ramp { display: flex; height: 1.1rem; border-radius: 0.125rem; overflow: clip; }
+.fg-spec__ramp i { flex: 1; background: var(--c); }
+
+/* the scale, as a ruler — fourteen ticks climbing, which states the step
+   without printing fourteen numbers nobody reads */
+.fg-spec__ruler {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 1.4rem;
+}
+
+.fg-spec__ruler i {
+  flex: 1;
+  height: var(--h, 50%);
+  background: var(--fg-line);
+  border-radius: 1px;
+}
+
+.fg-spec__f {
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-quiet);
+  margin-block-start: 0.2rem;
+}
+
+.fg-half__art .fg-spec { align-self: center; }
+
+/* --- the old system, still on the table ----------------------------------
+
+   NINE ARTEFACTS OUT OF THE CYSYNC FILE, in the bands the three text tracks
+   do not use. The field fills through the first half of the pin — while the
+   reasons are being read — and then goes back to a quarter at 0.5, on the
+   same clock and by the same gesture as the left column dimming. That is the
+   whole argument in one move: the old system is not attacked, it is put
+   behind the new one.
+
+   IT IS POSITIONED AGAINST THE STAGE, NOT THE SPREAD. `.scn__stage` is
+   sticky, so it is the containing block; `inset: 0` therefore means the whole
+   window rather than the padded column, and the stage's own `overflow: clip`
+   is what cuts a piece running off an edge. Every piece is cropped by
+   something, because a system you can see all of looks like a catalogue. */
+
+.fg-strew {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: clip;
+  color: var(--fg-ink);
+  /* the recede, shared by every piece so they go back together rather than
+     one at a time — 0.5 to 0.83, which is the window the answer arrives in */
+  --hush: clamp(0, calc((var(--p) - 0.5) * 3), 1);
+  --hushE: calc(var(--hush) * var(--hush) * (3 - 2 * var(--hush)));
+}
+
+.fg-strew__o {
+  /* its own arrival, smoothstepped, so it eases out of the distance and
+     settles rather than stopping dead */
+  --q: clamp(0, calc((var(--p) - var(--at, 0)) * var(--sp, 9)), 1);
+  --e: calc(var(--q) * var(--q) * (3 - 2 * var(--q)));
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  width: var(--w, 20vw);
+  z-index: var(--z, 1);
+  translate:
+    calc(-50% + (1 - var(--e)) * var(--dx, 0px))
+    calc(-50% + (1 - var(--e)) * var(--dy, 0px) + var(--p) * var(--dep, 0px));
+  scale: calc(0.94 + var(--e) * 0.06);
+  /* THE TILT IS A RESTING STATE, NOT AN ENTRANCE. These were spilled out
+     across a table, so each one keeps a degree or two at the end; unwinding
+     them to square would make the field a grid, which is the one thing a
+     strew must not be. */
+  rotate: calc(var(--e) * var(--rot, 0deg));
+  /* A QUARTER, NOT NOTHING. Still legible over there, which is the point —
+     you can see it was good, and you can see it was not this. */
+  opacity: calc(var(--e) * var(--dim, 1) * (1 - var(--hushE) * 0.76));
+}
+
+.fg-strew__o img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+}
+
+/* THE INTERIM DRAWING, and it is the same vocabulary the reserved frames use
+   everywhere else in this film — a line drawing of the thing that is coming,
+   at the size and in the place it will occupy. Swap a `src` into the data and
+   this is what it replaces; nothing else about the composition moves. */
+/* THE BOX IS THE ARTEFACT AND THE DRAWING IS WHAT IS ON IT. The frame is held
+   at the REAL export's proportion — `--ratio` comes off the Figma node's own
+   dimensions — so the interim composition is the final composition and
+   dropping a `src` in changes nothing but the picture. A flat tint under it
+   is what makes nine outlines read as nine sheets lying on a page rather than
+   as nine empty rectangles. */
+.fg-strew__skel {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: var(--ratio, 1.5);
+  border: 1px solid var(--fg-line);
+  border-radius: 0.375rem;
+  background: var(--fg-fill);
+  padding: 5%;
+  /* A SHEET CASTS SOMETHING. Without it nine flat tints on a flat ground read
+     as a printing fault; with it they read as paper that was put down. Kept
+     far under the frames in the middle, which are the ones being looked at. */
+  box-shadow: 0 0.75rem 1.75rem rgba(16, 16, 18, 0.05);
+}
+
+.fg-strew__skel svg {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.8;
+}
+
+.fg-strew__skel svg * { vector-effect: non-scaling-stroke; }
+
 .fg-name {
   font-size: clamp(2.25rem, 6.5vw, 5rem);
   font-weight: 620;
@@ -14042,6 +14256,310 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   line-height: 1;
   color: var(--fg-ink);
   margin: 0;
+}
+
+
+/* --- 07b · the questions, as the conversation they actually were ---------
+
+   A SPREAD, NOT A COLUMN. The talk sits in a measure narrow enough to read
+   like a phone held in one hand; the head sits beside it with air between
+   them, so the reader's eye goes conversation → figure → back, which is the
+   loop the scene is about. The empty space that is left is the space between
+   the two, and it is the composition rather than a gap in it. */
+
+.fg-msgs {
+  display: grid;
+  /* THE TALK TRACK IS THE WIDER ONE, and the gap between them is small. The
+     first pass gave each half its own column with six rems of nothing down
+     the middle, which is exactly the "blue block, then picture" the reader
+     sees. Deeply-indented bubbles now run into the figure's half and the two
+     sides interlock. */
+  grid-template-columns: minmax(0, 1.38fr) minmax(0, 1fr);
+  gap: 0;
+  align-items: center;
+  width: 100%;
+}
+
+.fg-msgs__talk {
+  display: grid;
+  gap: clamp(0.9rem, 2.2vh, 1.4rem);
+  align-content: center;
+  justify-items: start;
+  width: 100%;
+  /* the deepest indents are allowed to cross into the figure's half — that
+     crossing is what stops the two sides reading as two panels */
+  overflow: visible;
+  position: relative;
+  z-index: 2;
+}
+
+/* the setup holds one cell so the two halves of the sentence cross-fade in
+   place, and it reserves its own height so the thread below never jumps */
+.fg-msgs__lead { min-height: 2.7em; align-content: start; width: 100%; }
+
+.fg-thread {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  justify-items: start;
+  width: 100%;
+  /* no base gap at all: every space in this thread is authored per line by
+     `pad`, because an even rhythm is the thing that reads as generated */
+  gap: 0;
+}
+
+/* --- one message --------------------------------------------------------
+
+   ROUNDED, BUT NOT THEIR ROUNDING. 1.15rem all round with one corner pulled
+   in to 0.45rem on the side it comes from: enough to say the thing has an
+   origin, without drawing the tail that would make it somebody else's app.
+
+   THE FILL IS TWO STOPS AND THE LIGHT IS ONE LINE. A flat blue rectangle
+   reads as a component; a blue with a degree of light falling down it reads
+   as an object. The inset highlight along the top edge is a single hairline
+   of white at eight percent — the whole of the "premium" in this thing is
+   that one line and the shadow being wide and weak rather than tight and
+   dark. */
+.fg-msg {
+  --q: clamp(0, calc((var(--p) - var(--at, 0)) * 13), 1);
+  /* a small overshoot, then settle — one bounce, barely there. This is the
+     "arrived" of a message landing, and it is 1.5% of scale, not 10%. */
+  --e: calc(var(--q) * var(--q) * (3 - 2 * var(--q)));
+  --spring: calc(sin(var(--q) * 3.14159) * 0.012);
+
+  /* ITS OWN INDENT. This one line is what turns a chat log back into a
+     scatter of thoughts: no two are the same and the sequence has no rule in
+     it, so the left edge never becomes an edge. */
+  margin-inline-start: var(--ox, 0%);
+  /* SIZED TO WHAT IT SAYS, capped so the long ones wrap. Bubbles stretched to
+     an authored width put air inside short questions, which reads as a UI
+     component rather than as something somebody typed. */
+  width: fit-content;
+  max-width: var(--bw, 84%);
+  margin-block-start: var(--gap, 0rem);
+  opacity: var(--e);
+  translate: 0 calc((1 - var(--e)) * 0.85rem);
+  scale: calc(0.985 + var(--e) * 0.015 + var(--spring));
+  transform-origin: 0% 100%;
+}
+
+/* --- the bubble --------------------------------------------------------
+
+   FLAT, AND EVENLY ROUNDED. The first pass had a gradient down each one and a
+   nicked bottom-left corner, and both were wrong: the gradient made a message
+   look like a button, and the nick made a shape that points at nothing once
+   the bubbles are scattered. One solid colour, one radius all the way round,
+   and a small tail at the foot so each one still has an origin.
+
+   THE RADIUS IS BIGGER THAN THE TYPE IS TALL, which is what makes a one-line
+   message read as a capsule and a two-line one read as a rounded card off the
+   same rule. The tail is drawn in two pseudo-elements — a rounded square in
+   the bubble's colour, and a second in the page's colour biting the outside
+   of it — so it belongs to the bubble rather than being a triangle stuck on.
+
+   THREE FLAT TONES, NOT THREE TREATMENTS. The weight of a message is carried
+   by its size and its tone, and nothing else: no borders, no badges, no
+   second hue. */
+.fg-bub {
+  --bub: #2D7DF6;
+  position: relative;
+  padding: 0.7rem 1.15rem 0.75rem;
+  border-radius: 1.4rem;
+  background: var(--bub);
+  box-shadow: 0 0.45rem 1.4rem rgba(28, 99, 220, 0.16);
+}
+
+/* the tail: the bubble's own corner, pulled down and left */
+.fg-bub::before,
+.fg-bub::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  height: 1.05rem;
+  pointer-events: none;
+}
+
+.fg-bub::before {
+  left: -0.36rem;
+  width: 1.15rem;
+  background: var(--bub);
+  border-end-end-radius: 1rem;
+}
+
+/* and the page biting back into it, which is what gives the tail its curve */
+.fg-bub::after {
+  left: -0.72rem;
+  width: 0.72rem;
+  background: var(--fg-ground);
+  border-end-end-radius: 0.7rem;
+}
+
+.fg-bub p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: clamp(0.9375rem, 1.15vw, 1.0625rem);
+  line-height: 1.35;
+  letter-spacing: -0.006em;
+  font-weight: 480;
+  color: #fff;
+  /* OPTICAL, NOT MATHEMATICAL. Left-aligned and allowed to break where the
+     words want to break; a justified or balanced bubble reads as typeset,
+     and nobody typesets a message. */
+  text-wrap: pretty;
+}
+
+/* THE TWO THAT DECIDED THE REST: a step up in size and a shade deeper, so
+   they carry more weight on the page as they did in the room. */
+.fg-bub--keep {
+  --bub: #1667E8;
+  padding: 0.85rem 1.4rem 0.9rem;
+  border-radius: 1.7rem;
+  box-shadow: 0 0.65rem 1.9rem rgba(22, 103, 232, 0.2);
+}
+
+/* the tail grows with the bubble, or it detaches from a 1.7rem corner */
+.fg-bub--keep::before { height: 1.3rem; width: 1.4rem; left: -0.44rem; border-end-end-radius: 1.2rem; }
+.fg-bub--keep::after { height: 1.3rem; width: 0.88rem; left: -0.88rem; border-end-end-radius: 0.85rem; }
+
+.fg-bub--keep p {
+  font-size: clamp(1.0625rem, 1.45vw, 1.3125rem);
+  font-weight: 520;
+  letter-spacing: -0.016em;
+}
+
+/* AND A THIRD WEIGHT, BELOW THE OTHERS. Two of these were asides — half a
+   thought, said in passing — and setting them at the same size as the rest
+   gives all eight the same importance, which none of them had. Smaller,
+   lighter, sitting further back. */
+.fg-bub--sm {
+  --bub: #5A9BF9;
+  padding: 0.5rem 0.9rem 0.55rem;
+  border-radius: 1.1rem;
+  box-shadow: 0 0.3rem 0.9rem rgba(90, 155, 249, 0.18);
+}
+
+.fg-bub--sm::before { height: 0.8rem; width: 0.9rem; left: -0.28rem; border-end-end-radius: 0.8rem; }
+.fg-bub--sm::after { height: 0.8rem; width: 0.58rem; left: -0.58rem; border-end-end-radius: 0.55rem; }
+
+.fg-bub--sm p {
+  font-size: clamp(0.8125rem, 0.95vw, 0.9375rem);
+  font-weight: 460;
+}
+
+.fg-msg time {
+  display: block;
+  margin: 0.36rem 0 0 0.75rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.11em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-quiet);
+  opacity: 0.72;
+}
+
+/* --- the inside of the head ---------------------------------------------
+
+   ONE FIGURE AND SIX FRAGMENTS. The figure is a rendered object with its own
+   thought props already in it, so nothing is added on top of it — a second
+   layer of pictograms over a picture of pictograms is the point at which a
+   composition becomes a collage. What floats around it instead is line-art
+   taken from the work: a wireframe, a piece of grid, a component chip, a
+   crop mark, a dimension, a stack of screens. */
+
+.fg-msgs__head {
+  position: relative;
+  align-self: center;
+  justify-self: center;
+  width: 100%;
+  max-width: 40rem;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.fg-msgs__fig {
+  --q: clamp(0, calc((var(--p) - 0.06) * 4), 1);
+  --e: calc(var(--q) * var(--q) * (3 - 2 * var(--q)));
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 96%;
+  height: auto;
+  opacity: var(--e);
+  /* it leans in a little across the pin — the camera moving, not the head */
+  translate: 0 calc((1 - var(--e)) * 1.2rem + var(--p) * -0.9rem);
+  scale: calc(0.97 + var(--e) * 0.03);
+}
+
+/* EACH ONE ON ITS OWN RATE, which is the whole of the parallax. Two fragments
+   travelling together read as one sticker; six travelling at six rates read
+   as depth. Nothing here moves more than twenty pixels across the section. */
+.fg-frag {
+  --q: clamp(0, calc((var(--p) - var(--at, 0.2)) * 6), 1);
+  --e: calc(var(--q) * var(--q) * (3 - 2 * var(--q)));
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  width: var(--w, 3rem);
+  z-index: 1;
+  color: var(--fg-ink);
+  translate:
+    -50%
+    calc(-50% + (1 - var(--e)) * 0.6rem + var(--p) * var(--dep, 0px));
+  rotate: var(--rot, 0deg);
+  opacity: calc(var(--e) * var(--o, 0.5));
+}
+
+.fg-frag svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* --- narrow -------------------------------------------------------------
+
+   THE HEAD GOES FIRST AND THE TALK RUNS UNDER IT. At phone width a
+   side-by-side spread is two half-width columns, and a message bubble in a
+   half-width column is a word per line. So the composition stacks: the figure
+   is the opening image, the conversation is what you scroll into — which is
+   also, as it happens, the order it went in. */
+@media (max-width: 60rem) {
+  .fg-msgs {
+    grid-template-columns: 1fr;
+    gap: clamp(1.25rem, 4vh, 2rem);
+  }
+
+  .fg-msgs__head {
+    order: -1;
+    max-width: 17rem;
+    aspect-ratio: 1 / 0.86;
+  }
+
+  .fg-msgs__fig { width: 88%; }
+
+  /* the fragments crowd at this size and the figure carries the idea on its
+     own, so only the two furthest out survive */
+  .fg-frag { display: none; }
+  .fg-frag:nth-of-type(2),
+  .fg-frag:nth-of-type(5) { display: block; }
+
+  .fg-msgs__talk { max-width: none; gap: 0.7rem; }
+  .fg-msgs__lead { min-height: 0; }
+  /* at 390px a bubble authored at 42% of the column is four words in a
+     puddle; the floor keeps every one of them a readable line */
+  /* the indents are a wide-frame device; at 390px a 46% indent leaves four
+     words in a gutter, so every message comes back to the edge */
+  .fg-msg { margin-inline-start: 0; max-width: 100%; }
+  .fg-bub p { font-size: 0.9375rem; }
+  .fg-bub--keep p { font-size: 1.0625rem; }
 }
 
 /* --- 14 · the photograph ------------------------------------------------- */
@@ -14555,6 +15073,16 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
      simply an element off the side of the screen. */
   .fg-split { grid-template-columns: 1fr; gap: 1.25rem; margin-right: 0; }
   .fg-split .fg-half__art { display: none; }
+  /* EXCEPT A SPEC SHEET, WHICH IS TYPE. The art column comes off at phone
+     width because a reserved picture frame in a stacked column is a thumbnail
+     with a caption — but this one is a column of numbers, it sets perfectly
+     well at 390px, and it is the strongest evidence in the scene. */
+  .fg-split .fg-half__art:has(.fg-spec) { display: grid; }
+  .fg-spec__o { max-width: none; }
+  /* NINE ARTEFACTS IN A 390px FRAME IS A PILE, NOT A FIELD — and there are no
+     bands left over to strew them into once the spread has stacked into one
+     column. The evidence comes off; the argument does not depend on it. */
+  .fg-split .fg-strew { display: none; }
   .fg-track2 { grid-template-columns: 1fr; }
   .fg-dev-wrap { grid-template-columns: 1fr; gap: 1.25rem; }
   .fg-prin { grid-template-columns: 1fr; gap: 1.25rem; }
@@ -15160,13 +15688,20 @@ body[data-page='project'] .tmode { display: none; }
      grows: right so its leading edge clears the closing copy at 673px instead
      of growing over the words, and down so the top bezel, the island and the
      head of the interface stay in frame — a hero shot cropped through the
-     middle of the screen is a wallpaper, not a product. */
+     middle of the screen is a wallpaper, not a product.
+
+     --zx / --zy / --zs ARE THAT MOVE, AND THEY ARE NAMED BECAUSE THE FRAME
+     DECIDES THEM. Right-and-down past a left-hand copy column is the answer
+     in landscape; in portrait the copy is underneath, so the phone goes UP
+     instead and grows by a third of as much — the same beat, the same clock,
+     the same smoothstep, re-aimed. The narrow rule sets the three numbers and
+     touches nothing else. */
   --zc: clamp(0, calc((var(--p) - 0.88) * 8.33), 1);
   --ze: calc(var(--zc) * var(--zc) * (3 - 2 * var(--zc)));
   translate:
-    calc(-50% + var(--ze) * 2vw)
-    calc(-50% + var(--p) * var(--dep, -14px) + var(--ze) * 16vh);
-  scale: calc(0.93 + var(--e) * 0.07 + var(--p) * 0.03 + var(--ze) * 0.42);
+    calc(-50% + var(--ze) * var(--zx, 2vw))
+    calc(-50% + var(--p) * var(--dep, -14px) + var(--ze) * var(--zy, 16vh));
+  scale: calc(0.93 + var(--e) * 0.07 + var(--p) * 0.03 + var(--ze) * var(--zs, 0.42));
 
   /* IT IS NEVER TRANSLUCENT WHILE ANYTHING IS BEHIND IT, which was the worst
      thing in the section: the components were visible straight through the
@@ -15337,10 +15872,13 @@ body[data-page='project'] .tmode { display: none; }
   pointer-events: none;
   overflow: visible;
   color: rgba(238, 240, 245, 0.72);
+  /* term for term with the device, `--zx/--zy/--zs` included — the crossfade
+     at the end of the drawing only works because these two are the same
+     rectangle on every frame */
   translate:
-    calc(-50% + var(--ze) * 2vw)
-    calc(-50% + var(--p) * var(--ddep, -14px) + var(--ze) * 16vh);
-  scale: calc(0.93 + var(--de) * 0.07 + var(--p) * 0.03 + var(--ze) * 0.42);
+    calc(-50% + var(--ze) * var(--zx, 2vw))
+    calc(-50% + var(--p) * var(--ddep, -14px) + var(--ze) * var(--zy, 16vh));
+  scale: calc(0.93 + var(--de) * 0.07 + var(--p) * 0.03 + var(--ze) * var(--zs, 0.42));
 
   /* IT STEPS BACK WHEN THE RENDER ARRIVES AND THEN GOES. `--out` is where the
      drawing drops to a third — the prototype is there, the drawing is still
@@ -15660,133 +16198,198 @@ body[data-page='project'] .tmode { display: none; }
 
 /* --- narrow ---------------------------------------------------------------
 
-   Twelve overlapping objects in a 390px frame is a pile, not a composition.
-   The pin is released, the table unstacks into a column in arrival order, and
-   the annotation goes under its artefact where a caption belongs. It loses
-   the depth and keeps the story, which is the right thing to lose. */
+   THE SAME FILM, IN PORTRAIT. Not a reduction of it.
+
+   What was here before released the pin, unstacked the table into a document
+   column and threw away the blueprint, the sweep, the ten-band wake and the
+   veil — so a phone got the ending of the section on its first frame and then
+   scrolled past a list of the parts. It was a different film with the same
+   assets in it.
+
+   Everything below is composition and nothing below is sequence. The scene
+   stays pinned, `--p` still drives every clock, and every `at`, `sp`, `dim`,
+   `orb` and `z` in the data is the one the wide frame uses — so the mark, the
+   drawing, the outline, the arrival of the parts, the wake, the light and the
+   closing line all land at exactly the same fraction of the section on a
+   390px phone as on a 1470px window. Three things change:
+
+     WHERE THINGS STAND. Every object carries an `n` block — a second set of
+     coordinates for a tall frame — and every narrow property here falls back
+     to its wide one, so anything without an `n` keeps its desktop placement.
+     The table unfolds ABOVE AND BELOW the phone instead of around it, which
+     is the only arrangement a portrait frame has room for.
+
+     HOW FAR THEY TRAVEL. A journey is read as a proportion of the frame it
+     crosses, so the same gesture is 9vw and 12vh here as there — which is
+     about 120px on a phone where it was about 400 on a desktop.
+
+     HOW LONG IT RUNS. `--ndur` on the scene: 430svh against 620.
+
+   The phone is the hero and it gets bigger, not smaller: half the viewport's
+   height, dead centre, with the parts tucked in over and under it. */
 
 @media (max-width: 60rem) {
-  .scn--room { height: auto; }
-  .scn--room .scn__stage {
-    position: static;
-    height: auto;
-    padding: clamp(3rem, 9vh, 5rem) clamp(1.25rem, 6vw, 3rem);
-  }
+  /* THE PIN STAYS. This one line is the difference between a film and a
+     document, and releasing it was the whole of what went wrong. `--ndur` is
+     the compressed run; a room scene without one keeps its own length. */
+  .scn--room { height: var(--ndur, var(--dur)); }
 
   .room {
-    position: relative;
-    inset: auto;
-    display: grid;
-    gap: clamp(2rem, 6vh, 3.25rem);
-    justify-items: center;
+    /* the ending, re-aimed: up rather than right-and-down, and a third of the
+       growth, because in portrait the closing copy is underneath the phone
+       rather than beside it and a 42% zoom would sit on the words */
+    --zx: 0vw;
+    --zy: -14vh;
+    --zs: 0.13;
   }
 
-  .room::before { display: none; }
-  .room__veil { display: none; }
+  /* the pool of light follows the phone to the middle of the frame, and it is
+     tighter — a 46rem glow in a 390px window is a grey page, not a light */
+  .room::before {
+    left: var(--ngx, var(--gx, 50%));
+    top: var(--ngy, var(--gy, 52%));
+    width: min(90vw, 26rem);
+    filter: blur(40px);
+  }
 
-  /* the orbit, the draft and the bands are all things that happen in a
-     pinned frame with a device standing in it. In a column there is no frame,
-     no device to circle and nothing to draw around, so all three come off and
-     the phone is simply the finished render, once. */
+  /* the orbit is unchanged in kind and only re-centred: the arc still runs
+     around the device, so the parallax between the near components and the
+     far sheets survives at a twelfth of the radius */
   .room__orb {
-    position: relative;
-    inset: auto;
-    rotate: none;
-    display: contents;
+    transform-origin: var(--ngx, var(--gx, 50%)) var(--ngy, var(--gy, 52%));
   }
 
-  /* AT PHONE WIDTH THE DEVICE IS A PICTURE OF A DEVICE, and that is the
-     right answer here. The turn, the sweep and the depth all come off — a
-     phone at nine degrees in a 390px stack is a crooked picture, not a turned
-     object — and what is left is the render at rest with its screen on.
-
-     THE GLASS GOES STATIC, SO ITS INSET STOPS APPLYING. An inset that stops
-     applying is a screen printed over its own bezel, so the aperture comes
-     back as a margin, which is what positions a static box. */
-  .room__dev { aspect-ratio: auto; filter: none; }
-  .room__sweep, .room__cad { display: none; }
-
-  .room__frame { position: absolute; inset: 0; }
-
-  .room__glass {
-    position: relative;
-    inset: auto;
-    margin: var(--st, 0%) var(--sr, 0%) var(--sb, 0%) var(--sl, 0%);
+  /* --- an artefact, in a tall frame -------------------------------------
+     Same `--q`, same smoothstep, same dim, same resting brightness. Only the
+     place it rests and the distance it comes from are re-read. */
+  .room__o {
+    left: var(--nx, var(--x, 50%));
+    top: var(--ny, var(--y, 50%));
+    width: var(--nwd, var(--w, 20vw));
+    translate:
+      calc(-50% + (1 - var(--e)) * var(--ndx, var(--dx, 0px)))
+      calc(-50% + (1 - var(--e)) * var(--ndy, var(--dy, 0px))
+        + var(--p) * var(--ndep, var(--dep, 0px)));
   }
 
-  /* ONE COPY, WHOLE, IN THE COLUMN. The ten windows are a reveal, and there
-     is no reveal here — the pin is released, so there is no `--p` to stagger
-     them against and all ten would simply stack. The first one loses its clip
-     and shows the interface; the other nine have nothing to do. */
-  .room__ui {
-    position: relative;
-    clip-path: none;
-    opacity: 1;
-    height: auto;
-  }
-
-  .room__ui:not(:first-of-type) { display: none; }
-
-  /* the pseudo goes back to being a soft halo holding the phone off a flat
-     stack, rather than the ground shadow it is on the desktop: a black
-     ellipse under a black phone on a black ground is three blacks. */
-  .room__dev::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 156%;
-    aspect-ratio: 1;
-    z-index: 0;
-    transform: none;
-    translate: -50% -50%;
-    border-radius: 50%;
-    pointer-events: none;
-    background: radial-gradient(closest-side,
-      rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.022) 46%, transparent 72%);
-  }
-
-  .room__o,
-  .room__dev {
-    position: relative;
-    left: auto;
-    top: auto;
-    width: 100%;
-    max-width: var(--nw, 100%);
-    translate: 0;
-    scale: 1;
-    rotate: none;
-    /* the turn and the perspective come off with everything else. In a column
-       there is no room to be an object in, and a phone at three degrees in a
-       390px stack is a crooked picture rather than a turned one. */
-    transform: none;
-    opacity: 1;
-    order: var(--ord, 2);
-  }
-
-  .room__dev { width: min(62vw, 15rem); order: 1; }
-
+  /* the annotation stays where it belongs — under its own artefact, in the
+     composition — because moving it into the flow is what turns a table into
+     a list of captioned figures */
+  /* AND IT IS ALLOWED TO WRAP. `nowrap` keeps a two-word label off two lines
+     in a 1470px frame; in a 390px one it is the reason "10 tokens, named not
+     numbered" — 175px of tracked nine-pixel type hung off the right edge of a
+     152px sheet — ran off the side of the screen. Two lines inside the frame
+     is a caption; one line half outside it is a bug. */
   .room__m {
-    position: static;
-    margin: 0.6rem 0 0;
-    justify-items: start;
-    text-align: left;
+    gap: 0.15rem;
+    white-space: normal;
+    /* narrow enough that a label hung off the RIGHT edge of its own sheet
+       still starts inside the frame at 320px, which is the case that sets it */
+    max-width: min(40vw, 8.5rem);
   }
 
-  /* `display: contents` drops the copy wrapper out of the layout so each line
-     becomes a grid item of the room in its own right and the closing line can
-     take its place at the end, after the sheets. The desktop rule that stacks
-     both lines in one cell has to be undone explicitly — it still matches,
-     and left in place it puts the whole section's copy on one line of type. */
+  .room__m i { font-size: 0.5rem; letter-spacing: 0.08em; }
+
+  /* AND A LABEL IN THE TOP BAND HANGS ABOVE ITS SHEET, NOT BELOW IT. Below is
+     right in a wide frame, where the space under an artefact is more room. In
+     a tall one the phone starts a fifth of the way down and takes the middle
+     half of the width, so a caption hung under a sheet in the top band runs
+     straight in behind the device and reads as a truncated sentence. Flipping
+     it up puts it in the clear band over the phone, which is the only strip
+     up there wide enough to hold it. */
+  .room__m--br {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 0.55rem;
+  }
+
+  /* --- the phone ---------------------------------------------------------
+     Centred, and at half the viewport's height it is the largest thing in the
+     frame from the moment it resolves. The shadow comes in proportionally:
+     a 3rem drop under a 200px object is a puddle. */
+  .room__dev {
+    left: var(--nx, var(--x, 50%));
+    top: var(--ny, var(--y, 52%));
+    width: var(--nwd, var(--w, 17.5rem));
+    translate:
+      calc(-50% + var(--ze) * var(--zx, 2vw))
+      calc(-50% + var(--p) * var(--ndp, var(--dep, -14px))
+        + var(--ze) * var(--zy, 16vh));
+    filter:
+      drop-shadow(0 1.75rem 2.25rem rgba(0, 0, 0, 0.85))
+      drop-shadow(0 0.5rem 0.875rem rgba(0, 0, 0, 0.6));
+  }
+
+  /* --- the blueprint -----------------------------------------------------
+     It draws. All eight layers, in the same order, on the same clock, and it
+     dissolves into the render at the same fraction of the pin. The strokes
+     and the dimension type are scaled up in USER UNITS, not in pixels: the
+     drawing is a third of the size it is on a desktop, so a 5-unit line and a
+     46-unit numeral would land at half a pixel and seven. */
+  .room__cad {
+    left: var(--ngx, var(--gx, 50%));
+    top: var(--ngy, var(--gy, 52%));
+    width: calc(var(--ndw, var(--dw, 17.5rem)) * 1.21672);
+    translate:
+      calc(-50% + var(--ze) * var(--zx, 2vw))
+      calc(-50% + var(--p) * var(--ndp, var(--ddep, -14px))
+        + var(--ze) * var(--zy, 16vh));
+  }
+
+  .cad-g > * { stroke-width: 8; }
+  .cad-g--thin > * { stroke-width: 5; }
+  .cad-g--dash > * { stroke-width: 5; stroke-dasharray: 34 26; }
+  .cad-g--grid path { stroke-width: 4; }
+  .cad-g--label text { font-size: 74px; }
+
+  /* --- what is said ------------------------------------------------------
+
+     THE COLUMN IS THE FRAME'S OWN WIDTH, AND THE TWO LINES SIT AT ITS TWO
+     ENDS. They still share one grid cell and still cross-fade in place — the
+     title card is held at the head of the frame, where it is the only thing
+     on screen for the first sixth; the closing line lands at the foot, under
+     a phone that has just risen to make room for it. Neither is re-timed. */
+  .room__say {
+    left: 0;
+    right: 0;
+    width: auto;
+    padding-inline: clamp(1.15rem, 5.4vw, 2.5rem);
+    padding-block: clamp(1.4rem, 4.5vh, 3rem);
+    /* AND THE FOOT CLEARS THE FURNITURE. The assistant chip is fixed to the
+       bottom right of every page on this site; in landscape the closing copy
+       is a left-hand column and never meets it, and at 390px it is the full
+       width and the last line of the paragraph runs underneath it. */
+    padding-block-end: clamp(5rem, 11vh, 7rem);
+  }
+
+  .room__line--big { align-self: start; margin-block-start: 0; }
+  .room__line:not(.room__line--big) { align-self: end; }
+  .room__line { gap: 1rem; }
+
   /* A 96PX MARK AND SEVENTEEN TRACKED CAPITALS DO NOT FIT IN 343 PIXELS —
      measured, 20px over. The mark comes down to a third of the frame's width
      and the name drops a step; the lockup keeps its proportion, which is the
      part that matters. */
-  .room__mark { width: 3.5rem; height: 3.5rem; border-radius: 0.9rem; }
-  .room__lockup .lab-n { font-size: 0.5625rem; letter-spacing: 0.16em; }
-  .room__line--big { margin-block-start: 0; }
+  .room__lockup { gap: 0.45rem; }
+  .room__mark { width: 3.25rem; height: 3.25rem; border-radius: 0.85rem; }
+  .room__lockup .lab-n { font-size: 0.5rem; letter-spacing: 0.15em; }
 
-  .room__say { display: contents; }
-  .room__say > * { grid-area: auto; }
-  .room__line { position: relative; order: var(--sord, 0); opacity: 1; translate: 0; width: 100%; }
+  .room__line .fg-h { font-size: min(var(--fg-poster), 1.75rem); max-width: 18ch; }
+  .room__line .fg-p { font-size: 0.875rem; max-width: 36ch; }
+
+  /* --- the room gives way, from the foot ---------------------------------
+     The wide veil is an ellipse over a left-hand copy column, and in portrait
+     there is no left-hand copy column: the words are underneath. So the wash
+     comes up from the bottom edge instead, on the same clock, to the same
+     depth. The phone is above it either way, and the system is still legibly
+     on the table over the top of the frame. */
+  .room__veil {
+    background: linear-gradient(to top,
+      rgba(9, 9, 9, 1) 0%,
+      rgba(9, 9, 9, 0.97) 30%,
+      rgba(9, 9, 9, 0.62) 52%,
+      rgba(9, 9, 9, 0.18) 74%,
+      rgba(9, 9, 9, 0) 92%);
+  }
 }

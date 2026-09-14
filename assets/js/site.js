@@ -2982,8 +2982,56 @@
     : r >= 0.55 ? 'Portrait'
     : 'Phone frame');
 
+  /* --- A SPEC SHEET, AND EVERY NUMBER ON IT IS READ OFF THE REAL FILE -----
+
+     NOT A PICTURE OF A DESIGN SYSTEM. A reserved frame saying "the CySync
+     component sheet goes here" asks the reader to take the argument on trust,
+     and a screenshot of a component sheet is unreadable at a quarter of a
+     column anyway — you would see that there were a lot of things, which is
+     the one thing a sentence can already say.
+
+     So the frame states the system instead: the counts, the ramps, the scale
+     and the window, at the size type is meant to be read at. Every figure
+     below came out of the file over the plugin bridge — 65 variables in two
+     collections, 31 paint styles, 1,664 components in 150 sets across 84
+     pages, zero text styles — and the swatches are the real hexes.
+
+     THE HEADLINE IS A VARIABLE, NOT A CLAIM. `Mini Width: 1024` and
+     `Mini Height: 700` are two numbers the system keeps about itself: the
+     smallest window it is prepared to be. That is the whole of "built for a
+     desktop window, not a thumb", written by the system, about the system,
+     and it is the reason this frame is a specification rather than a photo. */
+  const FSPEC = (s) => {
+    const row = (r) => `<div class="fg-spec__r">` +
+        `<span class="fg-spec__k">${esc(r.k)}</span>` +
+        `<span class="fg-spec__v">${esc(r.v)}</span>` +
+        (r.swatches
+          ? `<span class="fg-spec__ramp">` + r.swatches.map((c) =>
+              `<i style="--c:${c}"></i>`).join('') + `</span>`
+          : '') +
+        (r.ticks
+          ? `<span class="fg-spec__ruler">` + r.ticks.map((t, i) =>
+              `<i style="--h:${20 + i * 6}%"></i>`).join('') + `</span>`
+          : '') +
+        (r.of ? `<span class="fg-spec__o">${esc(r.of)}</span>` : '') +
+      `</div>`;
+    return `<figure class="fg-spec"${s.ratio ? ` style="--ratio:${+s.ratio}"` : ''}>` +
+      `<span class="fg-spec__n">${esc(s.n || 'Spec sheet')}</span>` +
+      (s.head
+        ? `<div class="fg-spec__head">` +
+            `<span class="fg-spec__k">${esc(s.head.k)}</span>` +
+            `<strong class="fg-spec__big">${esc(s.head.v)}</strong>` +
+            (s.head.of ? `<span class="fg-spec__o">${esc(s.head.of)}</span>` : '') +
+          `</div>`
+        : '') +
+      (s.rows || []).map(row).join('') +
+      (s.foot ? `<span class="fg-spec__f">${esc(s.foot)}</span>` : '') +
+    `</figure>`;
+  };
+
   const FSHOT = (s) => {
     if (!s) return '';
+    if (s.kind === 'spec') return FSPEC(s);
     const ratio = +s.ratio || 1.586;
     const r = s.ratio ? ` style="--ratio:${+s.ratio}"` : '';
     let near = NAMED[0];
@@ -3180,6 +3228,114 @@
       `</div>`;
     },
 
+    /* --- 07b · THE QUESTIONS, AS THE CONVERSATION THEY ACTUALLY WERE -----
+
+       THESE WERE NEVER REQUIREMENTS. They are the eight things we kept asking
+       each other, and a column of grey sentences on a white page makes them
+       look like a specification — which is the one thing they were not. So
+       they are set as messages: the reader is not reading documentation, they
+       are reading over a shoulder.
+
+       INSPIRED BY A MESSAGING APP, NOT COPIED FROM ONE. What is borrowed is
+       the rhythm — one thing at a time, uneven lengths, a time under each,
+       the next one waiting until the last has settled. What is deliberately
+       NOT borrowed: no tails, no repeated avatar down the margin, no grouped
+       corners, no delivery receipts, no platform blue. Those are somebody
+       else's interface, and wearing it would make this a pastiche instead of
+       a voice.
+
+       THE WIDTHS ARE AUTHORED, NOT MEASURED. Bubbles sized to their text all
+       land within a few percent of each other, and eight near-identical
+       rectangles is exactly the tell that nothing was composed. `w` in the
+       data is a share of the column, set per line by eye: a two-word question
+       gets a third, the long one about unspecced features runs nearly the
+       full width, and no two adjacent bubbles are the same.
+
+       THE RIGHT SIDE IS THE INSIDE OF THE HEAD. One rendered figure with its
+       own thought objects, and around it a handful of line-art fragments from
+       the work itself — a wireframe, a grid, a component chip, a corner mark.
+       They are NOT emoji: a row of pictograms would make this cute, and the
+       distance between cute and considered is the whole brief. Each fragment
+       drifts at its own rate across the pin, which is what stops the cluster
+       reading as a pasted sticker sheet. */
+    msgs: (s) => {
+      const q = s.quotes || [];
+      const items = s.items || [];
+      /* one at a time, and the last one lands with a third of the pin still
+         to run — a conversation that finishes on the final frame has no
+         silence after it, and the silence is where the reader thinks */
+      const b = SPREAD(items.length, 0.30, 0.72);
+
+      const FRAG = {
+        /* a wireframe card */
+        wire: '<svg viewBox="0 0 60 44"><rect x="1" y="1" width="58" height="42" rx="4"/>'
+          + '<rect x="7" y="9" width="26" height="4" rx="2"/><rect x="7" y="18" width="18" height="3" rx="1.5"/>'
+          + '<rect x="7" y="26" width="34" height="3" rx="1.5"/><rect x="7" y="34" width="14" height="4" rx="2"/></svg>',
+        /* a fragment of grid */
+        grid: '<svg viewBox="0 0 48 48"><path d="M0 12h48M0 24h48M0 36h48M12 0v48M24 0v48M36 0v48"/></svg>',
+        /* a component chip with its handles */
+        chip: '<svg viewBox="0 0 56 28"><rect x="8" y="6" width="40" height="16" rx="8"/>'
+          + '<circle cx="4" cy="14" r="2.5"/><circle cx="52" cy="14" r="2.5"/></svg>',
+        /* a crop mark */
+        mark: '<svg viewBox="0 0 32 32"><path d="M1 11V1h10M21 1h10v10M31 21v10H21M11 31H1V21"/></svg>',
+        /* a measurement */
+        dim: '<svg viewBox="0 0 64 18"><path d="M2 3v12M62 3v12M2 9h60"/>'
+          + '<path d="M8 6l-6 3 6 3M56 6l6 3-6 3"/></svg>',
+        /* a stack of screens */
+        stack: '<svg viewBox="0 0 48 52"><rect x="11" y="1" width="26" height="40" rx="3"/>'
+          + '<rect x="6" y="7" width="26" height="40" rx="3"/><rect x="1" y="13" width="26" height="38" rx="3"/></svg>',
+      };
+
+      return `<div class="fg-msgs">` +
+
+          /* --- the conversation ---------------------------------------- */
+          `<div class="fg-msgs__talk">` +
+            (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+            /* THE SETUP STILL SWAPS IN PLACE, because the two lines are one
+               sentence with a turn in it and reading them side by side would
+               throw the turn away. It clears before the first question. */
+            (q.length
+              ? `<div class="fg-swap fg-msgs__lead">` +
+                  `<p${AT(0.04, 0.19)} class="fg-quote beat beat--win">${q[0]}</p>` +
+                  (q[1] ? `<p${AT(0.17, 0.30)} class="fg-quote beat beat--win">${q[1]}</p>` : '') +
+                `</div>`
+              : '') +
+            /* THE TIME IS OUTSIDE THE BUBBLE, which is not a detail. Inside,
+               it has to be white-on-blue and it becomes part of the message;
+               underneath, in the page's own quiet grey, it is a timestamp —
+               texture that says "this took a morning" and that nobody has to
+               read. The <li> carries the clock and the motion; the box inside
+               it carries the colour. */
+            `<ol class="fg-thread">` + items.map((it, i) => {
+              const t = typeof it === 'string' ? { t: it } : it;
+              return `<li class="fg-msg" style="--at:${b[i].toFixed(3)}` +
+                `${t.ox ? `;--ox:${t.ox}` : ''}${t.w ? `;--bw:${t.w}` : ''}` +
+                `${t.pad ? `;--gap:${t.pad}` : ''}">` +
+                `<div class="fg-bub${t.keep ? ' fg-bub--keep' : ''}` +
+                  `${t.sm ? ' fg-bub--sm' : ''}">` +
+                  `<p>${esc(t.t)}</p>` +
+                `</div>` +
+                (t.time ? `<time>${esc(t.time)}</time>` : '') +
+              `</li>`;
+            }).join('') + `</ol>` +
+          `</div>` +
+
+          /* --- what it looked like in there ---------------------------- */
+          `<div class="fg-msgs__head" aria-hidden="true">` +
+            (s.art
+              ? `<img class="fg-msgs__fig" src="${url(s.art)}" alt=""` +
+                ` loading="lazy" decoding="async">`
+              : '') +
+            (s.bits || []).map((f) =>
+              `<i class="fg-frag" style="--x:${f.x};--y:${f.y};--w:${f.w}` +
+                `;--at:${f.at == null ? 0.2 : f.at};--rot:${f.rot || '0deg'}` +
+                `;--dep:${f.dep || '0px'};--o:${f.o == null ? 0.5 : f.o}">` +
+                (FRAG[f.k] || FRAG.mark) +
+              `</i>`).join('') +
+          `</div>` +
+        `</div>`;
+    },
+
     /* --- 08 · five requirements, two of which fight ----------------------
        The contradiction is drawn as a hairline between the two lines that
        cannot both be true, rather than explained underneath them. */
@@ -3252,7 +3408,32 @@
          stage's gutter and is cut by the window. The picture was inside the
          left column in the first build, which made the scene two stacked
          text blocks with a thumbnail. */
-      return `<div class="fg-split">` +
+      /* THE OLD SYSTEM, STILL ON THE TABLE. Absolutely positioned against the
+         STAGE rather than against the spread — `.scn__stage` is sticky, which
+         makes it the containing block — so the field covers the whole window
+         and is cut by the stage's own `overflow: clip` rather than by the
+         spread's padding. That is what lets a piece run off an edge.
+
+         It is emitted FIRST and the three text tracks are lifted above it, so
+         nothing in the argument is ever competing with the evidence. */
+      const strew = (s.strew || []).length
+        ? `<div class="fg-strew" aria-hidden="true">` + s.strew.map((o) => {
+            const dia = SKEL[o.dia] || SKEL.gridmany;
+            return `<div class="fg-strew__o" style="--x:${o.x};--y:${o.y};--w:${o.w}` +
+              `;--at:${o.at};--sp:${o.sp == null ? 9 : o.sp};--z:${o.z == null ? 1 : o.z}` +
+              `;--dx:${o.dx || '0px'};--dy:${o.dy || '0px'};--dep:${o.dep || '0px'}` +
+              `;--rot:${o.rot || '0deg'};--dim:${o.dim == null ? 1 : o.dim}` +
+              `;--ratio:${+o.ratio || 1.5}">` +
+              /* a real export the moment one exists, and the interim drawing
+                 until then — the slot, the place and the clock do not change */
+              (o.src
+                ? `<img src="${url(o.src)}" alt="" loading="lazy" decoding="async">`
+                : `<i class="fg-strew__skel">${dia}</i>`) +
+            `</div>`;
+          }).join('') + `</div>`
+        : '';
+
+      return `<div class="fg-split">` + strew +
           `<div class="fg-half fg-half--fades">` +
             (L.title ? `<span${AT(0.02)} class="fg-lane__t beat">${esc(L.title)}</span>` : '') +
             `<ul class="fg-reasons">` + (L.items || []).map((t, i) =>
@@ -3319,10 +3500,32 @@
           `</span>`
         : '');
 
+      /* --- THE SAME ROOM, SEEN IN PORTRAIT ---------------------------------
+
+         `n` is a second set of coordinates for the same object and nothing
+         else: where it stands, how wide it is, and where it comes from, in a
+         frame that is tall rather than wide. There is no second timeline, no
+         second object list and no second story — every `--at`, `--sp`, `--z`,
+         `--dim`, `--orb` and `--dep` is the one the desktop uses, so a beat
+         lands at the same point in the pin on both. What changes is the
+         composition: the table unfolds above and below the phone instead of
+         around it, and the travel is scaled to a 390px frame.
+
+         Every narrow custom property falls back to its wide one, so an object
+         with no `n` block simply keeps its desktop placement. */
+      const nd = dev.n || {};
+
       return `<div class="room" style="--gx:${dev.x || '50%'};--gy:${dev.y || '52%'}` +
-          `;--gat:${dev.at == null ? 0.33 : dev.at};--dw:${dev.w || '17.5rem'}">` +
+          `;--gat:${dev.at == null ? 0.33 : dev.at};--dw:${dev.w || '17.5rem'}` +
+          (nd.x ? `;--ngx:${nd.x}` : '') + (nd.y ? `;--ngy:${nd.y}` : '') +
+          (nd.w ? `;--ndw:${nd.w}` : '') +
+          /* the device's own drift, on the wrapper rather than on the device,
+             because the blueprint has to match it term for term and the two
+             are siblings */
+          (nd.dep ? `;--ndp:${nd.dep}` : '') + `">` +
 
           (s.objects || []).map((o, i) => {
+            const n = o.n || {};
             return `<div class="room__orb" style="--orb:${o.orb || '0deg'}` +
               `;--z:${o.z == null ? 1 : o.z}">` +
               `<div class="room__o" style="--x:${o.x};--y:${o.y};--w:${o.w};--at:${o.at}` +
@@ -3331,7 +3534,11 @@
                 `;--rot:${o.rot || '0deg'};--spin:${o.spin || '0deg'}` +
                 `;--scl:${o.scl == null ? 0 : o.scl};--dim:${o.dim == null ? 1 : o.dim}` +
                 `;--ord:${i + 2}` +
-                (o.nw ? `;--nw:${o.nw}` : '') + `">` +
+                /* the portrait placement, and only the placement */
+                (n.x ? `;--nx:${n.x}` : '') + (n.y ? `;--ny:${n.y}` : '') +
+                (n.w ? `;--nwd:${n.w}` : '') +
+                (n.dx ? `;--ndx:${n.dx}` : '') + (n.dy ? `;--ndy:${n.dy}` : '') +
+                (n.dep ? `;--ndep:${n.dep}` : '') + `">` +
                 `<img src="${url(o.src)}" alt="${esc(o.alt || '')}"` +
                   ` width="${o.pw}" height="${o.ph}" loading="lazy" decoding="async">` +
                 M(o.m) +
@@ -3433,6 +3640,8 @@
           `<div class="room__dev${dev.src ? '' : ' room__dev--wait'}"` +
             ` style="--x:${dev.x || '51%'};--y:${dev.y || '50%'}` +
             `;--w:${dev.w || '17.5rem'};--dep:${dev.dep || '-14px'}` +
+            (nd.x ? `;--nx:${nd.x}` : '') + (nd.y ? `;--ny:${nd.y}` : '') +
+            (nd.w ? `;--nwd:${nd.w}` : '') +
             `;--at:${dev.at == null ? 0 : dev.at};--z:${dev.z || 18}` +
             `;--full:${num(dev.full, 0.87)}` +
             /* WITH THE PER-CENT SIGNS. Without them these are bare numbers,
@@ -3811,7 +4020,13 @@
             + `${s.lab ? ' scn--lab' : ''}${s.room ? ' scn--room' : ''}` +
             `${s.rest ? ' scn--rest' : ''}`,
           id: s.id,
-          style: `--dur:${s.dur || 120}svh`,
+          /* `ndur` IS THE SAME FILM, RUN SHORTER. A scene that is composed for
+             a portrait frame holds for a different length of scroll than the
+             one composed for a landscape one — not a different sequence, the
+             same sequence over less travel. The narrow rule reads `--ndur`
+             and falls back to `--dur`, so a scene without one is unchanged. */
+          style: `--dur:${s.dur || 120}svh`
+            + (s.ndur ? `;--ndur:${s.ndur}svh` : ''),
         });
         /* THE STAGE IS THE FRAME, and it is one element so that `overflow:
            clip` on it can be trusted: anything a scene pushes past the edge
