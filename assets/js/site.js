@@ -19493,6 +19493,159 @@
 
   /* ======================================================== boot ======== */
 
+  /* ========================================================================
+     THE GATE — A TEMPORARY LOCK ON THE CASE STUDIES
+
+     WHY IT EXISTS: the studies are being written and the home page is live, so
+     the work should not be readable yet. It is meant to come out again. Every
+     part of it is therefore in one place and removable in three deletions —
+     this module, the `.gate` block in the stylesheet, and the four-line script
+     in the head of each `work/*.html`.
+
+     WHAT IT IS NOT. A password checked in the browser is a sign on a door, not
+     a lock: the page is still served to anyone who asks for the URL, and the
+     check can be read in the source and skipped in the console. It keeps
+     casual visitors out of unfinished work, which is the actual requirement.
+     If the work ever needs to be genuinely private it has to be the server
+     refusing to send it — a Vercel password on the deployment, or the studies
+     behind an auth check — and this is not that.
+
+     THE PASSWORD IS NOT WRITTEN DOWN HERE, and that is worth exactly what it
+     sounds like. Two FNV-1a hashes of it — one of the string, one of the
+     string reversed, from different seeds — are compared instead, so the word
+     is not sitting in the bundle for anyone who opens the file, and a
+     collision would have to satisfy both. Reversing it takes about a minute
+     for anybody who wants to. See the note above.
+
+     TWO WAYS IN AND BOTH ARE COVERED: clicking a study from the work grid,
+     which is caught here in the capture phase before the link can act, and
+     typing or bookmarking the URL, which the head script catches before the
+     first paint so there is no flash of the study underneath. */
+  const Gate = {
+    KEY: 'site:open',
+    /* h(s) of the password, and h of it reversed from the other seed */
+    A: 2776390261,
+    B: 1095359679,
+
+    hash(str, seed) {
+      let h = seed >>> 0;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+      }
+      return h >>> 0;
+    },
+
+    ok(v) {
+      const rev = v.split('').reverse().join('');
+      return this.hash(v, 0x811c9dc5) === this.A
+        && this.hash(rev, 0x2166136f) === this.B;
+    },
+
+    isOpen() {
+      try { return localStorage.getItem(this.KEY) === '1'; } catch (e) { return false; }
+    },
+
+    /* the flag is what the head script reads on the next study, so the reader
+       is asked once rather than once per page */
+    unlock() {
+      try { localStorage.setItem(this.KEY, '1'); } catch (e) {}
+      document.documentElement.classList.remove('gate-locked');
+    },
+
+    /* --- the panel ------------------------------------------------------- */
+    build() {
+      const wrap = el('div', {
+        class: 'gate', role: 'dialog', 'aria-modal': 'true',
+        'aria-labelledby': 'gate-title',
+      });
+      wrap.innerHTML =
+        '<div class="gate__box">'
+        + '<p class="gate__k">Protected</p>'
+        + '<h2 class="gate__t" id="gate-title">This one is still being written.</h2>'
+        + '<p class="gate__p">The case studies are in progress. Enter the password to read them.</p>'
+        + '<form class="gate__form" novalidate>'
+        + '<input class="gate__in" type="password" name="pw" autocomplete="off"'
+        + ' autocapitalize="off" spellcheck="false" aria-label="Password" placeholder="Password">'
+        + '<button class="gate__go" type="submit">Enter</button>'
+        + '</form>'
+        + '<p class="gate__err" role="alert" hidden>That is not the password.</p>'
+        + '</div>';
+
+      this.el = wrap;
+      this.input = $('.gate__in', wrap);
+      this.err = $('.gate__err', wrap);
+
+      $('.gate__form', wrap).addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.try(this.input.value);
+      });
+      /* typing again clears the refusal; an error that stays up while you fix
+         it is an error you stop reading */
+      this.input.addEventListener('input', () => { this.err.hidden = true; });
+
+      App.mount(wrap);
+      return wrap;
+    },
+
+    open(href) {
+      this.pending = href || null;
+      if (!this.el) this.build();
+      document.documentElement.classList.add('gate-up');
+      requestAnimationFrame(() => this.input && this.input.focus());
+    },
+
+    shut() {
+      document.documentElement.classList.remove('gate-up');
+      this.pending = null;
+    },
+
+    try(v) {
+      if (!this.ok(String(v || ''))) {
+        this.err.hidden = false;
+        this.input.select();
+        return;
+      }
+      this.unlock();
+      /* From the grid: follow the link that was stopped. On a study: the page
+         is already built underneath — the head script only hid it — so
+         dropping the class is the whole of the reveal. */
+      if (this.pending) { location.href = this.pending; return; }
+      this.shut();
+    },
+
+    init() {
+      const locked = () => !this.isOpen();
+
+      /* 1 · the link, caught before it can act. Capture phase, because the
+         router and the cards' own handlers are listening too and the point is
+         that none of them run. */
+      document.addEventListener('click', (e) => {
+        if (!locked()) return;
+        const a = e.target && e.target.closest && e.target.closest('a[href]');
+        if (!a || a.target === '_blank') return;
+        let path;
+        try { path = new URL(a.href, location.href).pathname; } catch (err) { return; }
+        if (!/\/work\/[^/]+\.html?$/.test(path)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        this.open(a.href);
+      }, true);
+
+      /* 2 · the URL, typed or bookmarked. The head script has already hidden
+         the page; this is what offers the way in. */
+      if (document.body.dataset.page === 'project' && locked()) this.open(null);
+
+      addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (!document.documentElement.classList.contains('gate-up')) return;
+        /* Escape backs out of a click on the grid; on a study there is nothing
+           behind the panel to back out to, so it stays. */
+        if (this.pending) { e.preventDefault(); this.shut(); }
+      });
+    },
+  };
+
   function boot() {
     /* Before anything reads a path out of it: every relative file name in
        content.js becomes an absolute one, so a case study two directories down
@@ -19534,6 +19687,9 @@
     /* last, so the handle mounts above the furniture it sits beside */
     Peek.init();
     Llm.init();
+    /* TEMPORARY — see the module. Last of the overlays, and the only one that
+       is meant to be deleted. */
+    Gate.init();
     /* after the page has built, because it asks whether this one has a canvas */
     Pinch.init();
     observeReveals();
