@@ -14724,21 +14724,221 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 .scn--dark .fg-obj__art { filter: drop-shadow(0 2.5rem 4rem rgba(0, 0, 0, 0.75)); }
 .fg-obj__art--still { rotate: none; }
 
-/* SCENE 02 IS AN EDITORIAL SPLIT, and the flagship is cut by the left edge:
-   it is the product this story is standing next to, not the product this
-   story is about. The facts sit on a baseline at the bottom right, as far
-   from it as the frame allows. */
-[data-scene='x0-x1'] .fg-obj { place-items: center start; }
-[data-scene='x0-x1'] .fg-obj__art {
-  width: min(62vw, 42rem);
-  margin-left: calc(-16vw - clamp(1.25rem, 6.6vw, 7rem));
+/* SCENE 02 IS A DRAWING, AND THE DRAWING IS TWO THIRDS OF THE FRAME.
+
+   It used to be the other way round: the CySync grid cut off by the LEFT
+   edge with the copy pushed to the bottom right, which put four hundred
+   dark screens under the reader's eye first and a right-ragged column of
+   text in the corner it lands on last. Both halves were fighting. What is
+   here now is a left column read top to bottom and a line drawing filling
+   the right, and the two do not touch.
+
+   NO MASK, NO GROUND, NO CROP — WHICH IS WHY IT IS A DRAWING. A photograph
+   needs all three: its own white has to be dissolved into the page's white
+   with a fade, and a rectangle that does not match the frame's aspect has
+   to be cropped to fill it. An outline on a transparent ground needs none
+   of it. The page's white IS the drawing's white, there is no edge to hide,
+   and the object is shown whole at its own proportions.
+
+   SIZED BY WIDTH, CAPPED BY HEIGHT, AND IT NO LONGER BLEEDS. 46% of the frame
+   and inset by the stage's own gutter, so the drawing sits INSIDE the margin
+   every other scene's content sits inside instead of running off the right
+   edge. It was 65% and full-bleed — the measure the reference frame was drawn
+   at — and at that size it was the scene rather than an object on the page: it
+   crowded the column and left the headline arguing with a card corner. At 46%,
+   contained, the white around it is doing the work. The `svh` cap is for
+   wide-and-short windows, where 46% of the width is taller than the frame —
+   there the height decides instead and the drawing simply sits smaller. */
+[data-scene='x0-x1'] .fg-obj { place-items: center end; }
+/* `.film` IS CARRIED HERE FOR ONE REASON: the whitespace pass near the end of
+   this file states `.film .fg-obj__art { width: min(52vw, 32rem) }` to grow
+   the end card's object into its air. Same specificity as a `[data-scene]`
+   rule and further down the file, so it silently won this one too and capped
+   the drawing at 512px — which is not a bleed, it is a picture parked on the
+   right. One extra class, and the drawing is the two thirds it was drawn as. */
+.film [data-scene='x0-x1'] .fg-obj__art {
+  width: min(46%, 92svh);
+  height: auto;
+  max-width: none;
+  margin: 0 clamp(1.25rem, 6.6vw, 7rem) 0 0;
   rotate: none;
-  border-radius: 3px;
+  border-radius: 0;
+  filter: none;
 }
-[data-scene='x0-x1'] .scn__in--foot { justify-items: end; text-align: right; }
-[data-scene='x0-x1'] .fg-h { max-width: 16ch; }
-[data-scene='x0-x1'] .fg-facts { justify-content: flex-end; }
-[data-scene='x0-x1'] .fg-turn { margin-left: auto; }
+
+/* --- THE DRAWING ARRIVES ONE ELEMENT AT A TIME -----------------------------
+
+   NOTHING IS EVER HALF-DRAWN AND THAT IS THE WHOLE IDEA. Three reveals were
+   built and rejected before this one, and they failed the same way each time.
+   A gradient wipe was a curtain in front of a finished picture — the eye
+   follows the mask's edge, which means nothing. A pen ruling the lines in,
+   cut into chunks, put a hundred part-drawn fragments on screen at once and
+   read as debris. The same pen with whole lines was coherent but it was still
+   a line growing out of nothing: a drawing being made rather than a product
+   being presented.
+
+   SO THE OBJECT IS CUT INTO ITS OWN PARTS. The vault, the four cards from the
+   back forward, and the printed detail are six layers, each a mask over one
+   shared copy of the artwork — see the note on `draw.layers` in content.js.
+   A part fades up whole, at full fidelity, correct outline and correct
+   corners, with nothing growing; the parts overlap in time, so the object
+   assembles rather than flickers. At every scroll position everything visible
+   is a finished piece of the drawing, and scrubbing back takes the parts away
+   in reverse.
+
+   OPACITY IS THE ONLY THING THAT ANIMATES. No transform, no dash offset, no
+   filter — six numbers a frame, all of them composited off the main thread. */
+
+.fg-cad {
+  overflow: visible;
+  color: var(--fg-ink);
+}
+
+.fg-cad__art {
+  fill: currentColor;
+  stroke: none;
+}
+
+.fg-cad__lay {
+  /* THE FALLBACK IS NEVER, AND THAT IS DELIBERATE. `--a` is stated on every
+     layer by the renderer, so the fallback only applies when the stylesheet
+     and the scene data are out of step — a stale cached copy of one against a
+     fresh copy of the other. A fallback of 0 puts every layer on screen at
+     once from the first frame, which looks like a design decision; 9 shows
+     nothing, which points at the real fault. */
+  --l: clamp(0, calc((var(--p) - var(--a, 9)) * var(--s, 9)), 1);
+  /* smoothstep, the same ease the film uses on every other quantity it
+     interpolates — a part arrives and settles rather than snapping on */
+  opacity: calc(var(--l) * var(--l) * (3 - 2 * var(--l)));
+}
+
+/* THE MASK PEN IS WHITE AND FULLY DRAWN. A mask reads luminance: white is
+   "show this". Nothing here animates — it describes WHICH part of the drawing
+   a layer is, not when. */
+.fg-cad__pen {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* the printed type, the recycling mark and the dial's perforations have no
+   sensible pen path through them, so they are shapes rather than strokes and
+   they ride in the last layer's mask with everything else printed on the
+   object */
+.fg-cad__note {
+  fill: #fff;
+  stroke: #fff;
+}
+
+/* THE COLUMN IS CENTRED IN THE FRAME, NOT SAT ON ITS FLOOR. Every other
+   scene in the film anchors its copy to the bottom, because every other
+   scene has something above it to leave room for. This one has a picture
+   beside it instead, and a column hugging the floor next to a full-height
+   object reads as having slipped down the frame. */
+[data-scene='x0-x1'] .scn__in--foot {
+  justify-items: start;
+  text-align: left;
+  align-content: center;
+  justify-self: start;
+  max-width: min(46%, 40rem);
+  gap: 1rem;
+}
+
+/* SMALLER THAN THE FILM'S POSTER SIZE, and deliberately. `--fg-poster-l` is
+   set for a headline that owns the whole frame; this one owns half of it,
+   and at 103px next to the plate it stopped being a sentence and became a
+   wall. Two lines, thirteen characters to the line, is the measure the
+   frame was drawn at. */
+[data-scene='x0-x1'] .fg-h {
+  font-size: min(clamp(2.5rem, 5.4vw, 5.5rem), 9.6svh);
+  line-height: 0.94;
+  letter-spacing: -0.038em;
+  font-weight: 620;
+  max-width: 13ch;
+}
+
+/* NO CARET. A 2px bar sat after the full stop, on the argument that it made
+   the sentence read as just typed. In a frame with no other cursor in it, and
+   next to a drawing that is genuinely mid-construction, it was one more small
+   mark to explain — and a stray vertical rule is what it looked like. */
+
+/* PIPES, NOT GAPS. Three facts spaced apart on a baseline read as three
+   separate thoughts; the same three with a hairline between them read as
+   one specification, which is what they are. */
+[data-scene='x0-x1'] .fg-facts { gap: 0.35rem 0; margin-top: 0.35rem; }
+[data-scene='x0-x1'] .fg-facts li + li::before {
+  content: '|';
+  margin: 0 1.5rem;
+  color: var(--fg-quiet);
+  opacity: 0.4;
+  font-weight: 400;
+}
+[data-scene='x0-x1'] .fg-turn { max-width: 34ch; }
+
+/* THE FRAME'S OWN MARKS ARE GONE, and this note is what is left of them.
+
+   There were four, one to a corner: a plate number and rule at the top left,
+   a crosshair and a two-line remark out on the white at the top right, and a
+   signed rule in each bottom corner. They were faithful to the frame this
+   scene was drawn from, they were carefully set, and they were four small
+   grey things asking to be read around one sentence and one object. Chrome
+   earns its place by being ignorable; these were not, because each one was
+   the only thing of its kind on the page. `.fg-plate`, `.fg-note` and
+   `.fg-sign` and their renderers came out with them. */
+
+/* --- the three claims ----------------------------------------------------
+
+   THE ONLY ROW OF EQUALS IN THE FILM. Everything else that comes in threes
+   here — the facts above, the four words of the brief, the struck-through
+   costs — is a list with an order to it. These three are one claim said
+   three ways and no one of them leads, so they are set as a row of pills:
+   same border, same height, same weight, and a dot between them doing the
+   work a comma would do in a sentence. */
+
+.fg-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.9rem;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.fg-pills li {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.68rem 1.2rem;
+  border: 1px solid var(--fg-line);
+  border-radius: 999px;
+  background: var(--fg-ground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--fg-ink);
+}
+
+/* THE DOT BETWEEN THEM IS GONE, and the row is better for it. It was a
+   separator drawn as an absolutely positioned pseudo-element, which means it
+   knows nothing about where the row wraps: at any width where the three
+   claims break to two lines — and on a short frame they always do, because
+   the drawing pushes them left — a stray dot was left hanging in the margin
+   in front of the first pill of the second row. A separator that cannot
+   survive a wrap is not a separator. The gap does the work. */
+
+.fg-pills svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 /* --- a baseline row of facts --------------------------------------------- */
 
@@ -15071,6 +15271,77 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   max-width: none;
   align-items: center;
   margin-right: calc(-1 * clamp(1.25rem, 6.6vw, 7rem));
+
+  /* THE ANSWER'S OWN WINDOW, 0.5 to 0.83 — the frames the left column hands
+     over in. It used to belong to the strew, which was the only thing using
+     it; the light uses it now too, so it is stated at the parent both read
+     from. Smoothstepped, so what happens in it eases rather than ramps. */
+  --hush: clamp(0, calc((var(--p) - 0.5) * 3), 1);
+  --hushE: calc(var(--hush) * var(--hush) * (3 - 2 * var(--hush)));
+}
+
+/* --- THE LIGHT, WHICH REPLACED THE FADE ----------------------------------
+
+   WHAT THIS IS FOR. The old system used to recede to a quarter opacity at the
+   moment N45 arrived, and that was the wrong story told well: it read as the
+   evidence being deleted. CySync did not go anywhere — it became the floor
+   the new thing stands on, and it is still in the room.
+
+   SO NOTHING DIMS AND SOMETHING BRIGHTENS INSTEAD. One very large, very soft
+   bloom of the ground's own colour comes up behind the two text tracks over
+   exactly the frames the fade used to run in. It lifts the answer off the
+   field, and the artefacts nearest it are slightly veiled by being inside the
+   light rather than by being turned down — which is the difference between a
+   room lighting up and a layer being hidden.
+
+   IT IS NOT AN OBJECT. 78% by 62% is wider and taller than anything else on
+   the stage, its core is 0.66, and it is at zero well before any edge, so
+   there is no boundary anywhere in it to find. Eleven stops, because a bloom
+   this large on a flat ground bands with fewer. What a reader should notice
+   is that the words got easier to read. */
+.fg-glow {
+  position: absolute;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--hushE, 0);
+  /* 0.82 AT THE CORE, AND IT COULD ONLY GO THERE ONCE THE FIELD MOVED OUT.
+     This was 0.54 for one reason: at anything stronger it reached the
+     artefacts and pulled the contrast out of them, which read as them being
+     turned down — the one thing this layer exists to avoid. With every piece
+     pushed to the edges of the frame there is nothing left in the middle for
+     it to wash, so the light can do what it is for. Under the text it is now
+     nearly solid ground, which is what puts the words on paper instead of on
+     a screenshot.
+
+     STILL ELEVEN STOPS AND STILL AT ZERO BEFORE THE EDGE. A bloom this large
+     on a flat ground bands with fewer, and a boundary anywhere in it would
+     turn the light into an object. */
+  background: radial-gradient(
+    ellipse 82% 58% at 50% 50%,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.79) 12%,
+    rgba(255, 255, 255, 0.73) 24%,
+    rgba(255, 255, 255, 0.64) 34%,
+    rgba(255, 255, 255, 0.53) 44%,
+    rgba(255, 255, 255, 0.41) 54%,
+    rgba(255, 255, 255, 0.29) 63%,
+    rgba(255, 255, 255, 0.18) 72%,
+    rgba(255, 255, 255, 0.09) 81%,
+    rgba(255, 255, 255, 0.03) 90%,
+    rgba(255, 255, 255, 0) 100%);
+}
+
+/* the seven black scenes light with their own ground, not with white */
+.scn--dark .fg-glow {
+  background: radial-gradient(
+    ellipse 78% 62% at 50% 50%,
+    rgba(8, 8, 10, 0.72) 0%,
+    rgba(8, 8, 10, 0.6) 24%,
+    rgba(8, 8, 10, 0.42) 44%,
+    rgba(8, 8, 10, 0.24) 63%,
+    rgba(8, 8, 10, 0.1) 81%,
+    rgba(8, 8, 10, 0) 100%);
 }
 
 .fg-split__rule { display: none; }
@@ -15253,10 +15524,6 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   pointer-events: none;
   overflow: clip;
   color: var(--fg-ink);
-  /* the recede, shared by every piece so they go back together rather than
-     one at a time — 0.5 to 0.83, which is the window the answer arrives in */
-  --hush: clamp(0, calc((var(--p) - 0.5) * 3), 1);
-  --hushE: calc(var(--hush) * var(--hush) * (3 - 2 * var(--hush)));
 }
 
 .fg-strew__o {
@@ -15278,9 +15545,67 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
      them to square would make the field a grid, which is the one thing a
      strew must not be. */
   rotate: calc(var(--e) * var(--rot, 0deg));
-  /* A QUARTER, NOT NOTHING. Still legible over there, which is the point —
-     you can see it was good, and you can see it was not this. */
-  opacity: calc(var(--e) * var(--dim, 1) * (1 - var(--hushE) * 0.76));
+  /* NOTHING GOES BACK DOWN. This used to multiply by the answer's window and
+     take every piece to a quarter, which read as the evidence being deleted;
+     the light above does that job now. What is left in here is the arrival
+     and the piece's own authored distance.
+
+     AND THE DISTANCES ARE COMPRESSED. `--dim` runs 0.34 to 1 in the data,
+     which was a sensible range while the field was also being hushed and is a
+     ghost at the far end now that it is not. Mapped through 0.62 + 0.38d the
+     ordering is untouched — the far pieces are still the quiet ones — but the
+     quietest sits at 0.75 rather than 0.34, which is present in the room
+     rather than nearly gone from it. */
+  opacity: calc(var(--e) * (0.62 + var(--dim, 1) * 0.38));
+
+  /* --- THE CAMERA MOVES, NOT THE OBJECTS ---------------------------------
+
+     WHAT THIS REPLACED. Every piece used to drift on its own path, its own
+     duration and its own phase — twelve independent loops, which is the
+     correct way to animate twelve independent things and the wrong way to
+     animate one place. It read as idle UI: a dozen cards fidgeting. Nothing
+     in a room fidgets; you move through the room.
+
+     SO THERE IS ONE PATH AND EVERYTHING IS ON IT. Identical keyframes,
+     identical duration, identical phase, on all twelve — so they travel as a
+     single field and the motion belongs to the viewpoint rather than to any
+     object in it. What each piece scales that path by is `--par`, derived in
+     the markup from the depth the author already gave it: a piece the data
+     puts behind the plane travels about two thirds of the distance, one in
+     front travels about a third more. That difference is parallax, and
+     parallax is the only thing that tells an eye it is looking at a space
+     rather than at a picture.
+
+     FIVE MINUTES FOR ONE CIRCUIT, AND IT IS A CIRCUIT RATHER THAN A SWING.
+     The path wanders out to about six per cent of the window's width and
+     comes back by a different route — it never retraces itself, which is what
+     stops it reading as an oscillation, and at 300s it covers under half a
+     pixel a second. Nobody will see it move. They will notice, coming back to
+     the section, that it is not where it was.
+
+     `linear` ON PURPOSE. An easing curve would slow into every waypoint and
+     accelerate out of it, and nine soft stops a circuit is a mechanism
+     breathing. Constant speed through closely-spaced waypoints is drift. */
+  animation: worldDrift 300s linear infinite;
+}
+
+@keyframes worldDrift {
+  0%   { transform: translate3d(0, 0, 0); }
+  12%  { transform: translate3d(calc(var(--par, 1) * -1.6vw), calc(var(--par, 1) * -0.9vh), 0); }
+  25%  { transform: translate3d(calc(var(--par, 1) * -3.4vw), calc(var(--par, 1) * -1.9vh), 0); }
+  38%  { transform: translate3d(calc(var(--par, 1) * -5.1vw), calc(var(--par, 1) * -2.4vh), 0); }
+  50%  { transform: translate3d(calc(var(--par, 1) * -6.2vw), calc(var(--par, 1) * -1.2vh), 0); }
+  62%  { transform: translate3d(calc(var(--par, 1) * -5.6vw), calc(var(--par, 1) *  0.9vh), 0); }
+  74%  { transform: translate3d(calc(var(--par, 1) * -3.9vw), calc(var(--par, 1) *  2.3vh), 0); }
+  85%  { transform: translate3d(calc(var(--par, 1) * -2.2vw), calc(var(--par, 1) *  2.6vh), 0); }
+  94%  { transform: translate3d(calc(var(--par, 1) * -0.8vw), calc(var(--par, 1) *  1.6vh), 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+/* a visitor who has asked for less motion gets the composition, held still */
+@media (prefers-reduced-motion: reduce) {
+  .fg-strew__o { animation: none; }
+}
 }
 
 .fg-strew__o img {
@@ -16299,9 +16624,37 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   .fg-beat--turn::before { width: 1.4rem; left: -0.4rem; height: 1px; }
   .fg-cap { position: static; margin-top: 0.75rem; text-align: left; }
   .fg-obj__art { width: min(72vw, 17rem); }
-  [data-scene='x0-x1'] .fg-obj__art { width: 108vw; margin-left: calc(-1 * clamp(1.25rem, 6.6vw, 7rem)); }
-  [data-scene='x0-x1'] .scn__in--foot { justify-items: start; text-align: left; }
+  /* NARROW PUTS THE PLATE BEHIND THE COLUMN, not beside it. There is no
+     half of a 390px frame wide enough for both, and stacking them would
+     make the scene twice as tall as the stage it has to fit in. The plate
+     fills the frame, drops to a quarter of its strength, and the column
+     reads over it — which is the same composition seen from further away. */
+  [data-scene='x0-x1'] .fg-obj { place-items: start center; }
+  .film [data-scene='x0-x1'] .fg-obj__art {
+    width: 124%;
+    height: auto;
+    margin-top: 9svh;
+    /* THE DRAWING IS INHERITED, THE STRENGTH IS NOT. At this width it sits
+       behind the column rather than beside it, so it is dropped to a third
+       — but it still rules itself in, because that is the scene and not a
+       decoration on the wide layout. */
+    opacity: 0.3;
+  }
+  [data-scene='x0-x1'] .scn__in--foot {
+    justify-items: start;
+    text-align: left;
+    max-width: 100%;
+    align-content: end;
+    /* the three claims wrap to two rows at this width, and the film's own
+       control sits in the bottom-left corner — this is the gap between the
+       last pill and it */
+    padding-bottom: 2.25rem;
+  }
+  [data-scene='x0-x1'] .fg-h { font-size: min(clamp(2.25rem, 11vw, 3.5rem), 10svh); max-width: 11ch; }
   [data-scene='x0-x1'] .fg-facts { justify-content: flex-start; }
+  [data-scene='x0-x1'] .fg-facts li + li::before { margin: 0 0.9rem; }
+  .fg-pills { gap: 0.5rem 0.9rem; }
+  .fg-pills li { padding: 0.55rem 0.95rem; font-size: 0.8125rem; }
   .scn--strike .scn__in--foot { justify-items: start; text-align: left; }
   .fg-strikes { justify-items: start; }
   .scn--stack .scn__in { justify-items: start; text-align: left; }

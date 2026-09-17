@@ -3094,16 +3094,102 @@
     return s / 0x7fffffff;
   };
 
+  /* --- A DRAWING THAT ARRIVES ONE ELEMENT AT A TIME ------------------------
+
+     THE ARTWORK EXISTS ONCE. `art` is defined in `<defs>` and every layer
+     shows it through `<use>`, so the 70KB of path data is in the document a
+     single time however many layers reference it.
+
+     A LAYER IS A MASK OVER THAT ONE COPY. Each carries the centrelines of one
+     part of the object — the vault, a card, the printed detail — stroked fat
+     and white and fully drawn, so masking the artwork with it shows exactly
+     that part, at full fidelity, with nothing growing or half-formed. What
+     animates is the layer's opacity and nothing else.
+
+     IDS ARE PER SCENE. Two `<mask id="lay0">` in one document is one mask, and
+     the second scene to use this would quietly wear the first one's. */
+  const DRAW = (s) => {
+    const d = s.draw;
+    /* AND THE RATIO IS STATED, because an inline `<svg>` has none. An `<img>`
+       gets its intrinsic proportions from the file; an inline element is just
+       a box, so `height: auto` beside a stated width resolves to nothing and
+       the drawing collapses. The viewBox already says what the ratio is —
+       this hands it to CSS. */
+    const vb = String(d.vb).trim().split(/\s+/);
+    const art = `art-${s.id}`;
+    const lays = d.layers || [];
+    return `<svg class="fg-obj__art fg-cad" viewBox="${d.vb}" role="img"` +
+        ` style="aspect-ratio:${vb[2]}/${vb[3]}">` +
+        `<title>${esc(s.alt || '')}</title>` +
+        `<defs>` +
+          `<g id="${art}" class="fg-cad__art"${d.at ? ` transform="${d.at}"` : ''}>` +
+            (d.art || []).map((p) => `<path d="${p}"/>`).join('') +
+          `</g>` +
+          lays.map((L, i) =>
+            `<mask id="lay-${s.id}-${i}" maskUnits="userSpaceOnUse"` +
+              ` x="-24" y="-24" width="${+vb[2] + 48}" height="${+vb[3] + 48}">` +
+              `<g class="fg-cad__pen" stroke-width="${d.pw || 26}">` +
+                (L.pen || []).map((p) => `<path d="${p}"/>`).join('') +
+              `</g>` +
+              (L.note && (d.note || []).length
+                ? `<g class="fg-cad__note" stroke-width="${d.nw || 40}"` +
+                    `${d.nt ? ` transform="${d.nt}"` : ''}>` +
+                    d.note.map((p) => `<path d="${p}"/>`).join('') +
+                  `</g>`
+                : '') +
+            `</mask>`).join('') +
+        `</defs>` +
+        lays.map((L, i) =>
+          `<g class="fg-cad__lay" style="--a:${L.a == null ? 0 : L.a};` +
+            `--s:${L.s == null ? 9 : L.s}"` +
+            ` mask="url(#lay-${s.id}-${i})"><use href="#${art}"/></g>`).join('') +
+      `</svg>`;
+  };
+
   const SCENE = {
     /* --- an object on the black, with the title behind it ----------------
        Scenes 01, 02 and 27. The card sits in front of the letters and the
        letters crop off both edges, so type and object share one z-space —
        which is the single most expensive-looking thing the reference does. */
+    /* THE THREE PILL MARKS, and they are drawn here rather than imported
+       because there are three of them and they are eleven lines of path
+       data. Same stroke weight and same 24-unit box as everything else in
+       `DIA`, so a pill sits next to a diagram glyph without either looking
+       like it came from a different set. */
+    PILL: {
+      box: '<path d="M12 2.6 21 7.4v9.2L12 21.4 3 16.6V7.4Z"/><path d="M3 7.4 12 12l9-4.6M12 12v9.4"/>',
+      people: '<circle cx="9" cy="8" r="3.1"/><path d="M2.6 19.4c0-3.2 2.9-5.2 6.4-5.2s6.4 2 6.4 5.2"/>'
+        + '<path d="M16.4 6.1a3.1 3.1 0 0 1 0 5.9M17.6 14.6c2.3.6 3.8 2.3 3.8 4.8"/>',
+      bolt: '<path d="M13.4 2.4 5 13.4h5.6L10.6 21.6 19 10.6h-5.6Z"/>',
+    },
+
     object: (s) => {
-      const b = SPREAD((s.facts || []).length, 0.22, 0.62);
+      /* THE BEATS WERE REBALANCED WHEN THE FRAME WAS. They used to end on
+         the closing line at 0.78, which was fine when the closing line was
+         the last thing in the scene; with three claims under it the row
+         would have arrived at 88% of a 150svh scene — on screen for about
+         one flick before the scene left. Everything moved up, and the pause
+         the scene is built around is still there: the facts land, and then
+         there is half a screen of nothing before the market moves. */
+      const b = SPREAD((s.facts || []).length, 0.28, 0.44);
+      const P = SCENE.PILL;
       return `<div class="fg-obj">` +
           (s.word ? `<span class="fg-word" aria-hidden="true">${esc(s.word)}</span>` : '') +
-          (s.art ? `<img class="fg-obj__art${s.still ? ' fg-obj__art--still' : ''}"` +
+          /* A DRAWING THAT RULES ITSELF IN IS NOT AN IMAGE, so it cannot be
+             one. An `<img>` is a closed document: the page's stylesheet
+             cannot reach a single path inside it, which means the only
+             reveal available to it is something done TO the rectangle —
+             a fade, or a mask sliding across. Both are a curtain in front
+             of a finished picture, and the eye reads the curtain.
+
+             Inline, every stroke is an element. Each one carries where it
+             sits along the drawing's own axis, the stylesheet turns that
+             into a start beat, and the dash offset does the rest — the
+             same machinery the N45 blueprint uses eighteen scenes later,
+             because it is the same idea and it should not be a second
+             implementation of it. */
+          (s.draw ? DRAW(s) :
+            s.art ? `<img class="fg-obj__art${s.still ? ' fg-obj__art--still' : ''}"` +
             ` src="${url(s.art)}" alt="${esc(s.alt || '')}" decoding="async">`
             : `<div class="fg-obj__art fg-obj__art--still">${FSHOT(s.shot)}</div>`) +
         `</div>` +
@@ -3115,8 +3201,14 @@
             ? `<ul class="fg-facts">` + s.facts.map((f, i) =>
                 `<li${AT(b[i])} class="beat">${f}</li>`).join('') + `</ul>`
             : '') +
-          (s.turn ? `<p${AT(0.78)} class="fg-turn beat">${s.turn}</p>` : '') +
-          /* 0.7 AND NOT 0.86: on the cold open the meta line is one of only
+          (s.turn ? `<p${AT(0.54)} class="fg-turn beat">${s.turn}</p>` : '') +
+          ((s.pills || []).length
+            ? `<ul class="fg-pills">` + s.pills.map((q, i) =>
+                `<li${AT(0.64 + i * 0.04)} class="beat"><svg viewBox="0 0 24 24"`
+                + ` aria-hidden="true">${P[q.i] || P.box}</svg>${esc(q.t)}</li>`).join('')
+              + `</ul>`
+            : '') +
+          /* 0.7 AND NOT 0.86: on the end card the meta line is one of only
              three things in the frame, and a beat at 0.86 is still fading in
              at 88% of the scene. */
           (s.meta ? `<p${AT(0.7)} class="fg-meta beat">${s.meta}</p>` : '') +
@@ -3460,9 +3552,18 @@
          It is emitted FIRST and the three text tracks are lifted above it, so
          nothing in the argument is ever competing with the evidence. */
       const strew = (s.strew || []).length
-        ? `<div class="fg-strew" aria-hidden="true">` + s.strew.map((o) => {
+        ? `<div class="fg-strew" aria-hidden="true">` + s.strew.map((o, i) => {
             const dia = SKEL[o.dia] || SKEL.gridmany;
-            return `<div class="fg-strew__o" style="--x:${o.x};--y:${o.y};--w:${o.w}` +
+            /* HOW FAR THIS PIECE TRAVELS ON THE ONE SHARED PATH, and it is
+               read off the depth the composition already states rather than
+               invented here. `dep` is the piece's scroll parallax in pixels,
+               negative behind the plane and positive in front; over a spread
+               of 60 that becomes roughly 0.63 for the furthest and 1.33 for
+               the nearest. Everything moves together; the near things move
+               more. See `worldDrift` in section 46. */
+            const par = (1 + (parseFloat(o.dep) || 0) / 60).toFixed(3);
+            return `<div class="fg-strew__o" style="--par:${par}` +
+              `;--x:${o.x};--y:${o.y};--w:${o.w}` +
               `;--at:${o.at};--sp:${o.sp == null ? 9 : o.sp};--z:${o.z == null ? 1 : o.z}` +
               `;--dx:${o.dx || '0px'};--dy:${o.dy || '0px'};--dep:${o.dep || '0px'}` +
               `;--rot:${o.rot || '0deg'};--dim:${o.dim == null ? 1 : o.dim}` +
@@ -3476,7 +3577,13 @@
           }).join('') + `</div>`
         : '';
 
-      return `<div class="fg-split">` + strew +
+      /* THE LIGHT THAT REPLACED THE FADE. After the field so it paints over it,
+         before the text tracks so it paints under them — see `.fg-glow`. Only
+         where there is a field to light. */
+      const glow = (s.strew || []).length
+        ? '<div class="fg-glow" aria-hidden="true"></div>' : '';
+
+      return `<div class="fg-split">` + strew + glow +
           `<div class="fg-half fg-half--fades">` +
             (L.title ? `<span${AT(0.02)} class="fg-lane__t beat">${esc(L.title)}</span>` : '') +
             `<ul class="fg-reasons">` + (L.items || []).map((t, i) =>
