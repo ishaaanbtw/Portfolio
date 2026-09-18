@@ -1123,12 +1123,30 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
    An underline moves the row, a background makes it a button, and a colour
    change alone is invisible next to rows that are already muted — this is the
    smallest mark that is unambiguous. */
-.mast__here {
+.mast__mark {
+  /* IT IS PLACED IN THE LIST, NOT IN A ROW, which is the whole of why it can
+     travel — see `Mark` in site.js. `top: 0; left: 0` and a transform, rather
+     than `top`/`left` values that change: the square moves on the compositor
+     and the column it sits in never reflows, which is the same reason
+     `--shove-x` is a transform two rules up. */
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 5px;
   height: 5px;
-  background: currentColor;
-  flex: none;
+  background: var(--ink);
+  pointer-events: none;
+  /* NO TRANSITION ON THE TRANSFORM. The travel is integrated frame by frame by
+     a spring that carries its velocity through a retarget; a CSS transition
+     here would fight it and, on a click during a move, would be the snap this
+     replaced. What IS transitioned is the colour, because the theme can change
+     underneath a square that is standing still. */
+  transition: background 240ms var(--ease);
+  will-change: transform;
 }
+
+/* the list is the square's coordinate space */
+.mast__set { position: relative; }
 
 /* --- the closing lines --------------------------------------------------- */
 
@@ -1602,9 +1620,10 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
      scroll entrance writes only `--in`. A card that has never been near a
      brick has no `--push-x` at all — the property is removed, not set to zero —
      so the default rendering is exactly what it was. */
-  transform:
-    translate3d(var(--push-x, 0px), calc((1 - var(--in, 1)) * 9px), 0)
-    scale(calc(0.978 + var(--in, 1) * 0.022));
+  /* THE TRANSFORM ITSELF IS DECLARED IN SECTION 8b, where the folder's third
+     channel is composed into it. It cannot be stated twice — whichever came
+     last would win — so the two channels this rule is about are documented
+     here and written there. */
   transform-origin: 50% 70%;
   will-change: transform, opacity;
 }
@@ -1949,6 +1968,730 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
   .wcard__thumb--sheet { transition: width 200ms linear; transform: none; }
   :root:not(.hover-cold) .wcard:hover .wcard__thumb--sheet { transform: none; }
 }
+
+/* ==========================================================================
+   8b. THE WORK, REARRANGED  —  the page makes room for one project
+
+   WHAT THIS IS, IN ONE SENTENCE. The homepage stays exactly where it is and
+   goes quiet; a column of editorial type arrives at its left edge; and the
+   project that was pressed grows out of its own cell into the first slot of a
+   strip of that project's pictures. Nothing opens, nothing is mounted, nothing
+   is replaced, and nothing else on the page moves at all.
+
+   THE FLOOR DOES NOT MOVE, and that is the rule every earlier build broke. The
+   grid used to translate sideways to make room for the arriving column: the
+   moment the floor slides, the whole thing reads as a new screen arriving
+   rather than as this screen reorganising, and the type it pushed off the left
+   edge went off with it. The grid is softened IN PLACE instead — blur and a
+   little opacity, no transform of any kind, no reflow. A neighbour may blur. It
+   may not travel.
+
+   THE PRESSED CARD IS THE ANCHOR. It is never cloned, re-parented or rebuilt;
+   it is the only element in the arrangement with a transform of its own; and it
+   paints ABOVE the arriving column, so it stays visible and trackable for the
+   whole move even when it started inside the column's own footprint. Object
+   permanence is the test: at every frame there is one card the eye can follow.
+
+   ONE NUMBER. `--p` on the work view runs 0 to 1 and back, and every value
+   below is arithmetic on it. Closing is not a second animation; it is the same
+   number descending, so every object retraces its own path exactly.
+
+   MOVEMENT OVER OPACITY. The column of type and the strip of pictures share one
+   small leftward offset that resolves to zero — the composition assembles, it
+   does not fade up. The only real fades are the words and the paper they are
+   printed on, and both are finished in the first fifth of the move.
+   ========================================================================== */
+
+.home__work { position: relative; }
+
+/* THE CARD'S LEFT LIMIT. The pressed card pans with the workspace once the
+   camera is live, so it travels off the left of the field — and it must stop at
+   the work column's own edge rather than sliding over the navigation. The
+   reading column hides it from there to the stage; this cuts the rest, and
+   incidentally keeps a wide card from ever becoming page-level horizontal
+   scroll. The workspace layer is not a child of this element (see `mount`), so
+   nothing in the arrangement is clipped by it. */
+.home__work[data-mode='preview'] { overflow-x: clip; }
+
+/* --- THE GRID STAYS PUT ---------------------------------------------------
+
+   No translate, no scale, no reflow: every card is exactly where it was. What
+   changes is focus, and it is written PER CARD rather than on the container,
+   because a filter on a container applies to every descendant and a child
+   cannot exempt itself from an ancestor's filter. The pressed card is simply
+   not in this selector.
+
+   `z-index: auto` HERE IS LOAD-BEARING. A z-index on the showcase makes the
+   grid its own stacking context and traps the pressed card inside it, under the
+   arriving column — which is what drove every earlier build to slide the grid
+   out of the way. Left as `auto`, the card's own z-index competes directly with
+   the column's, and the grid can stand still. */
+.home__work[data-mode='preview'] .showcase {
+  position: relative;
+  z-index: auto;
+}
+
+/* THE GROUND GOES QUIET BEFORE THE CARD HAS FINISHED TRAVELLING, which is
+   deliberate: the card is the thing being followed, and it is easiest to follow
+   against a floor that has already settled. `--pq` is `--p` run at not quite
+   twice the speed and held at 1 — one number again, and the close retraces it
+   exactly, so nothing snaps back. */
+.home__work[data-mode='preview'] { --pq: clamp(0, calc(var(--p, 0) * 2.6), 1); }
+
+/* --- AND IT FALLS AWAY, WHICH IS NOT THE SAME AS BEING PUSHED ASIDE -------
+
+   THE DISTINCTION IS THE WHOLE POINT. An earlier build translated the grid
+   sideways by the width of the arriving column: a quarter of the viewport of
+   lateral shove, which reads as one screen making room for another and takes
+   the type off the left edge with it. This scales it back by six percent about
+   a point inside the strip, with a pixel or two of drift. Every card keeps
+   every relationship it had with every other card — the spacing, the
+   proportions and the reading order are identical — so the eye reads DEPTH
+   rather than displacement. It is the difference between a floor receding and
+   furniture being moved.
+
+   WHY IT IS WRITTEN PER CARD AND NOT ON THE CONTAINER. A transform on
+   `.showcase` would be one declaration instead of a loop, and it would make
+   the grid its own stacking context — which traps the pressed card inside it,
+   under the arriving column, which is the bug the whole z-index arrangement
+   above exists to avoid. So `Preview` solves each card's share of one
+   container-scale about one origin and writes it as `--rcx-to` / `--rcy-to`.
+   The arithmetic is identical to a container transform; only the element it
+   lands on differs. Same reason the blur is per card, one paragraph up.
+
+   `--pv-back` and `--pv-drift` are on `.pvw` and are the only two numbers. */
+.home__work[data-mode='preview'] .wcard:not(.is-open),
+.home__work[data-mode='preview'] .home__more {
+  --rc-x: calc(var(--pq, 0) * var(--rcx-to, 0px));
+  --rc-y: calc(var(--pq, 0) * var(--rcy-to, 0px));
+  --rc-s: calc(1 - var(--pq, 0) * var(--pv-back, 0.06));
+  /* 13px, not six. At six the cards were still legibly a grid of rectangles
+     with hard edges — softened, but plainly the same objects at the same size,
+     which is what made the arrangement read as a panel laid on top of a
+     homepage. Past about eleven they stop being rectangles and become colour,
+     and the recession above is what makes that read as distance rather than as
+     a page out of focus. */
+  filter: blur(calc(var(--pq, 0) * 13px)) saturate(calc(1 - var(--pq, 0) * 0.22));
+  opacity: calc((0.35 + var(--in, 1) * 0.65) * (1 - var(--pq, 0) * 0.45));
+}
+
+.home__more {
+  translate: var(--rc-x, 0px) var(--rc-y, 0px);
+  scale: var(--rc-s, 1);
+}
+
+/* --- THE NAVIGATION YIELDS THE STAGE --------------------------------------
+
+   IT WAS LOUDER THAN THE THING IT OPENED, which is the reason the left third
+   read as one undifferentiated slab of type. The masthead has a black headline,
+   a filled button and a bold current-section marker; the reading column beside
+   it is 11 and 12px of grey with one 16px title. Opened, the panel was the
+   quietest column on screen and so did not read as the subject.
+
+   NOTHING MOVES AND NOTHING BLURS. It is emphasis only — the same trick the
+   reference uses, where the whole navigation is muted grey and the panel's
+   title is the one near-black thing on that side. The closing block dims less
+   because it is already quiet, and its pods stay usable throughout. */
+.home[data-pvw='1'] .mast__keep,
+.home[data-pvw='1'] .mast__air { opacity: calc(1 - var(--pq, 0) * 0.54); }
+.home[data-pvw='1'] .mast__foot { opacity: calc(1 - var(--pq, 0) * 0.3); }
+
+/* it is still the homepage, so it is still reachable — but not while a folder
+   is open over it, or the first press lands on a blurred card */
+.home__work[data-mode='preview'] .showcase,
+.home__work[data-mode='preview'] .home__more { pointer-events: none; }
+.home__work[data-mode='preview'] .wcard.is-open { pointer-events: auto; }
+
+/* --- the project that was pressed -----------------------------------------
+
+   NOT MOVING SO MUCH AS GROWING. `--pv-*` is the extra that takes it from its
+   cell in the stack to the first slot of the strip, and it is a THIRD channel
+   on a transform that already carries two which must not interfere: the scroll
+   entrance owns `--in`, the brick fence owns `--push-x`. A card that has never
+   been pressed has none of the three and renders exactly as it always did. */
+.wcard {
+  transform:
+    translate3d(
+      calc(var(--push-x, 0px) + var(--pv-x, 0px) + var(--pv-cam, 0px) + var(--rc-x, 0px)),
+      calc((1 - var(--in, 1)) * 9px + var(--pv-y, 0px) + var(--rc-y, 0px)),
+      0)
+    scale(calc((0.978 + var(--in, 1) * 0.022) * var(--pv-s, 1) * var(--rc-s, 1)));
+}
+
+/* ABOVE THE ARRIVING COLUMN. `.pvw` is z-index 2; this is 4. A card pressed in
+   the left-hand stack starts inside the column's footprint, and painted under
+   the paper it would disappear for the first third of its own journey. */
+.wcard.is-open { z-index: 4; }
+
+/* the caption goes because the column now says the same thing, and it goes by
+   sliding under the card rather than by fading */
+/* AND IT GOES FAST. At a third of this rate the caption was still half
+   readable a sixth of the way in, sitting sharp over the reading column's own
+   type while the card crossed it — two captions for one project in the same
+   frame. Gone by 0.17, which is before the card has travelled far enough to
+   reach the column's text at all. */
+.wcard.is-open .wcard__meta {
+  opacity: clamp(0, calc(1 - var(--p, 0) * 6), 1);
+  translate: 0 calc(var(--p, 0) * -8px);
+}
+
+/* --- THE DOCUMENT IS LOCKED WHILE A PROJECT IS OPEN ----------------------
+
+   WHAT THIS FIXES, AND IT WAS THE WHOLE COMPLAINT. The layer used to be
+   `position: absolute` inside the work column at a measured `--pv-top`, on the
+   reasoning that the arrangement should happen where the visitor was looking
+   and scroll with the page rather than being pinned over it. Filmed, that
+   reasoning is simply wrong: the document went on scrolling under an open
+   project, the reading column slid off the top of the window and the strip went
+   with it, and what was meant to be a workspace read as a passage of a web
+   page. There is no `--pv-top` any more.
+
+   THE CLASS IS HALF OF IT AND THE HANDLERS ARE THE OTHER HALF. `overflow:
+   hidden` stops the document being a scroller; `Preview` also cancels wheel,
+   touch and the scrolling keys, because `overflow: hidden` alone still lets a
+   trackpad fling reach a nested scroller and still lets the page be moved by
+   the keyboard. Both, or neither works.
+
+   AND IT DOES NOT SHIFT. Removing the scrollbar makes the viewport wider by
+   the gutter's width and every centred thing on the page jumps. On macOS the
+   gutter is zero and there is nothing to do; where it is not, `Preview`
+   measures it and it is given back as a transparent right border, which
+   restores the content width whatever `box-sizing` is in force. */
+html.is-pvw,
+html.is-pvw body {
+  overflow: hidden;
+  touch-action: none;
+}
+html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
+
+/* --- the workspace -------------------------------------------------------
+
+   PINNED TO THE WINDOW. `--pv-left` is where the work column starts, measured
+   once — nothing can move it while the document is locked.
+
+   `z-index: auto`, DELIBERATELY. The three layers in here have to interleave
+   with the pressed card, and the pressed card is not in here: it is in the
+   grid, where it has always been. Left as `auto` this box makes no stacking
+   context, so the field, the stage and the reading column compete directly with
+   the card's own z-index — which is the only way to put the ground UNDER it and
+   the reading column OVER it without cloning or re-parenting anything. */
+.pvw[hidden] { display: none; }
+
+.pvw,
+.pvwr {
+  --pv-col: 19rem;
+  --pv-gap: clamp(0.75rem, 1.4vw, 1.25rem);
+  --pv-in: 40px;
+  /* HOW MUCH OF THE NEXT ARTEFACT SHOWS BEFORE THE EDGE TAKES IT, and the one
+     number that sets how tall the whole row is: `Preview` gives the first cell
+     all of the stage except this, then solves the height from the pressed
+     card's proportion. */
+  --pv-peek: 10.5rem;
+  /* the air above and below the row, as a share of the stage's height */
+  --pv-air: 0.1;
+  /* the gap BETWEEN artefacts, wider than the gap to the column: two near-black
+     screenshots twenty pixels apart merge into one black mass */
+  --pv-row-gap: clamp(1rem, 1.9vw, 1.75rem);
+  /* how far the floor falls back, and how far it drifts as a share of the work
+     column's width. The only two numbers in the recession. */
+  --pv-back: 0.06;
+  --pv-drift: 0.015;
+  /* THE FIELD'S OWN GROUND. Measured off the reference: its reading column and
+     its navigation are the same paper and the field the pictures stand in is
+     about six percent darker. That one step is what separates the three zones. */
+  --pv-field: rgba(20, 16, 12, 0.055);
+}
+
+/* --- THE FIELD AND THE STAGE ---------------------------------------------
+
+   `z-index: 2`, and it has to be stated rather than left to `auto`. An earlier
+   pass tried to keep the reading column inside this box and let the three
+   layers in here interleave with the pressed card by z-index alone — which
+   cannot work, because `position: fixed` makes a stacking context whatever its
+   z-index is, so everything in here is above or below the card TOGETHER. The
+   reading column is its own fixed layer for exactly that reason; see `.pvwr`. */
+.pvw {
+  position: fixed;
+  left: var(--pv-left, 0px);
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: clip;
+}
+
+:root.is-dark .pvw,
+:root.is-dark .pvwr { --pv-field: rgba(255, 255, 255, 0.042); }
+
+/* THE FIELD, AS A PLATE, AND UNDER THE CARD. `z-index: 1` against the card's 4:
+   the card is the subject and must not be washed with the ground it crosses.
+   The hairline on its left edge is the boundary between the reading column and
+   the field, and it is the only rule anywhere in this arrangement. */
+.pvw::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 var(--pv-col);
+  background: var(--pv-field);
+  box-shadow: inset 1px 0 0 var(--line-soft);
+  opacity: clamp(0, calc(var(--p, 0) * 6), 1);
+  pointer-events: none;
+}
+
+/* --- THE CAMERA'S WINDOW -------------------------------------------------
+
+   The stage is the hole you look through; `.pvw__cam` is the workspace behind
+   it and it is what moves. Nothing inside the workspace animates on its own —
+   the artefacts are laid out once, at their own proportions, and never touched
+   again. One translate on one element is the entire horizontal experience.
+
+   IT TAKES THE POINTER so a press on the empty field still puts the project
+   back. That is the only affordance the emptiness has. */
+.pvw__stage {
+  position: absolute;
+  inset: 0 0 0 calc(var(--pv-col) + var(--pv-gap));
+  overflow: clip;
+  pointer-events: auto;
+}
+
+.pvw__cam {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--pv-row-gap);
+  /* THE CAMERA AND THE ENTRANCE ON ONE TRANSFORM. `--cam` is where the camera
+     is; the second term is the forty pixels the whole composition assembles
+     through. Two writers, one property, no fight. */
+  translate: calc((var(--cam, 0px) * -1) - (1 - var(--p, 0)) * var(--pv-in)) 0;
+  will-change: translate;
+}
+
+/* --- a cell of the workspace --------------------------------------------
+
+   Plate over caption, one fixed caption height, so every plate in the row sits
+   on the same top and bottom line however long its caption runs. Ragged plate
+   tops is what a `gap` and an auto-height caption give you.
+
+   `.pvw__slot` IS THE FIRST CELL AND IT IS EMPTY. It is where the pressed card
+   is going; the card arrives and IS it. Nothing is drawn in it and nothing is
+   copied into it, which is why the card's video keeps playing across the whole
+   move. `Preview` reads its rectangle rather than being told a number, so the
+   destination is stated here, beside every other position in the row. */
+.pvw__fig {
+  position: relative;
+  flex: 0 0 auto;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  pointer-events: auto;
+}
+
+.pvw__plate,
+.pvw__slot {
+  position: relative;
+  display: block;
+  height: calc(var(--pv-h, 44svh) * var(--fh, 1));
+  aspect-ratio: var(--ar, 1.4);
+}
+
+.pvw__slot {
+  aspect-ratio: var(--slot-ar, 1.34);
+  pointer-events: none;
+}
+
+.pvw__plate {
+  /* enough that a screenshot's own corner is not a hard right angle against the
+     page, nowhere near enough to read as a card */
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(20, 16, 12, 0.04);
+  box-shadow:
+    0 1px 2px rgba(20, 16, 12, 0.05),
+    0 14px 36px -14px rgba(20, 16, 12, 0.16);
+}
+
+:root.is-dark .pvw__plate {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 16px 40px -14px rgba(0, 0, 0, 0.62);
+}
+
+.pvw__plate img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* OVER THE ARTWORK, NOT UNDER IT. The work in this portfolio is mostly
+   near-black, and a drop shadow does nothing to separate one black rectangle
+   from the next — the shadow is darker than both. A one-pixel inset highlight is
+   invisible on a light screenshot and is the whole edge on a dark one, which is
+   exactly the behaviour wanted from one declaration. An inset shadow on the
+   plate itself would paint beneath the image, so it is drawn here. */
+.pvw__plate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  pointer-events: none;
+}
+
+/* the artefact's own note, in the terms the study uses: a number and the line
+   that was written for the picture. It is the `alt` text, which is authored per
+   image beside the image — nothing here is composed for the preview. */
+.pvw__cap {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  height: 2.5rem;
+  max-width: 34ch;
+  font-size: 0.625rem;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  opacity: clamp(0, calc((var(--p, 0) - 0.3) * 4), 1);
+}
+
+.pvw__cap i {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+}
+
+.pvw__cap span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* the one deliberate change of scale in the row: a detail is a detail, and at
+   the height of the others it stops being one */
+.pvw__fig[data-at='detail'] { --fh: 0.62; }
+
+/* --- WHERE YOU ARE, AND NOTHING ELSE ------------------------------------
+
+   A number and a segment per cell. It is display only and it never becomes a
+   control: there is nothing to press, nothing to drag, and no cursor change.
+   Bottom left, because the bottom right of every page belongs to IshaanLLM. */
+.pvw__meter {
+  position: absolute;
+  left: 0;
+  bottom: clamp(0.9rem, 2.6vh, 1.6rem);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+  pointer-events: none;
+  opacity: clamp(0, calc((var(--p, 0) - 0.4) * 4), 1);
+}
+
+.pvw__meter[hidden] { display: none; }
+.pvw__segs { display: flex; gap: 4px; }
+
+.pvw__seg {
+  width: 16px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.28;
+  transition: opacity 260ms var(--ease), width 380ms var(--spring);
+}
+
+.pvw__seg.is-on { width: 26px; opacity: 1; }
+
+/* --- THE READING COLUMN, WHICH DOES NOT TRAVEL ---------------------------
+
+   It is chrome, not a cell: the camera glides past the artefacts and the
+   project's own facts stay put beside them, so the name, the role and the way
+   in are legible at every point in the workspace.
+
+   ONE LEFT EDGE, AND EVERYTHING SITS ON IT. Eyebrow, name, tagline, summary,
+   every metadata label, the button — all of it starts at the same x. Nothing is
+   centred horizontally and nothing is centred vertically: the column is set
+   from the top like a page in a magazine and the air collects at the bottom,
+   where air belongs.
+
+   `z-index: 3` UNTIL THE PROJECT IS OPEN, THEN 6. Under the card while the card
+   is travelling, because a card pressed in the left-hand stack starts inside
+   this column's footprint and would otherwise vanish for the first third of its
+   own journey. Over the card once the camera is live, because the card pans
+   with the workspace and has to disappear behind this column rather than slide
+   across it. The swap happens at the one instant the two do not overlap — the
+   card exactly at its slot, the camera at zero — so nothing can be seen to
+   change. */
+.pvw__brief:focus,
+.pvw__brief:focus-visible { outline: none; }
+
+/* `z-index: 3` UNTIL THE PROJECT IS OPEN, THEN 6, and the card sits at 4
+   between them. Under the card while the card is travelling, because a card
+   pressed in the left-hand stack starts inside this column's footprint and would
+   otherwise vanish for the first third of its own journey. Over the card once
+   the camera is live, because the card pans with the workspace and has to
+   disappear behind this column rather than slide across it. The swap happens at
+   the one instant the two cannot overlap — the card exactly at its slot, the
+   camera at zero — so nothing can be seen to change. */
+.pvwr[hidden] { display: none; }
+
+.pvwr {
+  position: fixed;
+  left: var(--pv-left, 0px);
+  top: 0;
+  bottom: 0;
+  width: var(--pv-col);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.pvw[data-cam='live'] ~ .pvwr { z-index: 6; }
+
+.pvw__brief {
+  position: absolute;
+  inset: 0;
+  /* A LEFT MARGIN OF ITS OWN. Set flush at 0 the column's first character sat
+     eighteen pixels from the navigation's last one, so the two columns of type
+     read as one column of type. The gutter is what makes it a separate page. */
+  padding:
+    clamp(1.4rem, 4.2vh, 2.4rem)
+    var(--pv-gap)
+    clamp(1.4rem, 4vh, 2.4rem)
+    clamp(1rem, 2vw, 1.75rem);
+  pointer-events: auto;
+}
+
+/* THE PAPER, AS ITS OWN LAYER. It has to be opaque, because the softened grid
+   runs underneath it — and it has to arrive without dragging the words into an
+   opacity ramp of their own, so it is a plate BEHIND them rather than a
+   background on the box they sit in. It is the page's own colour, so what reads
+   on screen is the grid going quiet, not a panel fading up. */
+.pvw__brief::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+  opacity: clamp(0, calc(var(--p, 0) * 6), 1);
+}
+
+/* THE ONE MOVEMENT IN HERE, and the workspace makes the same one: a single
+   leftward offset resolving to zero, measured off the reference at forty
+   pixels. One offset on the block, not a stagger down its children — the column
+   arrives as a column. */
+.pvw__body {
+  position: relative;
+  translate: calc((1 - var(--p, 0)) * var(--pv-in) * -1) 0;
+  opacity: clamp(0, calc(var(--p, 0) * 4), 1);
+}
+
+/* a mark, not a button and not a sentence: the project is closed by pressing
+   the field around it, and this is the affordance for people who look for one */
+.pvw__back {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: 0 0 clamp(1rem, 2.8vh, 1.8rem);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(20, 16, 12, 0.055);
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 180ms var(--ease), background 180ms var(--ease);
+}
+:root.is-dark .pvw__back { background: rgba(255, 255, 255, 0.075); }
+:root:not(.hover-cold) .pvw__back:hover { color: var(--ink); background: rgba(20, 16, 12, 0.1); }
+:root.is-dark:not(.hover-cold) .pvw__back:hover { background: rgba(255, 255, 255, 0.14); }
+
+.pvw__eyebrow {
+  display: block;
+  font-size: 0.6875rem;
+  letter-spacing: 0.01em;
+  color: var(--ink-dim);
+  margin: 0 0 0.2rem;
+}
+
+.pvw__name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 560;
+  line-height: 1.22;
+  letter-spacing: -0.014em;
+  color: var(--ink);
+  max-width: 22ch;
+  text-wrap: balance;
+}
+
+.pvw__tagline {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.42;
+  color: var(--ink-2);
+  max-width: 30ch;
+  text-wrap: pretty;
+}
+
+.pvw__summary {
+  margin: 0.55rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.62;
+  color: var(--ink-dim);
+  max-width: 34ch;
+  text-wrap: pretty;
+}
+
+/* --- THE METADATA, AS ENGINEERING METADATA -------------------------------
+
+   Key left, value right, a hairline under every row. Not a two-column grid of
+   prose and not a list of chips: a spec table, which is what these facts are.
+   Responsibilities is the same row shape with its values stacked, so the whole
+   block reads as one table rather than as a table plus an afterthought. */
+.pvw__facts {
+  margin: clamp(1rem, 2.8vh, 1.7rem) 0 0;
+  width: 100%;
+  border-block-start: 1px solid var(--line-soft);
+}
+
+.pvw__fact {
+  display: grid;
+  grid-template-columns: minmax(3.4rem, auto) minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: baseline;
+  padding-block: 0.44rem;
+  border-block-end: 1px solid var(--line-soft);
+}
+.pvw__fact--stack { align-items: start; }
+
+.pvw__k {
+  font-size: 0.6875rem;
+  letter-spacing: 0.01em;
+  color: var(--ink-dim);
+}
+
+.pvw__v {
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--ink);
+  text-align: right;
+  text-wrap: pretty;
+}
+
+.pvw__does {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pvw__do { display: block; }
+
+/* THE HOUSE AFFORDANCE, NOT A NEW ONE. `Copy email` in the masthead is a filled
+   pill and `+ Resume` is its ghost; a text link with a rule under it was a third
+   button style invented for one place, and it read as a footnote next to the two
+   real buttons a column away. This carries `.btn .btn--sm` and adds nothing but
+   the arrow — same radius, same padding, same type, same lift. */
+.pvw__door { margin-top: clamp(1rem, 2.8vh, 1.7rem); }
+
+.pvw__cta {
+  pointer-events: auto;
+  text-decoration: none;
+}
+.pvw__arrow { display: inline-block; transition: transform 480ms var(--spring); }
+:root:not(.hover-cold) .pvw__cta:hover .pvw__arrow { transform: translateX(3px); }
+
+.pvw__soon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  color: var(--ink-dim);
+}
+.pvw__soon::before { content: ''; width: 4px; height: 4px; background: currentColor; opacity: 0.5; }
+
+/* the hint that the workspace goes sideways, shown only while it has somewhere
+   to go and only until it has been moved once */
+.pvw__pan {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: clamp(1rem, 2.6vh, 1.6rem);
+  font-size: 0.625rem;
+  letter-spacing: 0.01em;
+  color: var(--ink-dim);
+  opacity: clamp(0, calc((var(--p, 0) - 0.5) * 3), 1);
+  transition: opacity 320ms var(--ease);
+}
+.pvw__pan[hidden] { display: none; }
+.pvw[data-panned='1'] ~ .pvwr .pvw__pan { opacity: 0; }
+
+/* --- narrow --------------------------------------------------------------
+
+   THE FLOOR STILL DOES NOT MOVE and the document is still locked. The column
+   takes the top of the window and the workspace the bottom of it, both over a
+   grid that has not shifted a pixel. */
+@media (max-width: 62rem) {
+  .pvw {
+    --pv-in: 26px;
+    --pv-peek: 2.5rem;
+    --pv-air: 0.07;
+    --pv-row-gap: 0.75rem;
+    /* less room to recede into, and a phone is held closer */
+    --pv-back: 0.04;
+    --pv-drift: 0;
+    left: 0;
+  }
+  /* the field is the lower band only, because the column takes the upper one */
+  .pvw::before { inset: 38svh 0 0 0; box-shadow: inset 0 1px 0 var(--line-soft); }
+  .pvw__stage { inset: 38svh 0 0 0; }
+  .pvwr {
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: auto;
+    width: auto;
+    height: 38svh;
+  }
+  .pvw__brief {
+    /* the grid and theme pods are shell furniture in the other corner, so the
+       column's last line stops above them rather than under them */
+    padding: clamp(0.9rem, 2.6vh, 1.4rem) var(--gut) clamp(0.9rem, 2.4vh, 1.4rem) var(--gut);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
+  .pvw__brief::before { inset: 0; }
+  .pvw__tagline,
+  .pvw__summary { max-width: 46ch; }
+  .pvw__facts { max-width: 26rem; }
+  .pvw__meter { left: var(--gut); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* the arrangement still happens; it simply does not travel, and the floor
+     does not fall away — the tonal step and the softening carry it alone */
+  .pvw__body { translate: none; }
+  .pvw__cam { translate: calc(var(--cam, 0px) * -1) 0; }
+  .home__work[data-mode='preview'] .wcard:not(.is-open),
+  .home__work[data-mode='preview'] .home__more {
+    filter: none;
+    --rc-x: 0px;
+    --rc-y: 0px;
+    --rc-s: 1;
+  }
+}
+
 
 /* ==========================================================================
    9. INDEX TABLE
@@ -4264,6 +5007,235 @@ body.is-lbox { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .blk, .sec__body, .sec__heading { opacity: 1; transform: none; }
 }
+
+
+/* ==========================================================================
+   23a. THE FILM'S INDEX  —  the same rail, on the study that is directed
+
+   WHAT THIS IS AND IS NOT. It is section 23's rail: same `.rail__back`, same
+   `.rail__list`, same `.rail__link`, same measured 40px row pitch and 13px
+   type, because the two case studies on this site should read as one
+   portfolio and the contents page is now the most visible thing they share.
+   Everything in this block is the difference between a rail beside a document
+   and a rail over a film, and there are only four differences.
+
+     FIXED, NOT STICKY. Section 23 makes a point of the rail being sticky, and
+     it is the right point: a sticky rail is contained by the case study's own
+     grid area, so it cannot outlive it. The film has no such area — it is a
+     stack of full-bleed scenes with sticky stages inside them, and a grid
+     track down the left of it would take 176px out of every composition in
+     the study. So this one is fixed, and what stops it outliving the film is
+     the state below rather than a containing block.
+
+     IT IS NOT DRAWN ON THE OPENING. `data-on` is written by `FilmNav.set`
+     from the scene the film reports on screen: `0` while that is the hero,
+     `1` from the first scene onward. A contents page over the opening frame
+     is a document announcing its own structure before it has shown you
+     anything — and the hero is one product in the middle of black, which is
+     the one composition in the study that can afford nothing beside it.
+
+     IT TAKES THE SCENE'S INK. Seven of the scenes are near-black and the rest
+     are white, and no single grey clears 4.5:1 on both — the same fact the
+     progress hairline is built around. `data-tone` is written from the same
+     pass, and both ink sets below are measured against their own ground.
+
+     AND THE ACTIVE ROW HAS A MARK. Section 23's rail carries its active state
+     in colour and weight alone, which is correct on paper where the ink is
+     always the same. Over twenty-five changing grounds, weight is not enough
+     on its own at 13px, so the active row also gets a 5px square — the
+     smallest indicator that survives a ground change.
+   ========================================================================== */
+
+.rail--film {
+  position: fixed;
+  /* the same two numbers section 23 uses — 56px from the left edge to clear
+     the menu handle, and the shell's own top allowance — stated again here
+     because a fixed element inherits neither */
+  left: calc(3.5rem + var(--sa-left, 0px));
+  top: clamp(2.5rem, 7vh, 4.5rem);
+  margin-left: 0;
+  width: 11rem;
+  z-index: 40;
+  transition: opacity 620ms var(--ease), translate 760ms var(--spring);
+
+  /* --- AND IT IS NEVER THE STRIP -------------------------------------
+
+     BELOW 70rem SECTION 23 LAYS ITS RAIL DOWN: a flex row across the top of
+     the window with a paper background, a hairline, a blur, a sideways
+     scroll and a mask over the right end where the menu handle sits. Every
+     one of those rules is written to `.rail`, which this element also is, so
+     all of them were landing on it — measured at 1024 the index was a
+     128px-padded flex row with a mask across it, at 390 the readout and the
+     list were sitting side by side inside it.
+
+     That layout is correct for a column of text with a rail beside it and
+     wrong over twenty-five full-bleed compositions, so it is turned off here
+     rather than worked around: the film's rail is a block at every width, and
+     what it becomes on a phone is stated further down in its own terms. This
+     is the only reason these nine lines exist — each one undoes exactly one
+     declaration in section 23's narrow block. */
+  display: block;
+  height: auto;
+  gap: 0;
+  padding: 0;
+  overflow: visible;
+  background: none;
+  border: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+/* THE OPENING STATE. `visibility` as well as opacity, so nothing in here is
+   reachable by a tab key while it is invisible — an index you cannot see but
+   can focus is worse than one that is simply there. */
+.rail--film[data-on='0'] {
+  opacity: 0;
+  visibility: hidden;
+  translate: -0.5rem 0;
+  pointer-events: none;
+}
+
+.rail--film[data-on='1'] { opacity: 1; visibility: visible; translate: 0 0; }
+
+/* --- the ink, both grounds ----------------------------------------------- */
+
+.rail--film .rail__back,
+.rail--film .rail__link { color: var(--fg-quiet, #74757c); }
+
+.rail--film .rail__back:hover,
+.rail--film .rail__link:hover { color: #55565c; }
+
+.rail--film .rail__link.is-active { color: #101012; font-weight: 600; }
+
+.rail--film[data-tone='dark'] .rail__back,
+.rail--film[data-tone='dark'] .rail__link { color: #8a8b91; }
+
+.rail--film[data-tone='dark'] .rail__back:hover,
+.rail--film[data-tone='dark'] .rail__link:hover { color: #c8c9ce; }
+
+.rail--film[data-tone='dark'] .rail__link.is-active { color: #ffffff; }
+
+.rail--film .rail__back,
+.rail--film .rail__link { transition: color 420ms var(--ease), transform 520ms var(--spring); }
+
+/* --- the mark ------------------------------------------------------------ */
+
+.rail__dot {
+  display: inline-block;
+  width: 0.3125rem;
+  height: 0.3125rem;
+  margin-left: 0.55em;
+  /* vertically on the lowercase x rather than the baseline, so it reads as
+     punctuation set with the word and not as a bullet under it */
+  vertical-align: 0.06em;
+  background: currentColor;
+  opacity: 0;
+  scale: 0.4;
+  transition: opacity 320ms var(--ease), scale 480ms var(--spring);
+}
+
+.rail__link.is-active .rail__dot { opacity: 1; scale: 1; }
+
+/* --- the phone: one line, which opens ------------------------------------
+
+   A 176px column is 45% of a 390px screen and cannot stay. Section 23's
+   answer — lie the rail down as a strip across the top — cannot be borrowed:
+   that strip is opaque with a hairline under it, which is right over a column
+   of text and wrong over twenty-five full-bleed compositions.
+
+   So the list collapses behind the line it would otherwise be summarised by.
+   Closed, it is a readout: which part of nine you are in, and its name — the
+   same statement the corner used to make, in the corner the corner used to
+   be. Pressed, the nine links come out above it. It is the only button in the
+   film. */
+.rail__now { display: none; }
+
+@media (min-width: 64rem) {
+  .rail--film .rail__list { display: grid; }
+}
+
+/* NOT 46rem, WHICH IS THE FILM'S OWN NARROW BREAKPOINT. The column costs
+   17.5rem wherever it is drawn, and at 800px that is a fifth of the window
+   taken out of every composition in the study for a list of nine words. The
+   readout costs nothing, so the crossover is where the room genuinely exists:
+   1024px. */
+@media (max-width: 63.9375rem) {
+  .rail--film {
+    left: calc(var(--gut) + var(--sa-left, 0px));
+    top: auto;
+    /* THE CORNER THE CHAPTER READING USED TO HOLD, and the same baseline: the
+       pods are 32px circles 20px off this corner and 4.5rem clears them, so
+       the readout, the controls and the window edge read as one stack. */
+    bottom: calc(4.5rem + var(--sa-bottom, 0px));
+    width: auto;
+    max-width: calc(100vw - var(--gut) * 2 - 5rem);
+  }
+
+  /* BACK IS THE ONE ROW THAT IS NOT PART OF THE INDEX, and on a phone it is
+     also the one row already reachable from the browser's own gesture. It
+     comes off rather than competing for the corner. */
+  .rail--film .rail__back { display: none; }
+
+  .rail__now {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .rail__now-n { color: #57585e; }
+  .rail__now-t { color: #8a8b91; }
+  .rail--film[data-tone='dark'] .rail__now-n { color: #6e6f76; }
+  .rail--film[data-tone='dark'] .rail__now-t { color: #a7a8ae; }
+
+  /* THE LIST SITS ABOVE THE READOUT, not below it, because the readout is
+     already at the bottom of the screen. It is closed by default and it is
+     `display: none` when closed rather than transparent — nine links floating
+     invisibly over a composition is nine things a stray tap can hit. */
+  .rail--film .rail__list {
+    display: none;
+    margin-block-end: 0.9rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: 0.5rem;
+    background: var(--fg-ground, #fff);
+    border: 1px solid var(--fg-line, rgba(16, 16, 18, 0.11));
+    box-shadow: 0 0.75rem 2.5rem rgba(16, 16, 18, 0.14);
+  }
+
+  .rail--film[data-open='1'] .rail__list { display: grid; }
+
+  .rail--film[data-tone='dark'] .rail__list {
+    background: #0e0e11;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0.75rem 2.5rem rgba(0, 0, 0, 0.5);
+  }
+
+  .rail--film .rail__link {
+    height: auto;
+    line-height: 1.75;
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail--film,
+  .rail--film .rail__back,
+  .rail--film .rail__link,
+  .rail__dot { transition-duration: 1ms; }
+}
+
 
 /* ==========================================================================
    24. FLOATING TOOL DOCK  —  built to the supplied spec
@@ -9063,9 +10035,16 @@ textarea,
    cannot leave the page dark. */
 html.wake-armed,
 html.wake-armed body {
-  background-color: #30363d;
+  background-color: #f8f7f3;
   background-image: none;
 }
+/* AND IT KNOWS WHICH SHEET IT IS BEFORE THE FIRST PAINT. The theme script in
+   the head runs a few lines after the entrance's own, and both are synchronous
+   — no frame is painted between them — so by the time anything is on screen the
+   root carries `is-dark` or does not, and this picks the right paper. Nothing
+   in the head had to learn about the sheet for that to work. */
+html.wake-armed.is-dark,
+html.wake-armed.is-dark body { background-color: #0f0f11; }
 /* AND NOTHING ON IT UNTIL THE ENTRANCE HAS TAKEN CHARGE. The flag is set in
    the head; the page is not pushed down out of the way until `Boot.arm` runs,
    at the very end of the document. In between there is a window in which the
@@ -9151,10 +10130,64 @@ body.waking .sheet { animation: none; }
      would land on a brick nobody can see. It goes back to being a hole on the
      frame it starts leaving, which is the frame the hero becomes yours. */
   pointer-events: auto;
-  background-color: #30363d;
-  background-image: radial-gradient(135% 105% at 50% 44%, #343a42 0%, #2d3239 100%);
-  transform: translate3d(0, 0, 0);
-  transition: transform var(--sig-ms, 540ms) cubic-bezier(0.25, 1, 0.5, 1);
+  /* FLAT, AND TO THE PAGE'S OWN VALUE. There was a radial lift in the middle of
+     this, from when the sheet was charcoal and a large field of one colour
+     needed some unevenness not to look like a swatch. The sheet is the page's
+     paper now, so the lift was a gradient between two identical values — a
+     second paint for no pixels — and the token behind it went with it. */
+  background-color: var(--sig-paper);
+}
+
+/* --- THE SHEET'S OWN PALETTE, AND IT FOLLOWS THE THEME --------------------
+
+   ONE SET OF TOKENS, TWO SHEETS. Everything drawn on the sheet — the mat, the
+   construction lines, the dimensions, the tags, the labels, the identity — is
+   stated once against these, so the dark sheet is not a second implementation.
+   The LEGO's own colours are not in here: they come from `BUILD`'s tones and
+   are the same plastic in both, which is the point of the piece being a piece.
+
+   A WARM OFF-WHITE, NOT WHITE. `--surface` is the page's paper at #f8f7f3; the
+   sheet is two values under it so the reveal is the paper coming UP a hair
+   rather than the sheet and the page being the same flat field — and so the
+   hairlines have something to be hairlines against. */
+.sig {
+  /* THE PAGE'S OWN PAPER, TO THE VALUE. It was two steps under `--surface` so
+     the reveal would be the paper coming up a hair. That was a reveal worth
+     having when the sheet travelled away as an object; now that the sheet is
+     masked away in place it is a visible edge between two greys moving down
+     the screen, which is the one seam the exit exists to avoid. Identical, so
+     the mask edge is invisible and the only thing that changes across it is
+     that there is content on the other side. */
+  --sig-paper: #f8f7f3;
+  /* what an image frame resolves TO: a flat tone, not a picture */
+  --sig-tone: rgba(23, 20, 16, 0.075);
+  /* the mat: a fine grid and a major one, both barely there */
+  --sig-grid: rgba(23, 20, 16, 0.062);
+  --sig-grid-2: rgba(23, 20, 16, 0.105);
+  /* the drawing: construction lines, witness lines, tag outlines.
+     RAISED AFTER FILMING IT. Every value in here was set by eye against the
+     paper and every one of them was too light: recorded and watched at size,
+     the tags and the witness lines were present in the DOM and absent on
+     screen, which is the worst of both — the density is paid for and not
+     delivered. A drawing on paper is a mark you can read. */
+  --sig-line: rgba(23, 20, 16, 0.26);
+  --sig-line-2: rgba(23, 20, 16, 0.44);
+  --sig-hatch: rgba(23, 20, 16, 0.07);
+  /* the writing: the tags, and the measurement under each plate */
+  --sig-ink: rgba(23, 20, 16, 0.56);
+  --sig-chip: rgba(244, 242, 236, 0.92);
+}
+
+:root.is-dark .sig {
+  --sig-paper: #0f0f11;
+  --sig-tone: rgba(255, 255, 255, 0.07);
+  --sig-grid: rgba(255, 255, 255, 0.06);
+  --sig-grid-2: rgba(255, 255, 255, 0.11);
+  --sig-line: rgba(255, 255, 255, 0.27);
+  --sig-line-2: rgba(255, 255, 255, 0.46);
+  --sig-hatch: rgba(255, 255, 255, 0.075);
+  --sig-ink: rgba(255, 255, 255, 0.58);
+  --sig-chip: rgba(48, 54, 61, 0.92);
 }
 /* AND IT IS NOT EASED INTO ITS RESTING POSE. The transition above exists for
    exactly one movement; before that movement there is nothing to interpolate,
@@ -9178,148 +10211,18 @@ body.waking:not(.sliding) .sig { transition: none; }
    settles out, which is what the reference does and why the reference reads as
    an object rather than as a state change. No overshoot and no bounce: the
    sheet is not landing anywhere, it is leaving. */
-body.sliding .sig {
-  transform: translate3d(0, -100%, 0);
-  pointer-events: none;
-}
+/* the pointer comes back on the frame the exit starts; the travel that used to
+   be here is gone — see the note at the foot of section 44b */
+body.sliding .sig { pointer-events: none; }
 
-/* --- AND THE DRAWING RECEDES A HAIR AS IT GOES ---------------------------
-   The only depth in the transition, and it is on the contents of the sheet
-   rather than on the sheet: scaling `.sig` itself would inset its own edges
-   and expose a two-pixel sliver of the page down either side of it for the
-   length of the journey, which is exactly the seam this refactor exists to
-   remove. Eight thousandths, on the same clock and the same curve — not
-   enough to read as a zoom, just enough that the object is travelling away
-   from you rather than merely upward. */
-.sig__stage {
-  position: absolute;
-  inset: 0;
-  transform-origin: 50% 42%;
-}
-body.sliding .sig__stage {
-  transform: scale(0.992);
-  transition: transform var(--sig-ms, 540ms) cubic-bezier(0.25, 1, 0.5, 1);
-}
+/* --- WHAT THE DRAWING IS ON ---------------------------------------------
+   A box the size of the sheet, and nothing else. It used to recede a hair on
+   the way out and then dissolve ahead of the paper, and both are gone: the exit
+   is one mask on `.sig`, and because this is inside `.sig` the marks are
+   carried off by that mask with the paper they are drawn on. See the foot of
+   this section. It exists to be the one thing the sheet has to let go of. */
+.sig__stage { position: absolute; inset: 0; }
 
-/* --- THE STENCIL ----------------------------------------------------------
-   The whole finished assembly, drawn once, hairline, at a fifth of the ink,
-   in the exact boxes the four pieces are about to fill. It is what turns a
-   brick crossing the screen into a brick crossing the screen AT something:
-   without it the motion is four objects moving, with it the motion is a
-   sentence and the slots are what finishes it.
-
-   It is never faded out. Each slot is simply covered — the piece that lands on
-   it is opaque and occupies precisely that box — which is the whole
-   relationship this is meant to state. Empty, approached, filled. Its opacity
-   is written per frame by the loop, so it lifts as its own piece closes in;
-   nothing here needs a transition. */
-.sig__gh {
-  position: absolute;
-  pointer-events: none;
-  /* TWO OPACITIES MULTIPLIED, AND THEY BELONG TO DIFFERENT CLOCKS. The arrival
-     is CSS's, because the stencil is drawn the moment the sheet goes up — well
-     before the page underneath has finished building and well before the loop
-     that moves the pieces has started. The lift is the loop's: `--near` is
-     written per frame as a piece closes on its slot. Keeping them on separate
-     elements means neither has to know about the other. */
-  opacity: 0;
-  animation: sigGhost 210ms var(--in, 60ms) cubic-bezier(0.3, 0.7, 0.3, 1) forwards;
-}
-/* THE STENCIL'S WEIGHT, WHICH IS A THIRD OF THE PIECE'S AND NOT A TENTH.
-   It has one job — to say, before anything moves, that these four shapes have
-   somewhere to be — and a line too faint to read cannot do that job. A third
-   of the ink is enough to be unmistakably a drawing of the finished object and
-   not nearly enough to compete with the piece flying at it. */
-.sig__gh > svg { opacity: var(--near, 0.34); }
-/* AND THE SLOTS OCCLUDE EACH OTHER, which is the difference between a
-   construction drawing and a tangle. Four hollow wireframes stacked in the
-   same place is twelve stud ellipses seen through one another, and the shape
-   the four pieces are going to make is exactly what you cannot read out of it.
-   A dark wash inside each silhouette — the first path in the group, which is
-   the silhouette by construction — puts the near faces in front of the far
-   ones. The lines behind are dimmed rather than removed, so it is still
-   plainly a drawing of a thing rather than a picture of a thing, and the slot
-   still reads as empty: what fills it is darker than the sheet, not lighter. */
-.sig__gh g > path:first-of-type { fill: rgba(19, 23, 28, 0.62); }
-.sig__gh.is-filled { opacity: 0; animation: none; }
-@keyframes sigGhost { to { opacity: 1; } }
-.sig__gh g {
-  fill: none;
-  stroke: rgba(234, 228, 217, 0.86);
-  stroke-width: var(--sw, 1.1px);
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-
-/* --- A PIECE --------------------------------------------------------------
-   Two drawings of the same brick in the same box, stacked: the solid
-   underneath, the hairline over it. Because they were projected from one set
-   of corners they are registered exactly, which is what lets the fill be a
-   wipe through the outline's own geometry rather than a second picture being
-   faded up over the first. A cross-fade reads as two images being swapped.
-   This has to read as one object gaining a material.
-
-   THERE IS NO TRANSITION ON THE TRAVEL. A transition can only describe a
-   position curve between two values, and the flight, the magnet and the
-   settle are three different kinds of movement in a row that have to join
-   without a seam — so the loop writes the transform itself, every frame, and
-   this rule only has to stay out of its way. What is left here is the state
-   change at the snap, which is genuinely two values and genuinely a
-   transition. */
-.sig__p {
-  position: absolute;
-  /* same reasoning as the stencil: the pieces are on screen, at their starting
-     poses, from the moment the sheet is mounted. What the loop owns is where
-     they are, not whether they are there. */
-  opacity: 0;
-  animation: sigGhost 200ms var(--in, 240ms) cubic-bezier(0.3, 0.7, 0.3, 1) forwards;
-  will-change: transform;
-  --ink: rgba(240, 236, 227, 0.9);
-}
-.sig__q {
-  position: absolute;
-  inset: 0;
-  /* about the foot of the brick, because that is where it meets what it is
-     being pressed onto and a compression is measured from the contact */
-  transform-origin: 50% 84%;
-  will-change: transform;
-}
-
-/* THE ONE CREATIVE MOVE, AND IT HAPPENS ON ONE FRAME. Colour floods down
-   through the shape the hairline was drawn into — top face first, because that
-   is the face nearest the light and the one the studs are on — the hairline
-   turns from cream into the brick's own dark edge, and a contact shadow
-   appears underneath it. Eighty to a hundred milliseconds: this is a click,
-   not a dissolve. Everything before this frame is an honest technical drawing.
-   This is the frame it becomes plastic. */
-.sig__wipe {
-  position: absolute;
-  inset: 0;
-  clip-path: inset(0 0 100% 0);
-  transition: clip-path var(--fill, 95ms) cubic-bezier(0.3, 0.72, 0.36, 1);
-  will-change: clip-path;
-}
-.sig__p.is-set .sig__wipe { clip-path: inset(0 0 0 0); }
-.sig__p.is-set { --ink: var(--edge); }
-/* the shadow is on the piece as a whole rather than on the solid, because a
-   filter inside a clip would be clipped with it — a half-brick casting a
-   half-shadow. It arrives a beat behind the colour, which is what stops the
-   two from reading as one switch being thrown. */
-.sig__p.is-set .sig__q {
-  filter: drop-shadow(var(--drop, 0 3px 7px rgba(6, 9, 12, 0.5)));
-  animation: sigDrop calc(var(--fill, 95ms) * 1.9) cubic-bezier(0.3, 0.7, 0.4, 1) both;
-}
-@keyframes sigDrop { from { filter: drop-shadow(0 0 0 rgba(6, 9, 12, 0)); } }
-
-.sig__ln { position: absolute; inset: 0; }
-.sig__ln g {
-  stroke: var(--ink);
-  stroke-width: var(--sw, 1.4px);
-  transition: stroke var(--fill, 95ms) cubic-bezier(0.3, 0.72, 0.36, 1);
-}
-.sig__wipe svg,
-.sig__ln svg,
-.sig__gh svg { display: block; overflow: visible; shape-rendering: geometricPrecision; }
 
 /* --- THE TYPE WAITS FOR THE BUILD ----------------------------------------
    `reveal` is the site's own entrance — opacity, a 14px blur, five pixels of
@@ -9364,12 +10267,300 @@ body.waking.awake .rv { opacity: 1; transform: none; }
    and travel do the same job at this speed and cost nothing. The keyframes
    themselves are untouched: every other way into this page still blurs up. */
 
+
+/* ==========================================================================
+   44b. THE SHEET IS THE PORTFOLIO BEING SET OUT
+
+   WHAT THE SECOND PASS GOT WRONG, and it is worth writing down because it is
+   the kind of mistake that looks like a success in a still. That pass drew a
+   handsome setting-out sheet and then threw four bricks at the middle of it,
+   and what came out was a LEGO animation with a drawing behind it. The bricks
+   were the first thing on screen, the largest thing on screen and the only
+   thing moving, so they were the subject — and the subject of a portfolio's
+   entrance cannot be four bricks.
+
+   WHAT THE THIRD PASS GOT WRONG WAS THE OPPOSITE, and it took a screenshot
+   with arrows on it to see it. Having decided the drawing was the subject, it
+   drew everything: a title block, a status field, a build counter, a bench, a
+   cursor, an identity in two weights, a hairline per line of copy in the
+   sidebar, two centre axes and a pair of 45° guides, on top of the frames.
+   Every one of those was defensible in isolation and together they were a
+   screen with more furniture than subject — an empty canvas is not made to
+   feel like a workshop by covering it. All of it is gone, about four hundred
+   lines of CSS and rather more of JavaScript, deleted rather than switched
+   off.
+
+   WHAT THE REFERENCE ACTUALLY DOES, looked at frame by frame rather than
+   admired: its placeholders never resolve into content. They are hatched boxes
+   when they arrive and hatched boxes when the sheet goes. What resolves is the
+   DENSITY — one box, then five, then their measurements. The immersion is a
+   drawing getting more complete, and the page arriving at the end of it. That
+   is a far cheaper thing to build than placeholders that turn into
+   photographs, and it is the thing that works.
+
+   SO WHAT IS LEFT IS THE PART THAT WAS WORKING:
+
+   (absolute, from the sheet being mounted; `Boot.T` holds the two clocks these
+   are derived from, and the second of them does not start until the page
+   underneath exists to be measured, about half a second in)
+
+     01  0–620      an empty canvas. Paper and a grid, wiped down. Nothing else.
+     02  620–1000   the page's own frames, measured off the live layout — the
+                    masthead's statement and each project card's image box —
+                    with their tags, and the showcase's own left edge.
+     03  1200–2300  the image frames stop being empty: the hatch goes, a flat
+                    tone fills the same outline, and the block's real width in
+                    real pixels lands underneath it.
+     04  2700–4000  the paper uncovers downward behind a soft edge and the page
+                    is underneath, exactly where it has been the whole time.
+
+   FOUR ELEMENT TYPES, FIVE KEYFRAME SETS, AND NO LOOP. `Boot` owns no
+   `requestAnimationFrame` at all: every mark is one CSS animation with a
+   per-element delay written into its style attribute, so the sequence is a set
+   of numbers in one object in site.js and the whole layer comes off the
+   document in one line at the end.
+   ========================================================================== */
+
+.sig__mat,
+.sig__skel { position: absolute; inset: 0; pointer-events: none; }
+
+/* --- 01 · THE EMPTY CANVAS ----------------------------------------------
+
+   Two grids in one element — eight pixels for the fine one and eighty for the
+   major, which is the ratio a cutting mat uses. Four gradients on one box
+   rather than lines, so the layer is one node and one composited paint.
+
+   IT WIPES ON RATHER THAN FADING. A mask travelling down the sheet reads as
+   paper being laid out; an opacity ramp on a whole field reads as a light
+   being turned up, and a light being turned up is not construction. */
+.sig__mat {
+  background-image:
+    linear-gradient(to right, var(--sig-grid-2) 0 1px, transparent 1px 100%),
+    linear-gradient(to bottom, var(--sig-grid-2) 0 1px, transparent 1px 100%),
+    linear-gradient(to right, var(--sig-grid) 0 1px, transparent 1px 100%),
+    linear-gradient(to bottom, var(--sig-grid) 0 1px, transparent 1px 100%);
+  background-size: 80px 80px, 80px 80px, 8px 8px, 8px 8px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 var(--wipe, 0%), transparent var(--wipe, 0%));
+  mask-image: linear-gradient(to bottom, #000 0, #000 var(--wipe, 0%), transparent var(--wipe, 0%));
+  /* AND IT ENDS AT THE BOTTOM OF THE SCREEN, ON A CURVE YOU CAN FOLLOW. This
+     ran to 112% on a hard ease-out, and measured off a recording the grid was
+     fully laid 220ms into a 620ms animation — two thirds of the stated time
+     spent travelling below the window on a curve that was at three quarters of
+     its distance inside a tenth of its duration. The phase read as the grid
+     appearing rather than as paper being laid out, which is the same mistake as
+     the exit's and it was made twice. 100%, and nearly linear. */
+  animation: sigWipe 560ms 40ms cubic-bezier(0.42, 0.08, 0.5, 0.96) forwards;
+}
+@keyframes sigWipe { from { --wipe: 0%; } to { --wipe: 100%; } }
+@property --wipe { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
+
+/* THE ONE PIECE OF CONTINUOUS MOTION ON THE WHOLE SHEET, and it is two pixels.
+   A grid that is exactly still is a background image; a grid that breathes by
+   two pixels over eleven seconds is a surface. It is slow enough that nobody
+   sees it move and present enough that the screen is not dead. */
+.sig__mat { animation-name: sigWipe, sigDrift; animation-duration: 560ms, 11s; }
+@keyframes sigDrift {
+  0%   { background-position: 0 0, 0 0, 0 0, 0 0; }
+  50%  { background-position: 2px 1px, 2px 1px, 2px 1px, 2px 1px; }
+  100% { background-position: 0 0, 0 0, 0 0, 0 0; }
+}
+
+/* the hatched sheet border along the top — the one mark that says this is a
+   drawing on a sheet and not a screen with a grid on it */
+.sig__mat::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 10px;
+  background-image: repeating-linear-gradient(45deg,
+    var(--sig-hatch) 0 1px, transparent 1px 6px);
+  border-block-end: 1px solid var(--sig-line);
+  opacity: 0;
+  animation: sigUp 340ms 180ms ease-out forwards;
+}
+
+/* --- 02 · CONSTRUCTION LINES -------------------------------------------
+   Each draws itself from one end, by scale from a stated origin. A `width`
+   animation on a dozen elements is a dozen layouts a frame and looks the same. */
+.sig__cl {
+  position: absolute;
+  background: var(--sig-line);
+  opacity: 0;
+  animation: sigDraw 460ms var(--in, 0ms) cubic-bezier(0.3, 0.75, 0.2, 1) forwards;
+}
+.sig__cl--v { width: 1px; transform-origin: 50% 0; animation-name: sigDrawV; }
+@keyframes sigDraw  { from { opacity: 0; scale: 0 1; } to { opacity: 1; scale: 1 1; } }
+@keyframes sigDrawV { from { opacity: 0; scale: 1 0; } to { opacity: 1; scale: 1 1; } }
+
+/* --- 02/03 · THE PORTFOLIO'S OWN SKELETON ------------------------------
+
+   MEASURED, NOT INVENTED. Every box in here is a real element of the page
+   underneath — the masthead's statement, its two button slots, its two
+   navigation groups, each project card's image box and each card's caption —
+   read off the live layout by `marks`. So the skeleton is the portfolio's
+   skeleton: the frames are where the frames are, and the rules standing in for
+   lines of type are at the y the lines of type are at and the width they
+   actually have. Nothing here is a guess about the page, which is why the end
+   of the sequence needs no transition.
+
+   A FRAME IS A DASHED OUTLINE, because dashed is the convention for a boundary
+   that is set out and not yet built. */
+.sig__fr {
+  position: absolute;
+  border: 1px dashed var(--sig-line);
+  opacity: 0;
+  animation: sigUp 420ms var(--in, 0ms) cubic-bezier(0.3, 0.75, 0.2, 1) forwards;
+}
+
+/* AN IMAGE FRAME RESOLVES, and this is the one place the reference is improved
+   on rather than copied. It arrives hatched — the convention for an area that
+   is specified and empty — and in phase three the hatch goes and a flat tone
+   comes up in its place, wiped in from the top on its own clip. Same box, same
+   outline, no cross-fade: the frame is not replaced by a picture, it stops
+   being empty. That is what `--res` is. */
+.sig__fr--plate::before,
+.sig__fr--plate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.sig__fr--plate::before {
+  background-image: repeating-linear-gradient(45deg,
+    var(--sig-hatch) 0 1px, transparent 1px 7px);
+  animation: sigFade 520ms var(--res, 1400ms) ease-in forwards;
+}
+.sig__fr--plate::after {
+  background: var(--sig-tone);
+  clip-path: inset(0 0 100% 0);
+  animation: sigFill 640ms var(--res, 1400ms) cubic-bezier(0.32, 0.72, 0.2, 1) forwards;
+}
+@keyframes sigFade { to { opacity: 0; } }
+@keyframes sigFill { to { clip-path: inset(0 0 0 0); } }
+
+/* the tag chip on the frame's top-left corner, the way a drawing tag sits */
+.sig__fr > i {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  padding: 1px 4px;
+  background: var(--sig-chip);
+  border: 1px solid var(--sig-line);
+  font: 500 9px/1.35 var(--mono, var(--sans));
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--sig-ink);
+  font-style: normal;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+/* --- 03 · THE WITNESS LINES --------------------------------------------
+   A rule with a tick at each end and the measurement boxed in the middle. The
+   number is the block's real width in CSS pixels, so it is a measurement of the
+   thing it is drawn on and is different on a laptop and a phone. */
+.sig__dim {
+  position: absolute;
+  height: 1px;
+  background: var(--sig-line);
+  transform-origin: 0 50%;
+  opacity: 0;
+  animation: sigDraw 460ms var(--in, 0ms) cubic-bezier(0.3, 0.75, 0.2, 1) forwards;
+}
+.sig__dim::before,
+.sig__dim::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 7px;
+  background: var(--sig-line-2);
+}
+.sig__dim::before { left: 0; }
+.sig__dim::after { right: 0; }
+.sig__dim > i {
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  translate: -50% 0;
+  padding: 0 4px;
+  background: var(--sig-chip);
+  font: 500 9px/1.4 var(--mono, var(--sans));
+  letter-spacing: 0.06em;
+  color: var(--sig-ink);
+  font-style: normal;
+}
+
+@keyframes sigUp   { from { opacity: 0; translate: 0 3px; } to { opacity: 1; translate: 0 0; } }
+
+/* --- AND THE PAPER UNCOVERS, WHICH IS THE WHOLE EXIT ---------------------
+
+   THE SHEET USED TO TRAVEL A VIEWPORT UPWARD, and that was right for what it
+   was: an object being taken off a table. It is not an object any more, it is
+   the paper the page is printed on — the same paper, to the value — so taking
+   it anywhere is a move with nothing to show for it, and it is the one thing
+   that makes the entrance read as a loading screen ending rather than as a
+   page finishing.
+
+   ONE MASK, AND IT IS THE ONLY THING THAT HAPPENS. The previous pass erased the
+   drawing first — a 260ms opacity ramp on `.sig__stage`, and a faster one on
+   the writing — and then uncovered the paper underneath it. Three clocks for
+   one event, and the first two were the reason it read as a wipe: the marks
+   vanished as a field, all at once, everywhere, and only then did the edge
+   start travelling. So there is now nothing but the mask on `.sig`. The stage
+   is inside `.sig`, so the mask takes the marks with it band by band — the
+   drawing is not erased and then uncovered, it is carried off the top of the
+   screen by the same edge that reveals the page. Nothing fades as a whole.
+
+   AND THE NUMBERS ARE MEASURED, NOT CHOSEN. The reference was recorded and
+   sampled in horizontal quarters: its top band has lost its colour while the
+   third is still at full saturation, the whole pass takes about 1.35s, and the
+   transition between covered and uncovered is roughly a quarter of the
+   viewport deep. This ran at 620ms behind a 9% edge — the same idea at twice
+   the speed through a third of the feather, which is a wipe with a soft edge on
+   it rather than a reveal. 1320ms and 26%.
+
+   THE FEATHER STARTS OFF THE TOP OF THE SCREEN. `--open` is where the
+   transparent part ends, so at 0% the gradient's soft quarter is already inside
+   the viewport and the first frame of the exit would show the page faintly
+   through the top of the sheet. It begins at -28%, which puts the entire
+   feather above the window and makes the first frame genuinely opaque.
+
+   AND IT ENDS WHERE THE SCREEN ENDS. `--open` used to run to 108% on an
+   ease-out, and both halves of that were waste: measured frame by frame, the
+   last band of paper was gone 1.04s into a 1.32s animation and the remaining
+   280ms was the gradient travelling below the bottom of the window. A reveal
+   whose final quarter happens off-screen is a reveal that is over before its
+   timing says it is, which is the other half of why this read as a wipe. It
+   stops at 102% — two percent of slack against rounding and nothing more — so
+   the stated duration and the visible duration are the same number.
+
+   NEARLY LINEAR, because this is a surface being drawn back at a steady rate
+   and not an object accelerating. The curve is symmetric: enough ease at the
+   head that it does not start from a standstill, the same at the tail so the
+   last band of paper settles away rather than snapping, and a straight run
+   through the middle where the edge is crossing the content. */
+body.sliding .sig {
+  -webkit-mask-image: linear-gradient(to bottom,
+    transparent 0, transparent var(--open, -28%), #000 calc(var(--open, -28%) + 26%), #000 100%);
+  mask-image: linear-gradient(to bottom,
+    transparent 0, transparent var(--open, -28%), #000 calc(var(--open, -28%) + 26%), #000 100%);
+  animation: sigOpen var(--sig-ms, 1320ms) 90ms cubic-bezier(0.5, 0.06, 0.5, 0.94) forwards;
+}
+@keyframes sigOpen { from { --open: -28%; } to { --open: 102%; } }
+@property --open { syntax: '<percentage>'; inherits: false; initial-value: -28%; }
+
+/* --- REDUCED MOTION ---------------------------------------------------
+   Never armed in this mode — the inline script tests for it before the class is
+   ever set — but if it somehow were, everything here is simply present. */
 @media (prefers-reduced-motion: reduce) {
-  /* never armed in this mode — the inline script tests for it too — but if it
-     somehow were, the page is where it belongs and there is nothing to watch */
-  html.wake-armed, html.wake-armed body { background-color: revert-layer; background-image: revert-layer; }
-  body.waking .rv { opacity: 1; filter: none; transform: none; transition: none; }
-  .sig { display: none; }
+  .sig__mat,
+  .sig__mat::before,
+  .sig__cl,
+  .sig__fr,
+  .sig__fr--plate::after,
+  .sig__dim { animation: none; opacity: 1; translate: none; scale: 1 1; clip-path: none; }
+  .sig__fr--plate::before { animation: none; opacity: 0; }
+  .sig__mat { -webkit-mask-image: none; mask-image: none; }
 }
 
 /* ==========================================================================
@@ -14088,6 +15279,53 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   margin-inline: 0;
   overflow: clip;      /* clip, not hidden — sticky must survive it */
   isolation: isolate;
+
+  /* --- THE COLUMN THE INDEX STANDS IN --------------------------------
+
+     WITHOUT THIS THE RAIL IS WRITTEN OVER THE WORK. `.scn__stage` leaves a
+     95px gutter at 1440 and the index occupies 56 to 232, so every scene
+     composed to the left of its frame — the flagship drawing, the split, the
+     wall of screens — had a contents page lying across it. A fixed element
+     cannot be avoided by the thing it is fixed over: the page has to reserve
+     the room.
+
+     AND IT IS THE STAGE'S PADDING THAT GROWS, NOT THE FILM'S. The first pass
+     put it on `.film`, which is one line and is wrong in a way that only
+     shows up on the seven black scenes: the stage is what paints the ground,
+     so insetting the stage leaves the film's own white standing in the column
+     — a white gutter down the left of every scene that is supposed to be
+     edge-to-edge black, with the index's light ink written on it. The stage
+     stays full width and the padding inside it grows instead. The ground
+     still reaches both edges; only the content moves.
+
+     THE BLEEDS COME OUT RIGHT ON THEIR OWN. `.fg-bleed` subtracts the stage's
+     ORIGINAL gutter by name, so against a padding of gutter-plus-column it
+     lands exactly on the column's edge — which is what a full-bleed element
+     in an indexed layout should do. Nothing in any scene needed changing.
+
+     ZERO UNLESS THE STUDY HAS AN INDEX. `film--indexed` is written by
+     `Project.film` only when `FilmNav.build` returned an element, so a study
+     whose scenes declare no `nav` is laid out exactly as it was. */
+  --film-index: 0rem;
+}
+
+/* 17.5rem is the rail's own geometry and not a guess: 3.5rem to its left edge,
+   11rem of column, and 3rem of air before the stage's gutter starts. Below
+   64rem the index is a readout in the corner instead and takes no room. */
+@media (min-width: 64rem) {
+  /* 15.5rem is the rail's own right edge — 3.5 out plus 11 of column — plus
+     one rem of air. It is the least the index can cost, and between 1024 and
+     1280 that is the number to use: 17.5rem at 1024 leaves the scenes 677px,
+     which is narrower than the study's own measure. */
+  .film--indexed { --film-index: 15.5rem; }
+}
+
+@media (min-width: 80rem) {
+  .film--indexed { --film-index: 17.5rem; }
+}
+
+.film--indexed .scn__stage {
+  padding-inline-start: calc(clamp(1.25rem, 6.6vw, 7rem) + var(--film-index));
 }
 
 /* THE SEVEN BLACK SCENES. Every colour in the film comes from the six tokens
@@ -15606,7 +16844,6 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 @media (prefers-reduced-motion: reduce) {
   .fg-strew__o { animation: none; }
 }
-}
 
 .fg-strew__o img {
   display: block;
@@ -16494,6 +17731,181 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 /* HOW FAR IN YOU ARE, and it is the only persistent chrome the film has: a
    twenty-six scene sequence with no progress signal is a page with no bottom.
    One pixel, at the top, in ink. */
+
+/* --- 00 · THE RECORD ------------------------------------------------------
+
+   THE FRONT MATTER OF A DOCUMENT, SET AS ONE. The film's own opening is a
+   product in the dark with one sentence under it; this is the screen after
+   it, and it is where the study says what it is. Name, one line of what the
+   thing is, then the facts — ruled, key left, value right, nothing centred
+   and nothing large.
+
+   IT IS LEFT-ALIGNED ON THE STAGE'S OWN GUTTER and it does not fill it. The
+   measure is 58ch, which at 1440 is about 640px in a 1248px frame, so the
+   record occupies a little over half the screen and the rest is air. That
+   proportion is the whole difference between front matter and a hero: a hero
+   uses the frame, a document sits in the corner of it.
+
+   THE ROWS ARE A DEFINITION LIST AND NOT A TABLE, because that is what they
+   are — five terms and their values — and a `<dl>` reads correctly to a
+   screen reader without a single role attribute. The grid is `auto 1fr`
+   rather than two fixed tracks so the longest key sets the gutter and the
+   values line up against whatever that turns out to be. */
+.fg-rec {
+  /* the record's own measure, narrower than the stage's 74rem */
+  max-width: 58ch;
+  gap: 0;
+}
+
+.fg-rec__h {
+  /* SMALLER THAN A SCENE HEADLINE, ON PURPOSE. Every other headline in the
+     film is `--fg-poster` because it is the only thing in its frame. This one
+     has five rows of metadata under it and a sentence between, so it is set at
+     the reading scale the rest of the study's prose is set at — the point of
+     the screen is the facts, not the name. */
+  font-size: clamp(1.75rem, 3.4vw, 2.75rem);
+  letter-spacing: -0.035em;
+  margin-block: clamp(0.85rem, 1.8vh, 1.3rem) 0;
+}
+
+.fg-rec__lede {
+  font-size: var(--fg-lede);
+  line-height: 1.5;
+  color: var(--fg-dim);
+  margin: clamp(0.8rem, 1.7vh, 1.15rem) 0 0;
+  max-width: 46ch;
+  text-wrap: pretty;
+}
+
+/* the same emphasis `.fg-p` carries, because it is the same kind of sentence */
+.fg-rec__lede b, .fg-rec__lede strong { color: var(--fg-ink); font-weight: 540; }
+
+.fg-rec__list {
+  margin: clamp(1.9rem, 4.4vh, 3rem) 0 0;
+  display: grid;
+  width: 100%;
+  /* the hairline above the first row, so the block reads as ruled rather
+     than as a list that happens to have lines between its items */
+  border-block-start: 1px solid var(--fg-line);
+}
+
+.fg-rec__r {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: baseline;
+  padding-block: clamp(0.62rem, 1.35vh, 0.9rem);
+  border-block-end: 1px solid var(--fg-line-soft);
+}
+
+.fg-rec__k {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--fg-quiet);
+  line-height: 1.6;
+}
+
+.fg-rec__v {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--fg-ink);
+  text-wrap: pretty;
+}
+
+.fg-rec__f {
+  margin-block-start: clamp(1rem, 2.2vh, 1.5rem);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--fg-quiet);
+}
+
+
+/* --- THE CHAPTER CARD ----------------------------------------------------
+
+   FIVE OF THESE IN FORTY-SIX SCREENS, and each one is one line: a number at
+   poster size, the chapter's name beside it at caption size, a rule under
+   both. The ratio between those two sizes is the entire design — a number
+   that large next to type that small reads as a plate in a document, and the
+   same number at headline size next to a headline would read as a title
+   slide.
+
+   IT PASSES THROUGH RATHER THAN HOLDING. The scenes state a `dur` barely over
+   one screen, so the sticky stage never gets a chance to stick and the card
+   crosses the frame at reading speed. Nothing here enforces that — it is the
+   scene's own height, in the data, which is where the film's timing lives.
+
+   NO GROUND OF ITS OWN. The card takes whatever the film's tokens currently
+   are, so a marker between two white scenes is white and the same element
+   between two black ones would be black. A chapter break that also changes
+   the ground is two events where the reader was promised one. */
+.fg-mark {
+  gap: 0;
+  align-content: center;
+}
+
+.fg-mark__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(1.25rem, 3vw, 2.75rem);
+  align-items: baseline;
+  width: 100%;
+}
+
+.fg-mark__n {
+  font-size: var(--fg-poster-xl);
+  font-weight: 600;
+  line-height: 0.8;
+  letter-spacing: -0.06em;
+  font-variant-numeric: tabular-nums;
+  /* THE NUMBER IS QUIET INK AND NOT HEADLINE INK, which is the only reason a
+     glyph this size is not the loudest thing in the study. It is a plate
+     number: it should be findable and it should not be read. */
+  color: var(--fg-line);
+}
+
+.fg-mark__t {
+  display: grid;
+  gap: 0.45rem;
+  padding-block-end: clamp(0.2rem, 0.8vh, 0.6rem);
+}
+
+.fg-mark__l {
+  font-size: clamp(1.0625rem, 1.7vw, 1.4375rem);
+  font-weight: 560;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  color: var(--fg-ink);
+  text-wrap: balance;
+}
+
+.fg-mark__s {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--fg-dim);
+  max-width: 44ch;
+  text-wrap: pretty;
+}
+
+.fg-mark__rule {
+  display: block;
+  width: 100%;
+  height: 1px;
+  margin-block-start: clamp(1.1rem, 2.6vh, 1.75rem);
+  background: var(--fg-line);
+  transform-origin: left center;
+  /* the rule draws itself in from the left rather than fading, which is the
+     one piece of motion on the card and is what makes it read as a line
+     being ruled under a chapter */
+  scale: var(--o, 1) 1;
+}
+
+
 /* AND ITS COLOUR IS THE CURRENT SCENE'S, NOT A BLEND MODE. The first draft
    used `mix-blend-mode: difference` so one grey could sit on both grounds,
    which is neat and is also a colour nobody can compute a contrast ratio
@@ -16524,57 +17936,19 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 
 /* --- AND WHERE YOU ARE IN IT ---------------------------------------------
 
-   AN ACT RAIL LIVED HERE ONCE AND WAS DELETED. The reason still holds: four
-   dots and a chapter label down the left edge is a table of contents for
-   something meant to be watched rather than navigated, and it competed with
-   the work at every scroll position. This is a smaller claim. Two lines in
-   the corner furthest from the frame's subject, changing four times in
-   forty-six screens — the number, so a reader who lands mid-film knows how
-   far in they are, and the act's name, so the number means something.
+   THE CORNER READOUT WAS HERE AND IT HAS COME OUT. It was two fixed lines in
+   the bottom-left — `01 / 04` over the act's name — and it was the right
+   answer for a film with no contents page: the smallest possible statement of
+   position, in the corner furthest from the subject.
 
-   IT BEGINS ON THE HERO. Fixed, built with the film, and reading 01 / 04
-   from the first paint — so it is one object in one corner from the opening
-   screen to the last, which is the whole of what makes it a chapter system
-   rather than a label on a hero.
-
-   ABOVE THE PODS, NOT BESIDE THEM. The grid and theme pods are 32px circles
-   fixed 20px off this corner; 4.5rem clears them, and the two together read
-   as one stack rather than as a row of unrelated furniture. It takes the
-   film's tone the same way the hairline does, because no single grey clears
-   4.5:1 on both white and near-black. */
-.film__chap {
-  position: fixed;
-  left: calc(20px + var(--sa-left, 0px));
-  /* THE SAME 4rem THE HERO'S OWN FOOT ROW SITS ON — see `--fh-foot` in
-     section 48 — so on the first screen the chapter reading, the scroll cue
-     and the readout share one baseline. It is stated rather than inherited
-     because this element is fixed to the window and outlives the hero by
-     forty-five screens. */
-  bottom: calc(4rem + var(--sa-bottom, 0px));
-  z-index: 40;
-  display: grid;
-  gap: 0.3rem;
-  font-family: var(--mono);
-  font-size: 0.625rem;
-  line-height: 1.5;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-}
-
-.film__chap-n { color: #57585e; }
-.film__chap-t { color: #8a8b91; }
-
-.film[data-tone='dark'] .film__chap-n { color: #6e6f76; }
-.film[data-tone='dark'] .film__chap-t { color: #a7a8ae; }
-
-/* A phone has one corner and IshaanLLM's chip and the two pods are already
-   in it. The chapter reading is the thing on this list a reader can most
-   afford to be without. */
-@media (max-width: 46rem) {
-  .film__chap { display: none; }
-}
+   The study has an index now (section 23a, `.rail--film`), which says the same
+   thing and three more: what the parts are called, what is on either side of
+   the one you are in, and how to get there. Two systems answering one question
+   four rows apart is one too many, so the readout is deleted rather than
+   hidden — its element, its `setAct`, both ink pairs and its phone rule are
+   all gone. `.film__bar`, the one-pixel progress hairline above, stays: it
+   measures the whole page rather than naming a part of it, and the index does
+   not do that. */
 
 
 /* --- narrow -------------------------------------------------------------- */
@@ -16587,6 +17961,21 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   }
 
   .scn__stage { padding-block: clamp(2.5rem, 6vh, 4rem); }
+
+  /* THE RECORD LOSES ITS SECOND COLUMN. At 390px an 8.5rem key track leaves
+     about 180px for a value like "Product strategy · UX · UI · Design system",
+     which sets in four lines against a one-line key — a ruled block with a
+     ragged left column is a table that has stopped being one. Stacked, the
+     key is a label over its value and the rules still carry the rhythm. */
+  .fg-rec__r { grid-template-columns: 1fr; gap: 0.3rem; }
+  .fg-rec { max-width: none; }
+
+  /* THE CHAPTER NUMBER GOES OVER ITS TITLE for the same reason, and loses a
+     third of its size on the way: `--fg-poster-xl` is already reduced at this
+     width, and a number beside a title in a 390px frame leaves the title four
+     words a line. */
+  .fg-mark__row { grid-template-columns: 1fr; gap: 0.6rem; }
+  .fg-mark__n { line-height: 0.9; }
 
   /* Everything that was two or three columns becomes one, and the columns
      keep their order: the words before the picture, the case against before
@@ -16995,6 +18384,17 @@ body[data-page='project'] .tmode { display: none; }
   inset: 0;
   overflow: clip;
 }
+
+/* THE ROOM IS THE ONE SCENE THE STAGE'S PADDING CANNOT MOVE, because the room
+   is `inset: 0` on a stage that deliberately has none — the environment is
+   meant to reach every edge. So the index's column is taken off the room
+   itself. Everything inside it is placed as a percentage of this box or as an
+   orbit around the phone at its centre, so narrowing the box moves the whole
+   composition together: the pool of light stays under the device, the sheets
+   keep their arcs, and nothing is re-tuned. The grid, grain and ground stay
+   full width behind it — they are the environment and the environment should
+   still run under the index. */
+.film--indexed .scn--room .room { left: var(--film-index); }
 
 /* the pool of light the phone stands in, centred on the phone itself rather
    than on the frame — the composition is asymmetric and a glow centred on the

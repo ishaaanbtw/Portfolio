@@ -666,6 +666,59 @@ window.SITE = {
            The Principles section is the one to split first — four principles
            sharing one frame today, but the point lands harder as four `shot`
            blocks, one screen under each idea.                                */
+        /* --- THE CHAPTER COVER ------------------------------------------
+
+           WHAT THIS IS FOR. Pressing a card used to leave the site: one click
+           and you were in a forty-six screen case study with no idea whether
+           you wanted to be. This is the screen in between — enough of the
+           project to decide by, on the page you are already on, with the study
+           one deliberate press further.
+
+           IT IS NOT A SUMMARY OF THE STUDY. A summary would be the study
+           again, shorter, and nobody reads the same argument twice. This is
+           the jacket copy: what the thing is, what was mine, and four pictures
+           that say whether it is any good. `spread` is composed rather than
+           listed — a hero, two supports at different crops and one detail —
+           and the three positions are named rather than numbered so the
+           composition is legible here and not only in the stylesheet.
+
+           EVERY FACT IS OUT OF THE STUDY OR THE KNOWLEDGE BASE. Nothing in a
+           `brief` is written for the brief. */
+        brief: {
+          tagline: 'A hardware wallet the size of a bank card.',
+          summary: 'X0 had to be new enough to justify its own identity and '
+            + 'unmistakably Cypherock at the same time. Seven months from the '
+            + 'first scoping conversation to a beta — the card, the app around '
+            + 'it, and the design system under both.',
+          facts: [
+            { k: 'Role', v: 'Senior Product Designer — end to end' },
+            { k: 'Timeline', v: 'Seven months · Dec 2025 — present' },
+            { k: 'Team', v: 'Design of one, with firmware, hardware, blockchain and frontend' },
+            { k: 'Platform', v: 'NFC card · iOS · Android · CySync desktop' },
+          ],
+          does: [
+            'Product strategy',
+            'Information architecture',
+            'UX and UI',
+            'N45 design system',
+            'Industrial and packaging design',
+            'NFC and BLE interaction flows',
+          ],
+          cta: 'View the complete case study',
+          /* THE HERO IS THE CARD AGAINST THE PHONE, because the whole product
+             is one object touching another one, and it is the only frame in
+             the set that says so without a caption. */
+          spread: [
+            { at: 'hero', src: 'assets/media/x0/app-walkthrough.webp', w: 1440, h: 918,
+              alt: 'The X0 companion app running on a phone, lit from one side.' },
+            { at: 'a', src: 'assets/img/x0/system/hero.webp', w: 862, h: 1772,
+              alt: 'The X0 Wallet portfolio screen.' },
+            { at: 'b', src: 'assets/img/x0/onboarding/09-tap-idle.webp', w: 393, h: 852,
+              alt: 'Tap to approve — the card held against the back of the phone.' },
+            { at: 'detail', src: 'assets/img/x0/system/n45-mark.png', w: 192, h: 192,
+              alt: 'The N45 design system mark.' },
+          ],
+        },
         study: {
           /* THE ROUTE THIS STUDY LIVES AT, and the reason it is a word rather
              than an index: `/work/cypherock-x0.html` is a URL somebody can
@@ -871,6 +924,44 @@ window.SITE = {
              change. X0-IMAGE-CHECKLIST.md is the list.                     */
           mode: 'film',
           scenes: [
+            /* --- 00 · THE RECORD ---------------------------------------------
+
+               WHAT THIS ANSWERS, AND WHY THE HERO CANNOT. The film opens on the
+               product moving in the dark under one sentence about self-custody.
+               That is an arrival and it is the right one — but a reader who has
+               just watched it still does not know what X0 IS, how long it took,
+               or which parts of it were mine, and those are the three things a
+               case study is opened for. Putting them in the hero turns the hero
+               into a title slide with a spec table under it, which is the exact
+               shape the film was built to stop being.
+
+               So they are the screen AFTER it. The hero ends on black, the
+               bridge turns the page white, and the first thing printed on the
+               white is the record. It is the front matter of a document: name,
+               one line of what the thing is, then the facts ruled off, key left
+               and value right — the same reading the legacy spec card gets
+               later in the study, because a fact set as engineering metadata
+               reads as a fact and the same fact set as a sentence reads as a
+               claim.
+
+               EVERY VALUE HERE IS DOCUMENTED. Seven months, concept to beta,
+               the scope and the collaborators are all out of the knowledge base
+               rather than written for the page. There is no team size and no
+               launch metric because neither is recorded anywhere, and a case
+               study that invents one has spent the only thing it had. */
+            { id: 'x0-record', nav: 'Overview', kind: 'record', dur: 165,
+              kicker: 'Cypherock · Case study',
+              h: 'Cypherock X0',
+              lede: 'A hardware wallet the size of a bank card, built to make '
+                + 'self-custody simpler, more approachable and more '
+                + '<b>physical</b> than the vault it sits beside.',
+              rows: [
+                { k: 'Role', v: 'Senior Product Designer — end to end, concept to beta' },
+                { k: 'Timeline', v: 'Seven months · Dec 2025 — present' },
+                { k: 'Team', v: 'Design of one, with firmware, hardware, blockchain and frontend engineering' },
+                { k: 'Scope', v: 'Product strategy · Information architecture · UX · UI · Design system · Industrial and packaging design' },
+                { k: 'Surfaces', v: 'The NFC card · X0 Wallet for iOS and Android · CySync desktop' },
+              ] },
 
             /* ==============================================================
                ACT I — THE PREMISE (01–05)
@@ -938,7 +1029,7 @@ window.SITE = {
                `object` renders each one only if the scene carries it, so the
                end card — the other scene on this renderer — is untouched by
                all of it. */
-            { id: 'x0-x1', act: 'I · Premise', kind: 'object', dur: 150,
+            { id: 'x0-x1', nav: 'Context', act: 'I · Premise', kind: 'object', dur: 150,
               /* THE DRAWING IS THE ORIGINAL. IT ARRIVES ONE ELEMENT AT A TIME.
 
                  `art` IS THE DRAWING AND IT IS NEVER TOUCHED. Traced from
@@ -1329,6 +1420,28 @@ window.SITE = {
               h: 'Mobile isn’t a platform decision. It’s where the money already lives.',
               p: 'Price and complexity were screening out the people self-custody was meant to protect.' },
 
+            /* ==============================================================
+               ACT II — THE QUESTION (06–10)
+               Surprise. The altitude of the problem, and what it ruled out.
+               ============================================================== */
+
+
+
+            /* ==============================================================
+               ACT IV — THE PRODUCT (21–27)
+               Admiration. What was built, what it cost, and what is next.
+               ============================================================== */
+
+            /* --- CHAPTER 01 · THE PROBLEM ---------------------------------
+
+               THE FIRST BREAK, AND IT COMES AFTER THE FLAGSHIP RATHER THAN
+               BEFORE IT. Two scenes have just argued that X1 was correct and
+               that the correctness stopped mattering; this rules a line under
+               that and names what the next three scenes are about. */
+            { id: 'x0-ch-1', nav: 'The Problem', kind: 'mark', dur: 118,
+              n: '01', h: 'The problem',
+              p: 'X1 was not broken. The market it was built for had moved.' },
+
             /* THE PRODUCT'S ACTUAL REASON TO EXIST, AND IT IS A SUBTRACTION.
                This is the strongest idea in the project and it was missing
                from both earlier versions of the study. The vault device
@@ -1350,11 +1463,16 @@ window.SITE = {
               kicker: 'The brief, in four words',
               items: ['Affordable.', 'Mobile-first.', 'Simple.', 'Secure.'],
               p: 'The first three were the brief. The fourth was non-negotiable.' },
+            /* --- CHAPTER 02 · UNDERSTANDING THE BRIEF ---------------------------------
 
-            /* ==============================================================
-               ACT II — THE QUESTION (06–10)
-               Surprise. The altitude of the problem, and what it ruled out.
-               ============================================================== */
+               THE BRIEF AND NOT THE USER, WHICH IS WHAT ACTUALLY HAPPENED.
+               The honest version of this chapter is that the research was done
+               ON the brief — five words, a stack of assumptions, and eight
+               questions nobody had written down. Calling it "understanding the
+               user" would be the template’s word for it, not the project’s. */
+            { id: 'x0-ch-2', nav: 'Research', kind: 'mark', dur: 118,
+              n: '02', h: 'Understanding the brief',
+              p: 'What was actually handed over, and what it turned out to be asking for.' },
 
             /* THE SPINE, and the only white frame in the film. Nothing moves
                in it: after five scenes of motion, stillness is the effect,
@@ -1462,6 +1580,13 @@ window.SITE = {
                 { t: 'Unmistakably Cypherock.', fight: true },
               ],
               p: 'It had to look better than the flagship without embarrassing it.' },
+            /* --- CHAPTER 03 · FINDING THE DIRECTION ---------------------------------
+
+               THE TURN. Everything before this chapter is the problem; everything
+               after it is a consequence of the two decisions inside it. */
+            { id: 'x0-ch-3', nav: 'Direction', kind: 'mark', dur: 118,
+              n: '03', h: 'Finding the direction',
+              p: 'Two decisions, taken early, that every screen after them follows from.' },
 
             /* THE CONTRADICTION CONVERTED INTO A DIRECTION. Each connector
                draws down and then its word appears, so the reader feels the
@@ -1500,6 +1625,15 @@ window.SITE = {
             { id: 'x0-dec-1', act: 'III · Decisions', kind: 'ask', dur: 110, dark: true,
               n: 'Decision 01',
               h: 'Don’t reuse the design system that already existed.' },
+            /* --- CHAPTER 04 · BUILDING THE SYSTEM ---------------------------------
+
+               THE LONGEST CHAPTER IN THE FILM SITS BEHIND THIS CARD: the split,
+               and then the eight-scene room. It is the one place a reader most
+               needs to be told they are entering something, because the room
+               changes ground and holds for six screens. */
+            { id: 'x0-ch-4', nav: 'Design System', kind: 'mark', dur: 118,
+              n: '04', h: 'Building the system',
+              p: 'N45 — the components, tokens and rules the product is assembled from.' },
 
             /* THE CASE AGAINST, THEN THE ANSWER, on one pin. The left column
                fills while the right stays black — the asymmetry is
@@ -1964,7 +2098,7 @@ window.SITE = {
                title card followed by its own proof is not two scenes. This is
                also where the film's texture changes for the only time:
                rendered black to a real wall, as a hard cut. */
-            { id: 'x0-dec-2', kind: 'photo', dur: 160,
+            { id: 'x0-dec-2', nav: 'Explorations', kind: 'photo', dur: 160,
               n: 'Decision 02',
               h: 'Four directions. Only one survived the people who’d have to sell it.',
               p: 'The only way to argue about four directions is to see them at the same time.',
@@ -2117,11 +2251,14 @@ window.SITE = {
                   t: 'One fork, asked once',
                   b: 'The only branch in the flow, at the end, in the terms a first-time owner would use.' },
               ] },
+            /* --- CHAPTER 05 · BRINGING X0 TO LIFE ---------------------------------
 
-            /* ==============================================================
-               ACT IV — THE PRODUCT (21–27)
-               Admiration. What was built, what it cost, and what is next.
-               ============================================================== */
+               THE LAST BREAK. Act IV opens on the tap, which is the first time in
+               the study a hand touches the product — so the card ruled in front
+               of it is the film clearing its throat before the payoff. */
+            { id: 'x0-ch-5', nav: 'Product', kind: 'mark', dur: 118,
+              n: '05', h: 'Bringing X0 to life',
+              p: 'The card, the app, and the four ideas the screens exist to prove.' },
 
             /* THE EMOTIONAL PEAK, AND THE PAYOFF FOR SCENE 04. The video is
                scrubbed by scroll, so the reader controls the tap and can hold
@@ -2170,7 +2307,7 @@ window.SITE = {
                RATHER THAN THE FIRST. The two months where an earlier answer
                was abandoned carry a brass dot, because those are the two the
                reader should feel. */
-            { id: 'x0-timeline', kind: 'spine', dur: 180,
+            { id: 'x0-timeline', nav: 'Outcomes', kind: 'spine', dur: 180,
               kicker: 'Seven months',
               beats: [
                 { w: 'Month 1',
@@ -2266,6 +2403,56 @@ window.SITE = {
            on hover — the two are neighbours in the grid. */
         thumbFit: 'sheet',
         preview: 'words', line: 'Shortlisted',
+        /* --- THE CHAPTER COVER ------------------------------------------
+
+           WHAT THIS IS FOR. Pressing a card used to leave the site: one click
+           and you were in a forty-six screen case study with no idea whether
+           you wanted to be. This is the screen in between — enough of the
+           project to decide by, on the page you are already on, with the study
+           one deliberate press further.
+
+           IT IS NOT A SUMMARY OF THE STUDY. A summary would be the study
+           again, shorter, and nobody reads the same argument twice. This is
+           the jacket copy: what the thing is, what was mine, and four pictures
+           that say whether it is any good. `spread` is composed rather than
+           listed — a hero, two supports at different crops and one detail —
+           and the three positions are named rather than numbered so the
+           composition is legible here and not only in the stylesheet.
+
+           EVERY FACT IS OUT OF THE STUDY OR THE KNOWLEDGE BASE. Nothing in a
+           `brief` is written for the brief. */
+        brief: {
+          tagline: 'Hiring software that reads the resumes for you.',
+          summary: 'Sourcing, shortlisting and screening automated end to end, '
+            + 'for a US B2B recruitment platform. The design problem was where '
+            + 'to stop: every screen is a place a human decides what the model '
+            + 'got right.',
+          facts: [
+            { k: 'Role', v: 'Product Designer — end to end, plus product direction' },
+            { k: 'Timeline', v: 'Jan 2024 — Nov 2025 · Noida, on-site' },
+            { k: 'Team', v: 'Cross-functional team of 7' },
+            { k: 'Platform', v: 'Web · Recruiter, admin and candidate surfaces' },
+          ],
+          does: [
+            'Product direction',
+            'AI assistant for job creation and scheduling',
+            'Freemium acquisition model',
+            'Meeting scheduler MVP',
+            'Design system, 100+ components',
+            'Continuous user and A/B testing',
+          ],
+          cta: 'View the complete case study',
+          spread: [
+            { at: 'hero', src: 'assets/img/onefinnet/screens/candidate-view.webp', w: 1488, h: 1140,
+              alt: 'A candidate evaluation, with the model\u2019s score beside the resume.' },
+            { at: 'a', src: 'assets/img/onefinnet/screens/kanban-board.webp', w: 1488, h: 1140,
+              alt: 'The hiring pipeline as a board.' },
+            { at: 'b', src: 'assets/img/onefinnet/screens/ai-screening-criteria.webp', w: 1488, h: 1140,
+              alt: 'Setting the screening criteria the assistant works from.' },
+            { at: 'detail', src: 'assets/img/onefinnet/personas.webp', w: 1534, h: 544,
+              alt: 'The three people the product is for, in their own words.' },
+          ],
+        },
         study: {
           slug: 'onefinnet-talent',
           company: 'Onefinnet',
@@ -2789,12 +2976,86 @@ window.SITE = {
       { title: 'Today, around the world', meta: 'Design, 2024, Everywhere', href: '#',
         /* the tall one. A fan of passports wants the height. */
         col: 'a', ratio: 1.06,
-        preview: 'fan' },
+        preview: 'fan' ,
+        /* --- THE CHAPTER COVER ------------------------------------------
+
+           WHAT THIS IS FOR. Pressing a card used to leave the site: one click
+           and you were in a forty-six screen case study with no idea whether
+           you wanted to be. This is the screen in between — enough of the
+           project to decide by, on the page you are already on, with the study
+           one deliberate press further.
+
+           IT IS NOT A SUMMARY OF THE STUDY. A summary would be the study
+           again, shorter, and nobody reads the same argument twice. This is
+           the jacket copy: what the thing is, what was mine, and four pictures
+           that say whether it is any good. `spread` is composed rather than
+           listed — a hero, two supports at different crops and one detail —
+           and the three positions are named rather than numbered so the
+           composition is legible here and not only in the stylesheet.
+
+           EVERY FACT IS OUT OF THE STUDY OR THE KNOWLEDGE BASE. Nothing in a
+           `brief` is written for the brief. */
+        brief: {
+          tagline: 'One document, ninety-six ways.',
+          summary: 'A self-directed study in how the same identity document is '
+            + 'designed differently in every country that issues one — and what '
+            + 'that says about designing anything for everywhere.',
+          facts: [
+            { k: 'Role', v: 'Self-directed' },
+            { k: 'Timeline', v: '2024' },
+            { k: 'Team', v: 'Solo' },
+            { k: 'Platform', v: 'Print and screen' },
+          ],
+          does: ['Research', 'Art direction', 'Typography'],
+          /* NO `cta`, BECAUSE THERE IS NOWHERE TO SEND ANYBODY YET. The study
+             is not written and a button to a page that does not exist is the
+             one thing worse than no button. `note` takes its place and says so
+             plainly — see `.pvw__soon`. */
+          note: 'Write-up in progress',
+          /* AND NO `spread` EITHER. There are no photographs of this in the
+             repository, and four crops of the card's own generated artwork is
+             padding with extra steps. The preview falls back to that artwork
+             at one size, which is honest about what exists. */
+        },
+      },
       { title: 'Magic Extractor', meta: 'Design, 2025, Bengaluru', href: '#',
         /* short and wide, under the tall one, so the right-hand stack ends on a
            different line again */
         col: 'b', ratio: 1.5,
-        preview: 'ring', line: 'Extracting', stat: '672/897 files parsed' },
+        preview: 'ring', line: 'Extracting', stat: '672/897 files parsed' ,
+        /* --- THE CHAPTER COVER ------------------------------------------
+
+           WHAT THIS IS FOR. Pressing a card used to leave the site: one click
+           and you were in a forty-six screen case study with no idea whether
+           you wanted to be. This is the screen in between — enough of the
+           project to decide by, on the page you are already on, with the study
+           one deliberate press further.
+
+           IT IS NOT A SUMMARY OF THE STUDY. A summary would be the study
+           again, shorter, and nobody reads the same argument twice. This is
+           the jacket copy: what the thing is, what was mine, and four pictures
+           that say whether it is any good. `spread` is composed rather than
+           listed — a hero, two supports at different crops and one detail —
+           and the three positions are named rather than numbered so the
+           composition is legible here and not only in the stylesheet.
+
+           EVERY FACT IS OUT OF THE STUDY OR THE KNOWLEDGE BASE. Nothing in a
+           `brief` is written for the brief. */
+        brief: {
+          tagline: 'Pulling the signal out of nine hundred files.',
+          summary: 'An extraction tool for people who are handed a folder and '
+            + 'asked what is in it. Most of the design is what the interface '
+            + 'does while it does not yet know the answer.',
+          facts: [
+            { k: 'Role', v: 'Design' },
+            { k: 'Timeline', v: '2025 · Bengaluru' },
+            { k: 'Team', v: 'With engineering' },
+            { k: 'Platform', v: 'Desktop' },
+          ],
+          does: ['Interaction design', 'Progress and state', 'UI'],
+          note: 'Write-up in progress',
+        },
+      },
     ],
   },
 

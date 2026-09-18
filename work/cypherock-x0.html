@@ -18,59 +18,83 @@
      before the stylesheet is parsed. -->
 <link rel="preload" href="../assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT.
-     What this is: site.js section 5c2c, site.css section 44. Why it cannot
-     live in site.js: the sheet is charcoal and the page is paper, and site.js
-     runs at the end of the body — a decision made there is one painted frame
-     of the wrong colour before the right one. So the test is applied here, in
-     the head, and it is identical in every page that loads the script.
+     What this is: site.js section 5c2c, site.css sections 44 and 44b. Why it
+     cannot live in site.js: the sheet is the page's own paper and the document
+     starts white, and site.js runs at the end of the body — a decision made
+     there is one painted frame of the wrong colour before the right one. So
+     the test is applied here, in the head, and this block is byte-identical in
+     every page that loads the script. Only one thing differs between them, and
+     it is an attribute on <html>: see below.
 
      ARRIVING, NOT MOVING. An intro is something you sit through when you get
      somewhere; the moment it becomes a toll on every click it stops being an
-     intro and starts being a wait. It plays once per tab session and then not
-     again — not on a click between pages, not on back or forward, not on a
-     reload.
+     intro and starts being a wait. So it plays on an arrival at the home page —
+     a cold visit, a typed address, a bookmark, and a reload, which is an
+     arrival at the same address and the thing you do most while building the
+     site — and it does not play on a click, on back or forward, or anywhere
+     else on the site.
 
-     THIS USED TO BE INFERRED, AND INFERENCE WAS THE BUG. The old rule read
-     `document.referrer` to decide whether you had come from inside the site,
-     and armed whenever it could not tell. Measured in Chromium the inference
-     is right — a walk from home to work to a project and back armed nothing —
-     but every one of its inputs is deniable. A referrer is empty under
-     `rel=noreferrer`, under a `no-referrer` policy, from a bookmark, from an
-     app, and on `file://` where the origins cannot be compared at all; each of
-     those looked exactly like a cold visit, and the loader played. And the one
-     case it got wrong on purpose was `reload`, which armed every single time.
-     A flag is not an inference. It cannot be wrong about whether it has been
-     set, so there is nothing left to deny.
+     ONLY THE LANDING PAGE HAS AN ENTRANCE, and `data-entrance` on <html> in
+     index.html is the whole of that decision. The sheet is a drawing OF the
+     home page: `Boot.marks` measures the masthead's statement and each project
+     card's image box off the live layout, and on About, Play, a case study or
+     the 404 it would find none of them and put up a blank sheet. So those
+     pages run this identical block, clear the flag below, and return. The
+     attribute is deliberately not a path test — `/`, `/index.html` and a
+     rewritten `/` are the same page under three spellings, and a rule that has
+     to know which is a rule that will be wrong on a rename.
 
-     What the old rule was protecting is real, and it is kept: gating on the
-     session takes away the ability to see the entrance by reloading, which is
-     the thing you do most while building it. That is what `?intro` is for.
+     AND SWITCHING SECTIONS NEVER REACHES HERE AT ALL. Work, About and Play are
+     views of one shell: `Route` swaps them with `pushState` and no navigation,
+     so the document is not reloaded and there is no load to suppress. Reloading
+     while on About loads about.html, which has no `data-entrance`, so that is
+     answered too — by the same line, not a second rule.
 
-     The timeout is the failsafe: if site.js never lands, the class comes off
+     WHAT CHANGED, AND WHY THE OLD RULE HAD TO GO. This used to gate on a
+     session flag: the first page of the tab armed and marked the session, and
+     every page after it read the mark and did not. That is a clean mechanism
+     and it got one case wrong on purpose — a reload of the home page, which is
+     the most common way anybody sees this sequence, was treated as "already
+     seen" and skipped. The flag has been replaced by two facts that are not
+     inferences either: the browser's own report of what kind of navigation
+     this was, and a flag the LEAVING page writes (`hop` in site.js).
+
+     THE FAILSAFE IS THE TIMEOUT: if site.js never lands, the class comes off
      by itself and the page is simply the page. -->
 <script>
 (function () {
   try {
     var d = document.documentElement;
 
-    /* ONE FLAG, SET BEFORE ANYTHING ELSE CAN RETURN.
-       Every page that loads site.js runs this identical block, and every one of
-       them writes the flag — including the pages that then decide not to arm.
-       That is the whole mechanism: whichever page you land on first arms the
-       entrance and marks the session, and every page after it, in any order,
-       reads the mark and does not. */
-    var seen = false;
+    /* READ AND CLEAR, ON EVERY PAGE, BEFORE ANYTHING CAN RETURN. `site:hop` is
+       set by `hop()` in site.js immediately before an internal link hands an
+       address to the browser. Every page consumes it — including the ones with
+       no entrance — so it is true for exactly one load and can never go stale
+       and suppress a genuine arrival later in the session. */
+    var hopped = false;
     try {
-      seen = !!sessionStorage.getItem('site:entered');
-      sessionStorage.setItem('site:entered', '1');
-    } catch (e) {}
+      hopped = !!sessionStorage.getItem('site:hop');
+      sessionStorage.removeItem('site:hop');
+    } catch (e) { /* private mode */ }
 
-    /* THE WAY BACK IN, because the rule above takes away the one thing you do
-       most while building the site. `?intro` on any URL plays it again. */
-    var force = /(^|[?&])intro(=|&|$)/.test(location.search);
-
+    if (!d.hasAttribute('data-entrance')) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (seen && !force) return;
+
+    /* `?intro` forces it, which is how you watch the sequence without caring
+       how you got here. */
+    if (!/(^|[?&])intro(=|&|$)/.test(location.search)) {
+      /* BACK AND FORWARD ARE NOT ARRIVALS, and this is the browser reporting
+         its own navigation rather than the page guessing from a header. A
+         restore from the back/forward cache never runs this script at all; a
+         back that has to rebuild the document does, and lands here. */
+      var nav = null;
+      try { nav = performance.getEntriesByType('navigation')[0]; } catch (e) {}
+      if (nav && nav.type === 'back_forward') return;
+      /* and a click is not an arrival. A reload cannot see this flag — the
+         load that followed the click already consumed it — which is exactly
+         why a reload arms and the click that preceded it did not. */
+      if (hopped) return;
+    }
 
     d.classList.add('wake-armed');
     setTimeout(function () { d.classList.remove('wake-armed'); }, 4000);

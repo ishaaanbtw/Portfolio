@@ -49,6 +49,34 @@
   const url = (p) => (typeof p === 'string' && p && !/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(p)
     ? ROOT + p : p);
 
+  /* --- I AM LEAVING BY A LINK, AND THE NEXT PAGE SHOULD KNOW ---------------
+
+     THE ENTRANCE PLAYS ON EVERY LOAD OF THE HOME PAGE NOW, which makes one
+     question load-bearing that used to be settled by a session flag: is this
+     load an arrival, or is it the second half of a click? A reload of the home
+     page is an arrival and gets the entrance; a BACK link at the top of a case
+     study is not, and a four-second construction sequence charged to a click is
+     the toll the old rule existed to avoid.
+
+     THE PAGE THAT LEAVES SAYS SO, rather than the page that lands guessing.
+     Every internal navigation to another DOCUMENT goes through one of three
+     lines in this file — `Shell.transitions`, and `Gate`'s two — and each of
+     them calls this immediately before handing the address to the browser. The
+     head script on the next page reads the flag and clears it, so it is true
+     for exactly one load and cannot go stale: whichever page you land on
+     consumes it, including the pages that have no entrance of their own.
+
+     NOT AN INFERENCE, which is the whole point. `document.referrer` was tried
+     for this and is deniable six ways — empty under `rel=noreferrer`, under a
+     `no-referrer` policy, from a bookmark, from an app, and on `file://` where
+     the origins cannot be compared — and every one of those looked exactly
+     like a cold visit. A flag cannot be wrong about whether it was set.
+
+     Switching between Work, About and Play does NOT come through here and does
+     not need to: those three are views of this shell and `Route` swaps them
+     without a navigation, so there is no load to suppress. */
+  const hop = () => { try { sessionStorage.setItem('site:hop', '1'); } catch (e) { /* private mode */ } };
+
   /* --- DOES THIS LINK LEAVE THE SITE? -------------------------------------
 
      THE TEST WAS THE SCHEME, AND THE SCHEME IS NOT THE QUESTION. Three places
@@ -1276,6 +1304,20 @@
     transitions() {
       if (REDUCED) return;
       document.addEventListener('click', (e) => {
+        /* --- A CLICK THAT HAS ALREADY BEEN ANSWERED IS NOT A NAVIGATION -----
+
+           THIS LINE WAS MISSING AND IT COST A WHOLE FEATURE. This listener is
+           on the DOCUMENT, so it runs after any handler on the link itself —
+           and it was reading only the event's modifiers, never whether someone
+           closer to the target had already called `preventDefault`. A card that
+           cancelled its own click to open the project cover therefore cancelled
+           nothing: the cover opened, and 240ms later this fired `location.href`
+           underneath it and loaded the case study anyway.
+
+           `Route`'s own listener has always had this guard on its first line.
+           This one is older and did not, and nothing had ever prevented a click
+           on an `<a>` before, so it had never been wrong. */
+        if (e.defaultPrevented) return;
         /* leave modified and middle clicks to the browser, or cmd-click stops
            opening links in a new tab */
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
@@ -1301,13 +1343,26 @@
            Ordered first because `Shell.init` runs before `Route.init`, so this
            listener is the one that sees the click first; a `preventDefault`
            here would make the router's own handler skip it as already
-           answered. */
-        if (Route.of(a.getAttribute('href'), a.href)) return;
+           answered.
+
+           AND IT HAS TO ASK WHETHER THE ROUTER IS EVEN THERE. `Route.of`
+           recognises `index.html` wherever it is written, on every document,
+           but `Route.init` returns before binding anything on a page that is
+           not one of the three views. So on a case study and on the 404 this
+           line was handing the BACK link to a router that had no listener: it
+           was not routed, and because this handler had already returned it was
+           not faded either, which is the one thing the comment above it says
+           happens. It fell through to a plain browser navigation, and once the
+           entrance stopped gating on the session that also meant it skipped
+           `hop()` and replayed the whole construction sequence on arrival.
+           `mine()` is the same one-line test `Route.init` uses. */
+        if (Route.mine() && Route.of(a.getAttribute('href'), a.href)) return;
         const url = new URL(a.href, location.href);
         if (url.origin !== location.origin || a.target === '_blank') return;
         if (url.pathname === location.pathname && url.hash) return;
         if (!/\.html?$/.test(url.pathname) && url.pathname !== '/') return;
         e.preventDefault();
+        hop();
         document.body.classList.add('is-leaving');
         setTimeout(() => (location.href = a.href), 240);
       });
@@ -1898,6 +1953,27 @@
           `<span class="wcard__tags">${esc(item.meta || '')}</span>`));
         /* `col: 'b'` puts a project in the narrower stack; anything else is the
            wide one. Stated per project, so the arrangement is editable copy. */
+        /* --- THE PRESS OPENS THE COVER, THE LINK STILL GOES TO THE STUDY ---
+
+           The href is untouched and nothing about the anchor changes, which is
+           the whole point: a middle-click, a cmd-click, "open in new tab" and a
+           right-click copy all still reach `work/<slug>.html`, because those
+           are people who have already decided. A plain left click is the only
+           one intercepted, and it is intercepted on the same four conditions
+           `Route.init` uses — a modifier held is a modifier meant.
+
+           A card with no `brief` is left entirely alone and navigates as it
+           always did, so this feature is per project and switched on by the
+           project having something to say. */
+        if (item.brief) {
+          card.addEventListener('click', (e) => {
+            if (e.defaultPrevented || e.button !== 0) return;
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            Sound.tap();
+            Preview.show(item, card);
+          });
+        }
         cols[item.col === 'b' ? 1 : 0].appendChild(card);
         this.cards.push({ el: card, sp: null, last: -1 });
       });
@@ -1910,6 +1986,14 @@
        so the value decelerates into place instead of tracking scroll rigidly. */
     tick(vh, dt) {
       if (!this.cards.length || REDUCED) return false;
+      /* THE ENTRANCE STANDS DOWN WHILE A FOLDER IS OPEN. This reads every
+         card's rectangle each frame and springs `--in` toward how far up the
+         window it is — which is correct for a grid being scrolled and wrong for
+         a grid being rearranged: the pressed card's rect is travelling, so the
+         entrance would fight the arrangement for the same scale and every
+         neighbour would dim as it moved off screen. It resumes, from wherever
+         the cards are, the moment the folder is closed. */
+      if (typeof Preview !== 'undefined' && (Preview.shown || Preview.sp)) return false;
       let moving = false;
 
       this.cards.forEach((c) => {
@@ -1933,6 +2017,855 @@
       });
 
       return moving;
+    },
+  };
+
+  /* ----------------------------------------------------------------------
+     THE CHAPTER COVER
+
+     WHAT THIS REPLACED. A card was an anchor and pressing it loaded another
+     document. That is the correct thing for a case study to be — it has an
+     address, it can be sent, it can be landed on cold — and it is the wrong
+     thing for a card to DO: one click took a visitor who was browsing four
+     projects and put them at the top of a forty-six screen film about one of
+     them, with nothing in between to decide by.
+
+     So the click opens the cover instead, and the cover is where the decision
+     is made. The URL still exists and the anchor still carries it: a
+     middle-click, a cmd-click and "open in new tab" all go straight to the
+     study, because those are people who have already decided.
+
+     IT IS NOT A MODAL AND NOTHING IS MOUNTED OVER ANYTHING. No overlay, no
+     scrim, no dialog. `.pvw` is a sibling of `.showcase` inside the work view —
+     the same column, the same shell — and both are on screen the whole time.
+     The sidebar does not move because nothing has happened to the sidebar, and
+     THE GRID DOES NOT MOVE EITHER: it stays exactly where it is and goes out of
+     focus. What the visitor sees is one screen reorganising itself, not a
+     second screen arriving.
+
+     THE ARRANGEMENT IS THREE THINGS HAPPENING TO ONE NUMBER:
+
+       the floor goes quiet   every card but the one pressed blurs and loses a
+                              little opacity, in place. It runs at not quite
+                              twice the speed of everything else, so the ground
+                              has settled before the card has finished moving.
+       the column arrives     the reading column's paper comes up and its type
+                              slides in from the left edge — forty pixels, one
+                              offset on the whole block.
+       the card grows         out of its own cell into the first slot of the
+                              strip, and the pictures of the project stand in
+                              the slots beside it.
+
+     THE CARD'S JOURNEY IS A FLIP and the numbers in it are measured, not
+     chosen: the card's rect is taken from its cell, the slot's rect from the
+     stylesheet's own row, and the transform between them is whatever makes the
+     two coincide. Nothing here knows how big a card is, or how tall the strip
+     is — see `remeasure`.
+
+     AND IT PAINTS ABOVE THE COLUMN. A card in the left-hand stack starts inside
+     the column's footprint; under the paper it would vanish for the first third
+     of its own move, which is the one thing this interaction cannot afford.
+
+     ITS CONTENT ARRIVES AFTER ITS GEOMETRY. A 27rem column of 15px type drawn
+     at scale 0.5 and grown is text that is briefly the wrong size and visibly
+     resampled; holding it until the frame is a quarter open costs nothing and
+     is the difference between a zoom and a smear.
+
+     NO URL, WHICH IS THE ONE DELIBERATE LIMIT. The cover cannot be linked to
+     or landed on. What it does push is a history entry at the SAME address —
+     `pushState(state, '', location.href)` — so the back button closes the cover
+     instead of leaving the site, and the address bar never changes. That is the
+     whole of the history handling; there is no route, and `Route.of` has never
+     recognised a project href, so nothing else in the file is involved.
+     ---------------------------------------------------------------------- */
+  const Preview = {
+    el: null,        /* the workspace layer, pinned to the window */
+    view: null,      /* the work view, which carries `--p` for the cards */
+    host: null,      /* the shell, which carries `--p` for the masthead */
+    stage: null,     /* the hole the camera looks through */
+    cam: null,       /* the workspace itself, and the only thing that moves */
+    meter: null,
+    segs: [],
+    item: null,
+    card: null,
+    sp: null,        /* the open/close spring */
+    cs: null,        /* the camera spring */
+    camMax: 0,
+    snaps: [],
+    at: -1,
+    lastPan: 0,
+    snapped: true,
+    touchX: null,
+    locked: false,
+    scroll: 0,
+    shown: false,
+
+    mount(view) {
+      this.view = view;
+      /* THE MASTHEAD IS NOT INSIDE THE WORK VIEW — it is `.mast`, a sibling of
+         the view stack inside `.home` — so `data-mode` on the view cannot reach
+         it. The shell carries the flag and `--p` instead, which inherit down to
+         both columns, and the navigation's emphasis rules live in the
+         stylesheet rather than as a second animation here. */
+      this.host = view.closest('.home');
+      /* --- TWO FIXED LAYERS, AND THE REASON IS THE CARD -----------------
+
+         `.pvw` is the field and the workspace; `.pvwr` is the reading column.
+         They are separate elements because `position: fixed` makes a stacking
+         context whatever its z-index is, so anything inside one box is above or
+         below the pressed card TOGETHER — and this arrangement needs the field
+         UNDER the card and the column OVER it. Two layers, one z-index each,
+         and the card at 4 in between. The first pass had them in one box and
+         the card slid across the column's type; there is no way to fix that
+         from inside a single fixed element.
+
+         AND NEITHER IS IN THE WORK VIEW any more. They used to be appended
+         there, which put them inside an element carrying `overflow-x: clip` —
+         and while a fixed box is not clipped by an ancestor's overflow in the
+         specification, resting the whole feature on that being true in every
+         engine is not a trade worth making. In the shell they are beside the
+         masthead and the view stack, clipped by nothing, and `--p`, `--pv-left`
+         and the tokens reach both because the shell carries them. */
+      this.el = el('div', { class: 'pvw', hidden: '' });
+      this.rail = el('div', { class: 'pvwr', hidden: '' });
+      const home = this.host || view;
+      home.appendChild(this.el);
+      home.appendChild(this.rail);
+
+      /* --- THE KEYBOARD CANNOT MOVE THE DOCUMENT EITHER ------------------
+
+         `overflow: hidden` takes away the scrollbar and stops the wheel; it does
+         nothing about space, Page Down or the arrows, and a workspace pinned
+         over a page you can still walk down with the keyboard is not pinned.
+         Left and Right are the workspace's own, so they are taken rather than
+         merely cancelled. */
+      addEventListener('keydown', (e) => {
+        if (!this.shown) return;
+        if (e.key === 'Escape') { e.preventDefault(); this.hide(true); return; }
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        const t = e.target;
+        if (t && t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
+        if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+          e.preventDefault(); this.stepTo(this.at + 1); return;
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+          e.preventDefault(); this.stepTo(this.at - 1); return;
+        }
+        if (e.key === 'Home') { e.preventDefault(); this.stepTo(0); return; }
+        if (e.key === 'End') { e.preventDefault(); this.stepTo(this.snaps.length - 1); return; }
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+      });
+
+      addEventListener('popstate', () => { if (this.shown) this.hide(false); });
+
+      /* --- THE WHEEL IS THE CAMERA --------------------------------------
+
+         `{ passive: false }`, because the whole point of the handler is the
+         `preventDefault`: a wheel event that reaches the document moves the
+         page, and `overflow: hidden` does not stop a fling that began over a
+         nested scroller.
+
+         ONE AXIS OUT OF TWO INPUTS. A trackpad swipe carries `deltaX`; a mouse
+         wheel only ever carries `deltaY`. Whichever of the two is larger is
+         taken as the gesture, which is what makes a two-finger swipe and a
+         wheel feel like the same control rather than like two. */
+      addEventListener('wheel', (e) => {
+        if (!this.shown) return;
+        e.preventDefault();
+        let d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if (e.deltaMode === 1) d *= 16;
+        else if (e.deltaMode === 2) d *= this.stage ? this.stage.clientWidth : 800;
+        this.pan(d);
+      }, { passive: false });
+
+      /* a finger drags the workspace directly, and nothing it does can reach
+         the document — `touch-action: none` on the locked root, and the move
+         cancelled here as well, because the two cover different browsers */
+      addEventListener('touchstart', (e) => {
+        if (!this.shown || !e.touches.length) return;
+        this.touchX = e.touches[0].clientX;
+      }, { passive: true });
+
+      addEventListener('touchmove', (e) => {
+        if (!this.shown || !e.touches.length) return;
+        e.preventDefault();
+        const x = e.touches[0].clientX;
+        if (this.touchX != null) this.pan(this.touchX - x);
+        this.touchX = x;
+      }, { passive: false });
+
+      addEventListener('touchend', () => { this.touchX = null; }, { passive: true });
+
+      /* --- PRESSING ANYWHERE ELSE PUTS IT BACK ---------------------------
+
+         A folder opened on the desk is closed by touching the desk, and that is
+         the whole affordance — there is no scrim to click through and no dialog
+         to dismiss, so the only thing that can carry it is the emptiness around
+         the work.
+
+         `pointerdown` AND NOT `click`, so the reverse starts on the press. What
+         is not outside: the reading column, an artefact, and the three things
+         that float over every page regardless of what is under them. The
+         sidebar IS outside — pressing Work, About or Play while a project is
+         open puts it back on the way. */
+      addEventListener('pointerdown', (e) => {
+        if (!this.shown) return;
+        const t = e.target;
+        if (!t || !t.closest) return;
+        if (t.closest('.pvw__brief') || t.closest('.pvw__fig')) return;
+        if (t.closest('.wcard.is-open')) return;
+        if (t.closest('.rack') || t.closest('.llm') || t.closest('.lbox')) return;
+        this.hide(true);
+      }, { passive: true });
+
+      /* A resize invalidates every offset in the arrangement at once, and there
+         is no sane way to re-derive them mid-move. The workspace settles where
+         it is and the geometry is remeasured from a standing start. */
+      addEventListener('resize', () => { if (this.shown) this.remeasure(); }, { passive: true });
+      return this.el;
+    },
+
+    /* --- THE DOCUMENT STOPS ------------------------------------------------
+
+       A project is a workspace, not a passage of the page, so while one is open
+       the page cannot be moved at all: not by the wheel, not by a finger, not by
+       the space bar, and not by the scrollbar, which `overflow: hidden` takes
+       away. The offset is remembered and put back exactly.
+
+       AND IT IS PUT BACK THROUGH `App.to`, NOT `scrollTo`. The root carries
+       `scroll-behavior: smooth`, so a bare `scrollTo` animates — a visible slide
+       back to the place you were already standing. `App.to(y, false)` asks for
+       `instant`, which is the whole difference between "no jump" and a jump. */
+    lock() {
+      if (this.locked) return;
+      this.locked = true;
+      this.scroll = App.y();
+      /* the width the scrollbar was taking, given back as a transparent border
+         so nothing on the page moves sideways when it goes. Zero on macOS, where
+         the scrollbar is an overlay and there is no gutter to begin with. */
+      const g = Math.max(0, innerWidth - document.documentElement.clientWidth);
+      document.documentElement.style.setProperty('--pvw-gutter', `${g.toFixed(0)}px`);
+      document.documentElement.classList.add('is-pvw');
+    },
+
+    unlock() {
+      if (!this.locked) return;
+      this.locked = false;
+      document.documentElement.classList.remove('is-pvw');
+      document.documentElement.style.removeProperty('--pvw-gutter');
+      App.to(this.scroll, false);
+    },
+
+    /* --- ONE INPUT, ONE TARGET --------------------------------------------
+
+       The camera is a spring and the input moves its TARGET, never its value,
+       and that is the whole of the inertia: a flick adds its distance and the
+       spring spends the next fifth of a second catching up, a slow scroll drags
+       the target at the speed of the fingers and the spring tracks it. There is
+       no velocity to integrate, nothing to decay, and no second easing anywhere.
+
+       AND THE STOP IS NOT A SECOND ANIMATION. When the input goes quiet the
+       target is moved once more, to the nearest artefact. The spring is already
+       travelling there; it simply ends up somewhere exact. */
+    pan(d) {
+      /* not until the opening has finished. While the card is still travelling
+         the camera has to be at zero: it is the card's own destination that is
+         being solved against, and a workspace that panned out from under it
+         mid-flight would leave it arriving at a slot that had moved. */
+      if (!this.el || this.el.dataset.cam !== 'live') return;
+      if (!this.cs || this.camMax <= 0 || !d) return;
+      this.cs.target = clamp(this.cs.target + d, 0, this.camMax);
+      this.lastPan = performance.now();
+      this.snapped = false;
+      this.el.dataset.panned = '1';
+      wakeLoop && wakeLoop();
+    },
+
+    stepTo(i) {
+      if (!this.el || this.el.dataset.cam !== 'live') return;
+      if (!this.cs || !this.snaps.length || this.camMax <= 0) return;
+      const n = clamp(Math.round(i), 0, this.snaps.length - 1);
+      if (this.cs.target === this.snaps[n]) return;
+      this.cs.target = this.snaps[n];
+      this.lastPan = 0;
+      this.snapped = true;
+      this.el.dataset.panned = '1';
+      Sound.tick();
+      wakeLoop && wakeLoop();
+    },
+
+    nearest(v) {
+      let best = 0;
+      let d = Infinity;
+      this.snaps.forEach((s, i) => { const k = Math.abs(s - v); if (k < d) { d = k; best = i; } });
+      return best;
+    },
+
+    /* --- what the workspace holds -----------------------------------------
+
+       CELL ONE IS THE PRESSED CARD'S DESTINATION and it is empty: `.pvw__slot`
+       marks where the card is going, the card arrives and IS it. Nothing about
+       the card is copied, re-parented or rebuilt, which is why its video keeps
+       playing across the whole move and across every pan afterwards.
+
+       THE REST ARE THE ONES THE PROJECT NAMED. `brief.spread` in content.js, in
+       its authored order, and nothing is ever substituted: no thumbnail
+       convention, no crop of the card's own artwork, no filling out a set of
+       four. A project with no `spread` — two of the four have no photographs in
+       the repository — gets cell one and nothing else, which is the pressed card
+       grown large beside its own brief, and a real arrangement rather than a gap.
+
+       THE CAPTIONS ARE NOT WRITTEN HERE. Each one is the picture's own `alt`,
+       authored beside the picture, or `cap` if a shorter line has been given for
+       the purpose. Nothing in this preview is composed for the preview. */
+    fill(item) {
+      const b = item.brief || {};
+      const st = item.study;
+
+      const facts = (b.facts || []).map((f) =>
+        `<div class="pvw__fact">` +
+          `<dt class="pvw__k">${esc(f.k)}</dt>` +
+          `<dd class="pvw__v">${esc(f.v)}</dd>` +
+        `</div>`).join('');
+
+      /* the same row as any other fact, with its values stacked — so the block
+         reads as one spec table rather than a table plus an afterthought */
+      const does = (b.does || []).length
+        ? `<div class="pvw__fact pvw__fact--stack">` +
+            `<dt class="pvw__k">Responsibilities</dt>` +
+            `<dd class="pvw__v"><ul class="pvw__does">` +
+              b.does.map((d) => `<li class="pvw__do">${esc(d)}</li>`).join('') +
+            `</ul></dd>` +
+          `</div>`
+        : '';
+
+      /* `.btn .btn--sm` IS THE HOUSE BUTTON, the one `Copy email` in the
+         masthead is built from. Carrying the classes rather than restating the
+         look is what keeps this one action in the same family as the two in the
+         column beside it — and means a change to the button changes this too. */
+      const door = st && b.cta
+        ? `<a class="pvw__cta btn btn--sm" href="${url(projectHref(st.slug))}">` +
+            `<span class="btn__label">${esc(b.cta)}</span>` +
+            `<i class="pvw__arrow" aria-hidden="true">→</i>` +
+          `</a>`
+        : (b.note ? `<span class="pvw__soon">${esc(b.note)}</span>` : '');
+
+      const num = (n) => String(n).padStart(2, '0');
+
+      const cells = [
+        `<figure class="pvw__fig" data-at="anchor">` +
+          `<i class="pvw__slot" aria-hidden="true"></i>` +
+          `<figcaption class="pvw__cap"><i>${num(1)}</i>` +
+            `<span>${esc(item.meta || item.title)}</span></figcaption>` +
+        `</figure>`,
+      ].concat((b.spread || []).map((sh, i) => {
+        const ar = (sh.w && sh.h) ? (sh.w / sh.h).toFixed(4) : '1.4';
+        return `<figure class="pvw__fig" data-at="${esc(sh.at || 'a')}"` +
+          ` style="--ar:${ar}">` +
+          `<span class="pvw__plate">` +
+            `<img src="${url(sh.src)}" alt="${esc(sh.alt || '')}"` +
+              `${sh.w ? ` width="${sh.w}"` : ''}${sh.h ? ` height="${sh.h}"` : ''}` +
+              ` loading="lazy" decoding="async">` +
+          `</span>` +
+          `<figcaption class="pvw__cap"><i>${num(i + 2)}</i>` +
+            `<span>${esc(sh.cap || sh.alt || '')}</span></figcaption>` +
+        `</figure>`;
+      }));
+
+      const segs = cells.map((c, i) =>
+        `<i class="pvw__seg${i ? '' : ' is-on'}"></i>`).join('');
+
+      this.el.innerHTML =
+        `<div class="pvw__stage">` +
+          `<div class="pvw__cam">${cells.join('')}</div>` +
+          `<div class="pvw__meter" aria-hidden="true">` +
+            `<span class="pvw__at">${num(1)}</span>` +
+            `<span class="pvw__segs">${segs}</span>` +
+            `<span class="pvw__of">${num(cells.length)}</span>` +
+          `</div>` +
+        `</div>`;
+
+      this.rail.innerHTML =
+        `<div class="pvw__brief" tabindex="-1">` +
+          `<div class="pvw__body">` +
+            `<button class="pvw__back" type="button" aria-label="Close">` +
+              `<i aria-hidden="true">✕</i></button>` +
+            (item.meta ? `<span class="pvw__eyebrow">${esc(item.meta)}</span>` : '') +
+            `<h2 class="pvw__name">${esc(item.title)}</h2>` +
+            (b.tagline ? `<p class="pvw__tagline">${esc(b.tagline)}</p>` : '') +
+            (b.summary ? `<p class="pvw__summary">${esc(b.summary)}</p>` : '') +
+            ((facts || does) ? `<dl class="pvw__facts">${facts}${does}</dl>` : '') +
+            (door ? `<div class="pvw__door">${door}</div>` : '') +
+            `<p class="pvw__pan" hidden><i aria-hidden="true">⇄</i>` +
+              `<span>Scroll sideways</span></p>` +
+          `</div>` +
+        `</div>`;
+
+      /* the row's own shape, stated on the layer: with nothing to run off the
+         right edge there is no edge to fade and nothing to left-align against */
+      this.el.dataset.figs = String((b.spread || []).length);
+
+      const back = $('.pvw__back', this.rail);
+      if (back) back.addEventListener('click', () => { Sound.tap(); this.hide(true); });
+    },
+
+    /* --- MEASURING THE WORKSPACE ------------------------------------------
+
+       Called once when a project opens and again after a resize. Everything
+       below is read off the live layout: where the pressed card is, where the
+       stylesheet has put the first cell of the workspace, the transform between
+       the two, how tall the row is, and where the camera's stops are.
+
+       IT RUNS AT THE DESTINATION AND WITH THE CAMERA AT ZERO. `--p` is 1 for the
+       length of the measurement so every element reports the rectangle it is
+       going to occupy; `--cam` is 0 because the track's own translate is part of
+       that layout, and a resize while the workspace was panned would otherwise
+       solve the card's journey against a slot that had scrolled away. Both are
+       restored in the same frame, so nothing is ever painted at the far end on
+       the way past. */
+    remeasure() {
+      const card = this.card;
+      if (!card || !this.el) return;
+      const was = this.el.style.getPropertyValue('--p');
+      const camWas = this.el.style.getPropertyValue('--cam');
+      this.view.style.setProperty('--p', '1');
+      this.el.style.setProperty('--p', '1');
+      this.el.style.setProperty('--cam', '0px');
+      /* and with no transform of its own on the card, so its rect is purely the
+         cell it sits in */
+      card.style.removeProperty('--pv-x');
+      card.style.removeProperty('--pv-y');
+      card.style.removeProperty('--pv-s');
+      card.style.removeProperty('--pv-cam');
+
+      /* --- RESOLVED BY THE BROWSER, NOT PARSED ---------------------------
+
+         The lengths below are custom properties and the stylesheet may write
+         them in any unit it likes — rem, vw, a clamp() of both — so each one is
+         handed to a property the browser computes to pixels and read straight
+         back. Parsing them here would quietly mean px only, which is the kind of
+         limit nobody finds until they change the stylesheet. `text-indent` is
+         the carrier because it affects nothing in this layer and is restored in
+         the same frame, before anything is measured off the layout. */
+      const lenPx = (expr, fb) => {
+        const prev = this.el.style.textIndent;
+        this.el.style.textIndent = expr;
+        const v = parseFloat(getComputedStyle(this.el).textIndent);
+        this.el.style.textIndent = prev;
+        return Number.isFinite(v) ? v : fb;
+      };
+      const ratio = (name, fb) => {
+        const v = parseFloat(getComputedStyle(this.el).getPropertyValue(name));
+        return Number.isFinite(v) ? v : fb;
+      };
+
+      /* THE FLOOR'S OWN TRANSFORM IS CLEARED BEFORE ANYTHING IS MEASURED.
+         `getBoundingClientRect` reports the transformed box, and this method
+         runs with `--p` at 1 — so on a re-measure every card would be measured
+         where the LAST recession left it, and the solver would compound its own
+         output. Cleared here, every rect below is the cell the stylesheet gives
+         it, which is the only frame of reference the arithmetic can use. */
+      const floor = $$('.wcard', this.view).slice();
+      const moreEl = $('.home__more', this.view);
+      if (moreEl) floor.push(moreEl);
+      floor.forEach((n) => {
+        n.style.removeProperty('--rcx-to');
+        n.style.removeProperty('--rcy-to');
+      });
+
+      /* WHERE THE WORK COLUMN STARTS, which is the one number a box pinned to
+         the window cannot inherit. Measured with the document already locked, so
+         nothing can move it for as long as the workspace is up. */
+      const vr = this.view.getBoundingClientRect();
+      /* written on the SHELL, so both fixed layers inherit the one number */
+      (this.host || this.el).style.setProperty('--pv-left', `${Math.max(0, vr.left).toFixed(1)}px`);
+
+      const cr = card.getBoundingClientRect();
+      /* THE SLOT TAKES THE CARD'S OWN PROPORTION, so the card reaches it on one
+         uniform scale — no crop, no letterbox, and it arrives exactly as tall as
+         the artefacts beside it whatever shape the project's card is. */
+      const cardAr = cr.height ? cr.width / cr.height : 1.34;
+      const slotEl = $('.pvw__slot', this.el);
+      if (slotEl) slotEl.style.setProperty('--slot-ar', cardAr.toFixed(4));
+
+      /* --- HOW TALL THE ROW IS, SOLVED RATHER THAN CHOSEN ----------------
+
+         One height for every artefact, and the constraint that fixes it is the
+         first cell: it is the one the visitor pressed, so it has to be whole —
+         never clipped by the right edge — and as large as that allows. So the
+         first cell is given all of the stage's width except a sliver, and the
+         sliver is what the SECOND artefact shows before the edge takes it. The
+         height that comes out of that is then capped by the room above and
+         below, which is what keeps a portrait card from being taller than the
+         window. Nothing here is a chosen pixel. */
+      const stageEl = this.stage || $('.pvw__stage', this.el);
+      const camEl = this.cam || $('.pvw__cam', this.el);
+      const nFigs = $$('.pvw__plate', this.el).length;
+      if (stageEl && camEl) {
+        const sr = stageEl.getBoundingClientRect();
+        const gap = parseFloat(getComputedStyle(camEl).columnGap) || 16;
+        /* with nothing to leave showing, the row gets a little more of the
+           height as well as all of the width */
+        const air = Math.min(sr.height * ratio('--pv-air', 0.1), nFigs ? 76 : 52);
+        const roomH = Math.max(140, sr.height - air * 2);
+        const peek = nFigs
+          ? Math.min(lenPx('var(--pv-peek, 168px)', 168), sr.width * 0.24) + gap
+          : 0;
+        const slotW = Math.max(sr.width * 0.32, sr.width - peek);
+        const h = Math.min(slotW / Math.max(cardAr, 0.2), roomH);
+        camEl.style.setProperty('--pv-h', `${h.toFixed(1)}px`);
+      }
+
+      /* re-read AFTER the height is written: the slot's width is a function of
+         it, and so is where the row's own centring puts the slot */
+      const slot = slotEl ? slotEl.getBoundingClientRect() : cr;
+
+      /* scaling happens about `transform-origin: 50% 70%` — the card's own,
+         which the scroll entrance needs — so the translate undoes where that
+         origin leaves the box */
+      const k = cr.width ? slot.width / cr.width : 1;
+      this.k = k;
+      this.cx = slot.left - cr.left - 0.5 * cr.width * (1 - k);
+      this.cy = slot.top - cr.top - 0.7 * cr.height * (1 - k);
+
+      /* --- THE WORKSPACE'S EXTENT AND ITS STOPS -------------------------
+
+         A stop per cell, at that cell's own left edge, so every stop puts one
+         artefact against the stage's left margin — which is what makes panning
+         read as flipping through connected slides rather than as scrolling a
+         list. The last stop has to be reachable, and a track that ends with its
+         last cell is not wide enough for that cell to reach the left edge, so
+         the track is given exactly the trailing room that makes it so and no
+         more. With one cell there is no travel, no stop and no readout. */
+      if (stageEl && camEl) {
+        const stageW = stageEl.clientWidth;
+        const cells = $$('.pvw__fig', camEl);
+        const last = cells[cells.length - 1];
+        camEl.style.paddingInlineEnd =
+          `${last ? Math.max(0, stageW - last.offsetWidth).toFixed(1) : 0}px`;
+        this.camMax = Math.max(0, camEl.offsetWidth - stageW);
+        this.snaps = cells.map((c) => clamp(c.offsetLeft, 0, this.camMax));
+        if (this.cs) this.cs.target = clamp(this.cs.target, 0, this.camMax);
+        const hint = $('.pvw__pan', this.rail);
+        if (hint) hint.hidden = this.camMax <= 0;
+        if (this.meter) this.meter.hidden = this.camMax <= 0;
+        /* WITH ONE CELL THERE IS NO TRAVEL, so the cell is centred in the field
+           it was given rather than standing against the left margin with the
+           rest of the stage empty behind it. Two of the four projects have no
+           photographs in the repository yet and this is what they look like. */
+        const slack = stageW - (camEl.offsetWidth - parseFloat(camEl.style.paddingInlineEnd || 0));
+        camEl.style.paddingInlineStart =
+          `${this.camMax <= 0 && slack > 0 ? (slack / 2).toFixed(1) : 0}px`;
+      }
+
+      /* --- EACH CARD'S SHARE OF ONE CONTAINER SCALE ----------------------
+
+         What is wanted is `scale(1 - back)` on the grid about one origin, plus a
+         little drift. What cannot be used is a transform on the grid, because
+         that makes it a stacking context and takes the pressed card down with it
+         (see the stylesheet). So the same transform is solved per card:
+
+             dx = (s - 1) * (cardCentreX - originX) + drift
+             dy = (s - 1) * (cardCentreY - originY)
+
+         which is the definition of a scale about a point, written out. The
+         stylesheet multiplies both by `--pq` and applies `--rc-s` alongside, so
+         the card ends up exactly where a container transform would have put it.
+
+         THE ORIGIN IS THE WORKSPACE'S OWN CENTRE, and that is not arbitrary: the
+         grid falls away TOWARD the picture that just grew, so cards far from it
+         travel and cards behind it barely move. It is also what the reference
+         does — measured across a transition, its left band moves 59px right
+         while its right band does not move at all, which is a scale about a
+         point over on that side and nothing else. */
+      const back = ratio('--pv-back', 0.06);
+      const drift = ratio('--pv-drift', 0.015) * vr.width;
+      const sr2 = stageEl ? stageEl.getBoundingClientRect() : null;
+      const ox = sr2 ? sr2.left + sr2.width / 2 : vr.left + vr.width * 0.68;
+      const oy = innerHeight / 2;
+      floor.forEach((n) => {
+        if (n === card) return;
+        const r = n.getBoundingClientRect();
+        if (!r.width) return;
+        const dx = -back * (r.left + r.width / 2 - ox) + drift;
+        const dy = -back * (r.top + r.height / 2 - oy);
+        n.style.setProperty('--rcx-to', `${dx.toFixed(1)}px`);
+        n.style.setProperty('--rcy-to', `${dy.toFixed(1)}px`);
+      });
+
+      if (camWas) this.el.style.setProperty('--cam', camWas);
+      else this.el.style.removeProperty('--cam');
+      if (was) { this.el.style.setProperty('--p', was); this.view.style.setProperty('--p', was); }
+      else { this.el.style.removeProperty('--p'); this.view.style.removeProperty('--p'); }
+      this.paint();
+    },
+
+    show(item, card) {
+      if (this.shown || !this.el) return;
+      this.item = item;
+      this.card = card;
+      this.fill(item);
+      this.stage = $('.pvw__stage', this.el);
+      this.cam = $('.pvw__cam', this.el);
+      this.meter = $('.pvw__meter', this.el);
+      this.segs = $$('.pvw__seg', this.el);
+      this.at = -1;
+      this.snaps = [];
+      this.camMax = 0;
+      this.snapped = true;
+      this.lastPan = 0;
+      this.touchX = null;
+
+      this.el.hidden = false;
+      this.rail.hidden = false;
+      this.el.style.setProperty('--p', '0');
+      this.el.style.setProperty('--cam', '0px');
+      delete this.el.dataset.panned;
+      delete this.el.dataset.cam;
+      /* AND IT TAKES THE POINTER BACK. While the workspace is collapsing the
+         reading column is still in the document at whatever opacity `--p` gives
+         it, and an invisible column of it over the grid is a column of clicks
+         the grid never receives. Cleared here, taken away the moment a close
+         begins. */
+      this.el.style.removeProperty('pointer-events');
+      this.rail.style.removeProperty('pointer-events');
+      this.shown = true;
+      this.view.dataset.mode = 'preview';
+      if (this.host) this.host.dataset.pvw = '1';
+      /* the entrance channel is pinned so the two writers of this card's scale
+         cannot fight; `Showcase.tick` also stands down while a project is open */
+      card.classList.add('is-open');
+      card.style.setProperty('--in', '1');
+
+      /* THE DOCUMENT STOPS BEFORE ANYTHING IS MEASURED, so every rectangle the
+         workspace is solved from is the one it will actually live in — taking
+         the scrollbar away after the fact would leave every number in the
+         arrangement a gutter's width wrong. */
+      this.lock();
+
+      this.cs = Spring(0, 260, 30);
+      this.remeasure();
+
+      if (REDUCED) {
+        this.el.style.setProperty('--p', '1');
+        this.paint(1);
+        this.el.dataset.cam = 'live';
+      } else {
+        if (!this.sp) this.sp = Spring(0, 320, 33);
+        this.sp.v = 0; this.sp.vel = 0; this.sp.target = 1;
+        wakeLoop && wakeLoop();
+      }
+
+      try { history.pushState({ pvw: item.title }, '', location.href); } catch (e) { /* file:// */ }
+      const box = $('.pvw__brief', this.rail);
+      if (box) box.focus({ preventScroll: true });
+    },
+
+    /* THE REVERSE IS THE SAME NUMBERS RUNNING BACKWARDS. Not another animation
+       and not a second set of offsets: both springs are retargeted to zero and
+       every object retraces the path it came along, into the card it came out
+       of. The camera is given a stiffer spring for the return so that by the
+       time the card has finished shrinking it is beside its own cell again
+       rather than arriving from off screen. */
+    hide(pop) {
+      if (!this.shown || !this.el) return;
+      this.shown = false;
+      this.el.style.pointerEvents = 'none';
+      this.rail.style.pointerEvents = 'none';
+      /* the reading column drops back UNDER the card the moment a close begins,
+         so the card is visible crossing it on the way home however far the
+         visitor had panned */
+      delete this.el.dataset.cam;
+      if (this.cs) { this.cs.target = 0; this.cs.k = 440; this.cs.d = 42; }
+      if (pop) { try { history.back(); } catch (e) { /* file:// */ } }
+      if (REDUCED || !this.sp) { this.done(); return; }
+      this.sp.target = 0;
+      wakeLoop && wakeLoop();
+    },
+
+    done() {
+      if (this.card) {
+        this.card.classList.remove('is-open');
+        this.card.style.removeProperty('--in');
+        this.card.style.removeProperty('--pv-x');
+        this.card.style.removeProperty('--pv-y');
+        this.card.style.removeProperty('--pv-s');
+        this.card.style.removeProperty('--pv-cam');
+      }
+      /* the document comes back before anything takes focus, and focus is taken
+         with `preventScroll` — either on its own would put the page somewhere
+         other than where the visitor left it */
+      this.unlock();
+      if (this.card) this.card.focus({ preventScroll: true });
+      this.view.removeAttribute('data-mode');
+      this.view.style.removeProperty('--p');
+      if (this.host) {
+        this.host.removeAttribute('data-pvw');
+        this.host.style.removeProperty('--p');
+        this.host.style.removeProperty('--pq');
+      }
+      /* the recession's per-card offsets go with it. They are inert once
+         `data-mode` is off — `--rc-*` is only defined inside that selector — but
+         a stale inline value on every card is a lie the next reader of this file
+         has to disprove. */
+      $$('.wcard', this.view).forEach((n) => {
+        n.style.removeProperty('--rcx-to');
+        n.style.removeProperty('--rcy-to');
+      });
+      const moreEl = $('.home__more', this.view);
+      if (moreEl) {
+        moreEl.style.removeProperty('--rcx-to');
+        moreEl.style.removeProperty('--rcy-to');
+      }
+      this.el.hidden = true;
+      this.rail.hidden = true;
+      this.el.style.removeProperty('--p');
+      this.el.style.removeProperty('--cam');
+      delete this.el.dataset.cam;
+      delete this.el.dataset.panned;
+      if (this.host) this.host.style.removeProperty('--pv-left');
+      this.sp = null;
+      this.cs = null;
+      this.stage = null;
+      this.cam = null;
+      this.meter = null;
+      this.segs = [];
+      this.snaps = [];
+      this.camMax = 0;
+      this.at = -1;
+      /* AND IT LETS GO OF THE CARD. `paint` writes to `this.card` whenever it
+         is set, and with both springs gone it would write the arrangement at
+         full strength — the card would sit in the grid wearing the transform it
+         had at the slot. Released here, there is nothing for a late frame to
+         find. */
+      this.card = null;
+      this.item = null;
+      this.k = null;
+    },
+
+    /* Leaving the section altogether — `Route.go` calls this when a visitor
+       presses About or Play with a project open. The view is about to be hidden,
+       so there is nothing to travel back into; the document still has to be
+       given back. */
+    dismiss() {
+      if (!this.shown) return;
+      this.shown = false;
+      this.done();
+    },
+
+    paint(force) {
+      const p = force != null ? force : (this.sp ? this.sp.v : 1);
+      if (!this.el) return;
+      this.el.style.setProperty('--p', p.toFixed(4));
+      /* `--p` is read by rules on the cards too, and they are not inside `.pvw`
+         — the view carries it so the whole arrangement reads one number. */
+      this.view.style.setProperty('--p', p.toFixed(4));
+      /* and the shell carries it for the masthead, which is outside the view.
+         `--pq` is defined on the view, so it is restated here for the column
+         next door rather than being computed twice with two different curves. */
+      if (this.host) {
+        this.host.style.setProperty('--p', p.toFixed(4));
+        this.host.style.setProperty('--pq', Math.min(1, p * 2.6).toFixed(4));
+      }
+      const c = this.cs ? this.cs.v : 0;
+      this.el.style.setProperty('--cam', `${c.toFixed(2)}px`);
+      /* --- POSITION LEADS SIZE ------------------------------------------
+
+         Both channels ran on `--p` flat, and the consequence was visible on any
+         held frame: a card in the left-hand stack is 588px wide and starts
+         almost exactly under the reading column, so growing at the same rate it
+         travelled meant the first third of the move was a slab swelling ACROSS
+         the column's type. Bent apart — the translate a little ahead of the
+         curve, the scale a little behind — the card clears the column before it
+         has put on much size, and the two still arrive together at 1.
+
+         It is not two beats. Both are monotonic functions of the same number
+         over the same interval; neither waits, neither cuts, and the close
+         retraces both exactly. Only the ORDER in which the eye reads them
+         changes: it moves, therefore it grows. */
+      if (this.card && this.k != null) {
+        const pt = Math.pow(p, 0.8);
+        const pz = Math.pow(p, 1.3);
+        this.card.style.setProperty('--pv-x', `${(this.cx * pt).toFixed(2)}px`);
+        this.card.style.setProperty('--pv-y', `${(this.cy * pt).toFixed(2)}px`);
+        this.card.style.setProperty('--pv-s', (1 + (this.k - 1) * pz).toFixed(4));
+        /* THE CARD TRAVELS WITH THE WORKSPACE, because it IS the first cell of
+           it. Not scaled by `--p`: while a project is open the card has to be
+           exactly where the track puts its slot, and on the way out the camera
+           returns to zero on its own spring, so the two unwind together and the
+           card comes back into its cell from wherever the visitor had panned to.
+           Its left limit is the work column's own edge — see `overflow-x: clip`
+           in the stylesheet — and the reading column hides it from there in. */
+        this.card.style.setProperty('--pv-cam', `${(-c).toFixed(2)}px`);
+      }
+      this.mark(c);
+    },
+
+    /* the readout, and only when the number changes: a class write per frame for
+       a value that changes five times in a session is work for nothing */
+    mark(c) {
+      if (!this.meter || this.camMax <= 0 || !this.snaps.length) return;
+      const i = this.nearest(c);
+      if (i === this.at) return;
+      this.at = i;
+      this.segs.forEach((s, n) => s.classList.toggle('is-on', n === i));
+      const atEl = $('.pvw__at', this.meter);
+      if (atEl) atEl.textContent = String(i + 1).padStart(2, '0');
+    },
+
+    tick(dt) {
+      /* NOTHING RUNNING, NOTHING WRITTEN. This guard is not an optimisation: the
+         loop calls this every frame for as long as anything else on the page is
+         moving, and without it `paint` runs with no spring to read — which
+         defaults `--p` to 1 and re-applies a whole open arrangement to a card
+         that was put back a second ago. */
+      if (!this.sp && !this.cs) return false;
+      let moving = false;
+      if (this.sp) {
+        let m = this.sp.step(dt);
+        /* --- THE TAIL IS NOT PART OF THE ANIMATION -------------------------
+           `Spring` calls itself at rest within 0.0004 of its target, which is
+           right for a value that stays on screen. A collapse is different: every
+           object is back inside the card by about 0.02, and the rest is half a
+           second of a spring converging on a number nobody can see. */
+        if (m && this.sp.target === 0 && this.sp.v <= 0.018) {
+          this.sp.v = 0; this.sp.vel = 0; m = false;
+        }
+        moving = m;
+      }
+      if (this.cs) {
+        /* THE STOP IS ARMED BY SILENCE, not by a gesture ending: a trackpad
+           sends no event to say it has finished and a wheel has no end at all.
+           A sixth of a second with no input is the end of the input. */
+        if (!this.snapped && this.lastPan && performance.now() - this.lastPan > 150) {
+          this.snapped = true;
+          if (this.snaps.length) this.cs.target = this.snaps[this.nearest(this.cs.target)];
+        }
+        let cm = this.cs.step(dt);
+        /* SUB-PIXEL IS NOT MOVEMENT, and this one is measured in pixels.
+           `Spring` calls itself at rest within 0.0004 of its target, which is
+           right for a number between 0 and 1 and absurd for a distance: from two
+           thousand pixels away that threshold is three quarters of a second of a
+           spring converging on a gap no screen can show — three quarters of a
+           second of frames after the camera has visibly stopped, and, on a
+           close, three quarters of a second before the document is given back.
+           Four tenths of a pixel is there. */
+        if (cm && Math.abs(this.cs.v - this.cs.target) < 0.4 && Math.abs(this.cs.vel) < 6) {
+          this.cs.v = this.cs.target; this.cs.vel = 0; cm = false;
+        }
+        moving = cm || moving;
+      }
+      this.paint();
+      if (!moving) {
+        if (this.sp && this.sp.target === 0) { this.done(); return false; }
+        /* THE CAMERA IS LIVE FROM THE MOMENT THE OPENING HAS FINISHED, and that
+           is also when the reading column goes over the card instead of under
+           it — at the one instant the two cannot overlap, the card exactly at
+           its slot and the camera at zero, so nothing can be seen to change. */
+        if (this.shown) this.el.dataset.cam = 'live';
+        return false;
+      }
+      return true;
     },
   };
 
@@ -3163,6 +4096,82 @@
       bolt: '<path d="M13.4 2.4 5 13.4h5.6L10.6 21.6 19 10.6h-5.6Z"/>',
     },
 
+    /* --- 00 · THE RECORD -------------------------------------------------
+
+       WHAT THIS IS FOR, AND WHY IT IS NOT THE HERO. The film opens on the
+       product and says one sentence about self-custody; that is an arrival,
+       and an arrival is not an introduction. A reader who lands here still
+       does not know what X0 is, how long it took, or which parts of it were
+       mine — and those are the three facts a case study is read for. The
+       hero cannot carry them without becoming a title slide with a spec
+       table under it, which is the exact thing the film was built to stop
+       being.
+
+       So they are the scene after it. The film ends on black, the bridge
+       turns the page white, and the first thing on the white is the record:
+       the name, one sentence of what the thing is, and then the facts set
+       as engineering metadata — key on the left, value on the right, ruled.
+       It reads as the front matter of a document rather than as a hero,
+       which is the whole claim the restructure is making.
+
+       IT IS DATA AND NOT A TEMPLATE. `lede` is the sentence, `rows` are the
+       facts, and a study that states neither still renders — the scene is
+       simply its name. Nothing in it is specific to X0.
+
+       NO MOTION WORTH THE NAME. Four beats over the first third of the
+       scene and nothing after: the record is read, not watched, and a
+       metadata table that animates in row by row is a spreadsheet
+       pretending to be a film. */
+    record: (s) => {
+      const rows = s.rows || [];
+      const b = SPREAD(rows.length, 0.16, 0.34);
+      return `<div class="scn__in fg-rec">` +
+        (s.kicker ? `<span${AT(0.01)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+        (s.h ? `<h2${AT(0.03)} class="fg-h fg-h--wide fg-rec__h beat beat--still">${s.h}</h2>` : '') +
+        (s.lede ? `<p${AT(0.08)} class="fg-rec__lede beat">${s.lede}</p>` : '') +
+        (rows.length
+          ? `<dl class="fg-rec__list">` + rows.map((r, i) =>
+              `<div${AT(b[i])} class="fg-rec__r beat">` +
+                `<dt class="fg-rec__k">${esc(r.k)}</dt>` +
+                `<dd class="fg-rec__v">${esc(r.v)}</dd>` +
+              `</div>`).join('') + `</dl>`
+          : '') +
+        (s.foot ? `<span${AT(0.4)} class="fg-rec__f beat">${esc(s.foot)}</span>` : '') +
+      `</div>`;
+    },
+
+    /* --- THE CHAPTER CARD ------------------------------------------------
+
+       WHAT THIS REPLACED. A fixed two-line readout in the bottom-left
+       corner — `01 / 04 · PREMISE` — which told you where you were at every
+       scroll position and was therefore never anywhere. It was the right
+       answer while the film had no index; with an index down the left edge
+       the corner readout is a second thing saying the same thing, so the
+       position is carried by the rail and the CHAPTER is carried here, in
+       the flow, once.
+
+       AND IT IS PUNCTUATION, NOT A SECTION. A chapter card that holds is a
+       title slide the reader has to wait out five times. This one is short
+       — `dur` a little over one screen in the data, so the stage never
+       sticks and the card passes through at reading speed — and it is the
+       full width of the frame with two things on it. The number is large
+       because it is the only thing in the film that is allowed to be large
+       and say nothing; the title beside it is small for the same reason.
+
+       ONE RULE UNDER IT AND NOTHING ELSE. No ground change, no shot, no
+       paragraph: the card's job is to end the previous chapter, and a card
+       with an argument on it has started the next one instead. */
+    mark: (s) => `<div class="scn__in fg-mark">` +
+        `<div class="fg-mark__row">` +
+          `<span${AT(0.04)} class="fg-mark__n beat beat--still">${esc(s.n)}</span>` +
+          `<span class="fg-mark__t">` +
+            `<span${AT(0.1)} class="fg-mark__l beat">${esc(s.h)}</span>` +
+            (s.p ? `<span${AT(0.16)} class="fg-mark__s beat">${s.p}</span>` : '') +
+          `</span>` +
+        `</div>` +
+        `<i${AT(0.06)} class="fg-mark__rule beat" aria-hidden="true"></i>` +
+      `</div>`,
+
     object: (s) => {
       /* THE BEATS WERE REBALANCED WHEN THE FRAME WAS. They used to end on
          the closing line at 0.78, which was fine when the closing line was
@@ -4159,10 +5168,22 @@
          film, or trimming a scene out of it, cannot put the chapter reading
          out of step with what is on screen. */
       const acts = [];
+      const navs = [];
+      let order = 0;
       (p.scenes || []).forEach((s) => {
         const render = SCENE[s.kind];
         if (!render) return;
         if (s.act) acts.push(s.act);
+        /* THE INDEX IS COUNTED OFF THE SCENES THE SAME WAY THE ACTS ARE.
+           `nav` is stated on the FIRST scene of each part of the study and
+           nowhere else, so the contents list and the scene a given entry
+           points at are one fact rather than two — reordering the film or
+           cutting a scene cannot leave the rail pointing at a gap. Twenty-five
+           scenes carry nine of these; the other sixteen belong to whichever
+           entry last spoke, which is what makes it a table of contents rather
+           than a list of every frame. */
+        if (s.nav) navs.push({ id: s.id, label: s.nav, i: order });
+        order += 1;
 
         const scn = el('section', {
           /* AND A HOOK PER SCENE, not just per kind. `scn--object` is shared
@@ -4213,54 +5234,57 @@
 
       /* --- WHERE YOU ARE IN THE FILM ---------------------------------------
 
-         AN ACT RAIL LIVED HERE ONCE AND WAS DELETED, for a reason that still
-         holds: four dots and a label down the left edge is a table of
-         contents for something that is meant to be watched rather than
-         navigated, and it competed at every scroll position. This is not
-         that. It is two lines in the corner furthest from the work which
-         change four times in the length of the page — the number, so a
-         reader who lands mid-film knows how far in they are, and the act's
-         name, so the number means something.
+         WHAT WAS HERE, AND WHY IT IS GONE. A fixed two-line readout in the
+         bottom-left corner — `01 / 04` over the act's name — which told a
+         reader who landed mid-film how far in they were. It was the right
+         answer for a film with no contents page: the smallest possible claim
+         about position, in the corner furthest from the subject.
 
-         IT STARTS ON THE HERO AND NEVER MOVES. Fixed, so it is the same
-         object in the same corner from the first screen to the last, which
-         is the whole of what makes it read as a chapter system rather than
-         as a label on a hero. It sits ABOVE the reader's own two pods rather
-         than beside them, so that corner reads as one stack: the film's
-         position, then the controls, then the edge of the window. */
+         The study has a contents page now. An index down the left edge says
+         where you are, what is on either side of it, and lets you go there —
+         everything the corner readout said and three things it could not —
+         so keeping both would have been two systems answering one question
+         four rows apart. The readout is deleted rather than hidden: its
+         element, its `setAct`, its two ink pairs in the stylesheet and its
+         phone rule have all come out.
+
+         WHAT IS STILL COUNTED. `acts` survives it, because `data-act` is
+         written onto every scene and is what the film's own scroll loop uses
+         to know which act is on screen. It simply no longer draws anything.
+
+         THE RAIL IS NOT BUILT HERE. It is page furniture, not film chrome:
+         `Project.film` owns the element and `FilmNav` drives it, the same
+         way `Project.init` owns the rail on the document study. This
+         publishes the list it is built from, and nothing more. */
       this.acts = acts;
-      if (acts.length) {
-        const chap = el('div', { class: 'film__chap', 'aria-hidden': 'true' },
-          '<span class="film__chap-n"></span><span class="film__chap-t"></span>');
-        film.appendChild(chap);
-        this.chapN = $('.film__chap-n', chap);
-        this.chapT = $('.film__chap-t', chap);
-        this.act = -1;
-        this.setAct(0);
-      }
+      this.navs = navs;
+
       return film;
     },
 
-    /* An act is written `I · Premise` in the data, because that is how it
-       reads in a rail. Here the number is set separately — and in the same
-       two digits the rest of the film's chrome uses — so the only part of the
-       string wanted is the name on the end of it. */
-    setAct(i) {
-      if (i === this.act || !this.chapN) return;
-      this.act = i;
-      this.chapN.textContent = String(i + 1).padStart(2, '0')
-        + ' / ' + String(this.acts.length).padStart(2, '0');
-      this.chapT.textContent = String(this.acts[i] || '').split('\u00b7').pop().trim();
-    },
-
     bind(root) {
-      /* WITH MOTION OFF, NOTHING BINDS. `--p` keeps the 1 the stylesheet
-         declares for reduced motion, so every scene renders at its end
-         state and the film is a readable sequence of finished frames. */
-      if (REDUCED) return;
+      /* WITH MOTION OFF, NO SCENE IS ANIMATED. `--p` keeps the 1 the
+         stylesheet declares for reduced motion, so every scene renders at its
+         end state and the film is a readable sequence of finished frames.
 
-      this.scenes = $$('.scn', root).map((n) => ({
+         THE INDEX STILL BINDS, AND THIS USED TO RETURN BEFORE IT. Turning
+         motion off is a statement about animation, not about navigation — and
+         the rail is drawn out until the film tells it which scene is on
+         screen, so an early return here left a visitor with reduced motion no
+         contents page at all, on the longest page of the site, which is the
+         visitor most likely to want one. `still` is what the loop reads: the
+         scene records and the measuring are identical, the per-scene `--p`
+         write and the video seek are skipped, and the index, the tone and the
+         progress hairline are written exactly as they always were. */
+      this.still = REDUCED;
+
+      this.scenes = $$('.scn', root).map((n, ord) => ({
         n,
+        /* ITS PLACE IN THE FILM, so the loop below can say WHICH SCENE is on
+           screen and not only which act. The index reads this: a rail entry
+           owns every scene from its own up to the next entry's, and that is a
+           comparison of two running orders. */
+        ord,
         top: 0,
         len: 1,
         dark: n.classList.contains('scn--dark') || n.classList.contains('scn--lab')
@@ -4311,7 +5335,12 @@
       });
       const last = this.scenes[this.scenes.length - 1];
       this.first = this.scenes[0] ? this.scenes[0].top : 0;
-      this.total = Math.max(1, (last ? last.top + last.n.offsetHeight : 0) - this.first - vh);
+      /* where the film stops, which is not where the page does: the project's
+         own ending — Index, Previous, Next — is a block after it and outside
+         it. The index has nothing to say about that block and is drawn out
+         over it; see the foot of `tick`. */
+      this.end = last ? last.top + last.n.offsetHeight : 0;
+      this.total = Math.max(1, this.end - this.first - vh);
     },
 
     tick() {
@@ -4322,6 +5351,10 @@
          act rail, left behind when the rail went. It carries the chapter
          reading now. */
       let act = -1;
+      /* WHICH SCENE, not only which act — see `ord` on the scene records. -1
+         until one reaches the line, which on the hero is the whole first
+         screen and is exactly when the index should not be drawn. */
+      let ord = -1;
       let tone = this.tone || 'light';
 
       this.scenes.forEach((s) => {
@@ -4332,7 +5365,7 @@
 
         let p = (y - s.top) / s.len;
         p = p < 0 ? 0 : p > 1 ? 1 : p;
-        if (Math.abs(p - s.p) > 0.002) {
+        if (!this.still && Math.abs(p - s.p) > 0.002) {
           s.p = p;
           s.n.style.setProperty('--p', p.toFixed(4));
           /* THE VIDEO IS SEEKED, NOT PLAYED. `fastSeek` where it exists,
@@ -4344,7 +5377,7 @@
             else s.vid.currentTime = t;
           }
         }
-        if (rTop <= vh * 0.5) { act = s.act; tone = s.dark ? 'dark' : 'light'; }
+        if (rTop <= vh * 0.5) { act = s.act; ord = s.ord; tone = s.dark ? 'dark' : 'light'; }
       });
 
       /* THE CHROME TAKES THE SCENE'S TONE. The progress rule and the act dots
@@ -4356,13 +5389,201 @@
         this.film.dataset.tone = tone;
       }
 
-      if (act >= 0) this.setAct(act);
+      /* THE INDEX IS WRITTEN OFF THIS SAME PASS, because the loop above has
+         already read every rect it needs and a second reader of the same
+         geometry is a second forced layout on every frame of every scroll.
+         `ord` is -1 while the hero is still the thing on screen, which is
+         what tells the rail to stay out of the opening.
+
+         AND OUT OF THE ENDING, WHICH THE SCENE TEST ALONE DID NOT DO. A
+         scene stays "in range" until it is four tenths of a screen past the
+         top of the window, and `.onward` is shorter than that — so at the
+         bottom of the page the last scene still reported itself and the
+         index was left standing over Index / Previous / Next, which is a
+         contents page over a navigation block. Once the film's last pixel is
+         above the reading line the film is over, and the index says so. */
+      if (this.nav) this.nav.set(y + vh * 0.5 > this.end ? -1 : ord, tone);
 
       if (this.bar) {
         const fp = Math.min(1, Math.max(0, (y - this.first) / this.total));
         this.bar.style.setProperty('--fp', fp.toFixed(4));
       }
 
+    },
+  };
+
+  /* ----------------------------------------------------------------------
+     THE FILM'S INDEX
+
+     WHAT THIS IS, AND WHY IT IS NOT `SectionNav`.
+
+     The document study has a rail already, and it is a good one: an
+     IntersectionObserver reading band, one anchor per section, an active item
+     that flips exactly as a section reaches its resting position. None of it
+     transfers. That rail observes the section elements themselves, and every
+     section on that page is a rail entry — so the band is contiguous and
+     exactly one section always qualifies.
+
+     The film is twenty-five scenes and nine entries. Sixteen of them belong
+     to no entry of their own, so an observer watching only the nine would
+     have an EMPTY band for two thirds of the page, and an empty band keeps
+     whatever it last saw: correct scrolling down, and wrong scrolling up —
+     leave an entry upwards and the rail stays on the one below until you
+     reach the one above. Wrapping the sixteen in nine containers would fix
+     it and would also put a new element between `.film` and `.scn`, which is
+     where the sticky stages live. Neither is worth doing.
+
+     SO IT IS A COMPARISON OF TWO RUNNING ORDERS, AND IT IS FREE. `Film.tick`
+     already knows which scene is on screen — it has just measured every one
+     of them to write `--p`. An entry owns every scene from its own up to the
+     next entry's, so the active entry is the last one whose scene index is at
+     or below the scene on screen. No observer, no second geometry, no
+     scroll handler of its own.
+
+     WHAT IT LOOKS LIKE IS THE OTHER STUDY'S RAIL. Same `.rail__back`, same
+     `.rail__list`, same `.rail__link`, same measured 40px pitch — because the
+     two case studies should read as one portfolio and the index is the most
+     visible thing they now share. What section 23a adds is only what the film
+     needs and the document does not: fixed instead of sticky (the film has no
+     grid to be contained by), an ink pair for the black scenes, and an
+     opening state, because the one screen this must not appear on is the
+     film's own.
+     ---------------------------------------------------------------------- */
+  const FilmNav = {
+    /* `navs` is what `Film.build` counted off the scenes: one `{ id, label, i }`
+       per entry, `i` being the scene's running order. Returns the element or
+       null, and a study with no `nav` on any scene gets null and no rail —
+       which is how the film behaved before this existed. */
+    build(p, navs) {
+      const rail = $('#rail');
+      if (!rail || !navs || !navs.length) return null;
+
+      rail.className = 'rail rail--film';
+      rail.setAttribute('aria-label', 'Case study contents');
+      rail.dataset.tone = 'dark';      /* the hero is black; see `on` below */
+      rail.dataset.on = '0';
+      rail.textContent = '';
+
+      rail.appendChild(el('a', {
+        class: 'rail__back', href: url(p.back?.href || 'index.html'),
+      }, esc(p.back?.label || 'BACK')));
+
+      /* --- THE PHONE HAS NO ROOM FOR A CONTENTS PAGE ---------------------
+         A 176px column down the left edge is a third of a 390px screen, and
+         the document study's answer — lie the rail down as a strip across the
+         top — cannot be borrowed here: that strip is opaque with a hairline
+         under it, and it would sit across the top of twenty-five full-bleed
+         compositions for forty-six screens.
+
+         So on a phone the same list collapses behind one line that states
+         only where you are, and opens when it is pressed. Closed it is the
+         readout the corner used to carry; open it is the same nine links.
+         One element, two states, and the desktop never sees it. */
+      const now = el('button', {
+        class: 'rail__now', type: 'button', 'aria-expanded': 'false',
+        'aria-label': 'Case study contents',
+      }, '<span class="rail__now-n"></span><span class="rail__now-t"></span>');
+      rail.appendChild(now);
+
+      const list = el('nav', { class: 'rail__list' });
+      this.links = navs.map((n, i) => {
+        const a = el('a', { class: 'rail__link', href: `#${n.id}` },
+          `${esc(n.label)}<i class="rail__dot" aria-hidden="true"></i>`);
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          const t = document.getElementById(n.id);
+          if (!t) return;
+          Sound.tap();
+          /* PINNED WHILE THE SCROLL IS IN FLIGHT, for the same reason
+             `SectionNav` pins: a smooth scroll past six entries would
+             otherwise sweep the indicator through all of them on the way.
+             It is released by the first tick after the page settles. */
+          this.pin = i;
+          this.paint(i);
+          this.close();
+          App.to(t.getBoundingClientRect().top + App.y(), !REDUCED);
+          clearTimeout(this.settle);
+          this.settle = setTimeout(() => { this.pin = -1; }, 700);
+        });
+        list.appendChild(a);
+        return a;
+      });
+      rail.appendChild(list);
+
+      now.addEventListener('click', () => {
+        Sound.tap();
+        if (rail.dataset.open === '1') this.close();
+        else { rail.dataset.open = '1'; now.setAttribute('aria-expanded', 'true'); }
+      });
+      /* Pressing anywhere else closes it, and so does the Escape key. It is a
+         menu, and a menu you can only shut by pressing the thing that opened
+         it is a menu people leave open. */
+      addEventListener('pointerdown', (e) => {
+        if (rail.dataset.open === '1' && !rail.contains(e.target)) this.close();
+      }, { passive: true });
+      addEventListener('keydown', (e) => { if (e.key === 'Escape') this.close(); });
+
+      this.rail = rail;
+      this.navs = navs;
+      this.nowN = $('.rail__now-n', now);
+      this.nowT = $('.rail__now-t', now);
+      this.now = now;
+      this.at = -2;
+      this.pin = -1;
+      this.tone = '';
+      this.on = '0';
+      return rail;
+    },
+
+    close() {
+      if (!this.rail) return;
+      this.rail.dataset.open = '0';
+      if (this.now) this.now.setAttribute('aria-expanded', 'false');
+    },
+
+    /* Called once per frame by `Film.tick` with the running order of the scene
+       on screen and that scene's tone. Everything here is guarded on a change,
+       because this runs on every frame of every scroll and the three writes
+       below happen nine, two and two times in the length of the page. */
+    set(ord, tone) {
+      if (!this.rail) return;
+
+      /* THE HERO IS NOT PART OF THE STUDY AND THE INDEX SAYS SO. `ord` is -1
+         while the film's own first screen is the thing on screen, and the
+         rail is drawn out then: a contents page over the opening frame is
+         the page announcing its own table of contents before it has shown
+         you anything, which is the reason the document study's hero was
+         lifted out of the rail's container in the first place. */
+      const on = ord < 0 ? '0' : '1';
+      if (on !== this.on) { this.on = on; this.rail.dataset.on = on; }
+
+      if (tone !== this.tone) { this.tone = tone; this.rail.dataset.tone = tone; }
+
+      if (this.pin >= 0) return;
+      /* the last entry at or before the scene on screen — see the note on the
+         module. `navs` is in scene order by construction, so this is a walk
+         and not a search. */
+      let i = 0;
+      for (let k = 0; k < this.navs.length; k++) {
+        if (this.navs[k].i <= ord) i = k; else break;
+      }
+      this.paint(i);
+    },
+
+    paint(i) {
+      if (i === this.at) return;
+      this.at = i;
+      this.links.forEach((a, k) => {
+        const is = k === i;
+        a.classList.toggle('is-active', is);
+        if (is) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
+      });
+      if (this.nowN) {
+        this.nowN.textContent = String(i + 1).padStart(2, '0')
+          + ' / ' + String(this.navs.length).padStart(2, '0');
+        this.nowT.textContent = this.navs[i] ? this.navs[i].label : '';
+      }
     },
   };
 
@@ -4577,17 +5798,19 @@
        Which one a project gets is a value in its data, not a branch written
        about a slug.
 
-       WHAT IS NOT HERE. No `#rail` — twenty-six scenes as a table of
-       contents is a list nobody reads, and the film carries its own chrome
-       instead: a progress hairline along the top and the chapter reading in
-       the bottom-left corner. No `videos()` either; the one video inside the
+       THE RAIL IS HERE NOW, and it was not. The note that used to stand in
+       this place said twenty-six scenes as a table of contents is a list
+       nobody reads, which is true and is not what is built: the index lists
+       the study's nine parts, one entry per chapter, and the scenes inside a
+       chapter belong to it without appearing in it. See `FilmNav`, and the
+       block at the end of this method that builds it.
+
+       WHAT IS STILL NOT HERE. No `videos()`; the one video inside the
        film is seeked by scroll position and an autoplay-on-visible binding
        would fight it for the same element. The hero's film is bound by
        `bindFilm` instead, because it is played rather than scrubbed. */
     film(p, item) {
       const main = $('#main');
-      const rail = $('#rail');
-      if (rail) rail.remove();
 
       /* CLEARED BEFORE IT IS SET, because the router rebuilds `#main` in
          place and a reference kept from the last study is a rect read off a
@@ -4631,6 +5854,33 @@
       main.appendChild(film);
       /* the project's own ending, after the film and outside it */
       if (item) main.appendChild(this.onward());
+
+      /* --- THE INDEX ----------------------------------------------------
+
+         `#rail` USED TO BE REMOVED HERE, and the comment above this method
+         said why: twenty-six scenes as a table of contents is a list nobody
+         reads. That was true of a list of scenes. What is built now is a list
+         of the study's nine parts — Overview, Context, The Problem and the
+         rest — which is a reading index, and a forty-six screen document
+         without one is a document you cannot re-enter.
+
+         IT IS BUILT AFTER THE FILM AND NOT BEFORE, because the entries are
+         counted off the scenes as they are rendered: `Film.build` publishes
+         `navs`, this turns them into an element, and `Film.tick` drives it
+         from the measurements it was already taking. A study whose scenes
+         declare no `nav` gets null back and the page is exactly what it was.
+
+         AND IT STAYS WHERE THE MARKUP PUT IT — a child of `<body>`, outside
+         `.sheet`. The document study MOVES its rail into `.proj__body` so a
+         sticky rail has the case study as its containing block; the film has
+         no such container, its own chrome is already fixed to the window, and
+         a fixed element wants the shallowest parent it can have. */
+      Film.nav = FilmNav.build(p, Film.navs) ? FilmNav : null;
+      /* AND THE FILM GIVES UP THE COLUMN THE INDEX STANDS IN. Stated as a
+         class on the element rather than assumed by the stylesheet, so a
+         study with no `nav` on any scene keeps the full width it had. */
+      if (Film.nav) film.classList.add('film--indexed');
+
       Film.bind(film);
 
       if (!location.hash) requestAnimationFrame(() => App.to(0));
@@ -13770,160 +15020,87 @@
      head of index.html, so the charcoal is the first painted frame rather
      than a paper flash and then the charcoal; this reads the flag they set.  */
 
-  /* --- THE ISOMETRIC ------------------------------------------------------
-     A true 30 degree isometric. One stud step along the x axis is
-     (cos30, sin30) * S on screen and one along y is (-cos30, sin30) * S, so
-     the top of a brick is a rhombus and the two visible walls are the same
-     shape leaning opposite ways. A brick is 1.2 studs tall — LEGO's own ratio
-     is 1.2 plate-widths, near enough that the eye reads it as correct.
-
-     A stud is a circle on the top plane, and a circle on that plane projects
-     to an axis-aligned ellipse with rx/ry = cot(30) = 1.732 — which is why
-     the numbers below are 1.2247 and 0.7071 rather than one number twice. */
-  const ISO = {
-    cx: 0.8660254,          /* cos 30 — half-width of one stud step        */
-    cy: 0.5,                /* sin 30 — half-height of one stud step       */
-    bh: 1.2,                /* brick height, in studs                      */
-    srx: 0.3674,            /* stud ellipse, x radius, in studs            */
-    sry: 0.2121,            /* stud ellipse, y radius                      */
-    sh: 0.21,               /* how far a stud stands off the top face      */
-  };
-
-  /* --- WHAT IS BUILT, AND HOW EACH PIECE BEHAVES --------------------------
-     Four pieces: one large 2x4, two mediums, one small. `x`/`y` are the near
-     corner's cell, `z` the layer, `w`/`d` the footprint. They interlock — the
-     2x3 and the 1x2 together cover the 2x4 exactly, and the 2x2 caps the
-     middle of that — so the finished thing is something that could be built
-     by hand. None of those numbers is ever rolled: every load ends in exactly
-     the same object.
-
-     Everything after `tone` is character, and no two pieces share it.
-
-       at      when it is thrown
-       dur     how long the flight takes
-       mag     how long the magnetic part takes — the last few pixels
-       fill    how long the colour takes to flood the geometry
-       seat    how long it settles for afterwards
-       from    where it starts, in studs, so the entrance scales with the
-               drawing rather than with the screen
-       bow     how much its path bends — a straight line between two points
-               is the one thing a thrown object never travels along
-       accel   the fraction of the flight spent getting up to speed; small is
-               a flick, large is a shove
-       grab    how far short of the slot the flight ends and the magnet takes
-               over, as a fraction of the whole distance
-       over    how far past the slot it goes before it is corrected, in studs
-       resid   the degree or so of rotation deliberately left uncorrected by
-               the flight, so the magnet has an alignment to make            */
-  const BUILD = [
-    /* 1. THE BASE. A diagonal from below left, the heaviest thing here, so it
-          is shoved rather than flicked and it barely overshoots. */
-    { w: 4, d: 2, x: 0, y: 0, z: 0, tone: 1,
-      at: 60, dur: 316, mag: 126, fill: 96, seat: 190,
-      from: { x: -6.4, y: 6.2, r: -5 },
-      bow: 0.10, accel: 0.30, grab: 0.13, over: 0.145, resid: -0.8 },
-    /* 2. IN FROM THE LEFT AND TURNING. The longest rotation of the four and
-          the widest bow, so it arcs in rather than sliding in. */
-    { w: 3, d: 2, x: 0, y: 0, z: 1, tone: 0,
-      at: 250, dur: 292, mag: 112, fill: 88, seat: 176,
-      from: { x: -10.8, y: -2.3, r: -13 },
-      bow: -0.14, accel: 0.35, grab: 0.12, over: 0.125, resid: -1.5 },
-    /* 3. STRAIGHT ACROSS. The smallest piece, thrown almost horizontally,
-          and the one allowed the most visible overshoot. */
-    { w: 1, d: 2, x: 3, y: 0, z: 1, tone: 2,
-      at: 452, dur: 278, mag: 118, fill: 80, seat: 168,
-      from: { x: 11.6, y: -0.5, r: 8 },
-      bow: 0.06, accel: 0.40, grab: 0.15, over: 0.205, resid: 1.0 },
-    /* 4. THE CAP, AND THE BEST SNAP. Dropped almost straight down onto the
-          finished thing: the slowest pull, the longest settle, the fullest
-          click. It is the piece that completes the object and it is allowed
-          to be the one you remember. */
-    { w: 2, d: 2, x: 1, y: 0, z: 2, tone: 3,
-      at: 622, dur: 306, mag: 144, fill: 104, seat: 204,
-      from: { x: 0.5, y: -9.4, r: 2.5 },
-      bow: 0.05, accel: 0.26, grab: 0.13, over: 0.135, resid: 0.5 },
-  ];
-
   const Boot = {
     on: false,
     woke: false,
     stage: null,
+    /* the only things the drawing holds on to, so the exit can let go of all of
+       it in one line — see `slide` */
+    taps: [],
 
-    /* --- the clock, in ms from the sheet appearing ---------------------- */
+    /* --- THE CLOCK, AND IT RUNS ON TWO ---------------------------------
+
+       TWO CLOCKS, BECAUSE THERE ARE TWO MOMENTS. The sheet goes up before the
+       page is built — on purpose, so the time the browser spends building it is
+       the beat before the drawing rather than dead air — so `draw` runs then,
+       and everything it schedules is measured from the sheet appearing.
+       `setOut` cannot run until there is a page to measure, which is `go`,
+       about half a second later. Each field below says which clock it is on.
+
+       WHAT THIS PASS REMOVED, and it is most of what was here. The sheet had a
+       title block, a status field, a build counter, a bench, a cursor, an
+       identity, type rules standing in for every line of copy in the sidebar,
+       two centre axes, two 45° guides and a four-piece LEGO assembly. Every one
+       of them was defensible on its own and together they were a screen with
+       more furniture than subject. What is left is the thing that was actually
+       working: paper, a grid, the page's own frames with their tags, and a
+       measurement under each one.
+
+       THE LEGO IS GONE FROM THE ENTRANCE ENTIRELY — the renderer, the throw
+       curves, the magnet, the settle and the assembly with it, about four
+       hundred lines, deleted rather than switched off. It was Boot's own and
+       nothing else referenced it; the bricks on the page are `Bricks`, a
+       separate system, untouched. LEGO is still the site's language, it is
+       simply not what the door is made of.
+
+         go clock — and it is the ONLY clock now, see below
+           0     the mat wipes down, the sheet border follows
+           420   the frames draw, one per measured block
+           900   the image frames stop being empty, one after another
+           ~2240 the paper uncovers downward over 1.3s
+
+       THE MAT USED TO BE ON THE SHEET'S CLOCK AND NOBODY EVER SAW IT. Recorded
+       and measured frame by frame, the first painted frame of a cold load
+       arrived about nine hundred milliseconds after navigation — a megabyte of
+       script and eight hundred kilobytes of stylesheet, parsed before the body
+       ends — and the grid's six-hundred-millisecond wipe had been and gone
+       inside that window. What was actually on screen was a second of flat
+       paper and then the grid and the frames arriving together, which is
+       exactly the phase this sequence opens with and exactly the phase it was
+       not showing.
+
+       So there is one clock, and it starts at the first moment the browser has
+       demonstrably painted — `go` waits for three consecutive frames under
+       twenty-one milliseconds before it runs. The empty canvas is now the first
+       thing seen rather than the first thing scheduled.
+
+       THE UNCOVER IS MEASURED OFF THE REFERENCE, not chosen. Its sheet leaves
+       as a top-to-bottom uncover — sampled in quarters, the top band's colour
+       is gone while the third is still full — over about 1.35 seconds, behind a
+       soft edge roughly a quarter of the viewport deep. The first attempt at
+       this ran 620ms behind a 9% edge, which is the same idea at twice the
+       speed through a third of the feather, and it read as a wipe. */
     T: {
-      hold: 200,        /* the finished object sits still this long  */
-      ready: 90,        /* the page underneath is let go this soon   */
-      exit: 580,        /* and the sheet takes this long to leave    */
+      /* all on `go`'s clock, which begins on the first painted frame */
+      skel: 420,        /* the first frame is drawn, over the laid grid     */
+      stagger: 80,      /* between one measured block and the next          */
+      res: 900,         /* image frames stop being empty                    */
+      resStep: 130,     /* and one after another                            */
+      /* and the end */
+      hold: 160,        /* the finished drawing sits still this long        */
+      ready: 90,        /* the page underneath is let go this soon          */
+      exit: 1320,       /* the paper uncovers over this                     */
       wait: 340,        /* the longest the exit waits before ending the fall */
     },
 
-    /* --- THE CURVES ---------------------------------------------------------
+    /* THE FLAG IS SET IN THE HEAD, not decided here. Every page that loads this
+       script runs the same dozen lines before its first paint and puts
+       `wake-armed` on the root, because a decision made down here, at the end
+       of the body, would be one painted frame of the wrong colour first. This
+       only has to agree with it.
 
-       A FLIGHT, INTEGRATED RATHER THAN DRAWN. Every stock easing curve is a
-       position curve, which is why so much UI motion reads as a shape sliding
-       and not as an object moving: you pick how it looks at the ends and the
-       middle is whatever falls out. This is the other way round. The velocity
-       is the thing described — it ramps from nothing over the first `a` of the
-       journey, then decays as a square to nothing at the end — and the
-       position is its integral, normalised. That is what acceleration,
-       momentum and deceleration actually are, and the two halves join with the
-       same slope, so there is no kink where a bezier's handles would meet.
-
-       `a` is the only knob and it is per piece: small is a flick that is up to
-       speed immediately, large is a shove that takes its time. */
-    flight(u, a) {
-      const A = a / 2, B = (1 - a) / 3, tot = A + B;
-      if (u <= a) return (u * u) / (2 * a) / tot;
-      const v = (u - a) / (1 - a);
-      return (A + B * (1 - Math.pow(1 - v, 3))) / tot;
-    },
-
-    /* AND THEN THE MAGNET, which is a different kind of movement and has to
-       look like one. The flight has all but stopped a few pixels out; this
-       accelerates from there — the pull — carries the piece a whisker past its
-       slot, and takes it back. It ends at exactly 1 with exactly no
-       overshoot left, because the destination is not a matter of taste.
-
-       Returns the fraction of the remaining distance covered. The overshoot is
-       returned separately, in pixels, so it can be capped: a proportional
-       overshoot on a long throw is a piece visibly missing its slot. */
-    pull(v) { return Math.min(1, Math.pow(v / 0.45, 1.7)); },
-    past(v) {
-      if (v <= 0.38 || v >= 1) return 0;
-      return Math.sin((v - 0.38) / 0.62 * Math.PI);
-    },
-
-    /* THE SETTLE, AND THE HELD FRAME AT THE FRONT OF IT.
-
-       A brick pressed onto studs compresses, is held there for an instant by
-       the friction of the studs it has just been forced over, and then
-       relaxes. So this is not a bare damped oscillation: it is flat at full
-       compression for the first sixth of the settle and damped after that.
-
-       The flat part is about two frames, and it is the entire reason the
-       compression is visible at all. A decay that starts at the moment of
-       contact is already half gone by the next frame a display can show, which
-       is how a settle that is right on paper turns into a settle nobody can
-       see. `amp` is about 1.5% at its deepest — the difference between "it
-       seated" and "it bounced". */
-    damp(w) {
-      if (w < 0.16) return 1;
-      const v = w - 0.16;
-      return Math.exp(-6.0 * v) * Math.cos(v * 7.2);
-    },
-
-    /* THE FLAG IS SET IN THE HEAD, not decided here. Every page that loads
-       this script runs the same dozen lines before its first paint and puts
-       `wake-armed` on the root, because the sheet is charcoal and the page is
-       paper: a decision made down here, at the end of the body, would be one
-       painted frame of the wrong colour first. This only has to agree with it.
-
-       AND IT ONLY RUNS ON AN ARRIVAL. There was briefly a second, brisker
-       tempo for moving inside the site, on the theory that a repeat viewing
-       wants the same thing faster. It does not: what a repeat viewing wants is
-       the page. So an internal click gets no entrance at all rather than a
-       hurried one, the head decides which is which, and this is the only
-       speed there is. */
+       AND IT ONLY RUNS ON AN ARRIVAL. An internal click gets no entrance at all
+       rather than a hurried one; the head decides which is which. */
     arm(page) {
       const root = document.documentElement;
       if (REDUCED || !root.classList.contains('wake-armed')) {
@@ -13931,595 +15108,201 @@
         return;
       }
       this.on = true;
-      /* NOTHING IS MOVED OUT OF THE WAY. The old entrance pushed `.app` down
-         by exactly one viewport here and put it back as the sheet left, so the
-         two edges were welded for every frame of the journey. The arithmetic
-         was right; the idea was wrong. A page that travels is a page that
-         arrives, and this one is meant to have been here all along. So the
-         only number the exit needs is how long it takes, and the only thing
-         that reads it is the sheet. */
       document.body.style.setProperty('--sig-ms', `${this.T.exit}ms`);
       document.body.classList.add('waking');
-
-      /* AND THE DRAWING GOES UP NOW, BEFORE THE PAGE IS BUILT. It used to be
-         mounted from the middle of `Pages.home`, which put it on screen a
-         quarter of a second later than it needed to be — a quarter of a second
-         of flat charcoal with nothing on it. Nothing in `layout` depends on the
-         page; it needs the viewport and that is all. So the stencil and the
-         four pieces are drawn immediately and simply wait, which turns the
-         time the browser spends building the page underneath into the beat
-         before the first throw instead of into dead air. */
       this.begin();
-
-      /* AND THE PAGE UNDERNEATH IS LET GO A BEAT LATER. `Pages.home` runs on
-         the next line of `boot()`; this fires just after it, which is early
-         enough that the reveal and the fall both finish inside the build and
-         late enough that neither of them is competing with the sheet's own
-         first paint. */
       this.ready = setTimeout(() => this.wakePage(), this.T.ready);
     },
 
-    /* THE FALL IS NOT HELD ANY MORE, AND THAT IS THE CHANGE.
-
-       This used to take `Bricks.rain` and keep it until the page had slid up
-       into view, on the reasoning that a brick should fall into a room you can
-       see. The room is not arriving now — it is already here, under the sheet
-       — so the fall belongs where everything else about the page belongs:
-       before the reveal, not after it. It runs while four bricks are being
-       thrown at a stencil on top of it, finishes in that time, and by the time
-       the sheet lifts the canvas is a settled arrangement rather than a
-       shower. `finish` waits on `data-arriving` for the loads where it is not.
-
-       The signature is unchanged because `Bricks.init` is unchanged: it asks,
-       and the answer is now always yes-and-here-it-is. */
+    /* THE FALL IS NOT HELD. The room is not arriving — it is already here,
+       under the sheet — so the brick rain belongs before the reveal rather than
+       after it. It runs while the drawing is being set out over it, finishes in
+       that time, and by the time the paper uncovers the canvas is a settled
+       arrangement rather than a shower. `finish` waits on `data-arriving` for
+       the loads where it is not. */
     hold(fn) {
       if (!this.on) return false;
       fn();
       return true;
     },
 
-    /* AND THE TYPE ARRIVES ON THE SAME EARLY CLOCK, for the same reason.
-
-       `.awake` releases the reveal — nineteen elements, opacity and five
-       pixels of travel. On the old entrance it was fired a beat into the slide
-       so the page was not blank when it landed. There is no landing now, so it
-       fires while the sheet is up: the reveal is over, in full, before anybody
-       can see the elements it belongs to. That is the brief. The page is not
-       supposed to make an entrance; it is supposed to have been here.
-
-       Not on the same tick as the mount, though — a beat later, so the first
-       paint of the sheet is not sharing a frame with nineteen elements being
-       promoted and rasterised. */
+    /* `.awake` releases the page's own reveal — nineteen elements, opacity and
+       five pixels of travel, staggered per element. It fires while the sheet is
+       up, so the reveal is over, in full, before anybody can see the elements
+       it belongs to. The page is not supposed to make an entrance; it is
+       supposed to have been here. */
     wakePage() {
       if (this.woke) return;
       this.woke = true;
       document.body.classList.add('awake');
     },
 
-    /* --- COLOUR -------------------------------------------------------------
-       Two faces of a brick are the same plastic under different light, so they
-       are the same hex moved toward white or black rather than three colours
-       picked by hand — which is the difference between an object and a flat
-       illustration of one. */
-    tint(hex, k) {
-      const n = parseInt(hex.slice(1), 16);
-      const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
-        const t = k >= 0 ? v + (255 - v) * k : v * (1 + k);
-        return Math.max(0, Math.min(255, Math.round(t)));
-      });
-      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    /* --- WHAT THE PAGE IS MADE OF -----------------------------------------
+
+       THE FRAMES ARE MEASURED, NEVER INVENTED, and that is the whole reason the
+       end of this sequence needs no transition. The page is built and laid out
+       under the sheet from the first frame — existing architecture, not
+       something added for this — so every frame and every dimension on the
+       drawing is read straight off it: the masthead's statement block and each
+       project card's image box.
+
+       THE TYPE RULES HAVE GONE. There was a hairline per line of copy in the
+       sidebar, at the real type's baseline and the real type's width, and on
+       paper that was the most faithful thing here. On screen it was fifteen
+       more marks in the quietest corner of a drawing that already had enough,
+       and it made the sidebar the busiest part of an empty canvas.
+
+       IT IS ALLOWED TO FIND NOTHING. On a slow build a stack may not exist yet,
+       and a frame drawn around nothing is the one thing this layer must never
+       be, so every box returned here was actually found and actually has size. */
+    marks() {
+      const out = [];
+      const push = (n, kind, tag) => {
+        if (!n) return;
+        const r = n.getBoundingClientRect();
+        if (r.width < 32 || r.height < 24) return;
+        out.push({ kind, tag, x: r.left, y: r.top, w: r.width, h: r.height });
+      };
+      push($('.mast__say'), 'frame', 'masthead');
+      $$('.home__work .wcard').forEach((card, i) =>
+        push($('.wcard__media', card), 'plate', `frame / 0${i + 1}`));
+      return out;
     },
 
-    /* --- ONE PIECE, DRAWN TWICE ---------------------------------------------
-       Once as an outline and once as a solid, in the same coordinates, in the
-       same box, stacked. Because they were projected from one set of corners
-       they are registered exactly, which is what lets the fill be a wipe
-       through the outline's own geometry rather than a second picture being
-       faded up over the first. A cross-fade reads as two images being swapped.
-       This has to read as one object gaining a material.
+    /* --- 02/03 · THE FRAMES, AND THEN THEIR RESOLUTION -------------------
 
-       THE MATERIAL IS THREE THINGS AND NO MORE. A gradient down the top face,
-       because a flat top face is a swatch and a graded one is a surface under
-       a light. A darker band along the foot of each wall, which is the shadow
-       a brick sits in where it meets the one below it. And the outline itself,
-       which after the snap is the brick's own dark edge and is therefore also
-       what defines every stud. No glow, no bloom, no specular blob. */
-    piece(b, S, uid) {
-      const I = ISO;
-      const H = I.bh * S;
-      const P = (a, c, up) => [
-        I.cx * S * (a - c),
-        I.cy * S * (a + c) - H * up,
-      ];
-      const zt = b.z + 1;
-      /* the top face, clockwise from the far corner */
-      const T = [
-        P(b.x, b.y, zt),
-        P(b.x + b.w, b.y, zt),
-        P(b.x + b.w, b.y + b.d, zt),
-        P(b.x, b.y + b.d, zt),
-      ];
-      const B = T.map((p) => [p[0], p[1] + H]);
+       CALLED FROM `go`, WHICH IS THE ONLY MOMENT THIS CAN HAPPEN. `arm` puts
+       the sheet up before `Pages.home` runs, so at `begin` there is no masthead
+       and no showcase to measure. `go` fires at the end of `boot()`, with the
+       page laid out underneath and still covered.
 
-      const studs = [];
-      for (let i = 0; i < b.w; i++) {
-        for (let j = 0; j < b.d; j++) {
-          studs.push(P(b.x + i + 0.5, b.y + j + 0.5, zt));
-        }
+       TWO WAVES OUT OF ONE PASS. Every box is drawn once and carries two
+       delays: `--in`, when its outline appears, and `--res`, when an image
+       frame stops being empty. So the frames arrive, and then the same boxes
+       resolve — the second wave is the first wave changing, not a second set of
+       elements fading up over it.
+
+       AN IMAGE FRAME ARRIVES HATCHED — the convention for an area that is
+       specified and empty — and the hatch then goes while a flat tone wipes
+       down inside the same outline. No cross-fade: the frame is not replaced by
+       a picture, it stops being empty. */
+    setOut() {
+      if (!this.stage || this.gone) return;
+      const T = this.T;
+      const blocks = this.marks();
+      const px = (v) => `${Math.round(v)}px`;
+
+      /* --- 01 · THE EMPTY CANVAS ------------------------------------------
+
+         Paper, a grid, and a hatched sheet border, wiped down the sheet. That
+         is everything the next third of a second contains, and the emptiness is
+         the point: the visitor gets a moment to understand that this is a
+         working canvas before anything is set out on it.
+
+         IT IS MOUNTED HERE RATHER THAN AT `begin`, which is the whole fix for
+         the phase nobody was seeing — see the note on the clock above. Two CSS
+         animations on one node, and no loop behind any of it: `Boot` owns no
+         `requestAnimationFrame` except the three-quiet-frames test in `go`. */
+      this.stage.appendChild(el('div', { class: 'sig__mat' }));
+
+      const skel = el('div', { class: 'sig__skel' });
+
+      /* the page's own left edge — the one construction line left, and the only
+         one that was ever doing structural work */
+      const work = $('.home__work');
+      if (work) {
+        const r = work.getBoundingClientRect();
+        const v = el('div', { class: 'sig__cl sig__cl--v' });
+        v.style.cssText = `left:${px(r.left)};top:0;height:${px(innerHeight)};--in:${T.skel}ms;`;
+        skel.appendChild(v);
       }
-      const rx = I.srx * S, ry = I.sry * S, sh = I.sh * S;
 
-      /* the box this all fits in, with room for the stroke */
-      const pad = Math.max(2, S * 0.14);
-      const cxs = studs.map((p) => p[0]);
-      const xs = T.concat(B).map((p) => p[0])
-        .concat(cxs.map((v) => v - rx), cxs.map((v) => v + rx));
-      const ys = T.concat(B).map((p) => p[1]).concat(studs.map((p) => p[1] - sh - ry));
-      const x0 = Math.min.apply(null, xs) - pad;
-      const y0 = Math.min.apply(null, ys) - pad;
-      const x1 = Math.max.apply(null, xs) + pad;
-      const y1 = Math.max.apply(null, ys.concat(T.concat(B).map((p) => p[1]))) + pad;
-      const w = x1 - x0, h = y1 - y0;
+      let plate = 0;
+      blocks.forEach((b, i) => {
+        const isPlate = b.kind === 'plate';
+        const res = T.res + plate * T.resStep;
+        const fr = el('div', { class: `sig__fr${isPlate ? ' sig__fr--plate' : ''}` });
+        fr.style.cssText = `left:${px(b.x)};top:${px(b.y)};width:${px(b.w)};`
+          + `height:${px(b.h)};--in:${T.skel + i * T.stagger}ms;`
+          /* the first image frame resolves while the last is still being
+             outlined, which is what makes the two waves overlap rather than
+             queue */
+          + (isPlate ? `--res:${res}ms;` : '');
+        if (b.tag) fr.appendChild(el('i', {}, esc(b.tag)));
+        skel.appendChild(fr);
 
-      const f = (n) => n.toFixed(2);
-      const pts = (arr) => arr.map((p) => `${f(p[0])},${f(p[1])}`).join(' ');
-      /* a stud's wall: down the left side, round the underside, up the right */
-      const wall = (p) =>
-        `M${f(p[0] - rx)},${f(p[1] - sh)}L${f(p[0] - rx)},${f(p[1])}`
-        + `A${f(rx)},${f(ry)} 0 0 0 ${f(p[0] + rx)},${f(p[1])}`
-        + `L${f(p[0] + rx)},${f(p[1] - sh)}`;
-      /* the foot of a wall — the bottom fifth of it, darkened */
-      const foot = (p1, p2) => {
-        const k = 0.78;
-        return pts([[p1[0], p1[1] + H * k], [p2[0], p2[1] + H * k],
-          [p2[0], p2[1] + H], [p1[0], p1[1] + H]]);
-      };
-
-      const base = TONE[b.tone];
-      const cRight = this.tint(base, -0.10);
-      const cLeft = this.tint(base, -0.30);
-      const cStud = this.tint(base, 0.20);
-      const cStudW = this.tint(base, 0.0);
-      const edge = this.tint(base, -0.46);
-      const gid = `sgg${uid}`;
-
-      const open = `<svg viewBox="${f(x0)} ${f(y0)} ${f(w)} ${f(h)}"`
-        + ` width="${f(w)}" height="${f(h)}" aria-hidden="true">`;
-
-      /* --- the solid. Painted far to near: the two walls and their feet, then
-         the top face under its gradient, then the studs. Nothing needs a z
-         index and nothing shows through. */
-      let solid = open
-        + `<defs><linearGradient id="${gid}" x1="0.12" y1="0" x2="0.72" y2="1">`
-        + `<stop offset="0" stop-color="${this.tint(base, 0.21)}"/>`
-        + `<stop offset="1" stop-color="${this.tint(base, 0.02)}"/></linearGradient></defs><g>`
-        + `<polygon points="${pts([T[1], T[2], B[2], B[1]])}" fill="${cRight}"/>`
-        + `<polygon points="${pts([T[2], T[3], B[3], B[2]])}" fill="${cLeft}"/>`
-        + `<polygon points="${foot(T[1], T[2])}" fill="rgba(0,0,0,0.17)"/>`
-        + `<polygon points="${foot(T[2], T[3])}" fill="rgba(0,0,0,0.17)"/>`
-        + `<polygon points="${pts(T)}" fill="url(#${gid})"/>`;
-      studs.forEach((p) => {
-        solid += `<path d="${wall(p)}Z" fill="${cStudW}"/>`
-          + `<ellipse cx="${f(p[0])}" cy="${f(p[1] - sh)}" rx="${f(rx)}" ry="${f(ry)}" fill="${cStud}"/>`;
+        if (isPlate) {
+          /* the witness line, carrying the block's real width in real pixels —
+             a measurement of the thing it is drawn on, so it is different on a
+             laptop and a phone */
+          const d = el('div', { class: 'sig__dim' });
+          d.style.cssText = `left:${px(b.x)};top:${px(b.y + b.h + 9)};width:${px(b.w)};`
+            + `--in:${res + 90}ms;`;
+          d.appendChild(el('i', {}, String(Math.round(b.w))));
+          skel.appendChild(d);
+          plate++;
+        }
       });
-      solid += '</g></svg>';
+      this.stage.appendChild(skel);
 
-      /* --- the drawing. Silhouette, then the three edges inside it, then the
-         studs — which is the order a person would draw it in, and it is also
-         the order that keeps the stud outlines on top of the top face's own
-         line where they cross it. */
-      const sil = `M${pts([T[0], T[1], B[1], B[2], B[3], T[3]]).split(' ').join('L')}Z`;
-      let line = open + '<g fill="none" stroke-linejoin="round" stroke-linecap="round">'
-        + `<path d="${sil}"/>`
-        + `<path d="M${pts([T[1], T[2], T[3]]).split(' ').join('L')}"/>`
-        + `<path d="M${pts([T[2], B[2]]).split(' ').join('L')}"/>`;
-      studs.forEach((p) => {
-        line += `<path d="${wall(p)}"/>`
-          + `<ellipse cx="${f(p[0])}" cy="${f(p[1] - sh)}" rx="${f(rx)}" ry="${f(ry)}"/>`;
-      });
-      line += '</g></svg>';
+      /* --- AND WHEN IT IS DONE, IT GOES -----------------------------------
 
-      return { x0, y0, w, h, solid, line, edge };
+         THE END IS THE DRAWING'S OWN, not a piece schedule's. The last image
+         frame finishes filling, its measurement lands under it, the sheet sits
+         still for a beat, and the paper uncovers. One number, derived from the
+         same delays the frames were given, so changing `res` or `resStep` moves
+         the end of the sequence with them and there is nothing to keep in step
+         by hand. */
+      const last = T.res + Math.max(0, plate - 1) * T.resStep + 740;
+      this.timer = setTimeout(() => this.finish(), last + T.hold);
     },
 
-    /* --- WHERE THE DRAWING SITS --------------------------------------------
-       One stud size for the whole assembly, from whichever of the two axes
-       runs out first, so the object is the same object on a phone as on a
-       desk — smaller, not recomposed. It is placed a little above the middle
-       of the screen because the eye reads the centre of a stack of bricks as
-       lower than its geometric centre. */
-    layout() {
-      const W = innerWidth, H = innerHeight;
-      const I = ISO;
-      /* the assembly is 4 studs by 2 and three layers tall */
-      const spanX = (4 + 2) * I.cx;
-      const spanY = (4 + 2) * I.cy + 3 * I.bh + I.sh;
-      /* AND IT IS SMALL, AND THE CAP IS THE POINT OF IT.
-
-         A stud of about a fifth of the viewport's height puts the finished
-         object at roughly a hundred and twenty pixels across on a laptop and
-         ninety on a phone — an object sitting in a lot of space rather than a
-         graphic filling a screen, which is both what makes it read as a small
-         real thing and what lets one size work on both. The width term only
-         ever binds on a very narrow screen; the ceiling is what stops a large
-         monitor from turning it back into a poster, and the floor is what
-         keeps the studs from closing up on a short one. */
-      const S = clamp(Math.round(Math.min(
-        W * 0.40 / spanX,
-        H * 0.171 / spanY,
-      )), 13, 27);
-
-      const parts = BUILD.map((b, i) => Object.assign({ b }, this.piece(b, S, i)));
-      /* the assembly's own box, so it can be centred as one thing */
-      const bx0 = Math.min.apply(null, parts.map((p) => p.x0));
-      const by0 = Math.min.apply(null, parts.map((p) => p.y0));
-      const bx1 = Math.max.apply(null, parts.map((p) => p.x0 + p.w));
-      const by1 = Math.max.apply(null, parts.map((p) => p.y0 + p.h));
-      const ox = W / 2 - (bx0 + bx1) / 2;
-      const oy = H * 0.48 - (by0 + by1) / 2;
-
-      parts.forEach((p) => { p.left = p.x0 + ox; p.top = p.y0 + oy; p.S = S; });
-      return parts;
-    },
-
-    /* --- WHAT VARIES BETWEEN LOADS ------------------------------------------
-       Where a piece comes from, how hard it is thrown, how its path bends,
-       when its turn is and how far past its slot it runs — all rolled fresh.
-       Where it ends up, which way up it ends up, what the stencil says and
-       what the finished object is — never. Two visits watch different
-       throws and get the same object. */
-    vary(b, S) {
-      const j = (m) => 1 + (Math.random() * 2 - 1) * m;
-      const sx = b.from.x * S * j(0.14);
-      const sy = b.from.y * S * j(0.14);
-      const len = Math.hypot(sx, sy) || 1;
-      return {
-        sx, sy, len,
-        sr: b.from.r * j(0.30),
-        at: Math.max(24, b.at + (Math.random() * 2 - 1) * 26),
-        dur: b.dur * j(0.05),
-        mag: b.mag * j(0.05),
-        bow: b.bow * S * 3.2 * j(0.35),
-        /* AND THE WINDUP IS NEVER SHORTER THAN FOUR FRAMES. Below about
-           seventy milliseconds the acceleration is real but it is not
-           legible: the piece is at full speed by the second frame anyone
-           sees, which is indistinguishable from it starting there. */
-        accel: Math.min(0.48, Math.max(0.24, b.accel * j(0.16))),
-        grab: Math.min(0.20, Math.max(0.08, b.grab * j(0.15))),
-        /* IN PIXELS, AND CAPPED. A fraction of a long throw is a piece that
-           visibly misses; a few pixels measured against the size the drawing
-           happens to be is a piece pressed in slightly too far. The object is
-           only about a hundred and twenty pixels across, so this is two to four
-           of them — enough to see at a glance and not enough to look like the
-           piece went to the wrong place. */
-        over: Math.min(b.over * S * j(0.18), S * 0.18),
-        resid: b.resid * j(0.35),
-        fill: b.fill,
-        seat: b.seat,
-      };
-    },
-
-    /* ------------------------------------------------------------------ */
     begin() {
       if (!this.on || this.el) return;
-      const parts = this.layout();
-      if (!parts.length) { this.on = false; this.wakePage(); return; }
 
-      /* --- THE SHEET, AND ONE ELEMENT INSIDE IT ---------------------------
-         `.sig` is the surface and does nothing but sit there and then travel.
-         `.sig__stage` holds every drawn thing on it, and exists so the exit
-         can shrink the construction by eight thousandths as it leaves without
-         shrinking the surface it is drawn on — a scale on `.sig` itself insets
-         its own edges and shows a sliver of the page down either side of it,
-         which is precisely the seam this is here to remove. */
+      /* `.sig` is the paper and does nothing but sit there and then uncover.
+         `.sig__stage` holds every drawn thing on it. */
       const layer = el('div', { class: 'sig', 'aria-hidden': 'true' });
       const stage = el('div', { class: 'sig__stage' });
       layer.appendChild(stage);
       document.body.appendChild(layer);
 
-      /* AND THE CHARCOAL COMES OFF THE DOCUMENT IN THE SAME TICK IT IS NO
-         LONGER NEEDED.
-
-         `wake-armed` paints the root charcoal before the first frame, and its
-         entire job is the window between that frame and this line — the
-         handful of milliseconds in which the sheet does not exist yet and the
-         page would otherwise flash paper. The sheet exists now, and it is
-         opaque, so the flag is a liability from here on: leaving it up means
-         the document's real background arrives at the END of the entrance,
-         behind a page that is already there, which is the second background
-         the whole refactor is about. Taken off here, inside the same task, so
-         no frame is ever painted between the two. What is behind the sheet
-         from this moment is the page's own paper and its own dot field, and
-         it is the same paper and the same dots the reader is looking at a
-         second and a half later. There is one background. */
+      /* AND THE PRE-PAINT COLOUR COMES OFF THE DOCUMENT IN THE SAME TICK IT IS
+         NO LONGER NEEDED. `wake-armed` paints the root the sheet's own paper
+         before the first frame, and its entire job is the window between that
+         frame and this line — the handful of milliseconds in which the sheet
+         does not exist yet and the page would otherwise flash. The sheet exists
+         now and it is opaque, so the flag is a liability from here on. Taken
+         off inside the same task, so no frame is painted between the two. */
       document.documentElement.classList.remove('wake-armed');
 
       this.el = layer;
       this.stage = stage;
-      /* AND THE PAGE UNDERNEATH IS SEALED OFF. It is live, laid out and one
-         click from a brick nobody can see, so the sheet takes the pointer
-         (`.sig` is `pointer-events: auto`) and the scroll is pinned. Both are
-         given back on the frame the sheet starts to leave. */
+      this.taps = [];
+      /* the page underneath is live, laid out and one click from a brick nobody
+         can see, so the sheet takes the pointer and the scroll is pinned. Both
+         are given back on the frame the uncover starts. */
       App.lock(true);
 
-      const T = this.T;
-      /* PAINTED FAR TO NEAR, ANIMATED BOTTOM UP. The two orders are not the
-         same — the cap is the last piece to arrive but it is not the nearest
-         thing to the eye — so the resting depth is sorted along the view axis
-         and the clock is left to `BUILD`. A piece in flight is lifted above
-         all of them and dropped back into its own depth when it lands, because
-         a piece being carried into place comes from in front of the object,
-         not through it. */
-      const depth = parts.slice().sort((a, c) =>
-        (a.b.x + a.b.y + a.b.z) - (c.b.x + c.b.y + c.b.z));
-
-      /* --- the stencil. The whole finished assembly, hairline, at a fifth of
-         the ink, in the exact boxes the pieces are about to fill. It is drawn
-         first and underneath so that everything after it is a piece flying at
-         a slot rather than a piece flying. */
-      depth.forEach((p, i) => {
-        const g = el('div', { class: 'sig__gh' });
-        g.style.cssText = `left:${p.left.toFixed(1)}px;top:${p.top.toFixed(1)}px;`
-          + `width:${p.w.toFixed(1)}px;height:${p.h.toFixed(1)}px;`
-          + `z-index:${i + 1};--sw:${clamp(p.S * 0.04, 0.85, 1.35).toFixed(2)}px;`
-          /* THE STENCIL DRAWS ITSELF, BOTTOM UP, RATHER THAN SWITCHING ON.
-             There is a real gap between the sheet going up and the first piece
-             being thrown — the page is still being built underneath and the
-             throw deliberately waits for that to be over (see `go`) — and the
-             difference between that gap being dead air and being the beat
-             before the music is entirely whether something is happening in it.
-             So the four slots are drawn in the order they will be filled, over
-             about a third of a second, and by the time the last one is down
-             the first piece is on its way. */
-          + `--in:${60 + i * 78}ms;`;
-        g.innerHTML = p.line;
-        stage.appendChild(g);
-        p.gh = g;
-        p.rank = i + 1;
-      });
-
-      depth.forEach((p) => {
-        const v = this.vary(p.b, p.S);
-        Object.assign(p, v);
-        const n = el('div', { class: 'sig__p' });
-        n.style.cssText = `left:${p.left.toFixed(1)}px;top:${p.top.toFixed(1)}px;`
-          + `width:${p.w.toFixed(1)}px;height:${p.h.toFixed(1)}px;`
-          + `z-index:20;--edge:${p.edge};`
-          /* THE LINE IS A HAIRLINE AND STAYS ONE. It scales with the drawing,
-             because a stroke that does not is a stroke that reads as heavy at
-             the small end, but it is held between one physical pixel and one
-             and three quarters — past that it stops being a drawn line and
-             starts being a painted border, and at this size the object is not
-             much more than a hundred pixels across. */
-          + `--sw:${clamp(p.S * 0.05, 1.1, 1.75).toFixed(2)}px;`
-          + `--fill:${Math.round(p.fill)}ms;`
-          + `--drop:0 ${(p.S * 0.055).toFixed(1)}px ${(p.S * 0.115).toFixed(1)}px rgba(6,9,12,0.5);`
-          + `--in:${170 + p.rank * 38}ms;`;
-        const q = el('div', { class: 'sig__q' });
-        q.innerHTML = `<div class="sig__wipe">${p.solid}</div>`
-          + `<div class="sig__ln">${p.line}</div>`;
-        n.appendChild(q);
-        stage.appendChild(n);
-        p.n = n; p.q = q; p.ln = q.lastChild;
-        /* the first pose, written before the element has ever been painted */
-        p.n.style.transform =
-          `translate3d(${p.sx.toFixed(2)}px,${p.sy.toFixed(2)}px,0) rotate(${p.sr.toFixed(2)}deg)`;
-      });
-
-      /* the order the ear hears, so the last click can be the last click */
-      const last = parts.reduce((a, c) =>
-        (c.at + c.dur + c.mag > a.at + a.dur + a.mag ? c : a), parts[0]);
-
-      /* AND THEN THE RHYTHM IS PROTECTED FROM THE RANDOMNESS. Every one of
-         `at`, `dur` and `mag` is rolled, and three rolls landing the wrong way
-         can close a hundred and fifty millisecond gap between two placements
-         to twenty — which does not read as a variation, it reads as two pieces
-         arriving at once and a mistake. So the intended order is walked in
-         order and any piece that has crowded the one before it is pushed back
-         until it is not. The variation survives; the beat does not depend on
-         it going well. */
-      let floor = 0;
-      parts.forEach((p) => {
-        p.snapAt = p.at + p.dur + p.mag;
-        if (p.snapAt < floor) { p.at += floor - p.snapAt; p.snapAt = floor; }
-        floor = p.snapAt + 108;
-      });
-      /* AND THE LAST GAP IS ALWAYS THE LONGEST, BY A CLEAR MARGIN. The three
-         intervals are meant to open out — a hundred and fifty, two hundred,
-         two hundred and forty — because four placements at one interval is a
-         metronome and the ear hears a metronome as a machine. Three rolls
-         landing the wrong way can flatten that to within twenty milliseconds,
-         which is a perfectly good animation and the wrong one. So the cap, the
-         piece that finishes the object and has the best snap, is given a
-         run-up that is always at least this much longer than any other. */
-      const gaps = [1, 2, 3].map((i) => parts[i].snapAt - parts[i - 1].snapAt);
-      const want = Math.max(gaps[0], gaps[1]) + 52;
-      if (gaps[2] < want) {
-        const add = want - gaps[2];
-        parts[3].at += add;
-        parts[3].snapAt += add;
-      }
-
-      let end = 0, lastSnap = 0;
-      parts.forEach((p) => {
-        end = Math.max(end, p.snapAt + p.seat);
-        lastSnap = Math.max(lastSnap, p.snapAt);
-      });
-      /* WHAT THE CLOCK ACTUALLY DECIDED, for the harness. The rhythm is the
-         one thing here that a recording cannot check honestly: at sixty frames
-         a second two intervals forty milliseconds apart can land in the same
-         bucket, and a single dropped frame moves an observed snap by more than
-         the margin the schedule guarantees. So the schedule is published and
-         asserted on directly. Four numbers, written once. */
-      this.sched = parts.map((p) => Math.round(p.snapAt));
-      /* WHEN THE HOLD BEGINS, WHICH IS NOT WHEN THE LOOP ENDS. The settle is a
-         damped oscillation and its tail is arithmetic, not motion: by half way
-         through it the amplitude is four percent of a percent and a half, which
-         is nothing anyone can see. Waiting for the loop to finish before
-         starting to count the hold would therefore spend an extra tenth of a
-         second of apparent stillness on top of the hold itself, and the whole
-         thing would feel like it was waiting for permission. So the hold is
-         counted from the point the last piece has visibly stopped, and the
-         arithmetic is left to run underneath the start of the slide. */
-      this.rest = lastSnap + Math.round(last.seat * 0.5);
-
-      /* --- ONE LOOP, FOUR PIECES, TWO TRANSFORMS EACH -------------------------
-         No transitions on the travel. A transition can only describe a
-         position curve between two values, and the whole point of this pass is
-         that the interesting part — the flight easing into the magnet easing
-         into the settle — is three different kinds of movement in a row that
-         have to join without a seam. So it is written per frame — and what is
-         written is a transform and, at most, two opacities, none of which
-         affects layout. Nothing in here reads geometry either, so there is
-         nothing for a style recalculation to be forced by: no `offsetWidth`,
-         no `getBoundingClientRect`, no computed style. Four elements, one
-         string each, sixty times a second. */
-      /* AND THE CLOCK DOES NOT START HERE. This runs before the page has been
-         built — the canvas, the showcase, the ink layer, the rack and the
-         deck are all still to come, and so are the fonts and the first
-         paint of any of it. Several hundred milliseconds of main thread, in
-         other words, landing squarely on the first throw and showing up as a
-         stutter in the one part of the page whose entire job is to look
-         smooth. So this mounts the sheet, writes every piece's opening pose,
-         and stops there. `boot()` calls `go()` when the page is finished, and
-         `go()` waits for the main thread to actually go quiet before starting
-         the clock. The drawing is on screen for all of it — what is deferred is
-         only the movement, and the stencil drawing itself in fills the wait. */
-      this.play = (t0) => {
-      const step = (now) => {
-        if (this.gone) return;
-        const t = now - t0;
-
-        parts.forEach((p) => {
-          if (!p.set) {
-            /* THE SLOT BRIGHTENS AS ITS OWN PIECE CLOSES ON IT. Its arrival is
-               a CSS animation on the element — it is on screen long before
-               this loop starts and must not depend on it — and what is written
-               here is only the lift, as a second opacity multiplied over the
-               first by the stylesheet. */
-            const near = Math.round((0.34 + 0.30 * (p.prox || 0)) * 100);
-            /* WRITTEN ONLY WHEN IT CHANGES. At four pieces and sixty frames a
-               second, blindly restating two custom properties and an opacity
-               is nearly a thousand string allocations and style invalidations
-               a second for values that are usually identical to the last ones.
-               Rounded to a hundredth — finer than anything an eye resolves in
-               a stroke this thin — and skipped when unchanged. */
-            if (near !== p.nearAt) { p.nearAt = near; p.gh.style.setProperty('--near', near / 100); }
-          }
-          if (p.done) return;
-
-          let x, y, rot, sx = 1, sy = 1;
-
-          if (t < p.at) {
-            x = p.sx; y = p.sy; rot = p.sr;
-          } else if (t < p.at + p.dur) {
-            /* THE FLIGHT. Away from where it started, up to speed, and then a
-               long deceleration onto a point a few pixels short of the slot —
-               `grab` of the way out along the line it came in on. It arrives
-               there with almost no speed left, which is what makes the magnet
-               that follows feel like a separate, deliberate thing. */
-            const u = (t - p.at) / p.dur;
-            const e = this.flight(u, p.accel);
-            const k = 1 - e * (1 - p.grab);
-            x = p.sx * k; y = p.sy * k;
-            /* and it bends. A thrown object does not travel the straight line
-               between two points; the bow is perpendicular to that line and
-               peaks halfway along it. */
-            const bw = Math.sin(e * Math.PI) * p.bow;
-            x += (-p.sy / p.len) * bw;
-            y += (p.sx / p.len) * bw;
-            rot = p.sr + (p.resid - p.sr) * (1 - Math.pow(1 - e, 2.4));
-            p.prox = clamp((e - 0.42) / 0.58, 0, 1);
-          } else if (t < p.snapAt) {
-            /* THE MAGNET. It accelerates out of the near-stop, carries the
-               piece a few pixels past its slot, and takes it back. At v = 1
-               both terms are exactly zero: the destination is arithmetic, not
-               an easing curve's opinion. */
-            const v = (t - p.at - p.dur) / p.mag;
-            const m = this.pull(v);
-            const os = this.past(v) * p.over;
-            const k = p.grab * (1 - m);
-            x = p.sx * k - (p.sx / p.len) * os;
-            y = p.sy * k - (p.sy / p.len) * os;
-            rot = p.resid * (1 - m);
-            p.prox = 1;
-          } else {
-            /* THE SEAT. Exactly on the slot from this frame on — the settle is
-               a scale, not a position, so nothing can leave the piece a
-               fraction of a pixel out. One compression of about a percent and
-               a half, one recovery, done. Plastic, not rubber. */
-            const w = (t - p.snapAt) / p.seat;
-            x = 0; y = 0; rot = 0;
-            if (!p.set) {
-              p.set = true;
-              p.n.classList.add('is-set');
-              p.n.style.zIndex = String(p.rank);
-              p.gh.style.setProperty('--near', '0');
-              p.gh.classList.add('is-filled');
-              /* THE CLICK IS ON THE FRAME THE PIECE ARRIVES, not on the frame
-                 it was thrown and not at the end of the settle. */
-              if (p === last) {
-                Sound.voice({ freq: 396, gain: 0.05, dur: 0.085, bright: 2600, drop: 1.15, noise: 0.42 });
-                Sound.voice({ freq: 152, gain: 0.038, dur: 0.14, bright: 860, drop: 0.4, noise: 0.5 });
-              } else {
-                Sound.voice({ freq: 500 + p.rank * 26, gain: 0.023, dur: 0.04, bright: 3000, drop: 1.5, noise: 0.34 });
-              }
-            }
-            if (w >= 1) {
-              p.done = true;
-              p.q.style.transform = '';
-              p.n.style.transform = 'translate3d(0,0,0)';
-              return;
-            }
-            const d = this.damp(w);
-            const amp = p === last ? 0.019 : 0.0145;
-            sy = 1 - amp * d;
-            sx = 1 + amp * 0.6 * d;
-          }
-
-          p.n.style.transform =
-            `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) rotate(${rot.toFixed(2)}deg)`;
-          if (sx !== 1 || sy !== 1) p.q.style.transform = `scale(${sx.toFixed(4)},${sy.toFixed(4)})`;
-          /* AND THE DRAWING FIRMS UP AS IT CLOSES. A piece still crossing the
-             screen is a shade lighter than one about to land — the outline is
-             emphasised into the snap rather than simply replaced at it. */
-          const lit = p.set ? 100 : Math.round((0.70 + 0.30 * (p.prox || 0)) * 100);
-          if (lit !== p.litAt) { p.litAt = lit; p.ln.style.opacity = lit / 100; }
-        });
-
-        if (t < end) this.raf = requestAnimationFrame(step);
-        else this.raf = null;
-      };
-      this.raf = requestAnimationFrame(step);
-      /* and the slide is on its own clock, so the settle's inaudible tail can
-         carry on underneath it rather than holding it up */
-      this.timer = setTimeout(() => this.finish(), this.rest + this.T.hold);
-      };
-
       /* IT CANNOT HOLD THE PAGE. If anything above throws, stalls or is cut
-         short, this slides the sheet off and lets the fall go anyway. The
-         guard is armed here rather than in `go`, so a page that never finishes
-         booting still gets let in. */
+         short, this uncovers the sheet and lets the fall go anyway. */
       this.guard = setTimeout(() => this.finish(true), 4600);
     },
 
-    /* THE STARTING GUN, fired at the end of `boot()`. Two frames, because the
-       first one after a page has been built is the one that pays for building
-       it: style, layout and the first paint of everything `Pages.home` just
-       mounted all land there. Starting on the second means the first throw
-       begins on a frame that has nothing else to do. */
+    /* THE STARTING GUN, fired at the end of `boot()`. The page is built and
+       laid out from this line, so this is where the drawing finally gets
+       something to be a drawing OF.
+
+       NOT A FIXED NUMBER OF FRAMES — A QUIET ONE. What follows `boot()` is not
+       idle: the first paint of everything it built, the fonts resolving, the
+       showcase's poster decoding. Any of those landing on the frames being
+       drawn is a stutter in the one part of the page whose entire job is to
+       look smooth, so this waits until two frames in a row have come in under
+       about twenty milliseconds and only then sets out. Capped, because a slow
+       machine is still owed an entrance. */
     go() {
-      if (!this.on || !this.play || this.gone) return;
-      const fn = this.play;
-      this.play = null;
-      /* NOT A FIXED NUMBER OF FRAMES — A QUIET ONE. What follows `boot()` is
-         not idle: the first paint of everything it built, the fonts resolving,
-         the showcase's poster decoding, the reveal observer's first callbacks.
-         Any of those landing on the first throw is a stutter in the one part
-         of the page whose entire job is to look smooth, so this waits until
-         two frames in a row have come in under about twenty milliseconds and
-         only then starts the clock. Capped, because a slow machine is still
-         owed an entrance. */
+      if (!this.on || this.done || this.gone) return;
+      this.done = true;
       const t0 = performance.now();
       let prev = null, calm = 0;
       const wait = (now) => {
@@ -14527,14 +15310,13 @@
         const d = prev === null ? 99 : now - prev;
         prev = now;
         calm = d < 21 ? calm + 1 : 0;
-        if (calm >= 3 || now - t0 > 340) { fn(now); return; }
+        if (calm >= 3 || now - t0 > 340) { this.setOut(); return; }
         requestAnimationFrame(wait);
       };
       requestAnimationFrame(wait);
     },
 
-    /* --- AND THEN THE SHEET LEAVES -------------------------------------
-       Nothing else does. See `slide`. */
+    /* --- AND THEN THE PAPER UNCOVERS ------------------------------------ */
     finish(forced) {
       if (this.ending) return;
       this.ending = true;
@@ -14544,24 +15326,20 @@
 
       /* AND IT WAITS FOR THE ROOM UNDERNEATH TO HAVE STOPPED MOVING.
 
-         The page's own arrival — nineteen revealed elements and eighteen
-         bricks thrown down a canvas — was let go a beat after the sheet went
-         up, and it has had the whole build to happen in. Usually it is long
-         over by here. Occasionally, on a cold cache or a slow machine, the
-         last brick is still rolling, and a brick still rolling when the sheet
-         lifts is the single thing this entrance must never show: it turns a
-         page that was already there into a page that is arriving.
+         The page's own arrival — nineteen revealed elements and eighteen bricks
+         thrown down a canvas — was let go a beat after the sheet went up, and it
+         has had the whole drawing to happen in. Usually it is long over by here.
+         Occasionally, on a cold cache or a slow machine, the last brick is still
+         rolling, and a brick still rolling when the paper uncovers is the single
+         thing this entrance must never show: it turns a page that was already
+         there into a page that is arriving.
 
          So the exit asks, and then it insists. `data-arriving` is set by
          `Bricks.rain` for exactly as long as the fall is live, and the sheet
          holds while it is there — but past `wait` the answer is not a longer
-         hold, it is a shorter fall. Waiting on a physics loop to converge
-         makes the length of the entrance a property of a random roll, and the
-         only thing worse than a brick still moving is a loading screen that
-         will not go. `Bricks.rushed` ends the simulation on its next frame and
-         lets its own resolution pass run exactly as it would have — the one
-         that guarantees no piece is left inside another — so what is uncovered
-         is a finished arrangement either way. Bounded, and always static. */
+         hold, it is a shorter fall. `Bricks.rushed` ends the simulation on its
+         next frame and lets its own resolution pass run exactly as it would
+         have, so what is uncovered is a finished arrangement either way. */
       const t0 = performance.now();
       const settled = () => {
         if (this.gone) return;
@@ -14572,44 +15350,44 @@
       settled();
     },
 
-    /* THE EXIT IS ONE OBJECT MOVING AND IT IS THE SHEET.
+    /* THE EXIT IS ONE PROPERTY AND IT IS A MASK.
 
-       This is the whole point of the refactor. It used to be two movements
-       welded by arithmetic: the sheet went up a viewport and the page came up
-       from a viewport below, on the same curve, at the same instant, their
-       edges guaranteed coincident to the pixel. It was correct and it read as
-       two surfaces — a loading screen leaving and a homepage arriving, one
-       after the other, which is what the eye reports however tightly the two
-       are synchronised.
-
-       Now the page never moves. It has been sitting at zero since the first
-       frame, laid out, revealed, its bricks fallen, its toolbar where its
-       toolbar goes, under an opaque sheet. The sheet lifts, and what is
-       underneath is not delivered by the movement — it is uncovered by it.
-       Nothing fades, nothing mounts, nothing is replaced, and there is no
-       frame anywhere in it where two backgrounds exist at once.
-
-       Everything the old exit had to choreograph — when to wake the type, when
-       to let the fall go, how to keep two dot fields in phase across a moving
-       edge — has no work to do here, because all of it already happened while
-       the sheet was standing still. */
+       The page never moves. It has been sitting at zero since the first frame,
+       laid out, revealed, its bricks fallen, its toolbar where its toolbar
+       goes, under an opaque sheet of the page's own paper. The paper is then
+       masked away from the top down behind a soft edge a quarter of the
+       viewport deep: what is underneath is not delivered by a movement, it is
+       uncovered by one. Nothing travels, nothing fades as a whole, and because
+       the paper either side of that edge is the same value to the number, the
+       only thing that changes across it is that there is now content. */
     slide(forced) {
       this.wakePage();
       document.body.classList.add('sliding');
-      /* the page is interactive from the frame the sheet starts moving: the
-         sheet stops taking the pointer in the same rule that starts it */
+      /* the page is interactive from the frame the uncover starts */
       App.lock(false);
+      this.taps.forEach(clearTimeout);
+      this.taps = [];
 
       setTimeout(() => {
         this.gone = true;
         document.body.classList.add('landed');
         document.body.classList.remove('sliding');
         document.documentElement.classList.remove('wake-armed');
+        /* AND EVERYTHING THE DRAWING MADE GOES WITH ONE `remove`. Three layers,
+           about a dozen nodes and every CSS animation on them are children of
+           this element, and none of them was ever driven by a loop. Nothing
+           from the entrance is alive after this line. */
         if (this.el) { this.el.remove(); this.el = null; }
         this.stage = null;
-      }, forced ? 40 : this.T.exit + 40);
+        /* THE DELAY IS PART OF THE EXIT, and this used to be sixty
+           milliseconds short of it. `sigOpen` waits ninety before it starts, so
+           a teardown at `exit + 60` removed the sheet thirty milliseconds
+           before the mask had finished — which on a slow frame is the last band
+           of paper disappearing rather than clearing. */
+      }, forced ? 40 : this.T.exit + 90 + 60);
     },
   };
+
 
   /* ================================================== 5c3. tool ghost === */
 
@@ -16038,9 +16816,12 @@
                three rows of the Site list shipped as new-tab links. */
             ...(outbound(href) ? { target: '_blank', rel: 'noopener' } : {}),
           }, esc(row.label));
-          /* aria-hidden: the square says "current" to the eye and
-             `aria-current` already says it to a screen reader. */
-          if (here) a.appendChild(el('i', { class: 'mast__here', 'aria-hidden': 'true' }));
+          /* THE SQUARE IS NOT IN THE ROW ANY MORE — see `Mark` below. It was
+             appended here to whichever row was current and removed from the
+             one that stopped being, which is correct and is also why it could
+             never travel: a node that is destroyed at one address and created
+             at another has no position to interpolate between. One square now
+             lives in the list and moves to the row that is current. */
           box.appendChild(a);
         });
         return box;
@@ -16060,6 +16841,11 @@
          rows above it, and it carries no `data-at`, which is what keeps
          `Rail.mark` from ever treating it as the current section. */
       const site = list('Site', c.site || []);
+      /* THE ONE SQUARE, AND IT BELONGS TO THE LIST RATHER THAN TO A ROW. It is
+         the last child so it paints over the rows, and it is mounted before
+         `Llm.trigger` because the trigger is not a place and must never be a
+         target — see `Mark.rows`. */
+      site.appendChild(Mark.mount());
       site.appendChild(Llm.trigger());
       keep.appendChild(site);
       keep.appendChild(list('Links', c.links || []));
@@ -16100,10 +16886,140 @@
         a.classList.toggle('is-here', on);
         if (on) a.setAttribute('aria-current', 'page');
         else a.removeAttribute('aria-current');
-        const dot = $('.mast__here', a);
-        if (on && !dot) a.appendChild(el('i', { class: 'mast__here', 'aria-hidden': 'true' }));
-        if (!on && dot) dot.remove();
       });
+      /* the ink and the square are the two halves of one statement, and they
+         are written in the same call so they cannot disagree */
+      Mark.to(page);
+    },
+  };
+
+  /* ----------------------------------------------------------------------
+     THE SQUARE THAT TRAVELS
+
+     WHAT THIS REPLACED. `Rail.mark` appended a 5px `<i>` to whichever row was
+     current and removed it from the one that had been. That is the smallest
+     possible implementation of "which section am I on", and it is also the
+     reason the sidebar was the one part of the page that snapped: a node
+     created at one address and destroyed at another has no position to
+     interpolate between. Work to Play did not move the square from Work to
+     Play — it deleted a square and drew a different one two rows down.
+
+     SO THERE IS ONE SQUARE AND IT HAS AN ADDRESS OF ITS OWN. It is a child of
+     the Site list rather than of a row, absolutely placed, and going somewhere
+     is a change of target rather than a change of parent.
+
+     AND IT IS A REAL SPRING, NOT A TRANSITION. A CSS transition retargeted
+     mid-flight restarts from wherever the value happens to be with zero
+     velocity, which is exactly the tell: click Work then Play 80ms later and
+     the square stops dead halfway and sets off again. `Spring` integrates
+     position AND velocity, so a retarget carries the momentum it already had —
+     the square curves through the turn instead of hinging at it. Two of them,
+     x and y, because the rows are different lengths and the square sits at the
+     end of the word rather than in a column of its own.
+
+     IT IS MEASURED OFF THE LAYOUT AND SHOVED ON TOP OF IT. `offsetLeft` and a
+     Range over the row's text give the untransformed position, so a brick
+     pushing "Work" sideways cannot drag the target around; the row's live
+     `--shove-x` is then added back each frame, so the square goes with the
+     word it is marking. Reading it is a string off an inline style — `Shove`
+     writes it there and nowhere else — so this costs no layout.
+     ---------------------------------------------------------------------- */
+  const Mark = {
+    el: null,
+    x: null,
+    y: null,
+    row: null,
+    shove: 0,
+
+    mount() {
+      this.el = el('i', { class: 'mast__mark', 'aria-hidden': 'true' });
+      /* Measuring before the sidebar is in the document gives zeroes, and a
+         square that starts at the top-left corner of the list and springs down
+         to Work is an entrance nobody asked for. The first placement is
+         therefore deferred to the frame after mount and made instantly. */
+      requestAnimationFrame(() => this.to(Shell.page, true));
+      /* A webfont landing changes every row's text width, and a resize changes
+         the column's. Both move the target under a square that is already at
+         rest, so both re-place it without animating. */
+      addEventListener('resize', () => this.to(null, true), { passive: true });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => this.to(null, true)).catch(() => {});
+      }
+      return this.el;
+    },
+
+    /* The rows this can point at: the three that name a section. The IshaanLLM
+       trigger is in the same list and carries no `data-at`, which is what keeps
+       it out — it opens a layer, it is not a place you can be. */
+    rows() { return $$('.mast__row[data-at]'); },
+
+    /* Where the square sits for a given row, in the list's own coordinates and
+       with no transform in the answer. The x is the end of the WORD and not the
+       end of the row: a row is a flex box the width of the column, so its right
+       edge is the same for all three and the square would stand in a column of
+       its own, which is a different design and a worse one — the mark belongs
+       to the word. */
+    at(a) {
+      const set = this.el && this.el.parentElement;
+      if (!set || !a) return null;
+      let w = 0;
+      try {
+        const r = document.createRange();
+        r.selectNodeContents(a);
+        w = r.getBoundingClientRect().width;
+      } catch (e) { w = a.offsetWidth; }
+      return {
+        x: a.offsetLeft + w + 7,
+        y: a.offsetTop + (a.offsetHeight - 5) / 2,
+      };
+    },
+
+    /* `page` null means "the row that is already current", which is what the
+       resize and webfont handlers want. `now` places without travelling. */
+    to(page, now) {
+      if (!this.el) return;
+      const rows = this.rows();
+      if (!rows.length) return;
+      const want = page == null
+        ? rows.find((a) => a.classList.contains('is-here'))
+        : rows.find((a) => (a.dataset.at || '').split(' ').indexOf(page) >= 0);
+      /* A section with no row in the list — there is none today, and if one is
+         ever added the square should stay where it is rather than fly to the
+         corner. */
+      if (!want) return;
+      this.row = want;
+      const p = this.at(want);
+      if (!p) return;
+
+      if (!this.x) { this.x = Spring(p.x, 210, 26); this.y = Spring(p.y, 210, 26); }
+      this.x.target = p.x;
+      this.y.target = p.y;
+      if (now || REDUCED) {
+        this.x.v = p.x; this.x.vel = 0;
+        this.y.v = p.y; this.y.vel = 0;
+      }
+      this.paint();
+      wakeLoop && wakeLoop();
+    },
+
+    paint() {
+      const sx = this.row
+        ? parseFloat(this.row.style.getPropertyValue('--shove-x')) || 0
+        : 0;
+      this.shove = sx;
+      this.el.style.transform =
+        `translate3d(${(this.x.v + sx).toFixed(2)}px, ${this.y.v.toFixed(2)}px, 0)`;
+    },
+
+    tick(dt) {
+      if (!this.el || !this.x) return false;
+      const moving = this.x.step(dt) | this.y.step(dt);
+      const sx = this.row
+        ? parseFloat(this.row.style.getPropertyValue('--shove-x')) || 0
+        : 0;
+      if (!moving && sx === this.shove) return false;
+      this.paint();
+      return !!moving;
     },
   };
 
@@ -18508,6 +19424,12 @@
       if (this.pend) { clearTimeout(this.t); const f = this.pend; this.pend = null; this.t = null; f(); }
       if (page === Store.nav.route) return;
 
+      /* A FOLDER OPEN ON THE WORK VIEW DOES NOT SURVIVE LEAVING IT. Without
+         this, Work → About → Work came back to the folder still open over a
+         grid the visitor had in the meantime scrolled somewhere else, with no
+         card left on screen for it to collapse into. */
+      if (typeof Preview !== 'undefined' && Preview.shown) Preview.dismiss();
+
       const from = Store.nav.route;
       Store.nav.scroll[from] = scrollY;
       if (push) {
@@ -18658,6 +19580,12 @@
          thumbnails, their captions and the scroll-driven entrance are the same
          component the old page used and the same one the work page uses. */
       Showcase.init(work);
+
+      /* THE COVER IS PART OF THE WORK VIEW, not of the shell and not of the
+         document. It is a sibling of the grid inside the same column, which is
+         what makes it a change of content rather than a layer over one — see
+         the long note on `Preview`. */
+      Preview.mount(work);
 
       /* AND ONE LINK AT THE END OF IT. The grid is four featured projects; the
          archive and the teams table are on the work page, and this is how you
@@ -19747,6 +20675,7 @@
       let from = '';
       try { from = document.referrer ? new URL(document.referrer).origin : ''; } catch (e) {}
       if (from && from === location.origin) { history.back(); return; }
+      hop();
       location.href = url('index.html');
     },
 
@@ -19760,7 +20689,7 @@
       /* From the grid: follow the link that was stopped. On a study: the page
          is already built underneath — the head script only hid it — so
          dropping the class is the whole of the reveal. */
-      if (this.pending) { location.href = this.pending; return; }
+      if (this.pending) { hop(); location.href = this.pending; return; }
       this.shut();
     },
 
@@ -19866,6 +20795,8 @@
       /* `Words.tick` used to be the first line here. See section 4 for why it
          is not: it drove an array nothing filled. */
       const b = Showcase.tick(vh, dt);
+      const mk = Mark.tick(dt);
+      const pw = Preview.tick(dt);
       Project.tick(vh);
       Ink.tick();
       Rack.applyScope();
@@ -19881,7 +20812,7 @@
          then on a brick moves only inside a drag, and `Drag.tick` above is
          already what drives that. So there is nothing for this loop to ask,
          and at rest the tray costs it nothing. */
-      if (b || dr || pr || gh || pk) idleFrames = 0;
+      if (b || mk || pw || dr || pr || gh || pk) idleFrames = 0;
       else idleFrames++;
 
       if (idleFrames > 6) { live = false; return; }
@@ -19927,6 +20858,18 @@
     window.__lboxOpen = (i) => Lightbox.show($$('[data-zoom]')[i || 0]);
     window.__lboxClose = () => Lightbox.close();
     window.__rackReading = () => !!Rack.reading;
+    /* THE ARRANGEMENT, HELD STILL. `--p` runs 0 to 1 in about 450ms, which is
+       the right speed to use and far too fast to look at: the quality test for
+       this interaction is whether a frame taken HALFWAY still reads as one
+       interface, and there is no way to take that frame from the outside.
+       Parking the spring and painting a stated value is the only way to see
+       what is actually on screen at a third of the way through. */
+    window.__pvwHold = (v) => { Preview.sp = null; Preview.cs = null; Preview.paint(v); };
+    window.__pvwState = () => ({
+      shown: Preview.shown,
+      p: Preview.sp ? Preview.sp.v : (Preview.shown ? 1 : 0),
+      card: Preview.card ? Preview.card.getAttribute('aria-label') : null,
+    });
     /* Bricks: the lattice is the thing worth asserting on and it is not in the
        DOM. A harness needs to know which pieces believe they are in the same
        structure and which cells each one occupies — from the outside a welded
