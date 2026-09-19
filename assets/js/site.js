@@ -293,6 +293,29 @@
     tick() { this.voice({ freq: 2100, gain: 0.014, dur: 0.018, bright: 6200, drop: 0.9, noise: 0.35 }); },
     /* glass click — links, rows, tabs */
     tap() { this.voice({ freq: 1320, gain: 0.036, dur: 0.036, bright: 4600, type: 'triangle', drop: 0.7, noise: 0.4 }); },
+    /* --- THE NAVIGATION'S OWN CLICK, AND IT IS A SWITCH ------------------
+
+       NOT `tap`. `tap` is the site's glass click for links and rows — 1320Hz
+       through a 4600Hz band, which is bright and plastic and right for the
+       hundred small things on this page that are not decisions. Moving between
+       sections is a decision, and the thing it should sound like is a switch
+       being thrown: a low body, a short bright edge on the front of it, and
+       nothing after.
+
+       SO IT IS TWO TRANSIENTS 12ms APART rather than one voice. The first is
+       almost all noise through a low band — the mechanical edge, the part that
+       makes it sound like a contact closing rather than a note. The second is
+       the body, an octave under `tap`'s and shorter, dropping fast. Together
+       they are 55ms end to end and about two thirds of `tap`'s level, which
+       puts it under the page rather than on top of it. */
+    nav() {
+      this.voice({ freq: 1080, gain: 0.016, dur: 0.014, bright: 2400, drop: 0.8, noise: 1.5, attack: 0.001 });
+      setTimeout(() => this.voice({
+        freq: 226, gain: 0.03, dur: 0.042, bright: 900,
+        type: 'triangle', drop: 0.38, noise: 0.35, attack: 0.002,
+      }), 12);
+    },
+
     /* muted pop — a deliberate button press */
     press() { this.voice({ freq: 300, gain: 0.055, dur: 0.075, bright: 1500, drop: 0.42, noise: 0.3, attack: 0.002 }); },
 
@@ -1396,8 +1419,20 @@
         target.classList.add('pressable', 'is-press');
         pressed = target;
 
+        /* --- THE SIDEBAR ANSWERS IN ITS OWN VOICE -------------------------
+
+           A row of the side navigation is an `<a>`, so without this it took the
+           generic `tap` along with every other link on the page. It gets `nav`
+           instead — see the note on that voice — and the row you are ALREADY on
+           gets nothing: pressing "Work" while on Work is not a navigation, the
+           router returns early without changing anything, and a sound for an
+           event that did not happen is the interface lying. The press dip still
+           runs, so the row acknowledges the finger either way. */
+        const navRow = hit(e, '.mast__row');
         const b = hit(e, '.btn');
-        if (b) {
+        if (navRow) {
+          if (!navRow.classList.contains('is-here')) Sound.nav();
+        } else if (b) {
           Sound.press();
           /* the ripple starts under the finger, in the button's own space */
           const q = Space.local(e.clientX, e.clientY, b);
@@ -1424,13 +1459,19 @@
       });
       document.addEventListener('keyup', release);
 
-      /* a quiet tick when the pointer first enters something clickable */
+      /* a quiet tick when the pointer first enters something clickable —
+         EXCEPT IN THE SIDE NAVIGATION, WHICH IS SILENT UNTIL PRESSED. Seven
+         rows at a 22.5px pitch is a column you cross rather than point into:
+         moving the cursor from the top of it to IshaanLLM ticked five times on
+         the way past, so the one sound that means something — the click — was
+         the sixth in a row of six. Hover says it with ink and a hair of
+         travel; only a press makes a noise. */
       let lastHover = null;
       document.addEventListener('pointermove', (e) => {
         const over = hit(e, HIT);
         if (over === lastHover) return;
         lastHover = over;
-        if (over) Sound.tick();
+        if (over && !over.closest('.mast__set')) Sound.tick();
       }, { passive: true });
 
       document.addEventListener('click', async (e) => {
@@ -1966,6 +2007,8 @@
            always did, so this feature is per project and switched on by the
            project having something to say. */
         if (item.brief) {
+          /* the sequence the two step buttons walk; see `Preview.seq` */
+          Preview.register(item, card);
           card.addEventListener('click', (e) => {
             if (e.defaultPrevented || e.button !== 0) return;
             if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -2099,6 +2142,17 @@
     locked: false,
     scroll: 0,
     shown: false,
+    /* --- EVERY PREVIEWABLE PROJECT, IN THE ORDER THE GRID SHOWS THEM -------
+
+       The card-to-project binding used to live entirely in a closure per card
+       (see `Showcase`'s click handler), which is all an opening needs and is
+       nothing to walk. Stepping between projects from inside one needs the
+       sequence, so the same handler registers here as it binds. Order is DOM
+       order, which is reading order, which is what the two buttons should
+       follow. Only projects with a `brief` are in it — those are the only ones
+       that can be opened at all, so there is no dead stop in the run. */
+    seq: [],
+    register(item, card) { this.seq.push({ item, card }); },
 
     mount(view) {
       this.view = view;
@@ -2145,6 +2199,17 @@
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         const t = e.target;
         if (t && t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
+        /* SHIFT CHANGES WHAT THE ARROW IS ABOUT. Unshifted, the arrows are the
+           camera — the next artefact in this project, which is what they have
+           always done and what the meter counts. Shifted, they are the next
+           PROJECT. Same axis, one scale up, which is the relationship the two
+           actually have; the buttons carry `aria-keyshortcuts` so the pairing is
+           discoverable rather than folklore. */
+        if (e.shiftKey) {
+          if (e.key === 'ArrowRight') { e.preventDefault(); this.stepProject(1); return; }
+          if (e.key === 'ArrowLeft') { e.preventDefault(); this.stepProject(-1); return; }
+          return;
+        }
         if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
           e.preventDefault(); this.stepTo(this.at + 1); return;
         }
@@ -2196,27 +2261,70 @@
 
       addEventListener('touchend', () => { this.touchX = null; }, { passive: true });
 
-      /* --- PRESSING ANYWHERE ELSE PUTS IT BACK ---------------------------
+      /* --- PRESSING THE EMPTY SPACE PUTS IT BACK -------------------------
 
          A folder opened on the desk is closed by touching the desk, and that is
          the whole affordance — there is no scrim to click through and no dialog
          to dismiss, so the only thing that can carry it is the emptiness around
-         the work.
+         the work. The empty space INSIDE the workspace counts: the air above
+         and below the row, the gaps between artefacts, and the trailing run-off
+         the track is given so the last artefact can reach the left margin. If
+         it looks empty it closes, which is the only rule a person can predict
+         from looking.
 
-         `pointerdown` AND NOT `click`, so the reverse starts on the press. What
-         is not outside: the reading column, an artefact, and the three things
-         that float over every page regardless of what is under them. The
-         sidebar IS outside — pressing Work, About or Play while a project is
-         open puts it back on the way. */
+         WHAT IS NOT EMPTY: an artefact and its caption, the reading column, the
+         card itself, and the three things that float over every page regardless
+         of what is under them. The sidebar IS empty in this sense — pressing
+         Work, About or Play while a project is open puts it back on the way.
+
+         --- AND IT IS A TAP, NOT A PRESS, WHICH IS THE WHOLE FIX --------------
+
+         THIS RAN ON `pointerdown` AND THAT IS WHY IT FELT WRONG. Touch panning
+         listens on the window and starts wherever the finger lands, so on a
+         phone every swipe that began on empty space — which is most of them,
+         since the empty space is the biggest target in the workspace — closed
+         the project on the first frame of the gesture instead of panning it.
+         The press and the drag were competing for the same pixel and the press
+         always won.
+
+         So the two are told apart by what the pointer actually does: the press
+         is remembered, and the close happens on release, and only if the
+         pointer stayed within ten pixels and under seven hundred milliseconds.
+         A tap closes. A drag pans and never closes. A long hold does neither,
+         which is what a hold on empty space should do.
+
+         An earlier pass tried to fix the conflict by exempting the whole stage
+         instead, and that is worse in the other direction: it took the ambient
+         close away entirely, so the empty space did nothing at all and the only
+         ways out were `✕` and Escape. The problem was never WHERE the region
+         was — it was that a region cannot be shared by a tap and a drag until
+         you check which one happened. */
+      let press = null;
+      const closable = (t) => {
+        if (!t || !t.closest) return false;
+        if (t.closest('.pvw__brief') || t.closest('.pvw__fig')) return false;
+        if (t.closest('.wcard.is-open')) return false;
+        if (t.closest('.rack') || t.closest('.llm') || t.closest('.lbox')) return false;
+        return true;
+      };
       addEventListener('pointerdown', (e) => {
-        if (!this.shown) return;
-        const t = e.target;
-        if (!t || !t.closest) return;
-        if (t.closest('.pvw__brief') || t.closest('.pvw__fig')) return;
-        if (t.closest('.wcard.is-open')) return;
-        if (t.closest('.rack') || t.closest('.llm') || t.closest('.lbox')) return;
+        press = (this.shown && closable(e.target))
+          ? { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() }
+          : null;
+      }, { passive: true });
+      addEventListener('pointerup', (e) => {
+        const d = press;
+        press = null;
+        if (!d || !this.shown || e.pointerId !== d.id) return;
+        /* a drag panned the workspace; a hold was not an answer to anything */
+        if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 10) return;
+        if (performance.now() - d.t > 700) return;
+        /* and it still has to be empty where the finger LEFT, so a tap that
+           started on the air and ended on an artefact is not a close */
+        if (!closable(e.target)) return;
         this.hide(true);
       }, { passive: true });
+      addEventListener('pointercancel', () => { press = null; }, { passive: true });
 
       /* A resize invalidates every offset in the arrangement at once, and there
          is no sane way to re-derive them mid-move. The workspace settles where
@@ -2339,6 +2447,44 @@
           `</div>`
         : '';
 
+      /* --- THE THREE MARKS IN THIS COLUMN, AND THEY ARE DRAWN --------------
+
+         THEY WERE TYPE, AND THAT WAS THE BUG. The close, the arrow and the
+         sideways hint were `\u2715`, `\u2192` and `\u21c4` — Unicode characters set in
+         the body font. A character is not an icon: its weight is whatever the
+         typeface decided, it does not match the 1.1–1.35px stroke every other
+         mark on this site is drawn at, its size is tied to a font-size rather
+         than a box, it sits on a text baseline instead of centred in one, and
+         it falls back to a different shape entirely on a machine without that
+         glyph. Set beside the masthead's own two pods — which are real drawings
+         — they read as placeholders, because that is what they were.
+
+         SAME CONVENTION AS THE REST OF THE FILE: a 16 viewBox, no fill, a
+         `currentColor` stroke and round caps, so they ink with the theme and
+         with `:hover` for free. Weights match what they sit next to — 1.35 in
+         the pod, the same as the theme pod's ring; 1.5 on the button's arrow,
+         to hold beside a 500-weight label; 1.3 on the hint, which is the
+         lightest thing in the column. `stroke-width` is stated per mark rather
+         than scaled by CSS, because a scaled stroke is a different weight at
+         every size. */
+      const mark = (d, w) =>
+        `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor"` +
+        ` stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"` +
+        ` aria-hidden="true">${d}</svg>`;
+      const ICON = {
+        close: mark('<path d="M4.6 4.6l6.8 6.8M11.4 4.6l-6.8 6.8"/>', 1.35),
+        /* a shaft with a head, not a chevron: the button says "go to the study",
+           and a chevron is the mark for "there is more of this here" */
+        go: mark('<path d="M2.9 8h10.2M9.5 4.6 13.1 8l-3.6 3.4"/>', 1.5),
+        /* one shaft, two heads. The axis is what it is saying. */
+        pan: mark('<path d="M2.4 8h11.2M5.1 5.3 2.4 8l2.7 2.7M10.9 5.3 13.6 8l-2.7 2.7"/>', 1.3),
+        /* the same arrow as `go`, mirrored, because moving to the next project
+           and moving to the case study are the same gesture at two scales and
+           should not be drawn two different ways */
+        prev: mark('<path d="M13.1 8H2.9M6.5 4.6 2.9 8l3.6 3.4"/>', 1.4),
+        next: mark('<path d="M2.9 8h10.2M9.5 4.6 13.1 8l-3.6 3.4"/>', 1.4),
+      };
+
       /* `.btn .btn--sm` IS THE HOUSE BUTTON, the one `Copy email` in the
          masthead is built from. Carrying the classes rather than restating the
          look is what keeps this one action in the same family as the two in the
@@ -2346,11 +2492,79 @@
       const door = st && b.cta
         ? `<a class="pvw__cta btn btn--sm" href="${url(projectHref(st.slug))}">` +
             `<span class="btn__label">${esc(b.cta)}</span>` +
-            `<i class="pvw__arrow" aria-hidden="true">→</i>` +
+            `<i class="pvw__arrow">${ICON.go}</i>` +
           `</a>`
         : (b.note ? `<span class="pvw__soon">${esc(b.note)}</span>` : '');
 
       const num = (n) => String(n).padStart(2, '0');
+
+      /* --- WHAT KIND OF THING IS THIS PICTURE OF ---------------------------
+
+         A ROW OF SCREENS AND A ROW OF PHONES ARE TWO DIFFERENT LAYOUTS, and
+         until now there was one. Every cell was given the same height, which is
+         right when everything in the row is the same kind of thing and wrong
+         the moment it is not: a phone screenshot at the height of a desktop
+         screenshot is 0.46 of that height wide, so beside an 846px hero it came
+         out a 248px splinter. Three splinters and a hero is not a row, it is a
+         layout accident — and it was the SAME accident whether the project had
+         four phones in it or one.
+
+         SO THE ROW IS CLASSIFIED FROM THE AUTHORED DIMENSIONS, which are in
+         content.js beside every image and are exact, rather than from anything
+         measured after the fact. Three kinds:
+
+           screen  landscape, and big enough to be a capture of one
+           phone   portrait past 5:4, which no desktop screenshot ever is
+           mark    a small square asset — a logo, an icon, a swatch. `n45-mark`
+                   is 192px square: at a 539px plate it is a 2.8x upscale of a
+                   logo presented as if it were a screen.
+
+         SIZE IS PART OF THE TEST AND NOT JUST RATIO. A 1:1 crop of a real
+         screen at 1200px is a screen; a 192px square is a mark. Ratio alone
+         cannot tell those apart, and `at: 'detail'` — which is what the
+         stylesheet used to key its one exception off — is an authoring label
+         about running order, not a statement about what the file contains. */
+      const kindOf = (w, h) => {
+        const W = +w || 0, HH = +h || 0;
+        if (!W || !HH) return 'screen';
+        if (Math.max(W, HH) < 420) return 'mark';
+        return (W / HH) <= 0.8 ? 'phone' : 'screen';
+      };
+      /* --- WHO IT WAS FOR ---------------------------------------------------
+
+         TWO OPTIONAL FIELDS ON THE BRIEF, and the row is absent unless at least
+         the name is there: `client` is the company, `logo` is a path to its
+         mark. Neither is invented here — a project with no client named simply
+         has no client row, which is the honest rendering for self-directed
+         work and is exactly what "Today, around the world" should show.
+
+         AND IT DEGRADES TO A MONOGRAM rather than to a broken image or an empty
+         square. Until a `logo` path is set, the mark is the client's first
+         letter in a rounded tile at the same size the image will be, so the row
+         has its final shape and the only thing that changes when the artwork
+         lands is what is inside the tile. */
+      const client = (b.client || '').trim();
+      const mark2 = b.logo
+        ? `<img class="pvw__logo" src="${url(b.logo)}" alt=""`
+          + ` width="20" height="20" decoding="async" loading="lazy">`
+        : (client
+          ? `<i class="pvw__logo pvw__logo--mono" aria-hidden="true">`
+            + `${esc(client.charAt(0).toUpperCase())}</i>`
+          : '');
+      const who = client
+        ? `<p class="pvw__client">${mark2}<span>${esc(client)}</span></p>`
+        : '';
+
+      const kinds = (b.spread || []).map((sh) => kindOf(sh.w, sh.h));
+      /* THE ANCHOR IS NOT A VOTE. It is the project card arriving into its own
+         slot, its aspect is the card's and its height has to stay exactly the
+         band's or the scale `Preview` solves for it is wrong and the card no
+         longer lands where the slot is. What the row is ABOUT is the pictures. */
+      const fam = !kinds.length ? 'single'
+        : kinds.every((k) => k === 'phone') ? 'phone'
+        : kinds.every((k) => k === 'screen') ? 'screen'
+        : 'mixed';
+
 
       const cells = [
         `<figure class="pvw__fig" data-at="anchor">` +
@@ -2361,7 +2575,7 @@
       ].concat((b.spread || []).map((sh, i) => {
         const ar = (sh.w && sh.h) ? (sh.w / sh.h).toFixed(4) : '1.4';
         return `<figure class="pvw__fig" data-at="${esc(sh.at || 'a')}"` +
-          ` style="--ar:${ar}">` +
+          ` data-kind="${kinds[i]}" style="--ar:${ar}">` +
           `<span class="pvw__plate">` +
             `<img src="${url(sh.src)}" alt="${esc(sh.alt || '')}"` +
               `${sh.w ? ` width="${sh.w}"` : ''}${sh.h ? ` height="${sh.h}"` : ''}` +
@@ -2377,7 +2591,7 @@
 
       this.el.innerHTML =
         `<div class="pvw__stage">` +
-          `<div class="pvw__cam">${cells.join('')}</div>` +
+          `<div class="pvw__cam" data-fam="${fam}">${cells.join('')}</div>` +
           `<div class="pvw__meter" aria-hidden="true">` +
             `<span class="pvw__at">${num(1)}</span>` +
             `<span class="pvw__segs">${segs}</span>` +
@@ -2388,15 +2602,33 @@
       this.rail.innerHTML =
         `<div class="pvw__brief" tabindex="-1">` +
           `<div class="pvw__body">` +
-            `<button class="pvw__back" type="button" aria-label="Close">` +
-              `<i aria-hidden="true">✕</i></button>` +
+            /* --- THE CONTROLS, IN ONE ROW, WHICH IS WHERE THEY BELONG ------
+
+               Close on the left because it is the way out and the way out is
+               where the eye starts; the two steps on the right because they are
+               a pair and a pair reads as a pair only when nothing is between
+               them. The row is the panel's own header, so it keeps its place
+               whatever the project underneath it is. */
+            `<div class="pvw__top">` +
+              `<button class="pvw__back" type="button" aria-label="Close">` +
+                ICON.close + `</button>` +
+              `<div class="pvw__flip">` +
+                `<button class="pvw__step" type="button" data-dir="-1"` +
+                  ` aria-label="Previous project" aria-keyshortcuts="Shift+ArrowLeft">` +
+                  ICON.prev + `</button>` +
+                `<button class="pvw__step" type="button" data-dir="1"` +
+                  ` aria-label="Next project" aria-keyshortcuts="Shift+ArrowRight">` +
+                  ICON.next + `</button>` +
+              `</div>` +
+            `</div>` +
             (item.meta ? `<span class="pvw__eyebrow">${esc(item.meta)}</span>` : '') +
             `<h2 class="pvw__name">${esc(item.title)}</h2>` +
+            who +
             (b.tagline ? `<p class="pvw__tagline">${esc(b.tagline)}</p>` : '') +
             (b.summary ? `<p class="pvw__summary">${esc(b.summary)}</p>` : '') +
             ((facts || does) ? `<dl class="pvw__facts">${facts}${does}</dl>` : '') +
             (door ? `<div class="pvw__door">${door}</div>` : '') +
-            `<p class="pvw__pan" hidden><i aria-hidden="true">⇄</i>` +
+            `<p class="pvw__pan" hidden>${ICON.pan}` +
               `<span>Scroll sideways</span></p>` +
           `</div>` +
         `</div>`;
@@ -2407,6 +2639,10 @@
 
       const back = $('.pvw__back', this.rail);
       if (back) back.addEventListener('click', () => { Sound.tap(); this.hide(true); });
+      $$('.pvw__step', this.rail).forEach((btn) => {
+        btn.addEventListener('click', () => this.stepProject(+btn.dataset.dir));
+      });
+      this.ends();
     },
 
     /* --- MEASURING THE WORKSPACE ------------------------------------------
@@ -2478,7 +2714,36 @@
          nothing can move it for as long as the workspace is up. */
       const vr = this.view.getBoundingClientRect();
       /* written on the SHELL, so both fixed layers inherit the one number */
-      (this.host || this.el).style.setProperty('--pv-left', `${Math.max(0, vr.left).toFixed(1)}px`);
+      /* --- AND IT IS MEASURED FROM ITS OWN OFFSET PARENT ------------------
+
+         THE LAYERS ARE `position: absolute`, NOT `fixed`, AND THAT IS NOT A
+         PREFERENCE. `.sheet` carries `animation: sheetIn ... both`, whose last
+         keyframe is `transform: none` — and a retained `none` still computes to
+         `matrix(1, 0, 0, 1, 0, 0)`, which is a transform, which makes `.sheet`
+         the containing block for every fixed box inside it. So `top: 0` on a
+         fixed `.pvw` meant the top of the DOCUMENT, and `bottom: 0` its bottom:
+         measured, the stage came out 1166px tall inside an 860px window.
+
+         Everything downstream of that was wrong and looked like four unrelated
+         bugs. The row was centred in a box a third taller than the screen, so
+         it sat low and its captions fell past the fold. `roomH` — the cap that
+         stops a plate being taller than the window — was computed from 1166 and
+         so never bound, which is why one project's row was half the height of
+         the next one's. The camera's stops were solved against the same wrong
+         box. This file already knew: the note over `.ink--inline` says exactly
+         this about exactly this element, and `Ink.recentre` is absolute for
+         exactly this reason.
+
+         So the geometry is stated against whatever the offset parent actually
+         turns out to be, read at measure time rather than assumed: the window's
+         top is at `-o.top` inside it, and its height is the window's. No
+         guessing which ancestor has a transform this month. */
+      const o = (this.el.offsetParent || $('.sheet') || document.body).getBoundingClientRect();
+      const host = this.host || this.el;
+      host.style.setProperty('--pv-top', `${(-o.top).toFixed(1)}px`);
+      host.style.setProperty('--pv-vh', `${innerHeight}px`);
+      host.style.setProperty('--pv-x0', `${(-o.left).toFixed(1)}px`);
+      host.style.setProperty('--pv-left', `${Math.max(0, vr.left - o.left).toFixed(1)}px`);
 
       const cr = card.getBoundingClientRect();
       /* THE SLOT TAKES THE CARD'S OWN PROPORTION, so the card reaches it on one
@@ -2486,7 +2751,17 @@
          the artefacts beside it whatever shape the project's card is. */
       const cardAr = cr.height ? cr.width / cr.height : 1.34;
       const slotEl = $('.pvw__slot', this.el);
-      if (slotEl) slotEl.style.setProperty('--slot-ar', cardAr.toFixed(4));
+      /* ON THE CELL, NOT ON THE SLOT, because the cell needs it too. The cell's
+         width is now stated from its plate's aspect rather than left to come
+         out of its contents (see `.pvw__fig`), and a custom property set on the
+         slot inherits DOWN from the slot — it cannot be read by the slot's own
+         parent. Written here it reaches both: the cell's width and the slot's
+         `aspect-ratio`. Set on the slot, every anchor in the site silently fell
+         back to the 1.34 default, which is the card landing in a slot that is
+         not its own shape. */
+      if (slotEl) {
+        (slotEl.parentElement || slotEl).style.setProperty('--slot-ar', cardAr.toFixed(4));
+      }
 
       /* --- HOW TALL THE ROW IS, SOLVED RATHER THAN CHOSEN ----------------
 
@@ -2515,18 +2790,6 @@
         const h = Math.min(slotW / Math.max(cardAr, 0.2), roomH);
         camEl.style.setProperty('--pv-h', `${h.toFixed(1)}px`);
       }
-
-      /* re-read AFTER the height is written: the slot's width is a function of
-         it, and so is where the row's own centring puts the slot */
-      const slot = slotEl ? slotEl.getBoundingClientRect() : cr;
-
-      /* scaling happens about `transform-origin: 50% 70%` — the card's own,
-         which the scroll entrance needs — so the translate undoes where that
-         origin leaves the box */
-      const k = cr.width ? slot.width / cr.width : 1;
-      this.k = k;
-      this.cx = slot.left - cr.left - 0.5 * cr.width * (1 - k);
-      this.cy = slot.top - cr.top - 0.7 * cr.height * (1 - k);
 
       /* --- THE WORKSPACE'S EXTENT AND ITS STOPS -------------------------
 
@@ -2557,6 +2820,32 @@
         camEl.style.paddingInlineStart =
           `${this.camMax <= 0 && slack > 0 ? (slack / 2).toFixed(1) : 0}px`;
       }
+
+      /* --- AND ONLY NOW IS THE SLOT WHERE IT IS GOING TO BE --------------
+
+         RE-READ AFTER THE HEIGHT **AND** AFTER THE CENTRING, and the second
+         half of that is what this block used to get wrong. The comment always
+         said "and so is where the row's own centring puts the slot" — and then
+         read the rectangle several statements BEFORE the centring was applied.
+         `paddingInlineStart` above shifts a lone cell by half the stage's slack
+         to put it in the middle of the field, so for any project with one
+         picture the card was solved toward where the slot had been and then the
+         slot moved out from under it: measured, 56px out at 1512 wide and 273px
+         out at 900, which is half the slack to the pixel in both cases. Two of
+         the four projects have a single cell, so half the portfolio opened with
+         the card landing next to its own slot instead of in it.
+
+         Nothing about the arithmetic changes — only that it now runs last, when
+         every number it reads has stopped moving. */
+      const slot = slotEl ? slotEl.getBoundingClientRect() : cr;
+
+      /* scaling happens about `transform-origin: 50% 70%` — the card's own,
+         which the scroll entrance needs — so the translate undoes where that
+         origin leaves the box */
+      const k = cr.width ? slot.width / cr.width : 1;
+      this.k = k;
+      this.cx = slot.left - cr.left - 0.5 * cr.width * (1 - k);
+      this.cy = slot.top - cr.top - 0.7 * cr.height * (1 - k);
 
       /* --- EACH CARD'S SHARE OF ONE CONTAINER SCALE ----------------------
 
@@ -2598,6 +2887,115 @@
       if (was) { this.el.style.setProperty('--p', was); this.view.style.setProperty('--p', was); }
       else { this.el.style.removeProperty('--p'); this.view.style.removeProperty('--p'); }
       this.paint();
+    },
+
+    /* --- MOVING TO THE NEXT PROJECT WITHOUT LEAVING THIS ONE -------------
+
+       `--p` DOES NOT MOVE, AND THAT IS THE WHOLE DESIGN. The obvious build is
+       `hide()` then `show()`, and it is wrong twice: it costs a full collapse
+       and a full re-open — the better part of two seconds of the panel, the
+       field and the recession undoing themselves and then doing themselves
+       again — and what it shows in between is the homepage, which is not where
+       the visitor is going. Stepping between projects is not leaving the
+       arrangement. The arrangement stays exactly where it is at 1: the paper,
+       the field, the muted navigation, the receded grid, the locked document.
+       Only three things change — which card is the anchor, what the panel says,
+       and what is on the track.
+
+       SO THE ANCHOR IS HANDED OVER RATHER THAN RETURNED. The outgoing card has
+       its channels stripped and drops back into the grid, where it is already
+       blurred to colour by the recession and so cannot be seen to jump; the
+       incoming card takes `is-open` and, because `--p` is already 1, is written
+       straight onto its slot by the next `paint`. No spring is restarted, no
+       geometry is inherited: `remeasure` re-solves every number for the new
+       card and the new row, which is the same call `show` makes.
+
+       THE CAMERA GOES HOME, because it is the old project's position and means
+       nothing in the new one. Stated rather than sprung — a pan animating out
+       while a different project's pictures arrive is two motions describing
+       unrelated things.
+
+       AND THE HISTORY ENTRY IS REPLACED, NOT PUSHED. One entry covers the whole
+       arrangement however many projects are looked at inside it, so Back closes
+       the folder rather than walking backwards through everything that was
+       opened in it — which is what Back did before there was any way to move
+       between them, and what `popstate` already assumes. */
+    stepProject(dir) {
+      if (!this.shown || !this.el) return;
+      const i = this.seq.findIndex((r) => r.card === this.card);
+      const to = this.seq[i + dir];
+      if (i < 0 || !to) return;
+
+      /* the outgoing anchor, back to being an ordinary card in a soft grid */
+      if (this.card) {
+        this.card.classList.remove('is-open');
+        ['--in', '--pv-x', '--pv-y', '--pv-s', '--pv-cam']
+          .forEach((k) => this.card.style.removeProperty(k));
+      }
+
+      Sound.tap();
+      this.item = to.item;
+      this.card = to.card;
+      this.fill(to.item);
+      this.stage = $('.pvw__stage', this.el);
+      this.cam = $('.pvw__cam', this.el);
+      this.meter = $('.pvw__meter', this.el);
+      this.segs = $$('.pvw__seg', this.el);
+      this.at = -1;
+      this.snaps = [];
+      this.camMax = 0;
+      this.snapped = true;
+      this.lastPan = 0;
+      this.touchX = null;
+      delete this.el.dataset.panned;
+      this.el.style.setProperty('--cam', '0px');
+      if (this.cs) { this.cs.v = 0; this.cs.vel = 0; this.cs.target = 0; }
+
+      this.card.classList.add('is-open');
+      this.card.style.setProperty('--in', '1');
+      this.remeasure();
+      this.paint(1);
+
+      /* --- AND THE DIRECTION GOES ON LAST, WHICH IS NOT A DETAIL ----------
+
+         `--swap-t` is a term in the track's own `translate`, so while the
+         animation is on its first frame the whole track — and therefore the
+         SLOT — is 26px to one side. Set before the measure, that offset went
+         straight into the rectangle `remeasure` solves the card's landing from,
+         and the card arrived 26px away from its own slot: exactly the keyframe,
+         which is how it was found. Measured first, flagged second, in the same
+         task, so nothing is painted in between and the animation's first frame
+         is the first thing seen.
+
+         The pair is taken off just past the animation and no further: `both`
+         holds the last keyframe until the attribute goes, and that keyframe
+         pins `opacity: 1` — every millisecond it outlives 260ms is a
+         millisecond the column cannot fade for a close. */
+      this.el.dataset.swap = dir > 0 ? 'next' : 'prev';
+      this.rail.dataset.swap = this.el.dataset.swap;
+      clearTimeout(this.swapT);
+      this.swapT = setTimeout(() => {
+        if (this.el) delete this.el.dataset.swap;
+        if (this.rail) delete this.rail.dataset.swap;
+      }, 300);
+      /* the camera was live on the project just closed and has to be live on
+         this one too, or the reading column drops back under the card */
+      this.el.dataset.cam = 'live';
+      try { history.replaceState({ pvw: to.item.title }, '', location.href); } catch (e) { /* file:// */ }
+      const box = $('.pvw__brief', this.rail);
+      if (box) box.focus({ preventScroll: true });
+    },
+
+    /* WHICH WAY THERE IS STILL SOMEWHERE TO GO. Bounded rather than wrapping:
+       four projects is few enough that a visitor can be at an end, and a
+       disabled arrow says "this is the end of the work" where a wrapping one
+       says nothing and quietly starts again. */
+    ends() {
+      const i = this.seq.findIndex((r) => r.card === this.card);
+      $$('.pvw__step', this.rail).forEach((btn) => {
+        const j = i + (+btn.dataset.dir);
+        btn.disabled = i < 0 || j < 0 || j >= this.seq.length;
+      });
     },
 
     show(item, card) {
@@ -2670,6 +3068,11 @@
     hide(pop) {
       if (!this.shown || !this.el) return;
       this.shown = false;
+      /* a swap still in flight is holding `opacity: 1` on the column under its
+         own fill; a close needs that opacity back on the frame it begins */
+      clearTimeout(this.swapT);
+      delete this.el.dataset.swap;
+      delete this.rail.dataset.swap;
       this.el.style.pointerEvents = 'none';
       this.rail.style.pointerEvents = 'none';
       /* the reading column drops back UNDER the card the moment a close begins,
@@ -2684,6 +3087,9 @@
     },
 
     done() {
+      clearTimeout(this.swapT);
+      if (this.el) delete this.el.dataset.swap;
+      if (this.rail) delete this.rail.dataset.swap;
       if (this.card) {
         this.card.classList.remove('is-open');
         this.card.style.removeProperty('--in');
@@ -2723,7 +3129,12 @@
       this.el.style.removeProperty('--cam');
       delete this.el.dataset.cam;
       delete this.el.dataset.panned;
-      if (this.host) this.host.style.removeProperty('--pv-left');
+      if (this.host) {
+        this.host.style.removeProperty('--pv-left');
+        this.host.style.removeProperty('--pv-top');
+        this.host.style.removeProperty('--pv-vh');
+        this.host.style.removeProperty('--pv-x0');
+      }
       this.sp = null;
       this.cs = null;
       this.stage = null;
@@ -16991,7 +17402,27 @@
       const p = this.at(want);
       if (!p) return;
 
-      if (!this.x) { this.x = Spring(p.x, 210, 26); this.y = Spring(p.y, 210, 26); }
+      /* --- AND THE SPRING IS TUNED, NOT GUESSED -------------------------
+
+         210/26 IS CRITICALLY DAMPED AND THAT WAS THE PROBLEM. Its damping
+         ratio is 0.897, and simulated against this file's own integrator at
+         the list's real 22.5px pitch it overshoots by 0.00px — there is no
+         overshoot at all. What it does instead is approach the target
+         asymptotically and take 433ms to get within 2% of it, which is the
+         exact opposite of what a physical control does: slow to arrive and
+         with nothing at the end to say it has arrived.
+
+         380/26 is ζ = 0.667. Same simulation: the square passes its target by
+         0.58px on a one-row move and 1.16px on a two-row move, then comes
+         back and is inside 2% at 333ms. Under a pixel of overshoot on a
+         five-pixel square is about a tenth of its own width — felt rather
+         than seen, which is the brief — and the higher stiffness is what makes
+         the first 60ms of the move quick, so the answer to the click is
+         immediate and the settle is the slow part.
+
+         The pair is stated once and shared by both axes: the square is one
+         object and a different curve per axis would make it arrive twice. */
+      if (!this.x) { this.x = Spring(p.x, 380, 26); this.y = Spring(p.y, 380, 26); }
       this.x.target = p.x;
       this.y.target = p.y;
       if (now || REDUCED) {

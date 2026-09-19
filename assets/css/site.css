@@ -1094,12 +1094,43 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
   line-height: 1.45;
   color: var(--ink-dim);
   text-decoration: none;
-  /* a colour is the whole hover. No underline, no slide, no background —
-     these are seven rows of 14px type in a quiet column. */
-  transition: color 180ms var(--ease);
+  /* --- WHAT A HOVER IS WORTH HERE ---------------------------------------
+
+     IT USED TO BE A COLOUR AND NOTHING ELSE, on the reasoning that seven rows
+     of 14px type in a quiet column cannot take a slide. That is right about
+     the SIZE of the movement and wrong about whether there should be one: a
+     colour ramp is a state being reported, and what a physical control does is
+     answer the pointer. Two pixels answers it. At this type size two pixels is
+     under a sixth of a character and nothing in the column reflows, so the row
+     does not read as animating — it reads as having given.
+
+     THE CURVE OVERSHOOTS, WHICH IS THE ENTIRE DIFFERENCE. `cubic-bezier(0.34,
+     1.3, 0.64, 1)` passes 1 at about 60% of its duration and comes back, so
+     two pixels out is really 2.3 out and then 2 — a third of a pixel of
+     overshoot. On the way back the curve is plain ease-out, because a control
+     springs when you touch it and relaxes when you let go; a row that
+     overshoots on the way home is a row that twitches.
+
+     ON THE ROW THAT IS ALREADY CURRENT, NOTHING MOVES. The square is parked
+     at the end of that word and is positioned by a spring in script, which
+     cannot see a `:hover` written here — so a row that moved under its own
+     mark would open a two-pixel gap that nothing closes. It is also the
+     honest answer: you are already there, and the brief for pressing the
+     current section is to do as little as possible. It still takes the ink.
+
+     `--hov-x` IS A TERM, NOT A TRANSFORM. See the transform rule below. */
+  transition: color 180ms var(--ease),
+    --hov-x 260ms cubic-bezier(0.32, 0, 0.36, 1);
 }
 :root:not(.hover-cold) .mast__row:hover { color: var(--ink-2); }
+:root:not(.hover-cold) .mast__row:not(.is-here):hover {
+  --hov-x: 2px;
+  transition: color 180ms var(--ease),
+    --hov-x 300ms cubic-bezier(0.34, 1.3, 0.64, 1);
+}
 .mast__row.is-here { color: var(--ink); }
+@property --hov-x { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --press-s { syntax: '<number>'; inherits: false; initial-value: 1; }
 
 /* `--shove-x` IS THE WORD GETTING OUT OF A BRICK'S WAY — see `Shove`.
 
@@ -1116,8 +1147,55 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
 
    A row that has never been near a brick has no `--shove-x` at all: `Shove`
    removes the property rather than setting it to zero, so the default is
-   `translate3d(0, 0, 0)` and the navigation renders exactly as it did. */
-.mast__row { transform: translate3d(var(--shove-x, 0px), 0, 0); }
+   `translate3d(0, 0, 0)` and the navigation renders exactly as it did.
+
+   --- AND THREE THINGS NOW WANT THIS ROW'S TRANSFORM -----------------------
+
+   `--shove-x` is the brick, `--hov-x` is the pointer, `--press-s` is the
+   finger, and all three are terms in ONE declaration because a property can
+   only have one writer. It mattered immediately: `.pressable.is-press` sets
+   `transform: scale(0.975)` on every `<a>` on the site and outranks the bare
+   `.mast__row` selector, so pressing a row that a brick had pushed sideways
+   discarded the push and snapped the word back to the column edge for the
+   length of the press. Folded together, a press scales a row that is already
+   displaced without arguing about where it is.
+
+   THE COMPRESSION IS ANCHORED AT THE LEFT EDGE. A row is a flex box the width
+   of the column, so scaling it about its centre moves the word right — which
+   is a press that pushes AWAY from the finger. From `0 50%` the word compresses
+   toward the column's own edge, which is the direction a key travels. 0.972 on
+   a 14px row is about a pixel across a five-letter word. */
+.mast__row {
+  transform:
+    translate3d(calc(var(--shove-x, 0px) + var(--hov-x, 0px)), 0, 0)
+    scale(var(--press-s, 1));
+  transform-origin: 0 50%;
+}
+/* outranks `.pressable.is-press` (0,3,0 against 0,2,0), so the dip is a term
+   in the row's own transform instead of a replacement for it */
+.mast__row.pressable.is-press {
+  transform:
+    translate3d(calc(var(--shove-x, 0px) + var(--hov-x, 0px)), 0, 0)
+    scale(var(--press-s, 1));
+  --press-s: 0.972;
+  transition: color 180ms var(--ease), --press-s 90ms cubic-bezier(0.3, 0, 0.4, 1);
+}
+.mast__row.pressable {
+  transition: color 180ms var(--ease),
+    --hov-x 260ms cubic-bezier(0.32, 0, 0.36, 1),
+    --press-s 340ms var(--spring);
+}
+
+/* NEITHER ON A TOUCHSCREEN NOR FOR A VISITOR WHO ASKED FOR LESS. `hover-cold`
+   already gates the ink; the travel goes with it, and on a phone the press dip
+   is the whole of the feedback — which is correct, because a finger has no
+   hover state to answer. */
+@media (prefers-reduced-motion: reduce) {
+  .mast__row,
+  .mast__row.pressable { transition: color 180ms var(--ease); }
+  .mast__row.pressable.is-press { --press-s: 1; }
+  :root:not(.hover-cold) .mast__row:not(.is-here):hover { --hov-x: 0px; }
+}
 
 /* THE ENTIRE ACTIVE INDICATOR. Five pixels of ink, square, on the row.
    An underline moves the row, a background makes it a button, and a colour
@@ -2091,9 +2169,24 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
    NOTHING MOVES AND NOTHING BLURS. It is emphasis only — the same trick the
    reference uses, where the whole navigation is muted grey and the panel's
    title is the one near-black thing on that side. The closing block dims less
-   because it is already quiet, and its pods stay usable throughout. */
-.home[data-pvw='1'] .mast__keep,
-.home[data-pvw='1'] .mast__air { opacity: calc(1 - var(--pq, 0) * 0.54); }
+   because it is already quiet, and its pods stay usable throughout.
+
+   AND THE BRICKS ARE NOT IN THIS RULE, WHICH IS THE ONE EXCEPTION.
+   `.mast__air` was dimmed with the type around it, on the reasoning that the
+   whole left column yields to the panel. That reasoning is right about type and
+   wrong about these: the pile is the only colour on that side of the screen and
+   the only thing on it a visitor can pick up, and half-fading it makes the
+   playground look switched off rather than deferential — a greyed control,
+   which is exactly what it is not. It is also the one thing here that is still
+   live while a project is open: the physics keeps running and the pieces are
+   still draggable, so dimming them was the interface telling a small lie.
+
+   The type recedes and the toys do not, which also gives that column something
+   to be: muted grey navigation, a pile of plastic at full strength, and the
+   panel's title as the near-black. Nothing here blurs either — the only blur in
+   this arrangement is on the grid's own cards, and it has never reached the
+   masthead. */
+.home[data-pvw='1'] .mast__keep { opacity: calc(1 - var(--pq, 0) * 0.54); }
 .home[data-pvw='1'] .mast__foot { opacity: calc(1 - var(--pq, 0) * 0.3); }
 
 /* it is still the homepage, so it is still reachable — but not while a folder
@@ -2196,10 +2289,31 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
      column's width. The only two numbers in the recession. */
   --pv-back: 0.06;
   --pv-drift: 0.015;
-  /* THE FIELD'S OWN GROUND. Measured off the reference: its reading column and
-     its navigation are the same paper and the field the pictures stand in is
-     about six percent darker. That one step is what separates the three zones. */
-  --pv-field: rgba(20, 16, 12, 0.055);
+  /* --- THE THREE ZONES, AND NOW THERE ARE THREE TONES ------------------
+
+     MEASURED OFF THE REFERENCE, AND THEN OVERRULED. The reference sets its
+     reading column and its navigation on the same paper and darkens only the
+     field the pictures stand in — two tones, one step. Built that way, the
+     panel and the navigation are one continuous sheet of paper with a gutter
+     in it, and at a glance the left half of the screen is a single column of
+     small grey type: the emphasis rules below are then doing all the work of
+     separating them, and emphasis alone is not enough to say "this is a
+     different surface".
+
+     SO IT IS A LADDER: paper, one step down for the reading column, one step
+     down again for the field. #f8f7f3 / #f0efec / #e8e7e4 in light — eight
+     values apart each, which is under the threshold where anybody would call
+     either of them grey and over the one where the edge between them
+     disappears. Left to right it also reads as recession, which is what the
+     arrangement is: the navigation is nearest, the field is furthest.
+
+     ONE NUMBER, NOT TWO. `--pv-paper` is `--pv-field` at half strength, so the
+     two steps are equal by construction and the ladder cannot be tuned out of
+     square by editing one of them. Both are an overlay rather than a colour,
+     which is why the same pair works in dark: there the overlay is white, so
+     "one step from the paper" runs the other way and the ladder holds. */
+  --pv-field: rgba(20, 16, 12, 0.068);
+  --pv-paper: rgba(20, 16, 12, 0.034);
 }
 
 /* --- THE FIELD AND THE STAGE ---------------------------------------------
@@ -2210,19 +2324,30 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
    cannot work, because `position: fixed` makes a stacking context whatever its
    z-index is, so everything in here is above or below the card TOGETHER. The
    reading column is its own fixed layer for exactly that reason; see `.pvwr`. */
+/* ABSOLUTE, AND POSITIONED ONTO THE WINDOW BY HAND. `.sheet` retains a
+   `transform: none` from `sheetIn`'s fill, so it is the containing block for
+   anything fixed in here and `top: 0` meant the top of the document — which
+   made this box 1166px tall in an 860px window and put every number downstream
+   of it out. `--pv-top` is where the window's top is inside the offset parent
+   and `--pv-vh` is the window's height, both written by `remeasure`; see the
+   long note beside them. The document cannot scroll while this is open, so the
+   pair is constant for the life of the arrangement. */
 .pvw {
-  position: fixed;
+  position: absolute;
   left: var(--pv-left, 0px);
   right: 0;
-  top: 0;
-  bottom: 0;
+  top: var(--pv-top, 0px);
+  height: var(--pv-vh, 100dvh);
   z-index: 2;
   pointer-events: none;
   overflow: clip;
 }
 
 :root.is-dark .pvw,
-:root.is-dark .pvwr { --pv-field: rgba(255, 255, 255, 0.042); }
+:root.is-dark .pvwr {
+  --pv-field: rgba(255, 255, 255, 0.05);
+  --pv-paper: rgba(255, 255, 255, 0.025);
+}
 
 /* THE FIELD, AS A PLATE, AND UNDER THE CARD. `z-index: 1` against the card's 4:
    the card is the subject and must not be washed with the ground it crosses.
@@ -2265,7 +2390,8 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   /* THE CAMERA AND THE ENTRANCE ON ONE TRANSFORM. `--cam` is where the camera
      is; the second term is the forty pixels the whole composition assembles
      through. Two writers, one property, no fight. */
-  translate: calc((var(--cam, 0px) * -1) - (1 - var(--p, 0)) * var(--pv-in)) 0;
+  translate: calc((var(--cam, 0px) * -1) - (1 - var(--p, 0)) * var(--pv-in)
+    + var(--swap-t, 0px)) 0;
   will-change: translate;
 }
 
@@ -2280,22 +2406,58 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
    copied into it, which is why the card's video keeps playing across the whole
    move. `Preview` reads its rectangle rather than being told a number, so the
    destination is stated here, beside every other position in the row. */
+/* EVERY CELL IS THE SAME HEIGHT AND THE STACK SITS AT ITS FOOT, which is what
+   makes a row out of things that are not the same size. The height is the band
+   plus the caption plus the gap between them, stated once; `justify-content:
+   flex-end` puts the caption on the cell's bottom edge and the plate directly
+   above it. So whatever a plate's own height turns out to be, its FOOT is on
+   the row's floor and its caption is on the row's caption line — the artefacts
+   stand on a surface instead of floating at n different altitudes.
+
+   IT WAS THE TOPS THAT WERE PINNED BEFORE, by every cell being plate-height and
+   the row centring them. Any cell whose plate was shorter than the band then
+   came out both shorter AND vertically off-centre from its neighbours, and its
+   caption rode up with it — measured, one cell's caption sat 102px above the
+   rest of the row's. */
+/* AND ITS WIDTH IS ITS PLATE'S WIDTH, STATED, NOT INTRINSIC. Left to size
+   itself, a cell is as wide as its widest child — and its widest child is
+   sometimes the CAPTION, which is allowed 34 characters. On a phone cell whose
+   plate is 194px that made the cell 225px, and because a column flexbox
+   stretches its children by default the plate was then pulled out to 225 as
+   well: `aspect-ratio: 0.46` silently rendering at 0.54, with `object-fit:
+   cover` quietly cropping the screenshot to fit the lie. Measured, that is
+   exactly what was happening to both phone plates.
+
+   Stating the width from the same two numbers the plate's own height comes from
+   makes the cell exactly its plate and nothing else, so no caption can ever
+   move a picture again, and `flex-start` stops the stretch at the source. The
+   caption then wraps inside its picture's width, which is where a caption
+   belongs. */
 .pvw__fig {
   position: relative;
   flex: 0 0 auto;
   margin: 0;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
   gap: 0.7rem;
+  --pv-ar: var(--ar, 1.4);
+  width: calc(var(--pv-h, 44svh) * var(--fh, 1) * var(--pv-ar));
+  height: calc(var(--pv-h, 44svh) + 0.7rem + 2.5rem);
   pointer-events: auto;
 }
+/* the anchor's aspect is the pressed card's, written by `remeasure` as
+   `--slot-ar`, so its cell has to be measured off that one instead */
+.pvw__fig:has(> .pvw__slot) { --pv-ar: var(--slot-ar, 1.34); }
 
 .pvw__plate,
 .pvw__slot {
   position: relative;
   display: block;
+  width: 100%;
   height: calc(var(--pv-h, 44svh) * var(--fh, 1));
-  aspect-ratio: var(--ar, 1.4);
+  aspect-ratio: var(--pv-ar);
 }
 
 .pvw__slot {
@@ -2371,9 +2533,40 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   overflow: hidden;
 }
 
-/* the one deliberate change of scale in the row: a detail is a detail, and at
-   the height of the others it stops being one */
-.pvw__fig[data-at='detail'] { --fh: 0.62; }
+/* --- WHAT EACH KIND OF THING IS WORTH, AND IT DEPENDS ON THE COMPANY -----
+
+   A UNIFORM ROW IS SIZED UNIFORMLY. When every picture in a project is a
+   desktop capture, they are all the same kind of object and they all get the
+   whole band — which is the "when it's all desktop screens, show that" case,
+   and the one the old code got right by accident. When every picture is a
+   phone, the same is true for the same reason: a row of phones at one height
+   reads as a set of phones, and nothing in it needs to be shrunk to make room
+   for something that is not there.
+
+   A MIXED ROW IS SIZED BY WHAT THINGS ARE. Here the band cannot be handed out
+   flat, because equal height between a 1.57 capture and a 0.46 one is a hero
+   beside three splinters. Each kind gets its own share:
+
+     screen  1      the reference object — the band is defined by it
+     phone   0.78   a 6" phone is about three quarters the height of a 14"
+                    laptop screen, so this is the ratio the two really have.
+                    It is device-true rather than tuned, which is why a phone
+                    next to a capture reads as a phone and not as a capture
+                    that came out wrong.
+     mark    0.58   not a screen at all. A 192px logo has no business being
+                    presented at the height of a screenshot, and at 0.58 of
+                    the band it is still a 1.6x upscale.
+
+   The anchor is always the whole band: it is the pressed card landing in its
+   own slot, and `Preview` solves its scale from that slot's measured
+   rectangle — shrink the slot and the card stops arriving where the slot is.
+   `data-fam` and `data-kind` are written by `Preview.paint` from the
+   dimensions authored in content.js; see `kindOf` there. */
+.pvw__cam[data-fam='mixed'] .pvw__fig[data-kind='phone'] { --fh: 0.78; }
+.pvw__cam[data-fam='mixed'] .pvw__fig[data-kind='mark']  { --fh: 0.58; }
+/* a mark on its own is still a mark, however uniform the rest of the row */
+.pvw__cam[data-fam='screen'] .pvw__fig[data-kind='mark'],
+.pvw__cam[data-fam='phone']  .pvw__fig[data-kind='mark'] { --fh: 0.58; }
 
 /* --- WHERE YOU ARE, AND NOTHING ELSE ------------------------------------
 
@@ -2443,10 +2636,10 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 .pvwr[hidden] { display: none; }
 
 .pvwr {
-  position: fixed;
+  position: absolute;
   left: var(--pv-left, 0px);
-  top: 0;
-  bottom: 0;
+  top: var(--pv-top, 0px);
+  height: var(--pv-vh, 100dvh);
   width: var(--pv-col);
   z-index: 3;
   pointer-events: none;
@@ -2471,14 +2664,70 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 /* THE PAPER, AS ITS OWN LAYER. It has to be opaque, because the softened grid
    runs underneath it — and it has to arrive without dragging the words into an
    opacity ramp of their own, so it is a plate BEHIND them rather than a
-   background on the box they sit in. It is the page's own colour, so what reads
-   on screen is the grid going quiet, not a panel fading up. */
+   background on the box they sit in.
+
+   TWO PAINTS ON ONE BOX, NOT A SECOND ELEMENT. The base is the page's own
+   colour, which is what makes the plate opaque; `--pv-paper` is a flat overlay
+   on top of it, stated as a one-stop gradient because that is how you lay a
+   translucent wash over an opaque background without another node to do it
+   with. The step is deliberately on the plate and not on the type: every word
+   in this column keeps the contrast it was designed with, and what changed is
+   the surface they are printed on. */
 .pvw__brief::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--surface);
+  background-color: var(--surface);
+  background-image: linear-gradient(var(--pv-paper), var(--pv-paper));
   opacity: clamp(0, calc(var(--p, 0) * 6), 1);
+}
+
+/* --- AND WHEN THE PROJECT CHANGES UNDERNEATH IT ---------------------------
+
+   ONE BEAT, ONE DIRECTION, AND NOTHING COLLAPSES. Stepping to the next project
+   leaves `--p` at 1 — the paper, the field and the receded grid all hold — so
+   the only thing that needs to say anything is the content that actually
+   changed: the column of type and the track of pictures. They come in from the
+   side the visitor asked for, which is what makes the two buttons feel like
+   direction rather than like a reload.
+
+   SHORT, AND SHORTER THAN THE OPENING. The opening is an object growing out of
+   a grid and is allowed to take its time; this is a page turn. 260ms, with the
+   fade finished inside the first half of it, so the type is readable almost
+   immediately and only the last of the movement is still settling.
+
+   IT ANIMATES A TERM, NOT THE PROPERTY, AND THAT IS NOT A STYLE CHOICE. Both of
+   these elements already have a `translate` written from `--cam` and `--p`, and
+   an animation on `translate` does not cooperate with a declaration on
+   `translate` — it replaces it for the length of the animation and then, under
+   `both`, goes on holding its last keyframe until the animation is taken off.
+   The camera would stop answering the wheel and the column would stop answering
+   a close, for as long as the class was there. So the swap contributes
+   `--swap-t` to the same calc instead: one writer per property, and the two
+   motions add up the way they would if a person had written the sum by hand. */
+@property --swap-t { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
+.pvw[data-swap='next'] .pvw__cam,
+.pvwr[data-swap='next'] .pvw__body {
+  animation: pvwSwapN 260ms cubic-bezier(0.22, 0.72, 0.24, 1) both;
+}
+.pvw[data-swap='prev'] .pvw__cam,
+.pvwr[data-swap='prev'] .pvw__body {
+  animation: pvwSwapP 260ms cubic-bezier(0.22, 0.72, 0.24, 1) both;
+}
+@keyframes pvwSwapN {
+  from { --swap-t: 26px; opacity: 0; }
+  55%  { opacity: 1; }
+  to   { --swap-t: 0px; opacity: 1; }
+}
+@keyframes pvwSwapP {
+  from { --swap-t: -26px; opacity: 0; }
+  55%  { opacity: 1; }
+  to   { --swap-t: 0px; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pvw[data-swap] .pvw__cam,
+  .pvwr[data-swap] .pvw__body { animation: none; }
 }
 
 /* THE ONE MOVEMENT IN HERE, and the workspace makes the same one: a single
@@ -2487,34 +2736,113 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
    arrives as a column. */
 .pvw__body {
   position: relative;
-  translate: calc((1 - var(--p, 0)) * var(--pv-in) * -1) 0;
+  translate: calc((1 - var(--p, 0)) * var(--pv-in) * -1 + var(--swap-t, 0px)) 0;
   opacity: clamp(0, calc(var(--p, 0) * 4), 1);
 }
 
+/* --- THE PANEL'S HEADER: OUT ON THE LEFT, ALONG ON THE RIGHT -------------
+   The close sits where the eye starts a column and the two steps sit together
+   at the far end, because a pair only reads as a pair when nothing is between
+   them. The row carries the space under it that the close button used to carry
+   itself, so the type below starts at the same place it always did. */
+.pvw__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: clamp(1rem, 2.8vh, 1.8rem);
+}
+.pvw__flip { display: flex; gap: 0.4rem; }
+
 /* a mark, not a button and not a sentence: the project is closed by pressing
    the field around it, and this is the affordance for people who look for one */
-.pvw__back {
+.pvw__back,
+.pvw__step {
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 1.75rem;
   height: 1.75rem;
-  margin: 0 0 clamp(1rem, 2.8vh, 1.8rem);
+  margin: 0;
   padding: 0;
   border: 0;
   border-radius: 50%;
   background: rgba(20, 16, 12, 0.055);
   color: var(--ink-dim);
   font: inherit;
-  font-size: 0.75rem;
   line-height: 1;
   cursor: pointer;
   transition: color 180ms var(--ease), background 180ms var(--ease);
 }
-:root.is-dark .pvw__back { background: rgba(255, 255, 255, 0.075); }
-:root:not(.hover-cold) .pvw__back:hover { color: var(--ink); background: rgba(20, 16, 12, 0.1); }
-:root.is-dark:not(.hover-cold) .pvw__back:hover { background: rgba(255, 255, 255, 0.14); }
+/* THE MARK IS A DRAWING AND SO IT IS SIZED AS A BOX. It was a `✕` sized by
+   `font-size`, which is why this rule used to carry one: a character's drawn
+   size is a fraction of its em that only the typeface knows, so the same
+   declaration lands differently in every font. Eleven pixels in a
+   twenty-eight-pixel pod. */
+.pvw__back svg {
+  width: 0.6875rem;
+  height: 0.6875rem;
+}
+
+/* --- WHO THE WORK WAS FOR ------------------------------------------------
+   A mark and a name, directly under the title, at the eyebrow's own weight so
+   it reads as attribution rather than as a second heading. The tile is the
+   size the artwork will be whether or not the artwork exists yet, so nothing
+   moves when a logo is dropped in — see `pvw__logo--mono`. */
+.pvw__client {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.55rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+}
+.pvw__logo {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 5px;
+  object-fit: cover;
+  background: rgba(20, 16, 12, 0.055);
+}
+:root.is-dark .pvw__logo { background: rgba(255, 255, 255, 0.075); }
+/* the stand-in: the client's initial, in a tile of the logo's own size. It is
+   deliberately not a wordmark and not a guess at the brand — it is a label
+   that fits where the label goes. */
+.pvw__logo--mono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 500 0.6875rem/1 var(--mono, var(--sans));
+  font-style: normal;
+  letter-spacing: 0;
+  color: var(--ink-dim);
+}
+:root.is-dark .pvw__back,
+:root.is-dark .pvw__step { background: rgba(255, 255, 255, 0.075); }
+:root:not(.hover-cold) .pvw__back:hover,
+:root:not(.hover-cold) .pvw__step:not(:disabled):hover { color: var(--ink); background: rgba(20, 16, 12, 0.1); }
+:root.is-dark:not(.hover-cold) .pvw__back:hover,
+:root.is-dark:not(.hover-cold) .pvw__step:not(:disabled):hover { background: rgba(255, 255, 255, 0.14); }
+
+/* AN END IS A STATE, NOT A MISSING BUTTON. The pair keeps its shape at either
+   end of the work so the header never reflows; the unavailable one simply
+   stops answering and says so by going quiet. Not `display: none` — a control
+   that vanishes moves the one beside it, and a visitor who has just pressed
+   it once would then press whatever slid under their cursor. */
+.pvw__step:disabled {
+  opacity: 0.32;
+  cursor: default;
+  pointer-events: none;
+}
+/* the shaft leans the way it is going, a pixel and a half, on press */
+.pvw__step:not(:disabled):active svg { translate: calc(var(--dir, 1) * 1.5px) 0; }
+.pvw__step[data-dir='-1'] { --dir: -1; }
+
+.pvw__back svg,
+.pvw__step svg { display: block; }
+.pvw__step svg { width: 0.8125rem; height: 0.8125rem; }
 
 .pvw__eyebrow {
   display: block;
@@ -2608,7 +2936,15 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   pointer-events: auto;
   text-decoration: none;
 }
-.pvw__arrow { display: inline-block; transition: transform 480ms var(--spring); }
+.pvw__arrow {
+  display: inline-flex;
+  transition: transform 480ms var(--spring);
+}
+.pvw__arrow svg {
+  display: block;
+  width: 0.875rem;
+  height: 0.875rem;
+}
 :root:not(.hover-cold) .pvw__cta:hover .pvw__arrow { transform: translateX(3px); }
 
 .pvw__soon {
@@ -2633,6 +2969,14 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   opacity: clamp(0, calc((var(--p, 0) - 0.5) * 3), 1);
   transition: opacity 320ms var(--ease);
 }
+/* 13px against 10px type: a mark that states an axis has to be slightly wider
+   than the type beside it or it reads as a dash. */
+.pvw__pan svg {
+  display: block;
+  flex: none;
+  width: 0.8125rem;
+  height: 0.8125rem;
+}
 .pvw__pan[hidden] { display: none; }
 .pvw[data-panned='1'] ~ .pvwr .pvw__pan { opacity: 0; }
 
@@ -2650,16 +2994,22 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
     /* less room to recede into, and a phone is held closer */
     --pv-back: 0.04;
     --pv-drift: 0;
-    left: 0;
+    /* the window's left edge inside the offset parent, not the parent's own —
+       same reasoning as `--pv-top`; it is 0 whenever `.sheet` starts at the
+       window's edge, which is every layout the site currently has, and stating
+       it costs nothing and removes the assumption */
+    left: var(--pv-x0, 0px);
   }
   /* the field is the lower band only, because the column takes the upper one */
   .pvw::before { inset: 38svh 0 0 0; box-shadow: inset 0 1px 0 var(--line-soft); }
   .pvw__stage { inset: 38svh 0 0 0; }
   .pvwr {
-    left: 0;
+    left: var(--pv-x0, 0px);
     right: 0;
-    top: 0;
-    bottom: auto;
+    /* NOT `top: 0` — these layers are absolute inside a transformed `.sheet`,
+       so zero is the top of the document. It has to be the same origin the wide
+       layout uses. */
+    top: var(--pv-top, 0px);
     width: auto;
     height: 38svh;
   }
