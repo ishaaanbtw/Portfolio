@@ -2353,12 +2353,70 @@
          the scrollbar is an overlay and there is no gutter to begin with. */
       const g = Math.max(0, innerWidth - document.documentElement.clientWidth);
       document.documentElement.style.setProperty('--pvw-gutter', `${g.toFixed(0)}px`);
+
+      /* --- AND WHAT IS STUCK TO THE WINDOW HAS TO STAY STUCK TO IT -------
+
+         `overflow: hidden` ON THE ROOT DOES NOT JUST STOP THE SCROLLING — IT
+         TAKES AWAY THE SCROLLPORT THAT `position: sticky` STICKS TO. The
+         sidebar is sticky, so the instant a project opened it stopped being
+         pinned and snapped back to its static place in the flow: open one from
+         a card near the bottom of the grid and the whole navigation column
+         jumped by however far the page was scrolled. Measured at 266 pixels
+         from the fourth card. It read as the navigation scrolling away by
+         itself at the exact moment the reader's attention was elsewhere, which
+         is why it looked like the page had lost its footing.
+
+         The answer is not to loosen the lock. Keeping the root scrollable
+         leaves a scrollbar that can still be dragged while a project is open,
+         which is the thing the lock exists to prevent — the sticky sidebar
+         would stay put and the page would move behind it instead.
+
+         So the offset each sticky element loses is given back to it. Measured
+         rather than derived: the top of every sticky box before the class goes
+         on, the top after, and the difference as a transform. That is exact
+         whatever the element, whatever its `top`, and whether or not it was
+         pinned at the moment the project opened — an element that was not
+         stuck moves by nothing and is left alone.
+
+         A transform, not `position: relative`, and the difference matters:
+         `sticky` makes this element a stacking context, `relative` with no
+         z-index would not, and a held brick inside the column would start
+         painting over the project cards again. `transform` keeps the stacking
+         context that the paint order depends on.
+
+         The scan is every element in the document, which sounds careless and
+         costs a millisecond on 475 nodes. It is worth that: whatever sticky
+         thing this page grows next is covered without anyone remembering to
+         come back here. */
+      const pin = [];
+      document.querySelectorAll('*').forEach((n) => {
+        if (getComputedStyle(n).position !== 'sticky') return;
+        pin.push({ n, t: n.getBoundingClientRect().top, was: n.style.transform || '' });
+      });
+
       document.documentElement.classList.add('is-pvw');
+
+      this.pinned = [];
+      pin.forEach((s2) => {
+        const d = s2.t - s2.n.getBoundingClientRect().top;
+        if (Math.abs(d) < 0.5) return;
+        s2.n.style.transform = `${s2.was} translate3d(0, ${d.toFixed(1)}px, 0)`.trim();
+        this.pinned.push(s2);
+      });
     },
 
     unlock() {
       if (!this.locked) return;
       this.locked = false;
+      /* released in the same order: the offset comes off, then the class, so
+         no frame is painted with the transform on and the scrollport back */
+      if (this.pinned) {
+        this.pinned.forEach((s2) => {
+          if (s2.was) s2.n.style.transform = s2.was;
+          else s2.n.style.removeProperty('transform');
+        });
+        this.pinned = null;
+      }
       document.documentElement.classList.remove('is-pvw');
       document.documentElement.style.removeProperty('--pvw-gutter');
       App.to(this.scroll, false);
@@ -10627,7 +10685,24 @@
        input it already takes, and not one line of the physics knows the
        difference between this page and the other one. Where they end up is
        still entirely the dump's business. */
-    scatter(n) {
+    /* --- AND WHERE IN THE REGION THEY START ------------------------------
+
+       `lo`/`hi` BAND THE Y, AND THE DEFAULT IS THE WHOLE REGION, so the desk
+       and the 404 room — the other two callers — get exactly what they got
+       before. Only the sidebar passes a band.
+
+       WHY THE TRAY NEEDS ONE. The tray is placed, not thrown (`entry = null`),
+       so a piece is laid down at rest wherever its `y` says and stays there:
+       a `y` of 12 is a brick resting in mid-air a third of the way up an empty
+       column, with nothing under it and no fall to bring it down. Over sixteen
+       pieces that reads as a sprinkle through the whole column rather than as
+       a pile — which is exactly the difference between the screenshot and the
+       reference. Banded low, the same sixteen pieces settle into one loose
+       heap along the floor with the upper two thirds of the column empty, and
+       the navigation keeps the hierarchy. */
+    scatter(n, lo, hi) {
+      const y0 = lo == null ? 0 : lo;
+      const y1 = hi == null ? 100 : hi;
       const kinds = ['conn', 'small', 'sq2', 'br24', 'long', 'ell', 'corner', 'tee', 'p13', 'p14'];
       /* the big flat slabs read as clutter in quantity, so the small pieces
          come up more often — a real box of LEGO is mostly little ones */
@@ -10638,7 +10713,7 @@
         out.push({
           kind: bag[(Math.random() * bag.length) | 0] || kinds[0],
           x: Math.random() * 100,
-          y: Math.random() * 100,
+          y: y0 + Math.random() * (y1 - y0),
           tone: (Math.random() * TONE.length) | 0,
         });
       }
@@ -17262,10 +17337,11 @@
       keep.appendChild(list('Links', c.links || []));
       mast.appendChild(keep);
 
-      /* THE PLAYGROUND LAYER. Empty, invisible, and the physics container — its
-         box is the whole column on a wide screen and a strip in the flow on a
-         narrow one, which is all in the stylesheet. See the long note there for
-         why the engine is not hosted on the column element itself. */
+      /* THE PILE'S BOX. Empty, invisible, no border and no background — the
+         slack between the last navigation link and the closing lines, which is
+         the region the bricks live in and the walls they cannot pass. It takes
+         the column's spare height (`flex: 1`), so the region follows the layout
+         at every width instead of being a number kept in step with one. */
       const air = el('div', { class: 'mast__air', 'aria-hidden': 'true' });
       mast.appendChild(air);
 
@@ -17537,7 +17613,22 @@
        the honest number is nothing: `want` is the depth the brick has pushed
        PAST the card's resting edge, the card moves exactly that far, and the
        two surfaces stay in contact for the whole of the shove. */
-    REACH: 0,         // the card moves when it is touched, and not before
+    /* --- AND IT IS BACK TO ZERO, BECAUSE THE REASON IT LEFT IS GONE -----
+
+       THIS WENT TO NINETY WHEN THE PILE WAS FENCED. A held brick was clamped
+       inside the navigation's own region, which stops about seventy pixels
+       short of the first card, so contact was impossible by construction and a
+       reach of zero meant the cards could never respond at all. Ninety was
+       that gap plus a little — a card answering a brick that was still short
+       of it, which is a card flinching at something across the room.
+
+       The fence is gone. The hand goes where the pointer goes, so the brick
+       can be brought right up against the card, and the honest number is the
+       one the note above this argued for in the first place: `want` is the
+       depth the brick has pushed PAST the card's resting edge, the card moves
+       exactly that far, and the two surfaces stay in contact for the whole of
+       the shove. */
+    REACH: 0,
     DECAY: 0.4,       // what a touching neighbour inherits
     K: 0.2,           // spring stiffness
     D: 0.7,           // damping
@@ -17713,6 +17804,19 @@
      nothing calls preventDefault, and no element is inserted over the type. */
   const Shove = {
     MAX: 14,          // px a word may be displaced — a stud and a bit
+    /* --- AND THIS IS BACK TO TWELVE FOR THE SAME REASON AS `Push.REACH`
+
+       IT WAS RAISED TO 26 WHILE THE PILE WAS FENCED. Confined to a band below
+       the whole navigation, a held brick could only ever approach a word from
+       underneath, at the very top of its region — and the vertical falloff is
+       measured centre to centre, so whether the word moved depended on whether
+       you happened to be holding a one-cell piece or a two-cell one. 26 made
+       it fire either way.
+
+       With the fence gone a brick can be carried directly over any word in the
+       column, so the margin can go back to what it was for: the last few
+       pixels before contact, so the word begins moving as the brick arrives
+       rather than after it has landed on top. */
     ZONE: 12,         // the invisible margin that starts the reaction
     K: 0.26,          // stiffness: quicker than the cards, these are lighter
     D: 0.62,          // damping: enough overshoot to read as elastic, once
@@ -19347,127 +19451,1459 @@
     },
   };
 
-  const Tray = {
+
+  /* ==================================================== 5e2. the pile =====
+
+     A HANDFUL OF BRICKS TIPPED INTO THE NAVIGATION COLUMN.
+
+     WHAT THIS IS NOT. It is not `Bricks` — the rigid-body engine behind the
+     play desk and the 404 room — pointed at a smaller box. That engine models
+     oriented bodies, contact torque, welding and structures, all of which are
+     right for a desk you go to in order to build on and all of which cost more
+     than a decoration in a sidebar can justify. `Bricks` is never initialised
+     here, never ticked here, and nothing in this module is reachable from it.
+     The play desk and the 404 room are untouched by every line below.
+
+     WHY THE BODIES ARE AXIS-ALIGNED AND THE TILT IS ONLY PAINT.
+
+     The brief for this pile is "real physics that settles flat": bricks should
+     fall, hit each other, push each other along and come to rest in a loose
+     heap — but a heap of LEGO, not a heap of jackstraws. Solving that with
+     oriented boxes means a full SAT contact solver, and a hastily built one is
+     exactly the list of failures nobody wants: pieces embedded in each other,
+     pieces tunnelling through each other at speed, corner contacts that jitter
+     forever, and stacks that explode when a body wakes inside another.
+
+     Axis-aligned boxes have none of those failure modes. Overlap is two
+     subtractions, the separating axis is whichever overlap is smaller, and a
+     stack of them is unconditionally stable. So the SIMULATION is AABB — which
+     is what makes it correct — and each brick additionally carries a small
+     visual angle that it picks up when it is thrown and sheds as it slows.
+     Moving pieces look tumbled; settled pieces sit flat, because by then the
+     angle has decayed to nothing. The reference does the same thing for the
+     same reason: not one brick in it is off-square.
+
+     AND IT STOPS. Every body sleeps once it has been slow for a third of a
+     second, and the loop cancels itself when they are all asleep. A settled
+     column costs one cancelled animation frame and nothing after it.
+     ======================================================================= */
+  const Pile = {
+    host: null,
+    U: 24,
+    W: 0,
+    H: 0,
+    bodies: [],
+    queue: [],
+    raf: 0,
+    held: null,
+
+    /* --- THE NUMBERS ----------------------------------------------------
+       Tuned against the region rather than chosen: `G` is in pixels per second
+       squared, so it reads as the same weight whatever the column measures.
+       `REST` is deliberately tiny — LEGO on a table does not bounce, it
+       clacks once and stops. `FRIC` is what stops a brick sliding for ever
+       along the one it landed on. `WAKE` is the speed under which a body is
+       considered to have stopped, and `NAP` how many frames it must hold that
+       before it is allowed to sleep: one frame of slowness is the top of an
+       arc, not a rest. */
+    /* --- AND THEY WERE ALL TOO BIG --------------------------------------
+
+       `G` WAS 2100, which is about two thirds of real gravity at this scale
+       and looked it: a piece crossed the region in a third of a second and the
+       eye read the arrival rather than the pile. Measured against the
+       reference, a brick there is never in the air for long and never appears
+       to be thrown — it is set down and it drops. 1250 is a fall you can
+       follow without it becoming an event.
+
+       `REST` WAS 0.14, which is a visible hop on landing. Halved, the piece
+       arrives and stays arrived. This is the one number where less is more
+       literally true: LEGO on a table does not bounce, it clacks once. */
+    G: 1700,
+    REST: 0.03,
+    FRIC: 0.78,
+    WAKE: 7,
+    NAP: 20,
+
+    /* --- WHY THE CORRECTION IS NEARLY FULL NOW --------------------------
+
+       THIS WAS 0.62, AND THE NOTE THAT JUSTIFIED IT BLAMED THE WRONG THING.
+       It said a full correction makes two bodies overshoot and shove back,
+       and that this is the hum a settled pile has. It is not. The hum came
+       from the impulse below, which was applied to every contact whether the
+       bodies were approaching or already parting — a resting brick was being
+       kicked off the one under it every frame and falling back onto it.
+
+       Fixing that leaves the position pass free to do its actual job, which
+       is to remove the overlap. At 0.62, over two passes, about a seventh of
+       every penetration survived the frame — and a body that then fell asleep
+       (see the sleep test, which used to ignore penetration entirely) froze
+       there, sunk into its neighbour. That is the overlap that was visible in
+       the pile, and it was permanent: two sleeping bodies were skipped by the
+       pass that would have separated them.
+
+       0.9 with a slop, iterated, is a rigid contact. It is also what makes
+       these read as plastic rather than as foam — a brick that gives by a
+       fifth of its height before it stops is a soft body, whatever it is
+       painted like. */
+    PUSH: 0.9,
+    /* penetration allowed to remain. Solvers need one: chasing zero makes
+       bodies twitch between two states that are both nearly right. Under half
+       a pixel is under a device pixel on every screen this runs on. */
+    SLOP: 0.4,
+    /* how many times the position pass may run before it gives up on this
+       frame. It breaks the moment the worst penetration is inside the slop,
+       so a settled pile pays for one. */
+    ITERS: 8,
+    /* how many times the VELOCITY pass runs. More than one because a stack is
+       a chain: the floor stops the bottom brick, the bottom brick stops the
+       one above it, and so on up. One sweep moves that news one link per
+       frame, so a five-deep column spends five frames collapsing into itself
+       before it learns it is standing on something. Four sweeps settle every
+       stack this region can hold inside the frame it forms. */
+    VITERS: 4,
+    /* nothing falls faster than this. A body that has been inside another for
+       a few frames can otherwise accumulate a speed that no correction looks
+       graceful undoing. */
+    VMAX: 1500,
+    /* --- AND BELOW THIS SPEED A CONTACT DOES NOT BOUNCE AT ALL ----------
+       The distinction every stacked-box solver needs: an impact bounces, a
+       body resting on another does not. Without it a pile is never at rest —
+       every brick is landing, very slightly, for ever. */
+    BMIN: 110,
+    /* --- HOW DEEP A BRICK MAY BE AND STILL BE ASLEEP -------------------
+
+       NOT `SLOP`, WHICH IS WHAT IT WAS AND WHICH NOTHING COULD EVER MEET. The
+       loop integrates before it solves, so a resting brick is given one frame
+       of gravity every frame and sinks by `G * dt^2` before anything pushes it
+       back out — about two pixels at the slowest frame rate this clamps to.
+       The pass then takes it back to `SLOP`, the frame ends somewhere between
+       the two, and a sleep test set at `SLOP` was a test that a settled pile
+       failed every time. Which meant nothing ever slept, and the whole column
+       re-solved itself sixty times a second for as long as the page was open.
+
+       Set above one frame of sinking and below anything that could be called
+       an overlap, it does the job it was added for — a brick a third of the
+       way inside another stays awake until it is out — and lets a pile that is
+       genuinely finished stop. */
+    NAPPEN: 2.4,
+
+    /* --- THE BRICK IN YOUR HAND IS HEAVY, NOT IMMOVABLE ------------------
+
+       IT USED TO BE IMMOVABLE, and that one decision produced both of the
+       things that looked wrong. A body the solver is forbidden to move cannot
+       be pushed out of anything, so when the hand drove it into a brick that
+       was itself wedged against the floor and a wall, neither of them could
+       give and the two simply occupied the same space — which is why SOME
+       bricks overlapped and others did not, and why it looked arbitrary. It
+       was not arbitrary: it was whichever brick happened to have nowhere left
+       to go. And because every contact handed the whole correction to the
+       other body, a brick carried across the pile did not move through it so
+       much as fire it out of the way.
+
+       Heavy instead of fixed fixes both. Five to one, the hand still wins
+       almost every contact — you can shove a path through the pile, which is
+       the interaction as it was asked for — but it is a ratio rather than an
+       exemption, so the held brick yields the last sixth and the overlap has
+       somewhere to resolve into. Against something genuinely immovable, a
+       brick standing on the floor-supported stack, it stops. Which is what
+       should happen when you push a brick into a brick. */
+    HOLDM: 5,
+    /* --- THE HAND HAS NO SPEED LIMIT, AND THIS ONE WAS THE LAG ----------
+
+       IT WAS 1100 PIXELS A SECOND, put there so a flick would not arrive as a
+       projectile. That was the wrong tool for that job and it had an obvious
+       cost I did not check for: an ordinary drag crosses this column far
+       faster than 1100, so on every ordinary drag the brick could not keep up
+       with the pointer. It trailed behind the cursor and then caught up when
+       the hand stopped — which is exactly "there is some lag, sometimes it
+       jumps".
+
+       Nothing is lost by removing it, because the cap was never what kept the
+       gesture civil. `NUDGE` limits what a moving brick can hand to the ones
+       it hits, so it still cannot fling the pile; the retreat below means it
+       cannot pass through anything however fast it is moving; and the release
+       clamps limit the throw. Those three are the actual constraints. This one
+       only ever slowed the piece down relative to the hand holding it.
+
+       The number that remains is a numerical guard rail, not a feel control —
+       far above anything a wrist produces, and there so a pathological `dt`
+       cannot produce a velocity that overflows the solver's arithmetic. */
+    HANDV: 12000,
+    /* and the most speed a shoved brick may take from the hand. The hand can
+       push a brick; it cannot throw one. Without this a fast drag hands over
+       its full speed and the pile scatters, which is the "pushing is a bit too
+       much" of it. */
+    NUDGE: 260,
+    /* how hard the pile pulls a brick that was let go outside it. The hand may
+       take a piece anywhere on the page; the pile is still where pieces live,
+       so one released over the work travels back rather than coming to rest on
+       top of a project. A spring rather than a snap, because a brick that
+       teleports home is a brick that was never really out. */
+    HOME: 13,
+
+    /* --- THE PALETTE IS THE SITE'S, NOT A SAMPLED ONE -------------------
+
+       THIS WAS THREE COLOURS PICKED OFF A RECORDING — a warm vermilion, a
+       butter yellow and a sky blue — and that was the mistake. The bricks on
+       the play desk and in the 404 room are painted from `TONE`, so sampling a
+       fourth red meant the same object was two different reds depending on
+       which page you were on. Three of `TONE` is the same restraint without
+       the second palette: red, blue and yellow, which is what a handful of
+       this toy looks like anyway. */
+    COLS: [TONE[0], TONE[1], TONE[2]],
+
+    /* --- AND THE SHAPES ARE THE SITE'S PIECES ---------------------------
+
+       Named out of `PIECE` rather than written here as raw cell counts, so
+       these are literally the same bricks the rest of the site is built from
+       and `Bricks.art` can draw them without being told anything.
+
+       RECTANGLES ONLY. The solver underneath is axis-aligned boxes, so an L or
+       a T would collide as the rectangle that contains it and leave a visible
+       gap no one could push a brick into. The bag is weighted the way a real
+       handful is: mostly short bars, a couple of two-deep pieces. */
+    BAG: ['small', 'small', 'p13', 'p13', 'p14', 'p14', 'conn', 'sq2', 'br24'],
+
     init(host) {
-      const c = S.tray;
-      if (!host || !c) return;
-      /* THE HOST IS THE PLAYGROUND LAYER, which is `inset: 0` of the sidebar —
-         so the physics rectangle and the visible column ARE the same rectangle,
-         by construction rather than by two numbers being kept in step, and the
-         boundary follows the layout at every width. */
-      if (this.went) return;
+      if (!host || this.host) return;
       this.host = host;
-      host.classList.add('canvas--tray');
+      host.classList.add('pile');
+      this.ready();
+    },
 
-      const narrow = innerWidth <= 700;
+    /* --- MEASURE A BOX THAT HAS STOPPED CHANGING SIZE --------------------
 
-      /* AND THE THROW WAITS FOR THE ENTRANCE TO GET OFF THE PAGE.
+       THE FLOOR IS THIS BOX'S BOTTOM EDGE, so measuring it one frame early
+       puts the floor below the region and the bottom course of the pile is
+       then sliced off by the clip — which is exactly what happened, and it
+       looked like a rendering bug rather than a timing one. The region is the
+       column's leftover height, so it has no final size until the navigation,
+       the buttons and the closing lines above and below it have all been laid
+       out and the webfont has landed.
 
-         On a cold load a charcoal sheet covers everything for about a second
-         and a half. `Bricks.init` lays out and immediately throws — `Boot.hold`
-         exists precisely so the hero's fall happened BEHIND that sheet, which
-         was right when the fall filled the window and is wrong for eight bricks
-         in a box nobody has seen yet. Filmed: the first frame the visitor saw
-         was the pile already at rest.
-
-         So the whole of init is held, not just the fall: nothing is built in
-         the box until there is somebody to watch it arrive. `landed` is the
-         class the entrance adds as it finishes leaving; a warm load never adds
-         `waking` at all, so the plain case starts immediately. The timeout is
-         the same four second failsafe the inline script in the head gives
-         itself — if the entrance never reports in, the bricks come anyway. */
-      const body = document.body;
-      const go = () => {
-        if (this.went) return;
-        /* --- AND THE COLUMN DOES NOT TAKE THE WORLD BACK BY SURPRISE -------
-
-           THIS IS THE RACE THAT PUT TWO WORLDS ON THE PAGE AT ONCE. This
-           function is deferred — it waits for the entrance sheet to leave, up
-           to four seconds — and a visitor can be on the play desk long before
-           it fires. It used to run anyway: `Bricks.init` re-hosted the module
-           onto the sidebar's box while the desk was holding it, so the desk's
-           twenty-two pieces and a fresh sixteen ended up in one `recs` with two
-           different origins, and the fall never finished because half its
-           bodies were being measured against the wrong rectangle.
-
-           `went` is deliberately NOT set here. This is a decline, not a
-           completion: the column still wants its bricks, it simply cannot have
-           the module right now, and `Stage.hand` asks again the moment the
-           visitor comes back to a section the column belongs to. */
-        if (Store.lego.live && Store.lego.live !== 'tray') return;
-        this.went = true;
-
-        /* WHAT THE DRAG FENCES AGAINST. `Drag.edge` measures `Canvas.host`, and
-           on this page nothing has called `Canvas.setSurface` — there is no
-           drawing here and no notes to place, so the surface machinery is not
-           wanted. This is the one field of it that is, assigned directly:
-           without it `edge` finds no host, sets no bounds, and a brick can be
-           dragged across the project grid and off the page. */
-        Canvas.host = host;
-
-        /* DROPPED, NOT THROWN, AND SIXTEEN OF THEM — both stated on this line
-           rather than at the top of `init`, because both are inputs to
-           `Bricks.init` and this is the frame it runs in. Set any earlier and
-           the desk, which sets the same two fields for its own surface, can
-           overwrite them in between: that is how the column once received
-           twenty-two pieces thrown in from the right. */
-        Bricks.entry = null;
-        /* ROLLED, NOT AUTHORED. `scatter` is what the 404 room uses: what and
-           roughly where, generated fresh, so the pile is different every
-           visit. An authored arrangement would be a composition, and a
-           composition is the thing the isometric version was — it is not what a
-           handful of bricks tipped onto a desk looks like. */
-        Bricks.defs = Bricks.scatter(narrow ? (c.mobilePieces || 9) : (c.pieces || 16));
-
-        Bricks.init(host);
-        /* AND THE COLUMN OWNS THE BRICKS FROM HERE — which box they are in, so
-           the world can be put back into the same rectangle after a trip to
-           the desk. See `Stage.hand`. */
-        Stage.claim('tray', host);
-        /* The work is measured once the bricks exist and never again until a
-           gesture asks for it. */
-        Push.arm(host);
-        /* the words' own springs, armed the same way and for the same reason:
-           the geometry is read on the first gesture, not now. */
-        Shove.arm(host);
-
-        /* AND THEN, OCCASIONALLY, ONE MORE.
-
-           `drip` is the 404 room's trickle and it is the right shape for this
-           exactly as it is: one piece, every so often, thrown in on top of the
-           pile that is already there — same region, same floor, same contact
-           torque, so a late brick bounces off what it lands on rather than
-           appearing. What makes it subtle rather than weather is the two
-           numbers. Every nine to twenty-two seconds, one at a time: long
-           enough that you have stopped watching the box before the next one
-           arrives, which is what makes it read as accidental instead of as a
-           feature demonstrating itself.
-
-           `max` matters more than `every`. Left uncapped, a tab open for ten
-           minutes accumulates forty bricks and the quiet box in the corner has
-           become a heap — the exact thing the brief is against. Sixteen is
-           about twice the load, so the pile grows visibly over a long visit
-           and then stops.
-
-           It also declines to interrupt: `drip` returns early while a piece is
-           in somebody's hand, and while the tab is hidden. */
-        Bricks.drip(S.tray && S.tray.drip);
-      };
-      if (REDUCED || !body.classList.contains('waking') || body.classList.contains('landed')) {
-        go();
+       "Unchanged since the frame before" is the only reliable test for that:
+       a height can be plausible and still be about to change. `Bricks.init`
+       waits the same way, for the same reason, and the cap is there so an odd
+       viewport still gets its bricks rather than none. */
+    ready() {
+      const h = this.host.getBoundingClientRect().height;
+      const settled = this._lastH != null && Math.abs(h - this._lastH) < 0.5;
+      this._lastH = h;
+      this._tries = (this._tries || 0) + 1;
+      if ((!settled || h < 40) && this._tries < 90) {
+        requestAnimationFrame(() => { if (this.host) this.ready(); });
         return;
       }
-      const obs = new MutationObserver(() => {
-        if (body.classList.contains('landed')) { obs.disconnect(); clearTimeout(fail); go(); }
+      this.measure();
+      this.fill();
+      this.bind();
+      this._rz = () => {
+        clearTimeout(this._rzT);
+        this._rzT = setTimeout(() => this.reflow(), 240);
+      };
+      addEventListener('resize', this._rz, { passive: true });
+    },
+
+    measure() {
+      const r = this.host.getBoundingClientRect();
+      this.W = r.width;
+      this.H = r.height;
+      /* the stud is clamped for legibility — under about sixteen pixels the
+         stud, the inner shadow and the radius are a pixel each and the piece
+         reads as a coloured rectangle rather than as a brick */
+      this.U = Math.max(16, Math.min(28, Math.round(r.width / 10)));
+    },
+
+    /* a resize changes the floor and the walls under a settled pile. Rather
+       than re-solving it, every body is nudged back inside and woken: the pile
+       re-settles itself in a few hundred milliseconds, which is both simpler
+       and the physically honest answer to the box changing shape. */
+    reflow() {
+      if (!this.host) return;
+      const oldU = this.U;
+      this.measure();
+      const k = this.U / oldU;
+      this.bodies.forEach((b) => {
+        b.w *= k; b.h *= k;
+        b.x = Math.min(Math.max(b.x * k, 0), Math.max(0, this.W - b.w));
+        b.y = Math.min(b.y * k, this.H - b.h);
+        b.node.style.width = `${b.w}px`;
+        b.node.style.height = `${b.h}px`;
+        b.node.innerHTML = this.art(b.kind, b.col, this.U);
+        b.sleep = 0; b.asleep = false;
       });
-      obs.observe(body, { attributes: true, attributeFilter: ['class'] });
-      const fail = setTimeout(() => { obs.disconnect(); go(); }, 4000);
+      this.run();
+    },
+
+    /* --- WHAT ARRIVES, AND WHEN -----------------------------------------
+
+       ONE AT A TIME, WITH A GAP. The brief is that the pile assembles rather
+       than appears: a brick enters, falls, hits what is already there, shifts
+       it, and settles — and only then does the next one come. At 260–520ms
+       apart the whole handful is in within about five seconds, which is slow
+       enough to read as a sequence and quick enough that nobody waiting for
+       the page notices it happening.
+
+       COUNT IS BY AREA, not a constant. The column is a different rectangle on
+       a laptop, a tablet and a phone, and the right number of bricks is
+       whatever leaves the pile a couple of courses deep in the bottom third.
+       Capped at both ends so a very tall column is not a wall and a very short
+       one is not empty. */
+    fill() {
+      const area = (this.W * this.H) / (this.U * this.U);
+      /* --- AND THE COUNT CAME DOWN WHEN THE OVERLAP WENT AWAY -----------
+
+         0.075 WAS CALIBRATED AGAINST A PILE THAT WAS CHEATING. While bricks
+         could sink a third of their height into each other, twelve of them
+         occupied roughly the volume of eight, and the number was chosen by
+         looking at that. Solid contact gave every one of them its full size
+         back and the same twelve stood most of the way up the column — which
+         is not a decorative band at the foot of the navigation any more, it is
+         a wall beside it.
+
+         Set so the pile settles two or three courses deep and leaves the upper
+         two thirds of the region empty, which is what the brief asks for and
+         what keeps the navigation the thing you look at. */
+      const n = Math.max(3, Math.min(11, Math.round(area * 0.05)));
+      this.queue = [];
+      for (let i = 0; i < n; i += 1) this.queue.push(i);
+      /* --- AND EACH ONE ENTERS OVER A DIFFERENT PART OF THE FLOOR -------
+
+         THE X USED TO BE UNIFORM RANDOM ACROSS THE WHOLE WIDTH, which sounds
+         like spreading them out and is not. Four independent draws land two
+         of them on top of each other about as often as not, and on a phone —
+         where the band is a hundred and thirty pixels and a big brick is
+         fifty-six of them — two bricks sharing a column means a third one
+         arriving has nowhere to go but up and out of the region. That is a
+         brick over the navigation, which is the one thing the brief rules out
+         absolutely, and it happened on roughly one load in three.
+
+         A shuffled lane per piece is the same randomness with the clumping
+         taken out: every brick still lands somewhere unpredictable, and the
+         handful still covers the floor rather than stacking in one place.
+         Jittered within the lane so the result is a scatter and not a row of
+         evenly spaced pieces, which would be the other failure. */
+      /* --- AND THERE ARE HALF AS MANY LANES AS PIECES ------------------
+
+         ONE LANE EACH IS THE OTHER FAILURE, and it is the one the brief names.
+         Eight pieces in eight lanes across a column this narrow is a piece
+         every thirty-four pixels — less than the width of the smallest brick
+         in the bag — so every one of them lands beside its neighbour, nothing
+         is ever dropped onto anything, and the pile settles as two perfectly
+         flat courses spanning the region. Which is a wall. Which is Tetris,
+         and Tetris is the single thing the brief rules out by name.
+
+         Half as many lanes means pieces share: roughly two per lane, so most
+         of them land ON something rather than beside it, and because what they
+         land on is a different width every time the courses come out ragged.
+         That is the difference between a pile and masonry, and it is the same
+         one lane of jitter cannot buy on its own. */
+      const nl = Math.max(2, Math.round(n / 2));
+      const lanes = [];
+      for (let i = 0; i < n; i += 1) lanes.push(i % nl);
+      for (let i = lanes.length - 1; i > 0; i -= 1) {
+        const j = (Math.random() * (i + 1)) | 0;
+        const t = lanes[i]; lanes[i] = lanes[j]; lanes[j] = t;
+      }
+      this.lanes = lanes;
+      this.laneW = this.W / nl;
+      const next = () => {
+        if (!this.host || !this.queue.length) return;
+        this.queue.pop();
+        this.drop();
+        /* WIDENED WITH THE GRAVITY. A gentler fall takes about twice as long,
+           so the old spacing had three pieces in the air at once and the
+           sequence the brief asks for — one enters, lands, shifts what it hit,
+           and only then the next — collapsed back into a shower. */
+        this._t = setTimeout(next, 360 + Math.random() * 300);
+      };
+      this._t = setTimeout(next, 220);
+    },
+
+    /* --- ONE BRICK, FROM ABOVE ------------------------------------------
+       Randomised horizontally, in rotation and in sideways drift, but all
+       three constrained: the x is kept a brick's width clear of both walls so
+       nothing spawns already touching one, and the drift is small enough that
+       a piece cannot be thrown across the column. It enters ABOVE the region —
+       the layer's own clip is what hides it until it is inside. */
+    drop() {
+      const kind = this.BAG[(Math.random() * this.BAG.length) | 0];
+      const cells = PIECE[kind].cells;
+      const cw = Math.max(...cells.map((c) => c[0])) + 1;
+      const ch = Math.max(...cells.map((c) => c[1])) + 1;
+      const col = this.COLS[(Math.random() * this.COLS.length) | 0];
+      const w = cw * this.U;
+      const h = ch * this.U;
+      const lane = this.lanes && this.lanes.length ? this.lanes.pop() : null;
+      const x = lane == null
+        ? Math.random() * Math.max(1, this.W - w)
+        : Math.max(0, Math.min(this.W - w,
+          (lane + 0.5) * this.laneW - w / 2 + (Math.random() - 0.5) * this.laneW * 0.8));
+      const node = el('div', { class: 'pbrk', 'aria-hidden': 'true' });
+      node.style.width = `${w}px`;
+      node.style.height = `${h}px`;
+      node.innerHTML = this.art(kind, col, this.U);
+      this.host.appendChild(node);
+      const b = {
+        node, kind, cw, ch, col, w, h,
+        x, y: -h - Math.random() * this.U * 2,
+        /* --- HOW IT ARRIVES, WHICH IS QUIETLY ---------------------------
+
+           THESE WERE ALL ROUGHLY THREE TIMES BIGGER. A piece entered with up
+           to 30px/s of sideways drift, thirteen degrees of tilt and 45deg/s of
+           spin, and the result was a brick that tumbled in. Against the
+           reference — where a piece is carried, set down, and falls straight
+           with no rotation at all — that read as theatre.
+
+           The tilt is not zero, because zero is a grid: twelve rectangles that
+           all land square are courses of masonry, which is the one thing the
+           brief rules out by name. Four or five degrees is the difference
+           between a pile and a wall and is below the angle anyone reads as
+           movement. */
+        vx: (Math.random() - 0.5) * 22,
+        vy: 0,
+        /* the visual tilt, in degrees, and its rate. Both decay — see `step` */
+        a: (Math.random() - 0.5) * 9,
+        va: (Math.random() - 0.5) * 26,
+        sleep: 0, asleep: false,
+      };
+      node.__b = b;
+      this.bodies.push(b);
+      this.paint(b);
+      this.run();
+    },
+
+    /* --- THE BRICK IS DRAWN BY `Bricks.art`, NOT BY THIS MODULE ---------
+
+       THERE WERE TWO PAINTERS AND THAT WAS THE WHOLE PROBLEM. This module used
+       to carry its own: a flat face with square corners and large studs,
+       measured off a screen recording. It was faithful to that recording and
+       wrong for this site, because the bricks on the play desk and in the 404
+       room are drawn by `Bricks.art` — moulded corners, a lit top edge, a
+       shaded bottom lip, and a stud that reads as a cylinder rather than as a
+       disc. The same toy was two different toys one click apart.
+
+       So the second painter is gone rather than retuned. This is a two-line
+       delegation to the one the rest of the site already uses, which means the
+       landing pile inherits every future change to the brick for free and
+       there is no longer a version of the object that can drift.
+
+       WHAT THIS STILL OWNS is the id, because `Bricks.art` puts the blur it
+       uses for the stud shadows in a `<filter>` and two filters sharing an id
+       in one document are one filter. The counter is per module, and the `p`
+       prefix keeps it clear of the desk's own. */
+    art(kind, col, U) {
+      this.uid = (this.uid || 0) + 1;
+      return Bricks.art(kind, col, `p${this.uid}`, U);
+    },
+
+    paint(b) {
+      b.node.style.transform =
+        `translate3d(${b.x.toFixed(1)}px, ${b.y.toFixed(1)}px, 0) rotate(${b.a.toFixed(2)}deg)`;
+    },
+
+    /* --- THE LOOP, WHICH CANCELS ITSELF ---------------------------------
+       One frame handle for the whole module. `run` is idempotent, so every
+       event that could disturb the pile can call it without checking. */
+    run() {
+      if (this.raf) return;
+      let last = performance.now();
+      const tick = (now) => {
+        const dt = Math.min((now - last) / 1000, 1 / 30);
+        last = now;
+        const busy = this.step(dt);
+        if (busy) { this.raf = requestAnimationFrame(tick); } else { this.raf = 0; }
+      };
+      this.raf = requestAnimationFrame(tick);
+    },
+
+    step(dt) {
+      const bs = this.bodies;
+      let busy = false;
+
+      for (let i = 0; i < bs.length; i += 1) {
+        const b = bs[i];
+        if (b === this.held) {
+          b.asleep = false; busy = true;
+          /* --- A CARRIED BRICK COMES LEVEL ------------------------------
+
+             In the hand the angle was simply frozen at whatever the piece had
+             when it was grabbed, so a brick that had settled at five degrees
+             was carried across the column at five degrees. The reference never
+             does this: a held piece is square to the page, every time, which
+             is what makes it read as being HELD rather than dragged. It eases
+             rather than snapping, so the correction is something you notice
+             having happened and not something you watch happen. */
+          b.a *= Math.pow(0.02, dt);
+          b.va = 0;
+          /* --- AND IT IS DRIVEN TOWARD THE POINTER RATHER THAN PLACED ON IT
+
+             THE POINTER HANDLER USED TO ASSIGN `b.x` AND `b.y` DIRECTLY, which
+             is what made the held brick a thing the solver could not argue
+             with: by the time the contacts ran, the piece was already inside
+             whatever it had been driven into and the only question left was
+             which of the two would be ejected.
+
+             Now the pointer sets a TARGET and the body closes on it under its
+             own velocity, like everything else here. When nothing is in the
+             way it covers the gap within the frame, so it still tracks the
+             cursor exactly and the drag feels no different. When something IS
+             in the way, the contact solver gets a say, and a brick that cannot
+             move is a brick the held one stops against — trailing the pointer
+             until you steer around it, which is what pushing a real object
+             into another real object does. */
+          if (b.tx != null) {
+            const gx = (b.tx - b.x) / Math.max(dt, 1 / 240);
+            const gy = (b.ty - b.y) / Math.max(dt, 1 / 240);
+            const sp = Math.hypot(gx, gy);
+            const k = sp > this.HANDV ? this.HANDV / sp : 1;
+            b.vx = gx * k; b.vy = gy * k;
+          }
+          /* WHERE IT WAS BEFORE THE HAND MOVED IT. Last frame ended with the
+             piece clear of everything, so this position is known good — which
+             is what makes it the one thing worth retreating to. See the
+             ejection pass. */
+          b.sx = b.x; b.sy = b.y;
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+          continue;
+        }
+        if (b.asleep) continue;
+        b.vy += this.G * dt;
+        if (b.vy > this.VMAX) b.vy = this.VMAX;
+        if (b.loose) {
+          /* pulled toward the nearest point of the region it belongs in, and
+             released from that pull the instant it is inside one */
+          const hx = Math.max(0, Math.min(b.x, this.W - b.w));
+          b.vx += (hx - b.x) * this.HOME * dt;
+          if (b.vx > this.VMAX) b.vx = this.VMAX;
+          else if (b.vx < -this.VMAX) b.vx = -this.VMAX;
+          /* --- AND IT MUST BE ABLE TO ARRIVE -------------------------------
+
+             THE TEST USED TO BE EXACT, TO HALF A PIXEL, and a brick that came
+             to rest two pixels proud of the region never met it. Being loose
+             means the walls do not apply, so nothing was going to trim those
+             two pixels either; the spring had almost no gradient left to pull
+             with and the pile's own contacts held the piece where it was. It
+             stayed loose for ever: never asleep, the clip stuck open, and the
+             whole column re-solving itself sixty times a second for the rest
+             of the visit. Caught by a test that asked how long coming home
+             takes and got "never".
+
+             A pixel and a half of tolerance is inside what the walls would
+             trim anyway, and the deadline is the belt to that braces: however
+             odd the arrangement, a piece is done being outside a few seconds
+             after you let go of it. */
+          const near = b.x >= -1.5 && b.x + b.w <= this.W + 1.5 && b.y + b.h <= this.H + 1.5;
+          if (near || (b.looseAt && performance.now() - b.looseAt > 2600)) {
+            b.loose = false;
+            b.looseAt = 0;
+          }
+        }
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        /* the tilt sheds with the motion: a piece that is still moving keeps
+           whatever angle it picked up, and one that has slowed comes level.
+           This is the whole of "settles flat" — there is no snap and no
+           threshold, the angle simply has nowhere to go once the body stops. */
+        b.a += b.va * dt;
+        b.va *= Math.pow(0.02, dt);
+        b.a *= Math.pow(0.08, dt);
+
+      }
+
+      /* --- AND THEN THEY ARE SEPARATED ---------------------------------
+
+         ITERATED TO A TOLERANCE, LOWEST BODY FIRST, and both halves of that
+         matter more than the number of passes did.
+
+         LOWEST FIRST: a stack is solved from the ground up. Resolve the top
+         brick against the middle one before the middle one is itself resting
+         on anything and the correction is immediately undone — the support has
+         not propagated yet. Sorted by the bottom edge, one sweep does what
+         several unordered ones only approximate.
+
+         TO A TOLERANCE: the pass repeats until the worst penetration in the
+         whole pile is inside `SLOP`, and breaks the moment it is. A settled
+         pile costs one sweep; a brick dropped into a crowd costs a few on the
+         frame it lands and one thereafter.
+
+         THE IMPULSE IS ONCE PER CONTACT, ON THE FIRST PASS ONLY, AND ONLY IF
+         THE TWO ARE APPROACHING. This is the bug that made the pile hum and
+         made it look bouncy: `-rel * (1 + REST)` was applied every pass of
+         every frame regardless of sign, so two bodies already separating were
+         given more separation, and a brick at rest on another was kicked
+         upward every single frame and fell back. Gated on approach and on
+         `BMIN`, an impact still bounces — barely, at `REST` — and a brick
+         lying on a brick is simply lying on it. */
+      const held = this.held;
+      const ord = this._ord || (this._ord = []);
+      ord.length = 0;
+      for (let i = 0; i < bs.length; i += 1) { bs[i].pen = 0; ord.push(bs[i]); }
+      ord.sort((p, q) => (q.y + q.h) - (p.y + p.h));
+
+      /* --- WHICH WAY A CONTACT PUSHES, WHICH IS NOT THE SHALLOWEST AXIS ---
+
+         THIS IS THE BUG THAT MADE THE PILE OVERLAP AND NEVER STOP MOVING, and
+         it is worth writing down because the rule it replaces is the one every
+         tutorial gives: separate along whichever axis the overlap is smaller
+         on, because that is the shortest way out.
+
+         It is the shortest way out and it is wrong here. Take two bricks side
+         by side on the floor, each 27 tall, pushed 47px into each other
+         horizontally. Their vertical overlap is 27 — the whole of their height,
+         because they are at the same level — and 27 is less than 47. So the
+         shallowest-axis rule lifts one brick a full course into the air to get
+         it clear of the one BESIDE it. Gravity drops it straight back, the same
+         contact is found next frame, and the two of them sit there flickering
+         against each other for as long as the page is open. Everything resting
+         on them is kept awake by it, which is why the whole pile churned and
+         why a screenshot caught bricks a third of the way inside each other.
+
+         The honest question is not which overlap is smaller in pixels but which
+         is smaller AS A SHARE OF WHAT THE TWO BODIES MEASURE THERE. A full
+         27 of 27 is a complete overlap — these are level with each other and
+         the contact cannot be vertical. 47 of 54 is not complete, so the gap
+         they can be pushed apart into is sideways. Ties go to Y, because
+         stacking is what this pile mostly does and gravity is the axis that
+         has an opinion. */
+      const axisY = (a, c, ox, oy) =>
+        (oy / Math.min(a.h, c.h)) <= (ox / Math.min(a.w, c.w));
+
+      /* equal masses, so each takes half — unless the other is the one in the
+         hand, which is immovable and hands over the whole of it.
+
+         ONLY IF THEY ARE CLOSING. Applied to a pair already moving apart it
+         adds energy, and applied to a brick resting on a brick it lifts it,
+         every frame, for ever — which is the hum that reads as bounciness.
+         Below `BMIN` the restitution is dropped as well, so an impact gives
+         back three per cent and a resting contact gives back nothing. */
+      const knock = (a, c, k, dir, ia, ic, hand) => {
+        const sum = ia + ic;
+        if (sum <= 0) return;
+        const s2 = -dir;
+        const app = (c[k] - a[k]) * dir;
+        if (app <= 0) return;
+        const e = app > this.BMIN ? this.REST : 0;
+        const j = (app * (1 + e)) / sum;
+        let da = j * ia, dc = j * ic;
+        /* THE HAND PUSHES, IT DOES NOT THROW. Everything the held brick is in
+           contact with is moving at the speed of someone's wrist, and handed
+           over in full that is a brick launched across the column. Capped, a
+           fast drag still clears a path — the positional correction does that
+           and is not touched here — but what it clears gets nudged aside
+           rather than fired. */
+        if (hand) { if (da > this.NUDGE) da = this.NUDGE; if (dc > this.NUDGE) dc = this.NUDGE; }
+        a[k] -= da * s2; c[k] += dc * s2;
+      };
+
+      /* --- VELOCITIES FIRST, FROM THE GROUND UP ------------------------
+
+         The floor is re-applied at the top of every sweep so that it is an
+         anchor the chain can be solved against rather than something that
+         happens afterwards, and the bodies are visited lowest first so one
+         sweep carries the constraint as far up the stack as it goes. */
+      for (let pass = 0; pass < this.VITERS; pass += 1) {
+        for (let i = 0; i < ord.length; i += 1) {
+          const b = ord[i];
+          if (b === held) continue;
+          if (b.y + b.h >= this.H - 0.5 && b.vy > 0) {
+            b.vy = b.vy > this.BMIN ? -b.vy * this.REST : 0;
+          }
+        }
+        for (let i = 0; i < ord.length; i += 1) {
+          for (let j = i + 1; j < ord.length; j += 1) {
+            const a = ord[i], c = ord[j];
+            const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
+            if (ox <= 0) continue;
+            const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
+            if (oy <= 0) continue;
+            const hand = a === held || c === held;
+            const ia = a === held ? 1 / this.HOLDM : 1;
+            const ic = c === held ? 1 / this.HOLDM : 1;
+            if (axisY(a, c, ox, oy)) {
+              const dir = (a.y + a.h / 2) < (c.y + c.h / 2) ? -1 : 1;
+              knock(a, c, 'vy', dir, ia, ic, hand);
+              /* landing on something kills sideways drift and tilt, which is
+                 most of what "with weight" means: a brick that lands does not
+                 then skate. The held piece is exempt — its velocity is the
+                 hand's, and damping it just makes the drag feel sticky. */
+              if (pass === 0) {
+                if (a !== held) { a.vx *= this.FRIC; a.va *= 0.35; }
+                if (c !== held) { c.vx *= this.FRIC; c.va *= 0.35; }
+              }
+            } else {
+              const dir = (a.x + a.w / 2) < (c.x + c.w / 2) ? -1 : 1;
+              knock(a, c, 'vx', dir, ia, ic, hand);
+            }
+          }
+        }
+      }
+
+      /* --- AND ONE LAST SWEEP IN WHICH THE GROUND IS THE GROUND --------
+
+         WHY THE FOUR SWEEPS ABOVE ARE NOT ENOUGH, which is not obvious and
+         cost a rebuild to find. They treat every pair as two equal masses, so
+         a brick resting on a brick that is resting on the floor splits the
+         difference with it: the impulse gives each of them half the closing
+         speed, the floor takes the lower one back to zero at the top of the
+         next sweep, and the pair halves again. Four sweeps leave a sixteenth
+         of the speed, gravity puts a full frame of it back, and the stack
+         spends the whole session sinking a millimetre and being pushed out —
+         never fast enough to look like falling, never still enough to sleep.
+         That is the creep, and it is why nothing ever settled.
+
+         The fix is the one every stacking solver ends up with, under one name
+         or another: SHOCK PROPAGATION. Walk the pile from the floor up and,
+         at each contact, treat the body underneath as immovable — because by
+         the time the walk reaches it, it IS: it is either on the floor or on
+         something that has already been declared to be. The brick on top gets
+         the whole impulse instead of half, the chain is solved in one sweep
+         however deep it is, and a stack stops behaving like a spring.
+
+         This is also the entire difference between bricks that feel like
+         plastic and bricks that feel like beanbags. A body with weight resting
+         on a body with weight transmits the ground through itself. */
+      for (let i = 0; i < ord.length; i += 1) {
+        const b = ord[i];
+        b.rest = b !== held && (b.y + b.h >= this.H - 0.5);
+        if (b.rest && b.vy > 0) b.vy = 0;
+      }
+      for (let i = 0; i < ord.length; i += 1) {
+        for (let j = i + 1; j < ord.length; j += 1) {
+          const a = ord[i], c = ord[j];
+          const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
+          if (ox <= 0) continue;
+          const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
+          if (oy <= 0) continue;
+          if (!axisY(a, c, ox, oy)) continue;
+          const dir = (a.y + a.h / 2) < (c.y + c.h / 2) ? -1 : 1;
+          /* `ord` is sorted by bottom edge, which is not the same question as
+             which of the two is underneath — a tall brick can reach lower and
+             still be the one on top. The centres answer it. */
+          const under = dir === 1 ? a : c;
+          const over = dir === 1 ? c : a;
+          /* the hand is not the ground and does not inherit it: a brick
+             resting on a held piece is resting on something that is about to
+             move, so it must not be declared settled. */
+          if (over === held || under === held) continue;
+          const aInf = a === under && under.rest;
+          const cInf = c === under && under.rest;
+          if (aInf && cInf) continue;
+          knock(a, c, 'vy', dir, aInf ? 0 : 1, cInf ? 0 : 1, false);
+          if (under.rest) over.rest = true;
+        }
+      }
+
+      /* --- AND THEN THE PENETRATION IS TAKEN OUT -----------------------
+
+         Iterated until the worst overlap in the pile is inside `SLOP`, and it
+         breaks the moment it is: a settled pile pays for one sweep. Nothing
+         is painted until `step` ends, so however many sweeps a landing costs,
+         what reaches the screen is a brick that was never overlapping. */
+      for (let pass = 0; pass < this.ITERS; pass += 1) {
+        let worst = 0;
+        /* --- THE WALLS ARE PART OF THE SOLVE, NOT SOMETHING AFTER IT ----
+
+           THE SECOND HALF OF THE SAME BUG THE AXIS RULE WAS THE FIRST HALF OF,
+           and it survived the first fix, which is what makes it worth the
+           words. With the floor applied only once the sweeps had finished, a
+           brick resting ON the floor with another sunk into it was free, for
+           the length of the solve, to answer that contact by moving DOWNWARD
+           THROUGH the floor — which is the cheapest answer available and the
+           one a solver with no floor in it will always find. The sweeps then
+           reported the pile resolved, the bounds pass lifted that brick back
+           where it belonged, and the overlap it had just been pushed out of
+           came straight back. Every frame. Roughly eight pixels of it, which
+           is a third of a brick and plainly visible.
+
+           Re-applied at the top of every sweep, the floor is a body that
+           cannot move, so the correction has nowhere to go but up into the
+           brick that is actually free to move. Which is what a floor is.
+
+           THE HELD BRICK IS CLAMPED HERE TOO NOW. It used to be skipped,
+           because the pointer handler owned its position outright; it owns a
+           target instead, so the piece is an ordinary body and the walls are
+           the walls. */
+        for (let i = 0; i < ord.length; i += 1) {
+          const b = ord[i];
+          if (b === held || b.loose) continue;
+          if (b.y + b.h > this.H) b.y = this.H - b.h;
+          if (b.x < 0) b.x = 0;
+          if (b.x + b.w > this.W) b.x = this.W - b.w;
+          /* THE FLOOR AND THE SIDES, AND DELIBERATELY NOT THE TOP. A piece
+             enters ABOVE the region and falls in — that is the whole of the
+             arrival — so a ceiling here does not contain anything, it deletes
+             the entrance. The first version of this pass had one, and every
+             brick appeared fully formed on the region's top edge instead of
+             dropping into it. Nothing needs a ceiling: the only thing that
+             can push a body upward is a contact, the clip hides the sliver of
+             one that is pushed proud of the top, and gravity has it back
+             within a frame or two. */
+        }
+        for (let i = 0; i < ord.length; i += 1) {
+          for (let j = i + 1; j < ord.length; j += 1) {
+            const a = ord[i], c = ord[j];
+            const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
+            if (ox <= 0) continue;
+            const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
+            if (oy <= 0) continue;
+            const useY = axisY(a, c, ox, oy);
+            const dep = useY ? oy : ox;
+            if (dep > worst) worst = dep;
+            if (dep > a.pen) a.pen = dep;
+            if (dep > c.pen) c.pen = dep;
+            /* --- AN OVERLAP WAKES BOTH, WHATEVER THEY WERE DOING ---------
+
+               THE PASS USED TO SKIP TWO SLEEPING BODIES ENTIRELY. Read
+               alongside a sleep test that did not look at penetration, that is
+               a trap with no way out: two bricks that fell asleep inside each
+               other were then never considered again, and the overlap was in
+               the page for as long as the visitor was. */
+            if (a !== held) a.asleep = false;
+            if (c !== held) c.asleep = false;
+            if (dep <= this.SLOP) continue;
+            busy = true;
+            /* HOW THE CORRECTION IS SPLIT: by inverse mass, so the lighter of
+               the two does the more of the moving. Two ordinary bricks take
+               half each; the one in the hand takes a sixth of it and the brick
+               it is pushing takes the rest. */
+            const ma = a === held ? this.HOLDM : 1;
+            const mc = c === held ? this.HOLDM : 1;
+            const out = (dep - this.SLOP) * this.PUSH;
+            if (useY) {
+              const dir = (a.y + a.h / 2) < (c.y + c.h / 2) ? -1 : 1;
+              /* --- AND THE ONE UNDERNEATH DOES NOT GIVE GROUND -----------
+
+                 The same rule the shock sweep above establishes, applied to
+                 position rather than to speed: a brick the walk has already
+                 declared settled is standing on the floor, directly or through
+                 others, so the way out of an overlap with it is entirely
+                 upward. Sharing the correction with it instead pushes it down
+                 through its own support, which the next sweep's clamp undoes,
+                 which is half of the overlap that was visible in the pile.
+
+                 THIS IS ALSO WHAT STOPS THE HAND. A held brick driven down
+                 into the settled pile meets a body with no give at all, so the
+                 whole correction comes back into the held one and it rides up
+                 over the pile instead of through it. */
+              const under = dir === 1 ? a : c;
+              const lo = under.rest && under !== held;
+              let ia = (a === under && lo) ? 0 : 1 / ma;
+              let ic = (c === under && lo) ? 0 : 1 / mc;
+              /* --- AND A BRICK WITH A WALL BEHIND IT CANNOT GIVE ---------
+
+                 THE THIRD TIME THIS EXACT LESSON HAS COME UP HERE, so it is
+                 worth stating as the rule it is: a constraint the solver
+                 cannot see is a constraint the solver will violate and the
+                 frame will undo.
+
+                 `a` moves one way on this contact and `c` the other. If the
+                 one being asked to move is already flat against the surface it
+                 is being pushed toward, it has no room, and giving it five
+                 sixths of the correction means five sixths of the correction
+                 is thrown away — the clamp at the top of the next sweep puts
+                 it straight back. That is what was left of the overlap while
+                 dragging: the hand drove a brick into one that was wedged, the
+                 wedged one absorbed most of the correction on paper and none
+                 of it in fact, and the two stayed inside each other for as
+                 long as you pushed.
+
+                 Zeroed, the whole correction goes to the body that can
+                 actually move — which against a wedged brick is the held one,
+                 so it stops dead instead of sinking in. Which is what pushing
+                 a brick into a brick that is against a wall does. */
+              const aWall = dir > 0
+                ? a.y + a.h >= this.H - 0.5
+                : !!a.entered && a.y <= 0.5;
+              const cWall = dir > 0
+                ? !!c.entered && c.y <= 0.5
+                : c.y + c.h >= this.H - 0.5;
+              /* --- UNLESS NEITHER OF THEM HAS ANYWHERE TO GO ---------------
+
+                 Blocking is only worth doing when it redirects the correction
+                 to somebody who can take it. Zeroing BOTH sides — which is
+                 what happens to a pair wedged between the floor and the top of
+                 a full region — resolves nothing and leaves the overlap in the
+                 page, which is precisely the failure this rule exists to fix,
+                 arrived at from the other side. Caught once in testing as
+                 twenty-two pixels that survived the release.
+
+                 So the redirect applies only if something is left to move.
+                 With both walled the ordinary mass split stands: it wastes
+                 part of the correction against the clamp, but the pile shifts
+                 over the next few frames and it comes out. */
+              if (aWall !== cWall) { if (aWall) ia = 0; else ic = 0; }
+              /* --- AND IF NEITHER CAN MOVE, GO THE OTHER WAY --------------
+
+                 A pair with the floor under one of them and the top of the
+                 region over the other has no vertical room at all, and the
+                 ordinary split then spends the whole correction against the
+                 clamp — nothing moves, and the overlap is still there next
+                 frame and the frame after that. Caught in testing as ten to
+                 twenty pixels that survived a release by three seconds.
+
+                 Sideways is the way out of that. It is the longer way — this
+                 is why the axis is normally chosen the way it is — but a
+                 longer way out is a way out, and the alternative is a pair of
+                 bricks that stay inside each other for good. */
+              if (ia + ic <= 0 || (aWall && cWall)) {
+                const xd = (a.x + a.w / 2) < (c.x + c.w / 2) ? -1 : 1;
+                const room = (ox - this.SLOP) * this.PUSH * 0.5;
+                if (room > 0) { a.x += room * xd; c.x -= room * xd; }
+                continue;
+              }
+              const sum = ia + ic;
+              if (sum <= 0) continue;
+              a.y += out * (ia / sum) * dir;
+              c.y -= out * (ic / sum) * dir;
+            } else {
+              const dir = (a.x + a.w / 2) < (c.x + c.w / 2) ? -1 : 1;
+              let ia = 1 / ma, ic = 1 / mc;
+              /* the side walls, by the same rule as the floor above, and with
+                 the same exception when neither of them can move */
+              const aWall = dir > 0 ? a.x + a.w >= this.W - 0.5 : a.x <= 0.5;
+              const cWall = dir > 0 ? c.x <= 0.5 : c.x + c.w >= this.W - 0.5;
+              if (aWall !== cWall) { if (aWall) ia = 0; else ic = 0; }
+              const sum = ia + ic;
+              if (sum <= 0) continue;
+              a.x += out * (ia / sum) * dir;
+              c.x -= out * (ic / sum) * dir;
+            }
+          }
+        }
+        if (worst <= this.SLOP) break;
+      }
+
+      /* --- IS ANYTHING ACTUALLY STILL OVERLAPPING? ----------------------
+
+         MEASURED AFTER THE LAST CORRECTION, NOT BEFORE IT. `worst` inside the
+         loop is read at the TOP of each sweep, so on the final pass it
+         describes the pile as it was before that pass fixed it. Used as the
+         trigger for the spill below, it fired on almost every frame of a
+         settling pile — bricks were lifted onto each other for overlaps that
+         had already been solved, the lift woke everything up, and the pile
+         never came to rest at all. Two of eight asleep after fourteen seconds,
+         where it had been eight of eight.
+
+         One measuring sweep, no corrections, and the threshold is `NAPPEN`
+         rather than `SLOP`: the question this asks is not "is there anything
+         left" but "is there a real overlap here", and a fraction of a pixel of
+         solver residue is not one. */
+      let stuck = 0;
+      for (let i = 0; i < ord.length; i += 1) {
+        for (let j = i + 1; j < ord.length; j += 1) {
+          const a = ord[i], c = ord[j];
+          const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
+          if (ox <= 0) continue;
+          const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
+          if (oy <= 0) continue;
+          const dep = axisY(a, c, ox, oy) ? oy : ox;
+          if (dep > stuck) stuck = dep;
+        }
+      }
+
+      /* --- AND WHEN A ROW SIMPLY WILL NOT FIT, SOMETHING RIDES UP --------
+
+         THE ONE HONEST DEAD END IN AN AXIS-ALIGNED SOLVER, and it took a dump
+         of a jammed pile to see that it was not a bug. Five bricks came to
+         rest along the floor measuring two hundred and ninety-seven pixels
+         across a region two hundred and seventy-four wide. Every pair between
+         them was correctly identified as a sideways contact — their vertical
+         overlap is complete, they are level with each other — and every pair
+         was correctly pushed sideways, into the next brick, into the wall.
+         There was no arrangement of that row that worked, and the sweeps spent
+         themselves proving it eight times a frame.
+
+         A real handful of bricks resolves this by one of them riding up onto
+         the others, and nothing above can produce that: the axis rule exists
+         precisely to stop level bricks being resolved vertically, which is the
+         right call everywhere except here. So it is a separate rule, with a
+         condition that says so — only once the sweeps have given up, only on
+         pairs still genuinely overlapping.
+
+         Placed exactly on top rather than nudged, so one pass ends it and the
+         piece does not spend the next second grinding its way out. Which is
+         also what it looks like when a row of bricks is one brick too long:
+         the last one ends up on the pile rather than in the row. */
+      if (stuck > this.NAPPEN) {
+        for (let i = 0; i < ord.length; i += 1) {
+          for (let j = i + 1; j < ord.length; j += 1) {
+            const a = ord[i], c = ord[j];
+            if (a === held || c === held) continue;
+            const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
+            if (ox <= this.SLOP) continue;
+            const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
+            if (oy <= this.SLOP) continue;
+            /* the upper of the two rides; ties go to the smaller piece, which
+               is the one a pile would actually shed */
+            const ac = a.y + a.h / 2, cc = c.y + c.h / 2;
+            const up = ac !== cc
+              ? (ac < cc ? a : c)
+              : (a.w * a.h <= c.w * c.h ? a : c);
+            const on = up === a ? c : a;
+            const y = on.y - up.h;
+            if (up.entered && y < 0) continue;
+            up.y = y; up.vy = 0; up.sleep = 0; up.asleep = false;
+            on.sleep = 0; on.asleep = false;
+          }
+        }
+      }
+
+      /* --- AND THE HELD BRICK IS PUT BACK OUTSIDE, WHATEVER HAPPENED ----
+
+         THE SOLVER PUSHES; THIS GUARANTEES. The two are different jobs and
+         trying to get one of them to do both is what made the drag look
+         broken. The sweeps above share every correction by mass, which is what
+         lets a carried brick shove a path through the pile — and sharing means
+         the held piece only ever takes a fraction of each frame's correction
+         back out of whatever the hand drove it into. Drive it at a brick that
+         is wedged and the fractions never catch up: you get a piece sitting a
+         third of the way inside another for as long as you lean on it, which
+         is what was on the screen.
+
+         So after the sharing is done, the held piece alone is moved clear of
+         anything it is still inside. Nothing else is touched — whatever the
+         pile was pushed to stays pushed — and because this is the last thing
+         to run before the walls, what gets painted is a held brick that is
+         beside what it is pushing rather than in it. The gesture keeps its
+         force and loses its only visible lie.
+
+         Along the shallower axis, because by this point the remaining depth is
+         small and the shortest way out is the one that does not look like a
+         jump. */
+      /* --- AND THE WALLS ARE THE LAST WORD -------------------------------
+
+         BOUNDS AFTER CONTACTS, NOT BEFORE, and this order is the whole of why
+         the pile stayed inside its box. Clamped during integration, a body was
+         put on the floor and then the separation pass — which runs after it —
+         shoved it back down through the floor to get it out of its neighbour.
+         Next frame would have corrected that, except that a body which has
+         stopped moving goes to sleep and is skipped by the integration loop
+         entirely: it slept where it had been pushed, below the floor, and the
+         clip cut it in half against the closing lines.
+
+         So the walls are applied here, to every body including the sleeping
+         ones and including the one in the hand, after everything that could
+         have moved anything has finished moving it. Nothing can be left
+         outside the region by anything, because this is the last thing that
+         touches a position. It is also the only guarantee the brief's "never
+         escape" needs — the clip is then belt and braces rather than the
+         mechanism. */
+      for (let i = 0; i < bs.length; i += 1) {
+        const b = bs[i];
+        /* --- EXCEPT THE ONE IN YOUR HAND, AND THE ONE ON ITS WAY BACK -----
+
+           These are the two states in which a brick is legitimately outside
+           the region, and the walls have nothing to say about either. See
+           `loose` in the release handler. */
+        if (b === this.held || b.loose) continue;
+        /* the same resting rule the contacts use: a brick that lands hard
+           gives back three per cent of it, and one that is merely sitting on
+           the floor is sitting on the floor. */
+        if (b.y + b.h > this.H) {
+          b.y = this.H - b.h;
+          if (b.vy > 0) {
+            b.vy = b.vy > this.BMIN ? -b.vy * this.REST : 0;
+            b.vx *= this.FRIC; b.va *= 0.4;
+          }
+        }
+        /* --- AND IT MAY NOT LEAVE BY THE TOP EITHER, ONCE IT IS IN ------
+
+           There was no ceiling here at all, for the good reason that a piece
+           enters from above and one would have deleted the entrance. But that
+           left the top as the one edge of the region with no guarantee behind
+           it, and a crowded short band on a phone found it: a brick squeezed
+           up out of the pile came to rest ABOVE the region, over the links,
+           and went to sleep there.
+
+           `entered` is the distinction the missing ceiling was reaching for.
+           A piece is falling in until the first moment it is fully inside the
+           region; from then on it is a piece IN the region and the top is a
+           wall like the other three. Nothing about the arrival changes, and
+           there is no longer an edge a brick can be pushed through. */
+        if (!b.entered && b.y >= 0) b.entered = true;
+        if (b.entered && b.y < 0) { b.y = 0; if (b.vy < 0) b.vy = 0; }
+        if (b.x < 0) { b.x = 0; if (b.vx < 0) b.vx = b.vx < -this.BMIN ? -b.vx * this.REST : 0; }
+        if (b.x + b.w > this.W) {
+          b.x = this.W - b.w;
+          if (b.vx > 0) b.vx = b.vx > this.BMIN ? -b.vx * this.REST : 0;
+        }
+      }
+
+      /* --- AND LAST OF ALL, THE HELD PIECE IS PUT SOMEWHERE LEGAL -------
+
+         AFTER THE WALLS, NOT BEFORE THEM. It ran before, and the walls pass
+         then clamped the piece straight back into whatever it had just been
+         moved clear of — the fourth time in this module that a guarantee was
+         placed somewhere a later pass could overrule it. Nothing touches a
+         position after this point, so this is the only place the guarantee can
+         actually be made. */
+      if (held) {
+        const hits = () => {
+          for (let i = 0; i < bs.length; i += 1) {
+            const o = bs[i];
+            if (o === held) continue;
+            if (Math.min(held.x + held.w, o.x + o.w) - Math.max(held.x, o.x) <= this.SLOP) continue;
+            if (Math.min(held.y + held.h, o.y + o.h) - Math.max(held.y, o.y) <= this.SLOP) continue;
+            return true;
+          }
+          return false;
+        };
+        if (hits() && held.sx != null) {
+          /* --- IT GOES AS FAR ALONG THE WAY YOU PUSHED IT AS IT CAN ------
+
+             AN EARLIER VERSION OF THIS GUESSED: it took each overlap in turn
+             and moved the piece out along whichever of the four sides was
+             cheapest and still inside the region. That works until getting
+             clear of one brick puts it inside the next, and in a crowded
+             corner no side is cheap for all of them at once. Measured on an
+             ordinary drag it left a visible overlap in about a quarter of the
+             frames.
+
+             There is usually no need to guess. The position the piece held at
+             the top of this frame was clear of everything, so somewhere on the
+             line between there and where the hand has driven it lies the last
+             clear point, and eight halvings find it to within a fifth of a
+             pixel.
+
+             THIS RUNS AFTER THE SOLVER, WHICH IS THE POINT. Anything that
+             could be shoved aside already has been, so most frames have
+             nothing to retreat from and this costs one test. The retreat
+             happens only against what genuinely would not move, and then it is
+             not a correction — it is the piece stopping where a real brick
+             would have stopped. */
+          const tx = held.x, ty = held.y;
+          let lo = 0, hi = 1;
+          for (let k = 0; k < 8; k += 1) {
+            const mid = (lo + hi) / 2;
+            held.x = held.sx + (tx - held.sx) * mid;
+            held.y = held.sy + (ty - held.sy) * mid;
+            if (hits()) hi = mid; else lo = mid;
+          }
+          held.x = held.sx + (tx - held.sx) * lo;
+          held.y = held.sy + (ty - held.sy) * lo;
+          /* it keeps only the speed it was allowed to use, so letting go while
+             pressed into a wall of bricks drops the piece rather than flicking
+             it */
+          held.vx *= lo; held.vy *= lo;
+        }
+        /* --- AND IF EVEN STANDING STILL OVERLAPS, STEP ASIDE -------------
+
+           The retreat needs one clear end to the line, and once in a long
+           while it does not have one: the pile can be pushed INTO where the
+           piece was standing while the piece is being driven somewhere else,
+           and then every point on the line is occupied, `lo` stays at zero and
+           the piece is left where it started — still inside something, and
+           still inside it next frame, because next frame starts from here.
+
+           So the guess is kept, as the fallback it should always have been.
+           All four ways out are costed, the ones leaving the region are struck
+           off, and the cheapest survivor wins. Cornered with no legal escape
+           it does nothing, which is the honest answer: there is nowhere to go,
+           and inventing somewhere puts the piece through a wall instead of
+           through a brick. */
+        for (let pass = 0; pass < 6 && hits(); pass += 1) {
+          for (let i = 0; i < bs.length; i += 1) {
+            const o = bs[i];
+            if (o === held) continue;
+            const ox = Math.min(held.x + held.w, o.x + o.w) - Math.max(held.x, o.x);
+            if (ox <= this.SLOP) continue;
+            const oy = Math.min(held.y + held.h, o.y + o.h) - Math.max(held.y, o.y);
+            if (oy <= this.SLOP) continue;
+            /* --- AND THE WAY OUT IS THE WAY IT CAME IN, NOT ANY WAY -----
+
+               THIS OFFERED ALL FOUR SIDES AND TOOK THE CHEAPEST LEGAL ONE,
+               which is wrong in a way that is easy to miss: two of those four
+               go DEEPER. Moving up by the height of the overlap separates two
+               boxes only when the one being moved is the upper one. When it is
+               the lower one, the same move drives it further in — and since
+               `up` was tested first and ties went to it, a brick pushed at
+               something from below was reliably pushed further into it.
+
+               Traced frame by frame it showed as a sixteen-frame episode with
+               a full cell of overlap: the piece was carried up against a brick
+               that was itself pinned to the top of the region, the retreat had
+               no clear end of its line left to aim at, and the escape then
+               made it worse every pass. Which is why it lasted sixteen frames
+               instead of one.
+
+               The side is not a choice. Of the two axes there is exactly one
+               direction each that separates, and which one it is falls out of
+               where the two centres sit. The cheaper of those two wins.
+
+               AND THE REGION IS NOT CONSULTED. It was, and that was left over
+               from when a held brick had to stay inside the band. It can go
+               anywhere now, so a test that struck off the escapes leading out
+               of the region could only ever reject good answers — and when it
+               rejected both, the piece stayed exactly where it was, inside. */
+            const dy = (held.y + held.h / 2) < (o.y + o.h / 2) ? -oy : oy;
+            const dx = (held.x + held.w / 2) < (o.x + o.w / 2) ? -ox : ox;
+            if (oy <= ox) held.y += dy; else held.x += dx;
+          }
+        }
+      }
+
+      /* --- SLEEP ---------------------------------------------------------
+         Slow for `NAP` consecutive frames and touching the floor or something
+         that is itself asleep. The second half matters: a body resting on one
+         that is still being pushed is not at rest, it is about to move. */
+      for (let i = 0; i < bs.length; i += 1) {
+        const b = bs[i];
+        if (b === this.held) continue;
+        /* --- AND IT MAY NOT SLEEP INSIDE ANOTHER BRICK ------------------
+
+           `b.pen` IS THE DEEPEST OVERLAP THE POSITION PASS FOUND FOR THIS BODY
+           THIS FRAME, and the test above used to be velocity alone. That is
+           how a brick came to rest a third of the way into its neighbour and
+           stayed there: slow is not the same as resolved, and sleep is what
+           made the difference permanent. A body still inside something keeps
+           its sleep counter at zero until the pass has pushed it out. */
+        const slow = !b.loose
+          && Math.abs(b.vx) < this.WAKE && Math.abs(b.vy) < this.WAKE
+          && Math.abs(b.va) < 6 && (b.pen || 0) <= this.NAPPEN;
+        if (slow) {
+          b.sleep += 1;
+          if (b.sleep > this.NAP) {
+            if (!b.asleep) { b.a = 0; b.va = 0; b.vx = 0; b.vy = 0; this.paint(b); }
+            b.asleep = true;
+          }
+        } else { b.sleep = 0; b.asleep = false; }
+        if (!b.asleep) { busy = true; this.paint(b); }
+      }
+      if (this.held) this.paint(this.held);
+      /* --- AND THE CLIP COMES OFF WHILE ANYTHING IS OUTSIDE --------------
+
+         The region clips its children, which is what keeps a brick entering
+         from above hidden until it is inside. It would also have hidden the
+         piece in your hand the moment you carried it out — the wall would have
+         been gone and the brick would simply have vanished at the same line,
+         which is worse than the wall.
+
+         So the clip is a state rather than a constant: off while a piece is
+         held or on its way back, on the rest of the time, which is almost all
+         of the time. */
+      const out = !!this.held || this.bodies.some((b) => b.loose);
+      if (out !== this._out) {
+        this._out = out;
+        this.host.classList.toggle('is-out', out);
+      }
+      return busy || this.queue.length > 0;
+    },
+
+    /* --- THE HAND -------------------------------------------------------
+
+       ONE DELEGATED LISTENER, captured on the column so a gesture that leaves
+       the region still ends here. A held brick is kinematic: it goes exactly
+       where the pointer puts it and is never pushed back by what it meets,
+       which is what lets you shove a path through the pile. Released, it is
+       simply handed back to gravity carrying the speed your hand had — no
+       snap, no target, no predetermined coordinate. */
+    bind() {
+      const host = this.host;
+      host.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || this.held) return;
+        const n = e.target && e.target.closest ? e.target.closest('.pbrk') : null;
+        if (!n || !n.__b) return;
+        e.preventDefault();
+        const b = n.__b;
+        const r = host.getBoundingClientRect();
+        this.held = b;
+        b.asleep = false;
+        b.grab = { x: e.clientX - r.left - b.x, y: e.clientY - r.top - b.y };
+        b.px = b.x; b.py = b.y;
+        b.tx = b.x; b.ty = b.y;
+        b.vx = 0; b.vy = 0;
+        b.node.classList.add('is-hold');
+        /* --- AND THE CURSOR STAYS A CLOSED HAND FOR THE WHOLE GESTURE -----
+
+           `.pbrk:hover` gives the open hand and `.pbrk.is-hold` the closed one,
+           and the second of those was almost never seen. The gesture is
+           pointer-captured on the column so that a drag which leaves the
+           region still ends properly — but capture does not change what the
+           cursor is drawn from, which is still whatever is under the pointer.
+           Move faster than the brick, or over a gap in the pile, and the
+           pointer is over the column rather than over the piece: open hand, or
+           the plain arrow.
+
+           A class on `body` for the duration is how the sticker tool already
+           solves this, so this is that pattern rather than a second one. */
+        document.body.classList.add('pile-hold');
+        host.appendChild(b.node);
+        try { host.setPointerCapture(e.pointerId); } catch (err) { /* older */ }
+        this.publish();
+        this.run();
+      });
+      host.addEventListener('pointermove', (e) => {
+        const b = this.held;
+        if (!b) return;
+        const r = host.getBoundingClientRect();
+        /* --- WHERE THE HAND WANTS IT, NOT WHERE IT IS -------------------
+
+           THIS USED TO SET `b.x` AND `b.y`, and that is what made the held
+           brick something the solver could not argue with — by the time the
+           contacts ran, the piece was already inside whatever the hand had
+           driven it into, and the only question left was which of the two
+           would be ejected. Bricks that had room were fired out of the way;
+           bricks wedged against the floor and a wall had nowhere to go and
+           were simply overlapped. Same gesture, two different outcomes, which
+           is exactly how it looked.
+
+           The target is the honest thing to record here. `step` closes the
+           body on it under its own velocity and the contact solver gets a say
+           on the way, so the piece tracks the pointer exactly while it is
+           free and stops against whatever will not move.
+
+           AND IT IS NOT CLAMPED TO THE REGION ANY MORE.
+
+           IT WAS, AND THAT WAS THE WALL YOU COULD FEEL. The reasoning at the
+           time ran: bricks must never come to rest over the navigation or the
+           work, the region is where they live, so the hand may not take one
+           out of it. The first half of that is right and the second does not
+           follow. Clamping the HAND to the region does not stop a brick
+           resting somewhere it should not — the fall and the walls already do
+           that — it stops you carrying one anywhere, and carrying one is the
+           whole interaction.
+
+           What it actually cost: the two reactions this pile exists to drive.
+           A project card springs away from a brick it is touching and a
+           navigation word slides out from under one — and the region stops
+           about seventy pixels short of the first card and entirely below the
+           last word, so neither could ever be reached. Both had to be given
+           artificial reach to fire at all, which is a workaround for a wall
+           that should not have been there.
+
+           The hand goes where the pointer goes. Where a brick may come to REST
+           is a separate question, answered on release. */
+        b.tx = e.clientX - r.left - b.grab.x;
+        b.ty = e.clientY - r.top - b.grab.y;
+        this.run();
+        /* --- AND THE PAGE IS WOKEN ON EVERY MOVE, NOT JUST ON THE GRAB ----
+
+           `Shove` and `Push` each run their own spring loop and each loop
+           cancels itself the moment nothing is travelling. Woken only when the
+           brick was picked up, they solved one frame, found the word and the
+           card already at rest, and stopped — so carrying a brick across the
+           column afterwards moved nothing at all. They have to be told that
+           the thing they are tracking has moved, every time it moves, which is
+           what the old engine did from its own `move`. */
+        Shove.wake();
+        Push.wake();
+      });
+      const end = () => {
+        const b = this.held;
+        if (!b) return;
+        this.held = null;
+        b.node.classList.remove('is-hold');
+        document.body.classList.remove('pile-hold');
+        b.tx = null; b.ty = null;
+        /* a small tilt taken from how fast it was moving sideways, so a piece
+           flicked across the column tumbles a little on the way down and a
+           piece set down gently does not */
+        /* THESE CLAMPS WERE 900 AND THE SPIN WAS HALF THE HAND'S SPEED, so a
+           quick flick sent a brick across the region at nearly a thousand
+           pixels a second, rotating. It was the most dramatic thing on the
+           page and it was reachable by accident. At a third of that a throw is
+           still a throw — the piece leaves your hand, travels, and lands
+           somewhere you did not place it — and it stays inside the register
+           the rest of the column is working in. */
+        b.va = Math.max(-60, Math.min(60, b.vx * 0.14));
+        b.vx = Math.max(-420, Math.min(420, b.vx));
+        b.vy = Math.max(-420, Math.min(420, b.vy));
+        b.sleep = 0;
+        /* --- LET GO OUTSIDE THE REGION, IT MAKES ITS OWN WAY BACK --------
+
+           The hand is free to go anywhere now, which leaves the question the
+           clamp used to answer by force: what happens when you let go over the
+           project cards. Not "it stays there" — the pile is a band at the foot
+           of the navigation and a brick resting on a case study is the thing
+           the brief rules out. Not "it snaps back" either, which reads as the
+           page confiscating it.
+
+           `loose` is the third answer: the walls stop applying to this piece,
+           gravity keeps acting on it, and a spring draws it horizontally
+           toward the region. It arcs back and drops into the pile, and the
+           moment it is inside, it is an ordinary brick again and the walls
+           resume. */
+        b.loose = b.x < 0 || b.x + b.w > this.W || b.y + b.h > this.H;
+        b.looseAt = b.loose ? performance.now() : 0;
+        /* everything it was resting against is now unsupported */
+        this.bodies.forEach((o) => { o.asleep = false; o.sleep = 0; });
+        this.publish();
+        this.run();
+        Shove.wake();
+        Push.wake();
+      };
+      /* --- AND THE RELEASE IS HEARD WHEREVER IT HAPPENS -----------------
+
+         THESE TWO ALONE MEANT A BRICK COULD STAY STUCK TO THE CURSOR. The
+         gesture is captured on the column, which is what keeps `pointermove`
+         coming while the pointer is somewhere else on the page — but capture
+         is not a guarantee that the matching `pointerup` will ever be
+         delivered to that element. Let go outside the window, switch app or
+         desktop mid-drag, have the browser take the pointer back for a scroll
+         or a gesture, and the up event goes somewhere this listener is not.
+         The piece then stays held with nothing holding it: it follows the
+         cursor around the page afterwards, which is what "it stays holded but
+         its not the case" describes exactly.
+
+         So the same handler is also on the window, where a stray release does
+         land, and on `blur`, which is the one signal that arrives when the
+         page stops being the thing the pointer belongs to at all. `end`
+         returns immediately when nothing is held, so hearing the release three
+         times costs nothing. */
+      host.addEventListener('pointerup', end);
+      host.addEventListener('pointercancel', end);
+      host.addEventListener('lostpointercapture', end);
+      this._end = end;
+      addEventListener('pointerup', end);
+      addEventListener('pointercancel', end);
+      addEventListener('blur', end);
+    },
+
+    /* --- WHAT THE REST OF THE PAGE IS TOLD ------------------------------
+
+       `Shove` (the navigation word that slides out of a brick's way) and
+       `Push` (the project card that springs away from one) both ask
+       `Bricks.heldSet` what is in the hand and read `it.node` off each entry.
+       Publishing here is the whole of the integration: both interactions
+       survive the engine underneath them being replaced, and neither module
+       learns anything about it.
+
+       `Bricks` IS NOT RUNNING ON THIS PAGE, so this field is nobody else's
+       while the landing page is live, and it is emptied on release and on
+       teardown so a trip to the play desk finds it as the desk expects. */
+    publish() {
+      Bricks.heldSet = this.held ? [{ it: { node: this.held.node } }] : null;
+      if (this.held) { Shove.wake(); Push.wake(); }
+    },
+
+    teardown() {
+      if (!this.host) return;
+      clearTimeout(this._t);
+      clearTimeout(this._rzT);
+      removeEventListener('resize', this._rz);
+      if (this._end) {
+        removeEventListener('pointerup', this._end);
+        removeEventListener('pointercancel', this._end);
+        removeEventListener('blur', this._end);
+        this._end = null;
+      }
+      if (this.raf) cancelAnimationFrame(this.raf);
+      this.raf = 0;
+      Bricks.heldSet = null;
+      document.body.classList.remove('pile-hold');
+      this._out = false;
+      this.bodies.forEach((b) => b.node.remove());
+      this.bodies = [];
+      this.queue = [];
+      this.held = null;
+      this.host.classList.remove('pile');
+      this.host = null;
     },
   };
 
-  /* ==================================================== 5f. the store =====
-
-     ONE ENVIRONMENT, NOT SIX PAGES.
+  /* ==================================================== 5f. the store =====     ONE ENVIRONMENT, NOT SIX PAGES.
 
      WHAT THIS REPLACED, AND WHY IT HAD TO GO. Work, About and Play were three
      documents. Clicking between them was a real navigation: the browser threw
@@ -19571,7 +21007,12 @@
        sidebar's box is part of that shell, so moving between them hands
        nothing over and touches nothing. That is why those two are seamless
        rather than merely fast. */
-    OWNER: { home: 'tray', about: 'tray', play: 'desk' },
+    /* --- AND ONLY THE PLAY DESK IS LEFT ---------------------------------
+       Work and About used to want the sidebar's brick box. There is no brick
+       box in the sidebar any more — see `Rail.build` — so those two sections
+       own no world at all, which is why `hand` now parks the desk on the way
+       out of Play and has nothing to claim on the way in anywhere else. */
+    OWNER: { play: 'desk' },
 
     wrap: null,     /* the persistent `.home` — the two-column shell */
     stack: null,    /* the persistent second column, which the views sit in */
@@ -19675,7 +21116,6 @@
           L.worlds[L.live] = parked;
         } else {
           L.worlds[L.live] = null;
-          if (L.live === 'tray') Tray.went = false;
         }
         L.live = null;
       }
@@ -19690,7 +21130,6 @@
            the entrance and can have declined the module because the desk was
            holding it (see `Tray.init`). So it is asked again here, which is the
            only place that knows the module is now free. */
-        if (want === 'tray' && Rail.trayEl) Tray.init(Rail.trayEl);
         return;
       }
       if (!Bricks.unpark(host, world)) return;
@@ -19703,7 +21142,6 @@
          cannot come in sideways because the desk was live an hour ago. */
       Bricks.entry = want === 'desk' ? 'toss' : null;
       /* and the column's own trickle starts again with its world */
-      if (want === 'tray') Bricks.drip(S.tray && S.tray.drip);
       /* THE PEN GOES BACK IN THE HAND ON THE WAY IN. Which tool was armed is
          a thing the visitor chose, so it belongs to them and survives the trip
          — the toolbar itself does not own it, `Store.play` does. */
@@ -19725,8 +21163,13 @@
     /* IS THIS DOCUMENT THE SHELL AT ALL. `Shell.page` is `data-page` off the
        body, so it is `project` on a case study, `notfound` on the 404, and one
        of the three section names on the shell. */
-    mine() {
-      return Object.keys(this.PAGES).some((k) => this.PAGES[k] === Shell.page);
+    mine() { return this.has(Shell.page); },
+
+    /* and the same question about any section name, which is what `go` needs
+       before it will move: one table, asked two ways, so the two answers
+       cannot drift apart */
+    has(page) {
+      return Object.keys(this.PAGES).some((k) => this.PAGES[k] === page);
     },
 
     init() {
@@ -19822,7 +21265,20 @@
        stops paying attention to the outgoing content well before it is gone.
        Reduced motion gets the cut without either fade. */
     go(page, push, restore) {
-      if (!Stage.OWNER[page]) return;
+      /* --- IS THIS ONE OF MY SECTIONS, ASKED OF THE RIGHT TABLE ----------
+
+         THIS READ `Stage.OWNER`, WHICH IS A DIFFERENT QUESTION. That table
+         says which BRICK WORLD a section wants, and it happened to list all
+         three sections for as long as two of them wanted the sidebar's
+         playground. The moment the playground was removed and Work and About
+         stopped owning a world, this guard started rejecting them: clicking
+         Work from Play returned at the first line and the section never
+         changed, with nothing thrown and nothing logged.
+
+         The router's own table is `PAGES`, and `has` asks it the same way
+         `mine` does. A section's physics is not a fact about whether you can
+         navigate to it. */
+      if (!this.has(page)) return;
       /* The listeners above are the only callers and they are not bound off
          the shell, so this cannot be reached there today. It is stated anyway,
          because the cost of being wrong about that is a case study rewriting
@@ -19923,12 +21379,6 @@
       Store.nav.route = page;
 
       /* --- and the four things that measure the page ---------------------- */
-      /* `Push` and `Shove` hold node lists: the project cards for one and the
-         rail's links for the other. The cards belong to a view, so the list
-         has to be taken again for the view that is now on screen — an old list
-         is not a crash, it is a spring pulling on a card that is no longer
-         displayed. */
-      if (Rail.trayEl) { Push.arm(Rail.trayEl); Shove.arm(Rail.trayEl); }
       /* the layout grid is drawn from the page's own edges, and the page just
          changed shape. `schedule`, not `init` — one is a redraw and the other
          would bind a second resize listener. */
@@ -20028,15 +21478,21 @@
           `<a href="${url(more.href)}">${esc(more.label)} <span aria-hidden="true">→</span></a>`));
       }
 
-      /* AND THE TRAY LAST, because the brick engine sizes a stud off the box
-         and the box is whatever height the rail has left once everything above
-         it has been laid out. One frame, so that layout has happened.
+      /* --- AND THE PILE LAST ---------------------------------------------
 
-         ONLY EVER FROM A FIRST BUILD. `Tray.init` throws sixteen pieces into
-         the column; every visit to this section after the first reaches it
-         through `Stage.hand`, which puts the world back exactly as it was
-         instead. */
-      if (Rail.trayEl) requestAnimationFrame(() => Tray.init(Rail.trayEl));
+         One frame, so the column has been laid out and its box is the box the
+         bricks will actually live in — the region is the navigation's slack,
+         so it has no height until everything above it does. `Pile.init` is
+         idempotent: every later visit to this section reaches it again through
+         `Stage`'s view swap and it returns on its first line, which is what
+         keeps the pile exactly as the visitor left it. */
+      if (Rail.trayEl) {
+        requestAnimationFrame(() => {
+          Pile.init(Rail.trayEl);
+          Push.arm(Rail.trayEl);
+          Shove.arm(Rail.trayEl);
+        });
+      }
 
       /* AND NO FOOTER. `index.html` no longer has the `#foot` element, so
          `Shell.foot()` finds nothing and returns — the closing lines are the
@@ -20402,10 +21858,6 @@
 
       page.append(side, body);
 
-      /* AND THE TRAY LAST, for the reason the home page gives: the brick
-         engine sizes a stud off the box, and the box is whatever height the
-         rail has left once everything above it has been laid out. */
-      if (Rail.trayEl) requestAnimationFrame(() => Tray.init(Rail.trayEl));
     },
 
     /* THE WAYS TO REACH ME, resolved from the data the rest of the site

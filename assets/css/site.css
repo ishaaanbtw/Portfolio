@@ -940,105 +940,152 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
   pointer-events: auto;
 }
 
-/* THE PLAYGROUND LAYER — the physics container, and the only element in the
-   page that is one.
+/* --- THE PILE'S REGION -------------------------------------------------
 
-   IT IS A REAL BOX AND NOT THE SIDEBAR ITSELF, for one reason: below 60rem the
-   sidebar becomes `display: contents` so its children can be reordered around
-   the work, and an element with `display: contents` generates no box at all.
-   Hosting the physics on it there gave the engine a zero-sized region, sixteen
-   bricks positioned against the wrong ancestor, and a navigation with bricks
-   painted over it — measured: 7 of 9 links unreachable at 768, 2 of 9 at 390.
+   NO BORDER, NO BOX, NO CARD, NO BACKGROUND. The region is the column's own
+   slack — the space between the last navigation link and the closing lines —
+   and it is styled by nothing at all. What a reader sees is paper with bricks
+   lying on it; the walls the bricks cannot pass are numbers in script, and the
+   floor is the bottom of this box.
 
-   So the layer is its own element, and its BOX is what changes with the
-   layout: stretched over the whole column here, a strip in the flow when the
-   page is stacked. One host at every width, so nothing has to be re-hosted on
-   a resize, and the engine only ever sees a rectangle.
+   `flex: 1 1 auto` IS THE WHOLE BOUNDARY. The region takes whatever height the
+   column has left, so it follows the layout at every width rather than being a
+   figure kept in step with one — and because it ends where `.mast__foot`
+   begins, a brick can no more reach the closing lines than it can reach the
+   navigation above it.
 
-   IT IS THE SPACE BETWEEN THE TYPE, NOT THE WHOLE COLUMN.
-
-   It was `inset: 0` of the sidebar — the physics rectangle and the visible
-   column were the same rectangle — and that one decision is what every
-   complaint about this playground came out of. The navigation, the buttons and
-   the statement were INSIDE the box, so they had to be declared to the solver
-   as obstacles, and `trayClear` had to resolve two conflicting constraints
-   every time a piece was released: get off the words, and get off the other
-   bricks. It says out loud that it settles that conflict in the words' favour
-   and accepts "a little brick overlap" as the price. That price is the
-   overlapping pieces; the pieces resting beside the navigation are the same
-   cause seen from the other end.
-
-   So the box is the space that is actually free. `.mast` is already a flex
-   column of three things — the type block, this, and the closing lines — and
-   this one takes the slack: `flex: 1` between two auto-height siblings is the
-   region below the last link and above the first closing line, at every width,
-   with no number written down anywhere and nothing to keep in step on a
-   resize. The type is not in the box, so it is not an obstacle, so there is no
-   conflict left to resolve.
-
-   `position: relative` because the bricks are absolutely positioned and this
-   is their containing block — it was the abspos layer before and it has to go
-   on being a containing block now that it is in the flow.
-
-   AND THE TOP EDGE OPENS BY EXACTLY AS FAR AS THE SCENE REACHES.
-
-   It was `inset(0 ...)` — a hard cut on the top edge — and that one number is
-   what made the pieces look emitted. The fall was kept short so it would
-   happen behind this cut, so the first thing anybody saw of a brick was it
-   emerging from a line halfway down the column, a few pixels above the pile.
-   There was never an emitter; the clip was drawing one.
-
-   `--air-sky` is the distance from the top of the WINDOW to the top of this
-   box, written by `Bricks.sky()` because that is the one place that knows it.
-   Opening the top by that much means the visible scene starts at the top of
-   the viewport: a piece enters off the top of the screen, crosses the
-   navigation, and arrives in the box. Above the window `.sheet`'s own clip
-   takes over, so nothing is ever painted off the page — and the default of 0
-   keeps the old hard cut for the stacked layout, where the space above this
-   strip belongs to the work rather than to the sky.
-
-   The other three sides are unchanged and still open by half a viewport, which
-   is what lets a held piece reach out to the right and touch the work.
-   `overflow: clip` would have done the top and taken the reach with it.
-
-   `pointer-events: none` and NOT because the layer is decorative. The bricks
-   inside it set `auto` on their own painted cells (see `.brk__hit`), so a press
-   on a brick reaches the brick and a press on the empty column between two
-   bricks reaches the page. Without this the layer would be a 300 by 900 sheet
-   of glass over the whole sidebar. */
+   `pointer-events: none` on the box and `auto` on each brick, so the empty
+   column is not a sheet of glass over the page: a press between two bricks
+   goes through to whatever is under it. */
 .mast__air {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  z-index: 0;
   pointer-events: none;
-  clip-path: inset(calc(-1 * var(--air-sky, 0px)) -50vw -50vw -50vw);
+}
+/* --- THE REGION CLIPS ITS CHILDREN, EXCEPT WHEN IT MUST NOT -------------
+
+   The clip is what hides a brick entering from above until it is inside the
+   band. It would also hide the piece in your hand the moment you carried it
+   out of the band — and since the hand is free to go anywhere on the page now,
+   that would mean the brick disappearing at exactly the line where it used to
+   stop. A wall you cannot see is worse than a wall you can.
+
+   `is-out` is set by `Pile` for as long as a piece is held or on its way back,
+   and cleared the rest of the time, which is almost all of the time. */
+.pile { overflow: hidden; }
+.pile.is-out { overflow: visible; }
+
+/* AND IT STAYS BEHIND THE WORK, WHICH IS THE WHOLE POINT OF THE PUSH.
+
+   IT WAS LIFTED ABOVE THE PAGE FOR ONE ROUND AND THAT WAS THE WRONG CALL. The
+   reasoning was that a brick in your hand should not be hidden by the page —
+   which sounds right and produces the opposite of what the interaction is for.
+   A card that springs away from a brick is the evidence that the brick touched
+   it, and a brick painted on top of the card covers up the very movement it
+   just caused. You see a brick sitting on a case study instead of a case study
+   getting out of the way.
+
+   Left where it belongs in the paint order, the piece goes behind the work and
+   the card's own movement is what you see — it slides aside and the brick
+   appears in the gap it leaves. Nothing has to be lifted for that, which is
+   why there is no z-index here at all: `.mast` is `position: sticky` and the
+   cards live in a later subtree of the sheet, so the cards are already in
+   front. The fix is the absence of the rule.
+
+   The clip above still has to come off — that is what stops the brick
+   vanishing at the band's edge, which is a different problem and a real one.
+
+   AND THE NAVIGATION IS THE EXCEPTION, which is worth writing down because the
+   obvious move is to treat it the same way. It was tried: one line puts the
+   region behind the column's own words too. It looks wrong, and the reason is
+   instructive. A card is a large opaque object, so a brick in front of it
+   hides the card's movement and the push stops reading. A link is a few thin
+   glyphs on no background, so a brick behind it does not hide anything — it
+   renders the word ON the brick, and a word printed on a brick is the one
+   thing that cannot then look like a word getting out of a brick's way.
+
+   Above the words and behind the work, therefore. The two look like opposite
+   answers and are the same one: whichever order lets you see the reaction. */
+
+.pbrk {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: auto;
+  cursor: grab;
+  will-change: transform;
+  /* CONTACT, NOT ELEVATION. A brick lying on paper is touching it, so the
+     shadow is a hairline directly under the piece and nothing more. The
+     reference has almost none; this is the least that still separates a
+     yellow brick from a warm page. */
+  filter: drop-shadow(0 1px 1px rgba(20, 16, 12, 0.14));
+  transition: filter 160ms var(--ease);
+}
+/* THE ART IS `Bricks.art`'S SVG, so it needs the two rules that painter's
+   output always needs and nothing else: the global reset caps every svg at
+   100% of its box and these are sized in absolute pixels off the lattice, so
+   they must not be scaled to fit. Every OTHER `.brk__art` rule in this file is
+   scoped under `.brk` — the hover lift, the drag shadow, the target glow — and
+   none of them reach a `.pbrk`, which is what keeps the landing pile's much
+   quieter shadow (above) the only one it wears. */
+.pbrk .brk__art {
+  display: block;
+  max-width: none;
 }
 
-/* AND IT COMES FORWARD WHILE SOMETHING IS ACTUALLY MOVING.
+/* --- AND THE CURSOR IS A CLOSED HAND FOR THE WHOLE GESTURE ---------------
 
-   `.mast__keep` sits at `z-index: 5` and the bricks at 4, which is the right
-   RESTING order and the wrong one for a piece in transit: a brick falling
-   through the navigation, or held over it, was painted behind the words. The
-   pile lives below the navigation, so raising the whole layer costs nothing at
-   rest — there is nothing up there to obscure — and for the length of a fall
-   or a drag the moving piece is in front of the type it is pushing aside,
-   which is the way round the interaction has to read.
+   `.pbrk:hover` gives the open hand and `.pbrk.is-hold` the closed one, and
+   the second of those was almost never actually seen. The gesture is
+   pointer-captured on the column so that a drag which leaves the region still
+   ends properly, but capture does not change what the cursor is drawn from —
+   that is still whatever sits under the pointer. Move faster than the brick,
+   or across a gap in the pile, and the pointer is over the column rather than
+   over the piece, so you get the open hand back, or the plain arrow.
 
-   `:has()` rather than a class, because the two states are already on the
-   bricks: `is-auto` is what `rain` puts on a piece in flight and takes off
-   when it lands, `is-hold`/`is-drag` are what the gesture puts on the piece in
-   your hand. Nothing to set, nothing to clear, and no counter to get wrong
-   when a late arrival lands while you are holding something else. */
-.mast__air:has(.brk.is-auto),
-.mast__air:has(.brk.is-hold),
-.mast__air:has(.brk.is-drag) { z-index: 6; }
+   Holding it on `body` for the duration is what the sticker tool on the play
+   desk already does, so this is that pattern rather than a second one. The
+   element selector is enough to beat the `cursor` on any single element it
+   passes over — including the links, which are `pointer` — without reaching
+   for `!important`. */
+body.pile-hold,
+body.pile-hold * { cursor: grabbing; }
 
-/* The closing lines took the column's slack with an auto margin; the
-   playground takes it now, and two things claiming the same free space is one
-   of them getting none of it. */
-.mast .mast__air ~ .mast__foot { margin-top: 0; }
+/* IN THE HAND. Off the surface, so it gets a real shadow and goes over
+   everything else in the column. No scale: the piece is the same object, and
+   growing it is the tell that a drag is being simulated rather than felt. */
+.pbrk.is-hold {
+  cursor: grabbing;
+  z-index: 4;
+  filter:
+    drop-shadow(0 2px 2px rgba(20, 16, 12, 0.14))
+    drop-shadow(0 9px 14px rgba(20, 16, 12, 0.20));
+}
+:root.is-dark .pbrk { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45)); }
+:root.is-dark .pbrk.is-hold {
+  filter:
+    drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 9px 14px rgba(0, 0, 0, 0.45));
+}
 
+/* a visitor who asked for less motion gets the pile, not the fall: `Pile`
+   reads this and places its pieces at rest instead of dropping them. */
+@media (prefers-reduced-motion: reduce) {
+  .pbrk { transition: none; }
+}
+
+/* THE PILE IS A BAND HERE. In one column the sidebar's children are grid items
+   in the page's own flow, so the container has no slack to take — the region
+   has to be given a height of its own, and that height is the playground. */
+@media (max-width: 62rem) {
+  .mast__air {
+    order: 5;
+    grid-column: 1 / -1;
+    height: clamp(8rem, 26vw, 11rem);
+    margin: 0 0 clamp(1.25rem, 3vh, 2rem);
+  }
+}
 
 .mast__say { margin: 0 0 0.75rem; }
 
@@ -1545,22 +1592,6 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
      at 22px in a 708px column, which is dense and level, and it wraps on its
      own by about 420px. */
 
-  /* THE PLAYGROUND IS A STRIP HERE. In one column the sidebar's children are
-     grid items in the page's own flow, so the container is no longer a tall
-     column with slack in it — the spacer has to be given a height, and that
-     height is the playground. Tall enough that a two or three brick structure
-     fits inside it at any angle: the fence gives up on an axis a structure
-     cannot fit on, so "fits" is a correctness property here and not a look. */
-  .mast__air {
-    /* back into the flow, and given a height of its own — this is the same
-       host, just a different rectangle */
-    position: relative;
-    inset: auto;
-    order: 5;
-    grid-column: 1 / -1;
-    height: clamp(9rem, 22vw, 12rem);
-    margin: 0 0 clamp(1.25rem, 3vh, 2rem);
-  }
   /* nothing to push down in one column */
   .mast__foot { margin-top: 0; }
 
@@ -1596,7 +1627,6 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
 
 @media (max-width: 34rem) {
   .home { grid-template-columns: 1fr; }
-  .mast__air { height: clamp(8rem, 34vw, 10rem); }
 }
 
 /* ==========================================================================
@@ -2171,20 +2201,13 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
    title is the one near-black thing on that side. The closing block dims less
    because it is already quiet, and its pods stay usable throughout.
 
-   AND THE BRICKS ARE NOT IN THIS RULE, WHICH IS THE ONE EXCEPTION.
-   `.mast__air` was dimmed with the type around it, on the reasoning that the
-   whole left column yields to the panel. That reasoning is right about type and
-   wrong about these: the pile is the only colour on that side of the screen and
-   the only thing on it a visitor can pick up, and half-fading it makes the
-   playground look switched off rather than deferential — a greyed control,
-   which is exactly what it is not. It is also the one thing here that is still
-   live while a project is open: the physics keeps running and the pieces are
-   still draggable, so dimming them was the interface telling a small lie.
-
-   The type recedes and the toys do not, which also gives that column something
-   to be: muted grey navigation, a pile of plastic at full strength, and the
-   panel's title as the near-black. Nothing here blurs either — the only blur in
-   this arrangement is on the grid's own cards, and it has never reached the
+   THERE IS NOTHING BUT TYPE IN THAT COLUMN NOW. The brick playground used to
+   sit under the navigation and was deliberately left out of this rule, because
+   a half-faded pile of plastic reads as a greyed-out control rather than as a
+   column deferring to a panel. The playground is gone, so the exception it
+   needed is gone with it and this is once again what it says it is: the
+   navigation's ink stepping back. Nothing here blurs — the only blur in this
+   arrangement is on the grid's own cards, and it has never reached the
    masthead. */
 .home[data-pvw='1'] .mast__keep { opacity: calc(1 - var(--pq, 0) * 0.54); }
 .home[data-pvw='1'] .mast__foot { opacity: calc(1 - var(--pq, 0) * 0.3); }
@@ -3609,8 +3632,16 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
 
 .rail__link {
   display: block;
-  height: 2.5rem;                    /* measured 40px row pitch */
-  line-height: 2.5rem;
+  /* --- 32PX, DOWN FROM 40 ---------------------------------------------
+
+     The 40 was measured off the reference and it is a great deal of air for a
+     14px row: nine sections at that pitch read as nine separate things rather
+     than as one contents page, and it was the first thing marked as too loose.
+     32 is still more than twice the type's own height, so nothing is in danger
+     of touching; what goes is the sense that the column has been stretched to
+     fill a height it never needed. */
+  height: 2rem;
+  line-height: 2rem;
   color: var(--ink-dim);
   /* colour and weight are the whole active state — the reference has no
      indicator bar, so there isn't one here either */
@@ -15657,25 +15688,52 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
      `Project.film` only when `FilmNav.build` returned an element, so a study
      whose scenes declare no `nav` is laid out exactly as it was. */
   --film-index: 0rem;
+
+  /* --- THE STAGE GUTTER, WHICH IS NOW A NAME --------------------------
+
+     IT WAS THIS CLAMP WRITTEN OUT ELEVEN TIMES: the stage's own padding, the
+     indexed variant that adds the index column to it, the three `.fg-bleed`
+     helpers that subtract it back off, the chain's bleed, two scene-specific
+     margins, the pins crop and the room's caption. Eleven copies of one
+     measurement is ten chances for the composition to come apart the first
+     time anybody adjusts it — and adjusting it is exactly what was asked for.
+
+     AND IT CAME DOWN, from 6.6vw to 5. At 1512 that is 76px a side rather
+     than 100. The gutter was written as "more air than is comfortable" and
+     meant as the composition, and on a study with no index it reads that way.
+     The trouble is that an INDEXED study charges it twice on the left — once
+     for the index column and again for the gutter — so those scenes were
+     paying 380px on one side against 100 on the other, and what that reads as
+     is not air, it is the content being squeezed between two margins. */
+  --fg-gut: clamp(1.25rem, 5vw, 6rem);
 }
 
-/* 17.5rem is the rail's own geometry and not a guess: 3.5rem to its left edge,
-   11rem of column, and 3rem of air before the stage's gutter starts. Below
-   64rem the index is a readout in the corner instead and takes no room. */
+/* --- WHAT THE INDEX COSTS, WHICH IS ITS WIDTH AND NOTHING MORE -----------
+
+   THIS WAS 17.5REM AND IT WAS THREE THINGS COMPOUNDED. The note that justified
+   it read "3.5rem to its left edge, 11rem of column, and 3rem of air before
+   the stage's gutter starts" — but the rail is out at 3rem, not 3.5, so half a
+   rem was reserved for nothing; the 3rem of air was invented on top of a
+   gutter that is already the widest margin on the page; and the gutter is then
+   added to the whole of it, so the left of every scene paid twice for the same
+   breathing room. 380px on the left against 100 on the right.
+
+   14REM IS THE RAIL'S RIGHT EDGE: 3rem out plus 11rem of column, measured
+   rather than estimated. Everything past it is the stage's gutter doing the
+   job it already does on the other three sides, so a scene sits exactly one
+   gutter clear of the index and one gutter clear of the window — which is what
+   makes the two sides read as a pair instead of as a composition shoved right.
+
+   ONE BREAKPOINT, NOT TWO. The second existed only to walk the number back at
+   narrower widths because it was too big to start with. The rail's geometry
+   does not change with the viewport, so neither does this. Below 64rem the
+   index is a readout in the corner instead and takes no room. */
 @media (min-width: 64rem) {
-  /* 15.5rem is the rail's own right edge — 3.5 out plus 11 of column — plus
-     one rem of air. It is the least the index can cost, and between 1024 and
-     1280 that is the number to use: 17.5rem at 1024 leaves the scenes 677px,
-     which is narrower than the study's own measure. */
-  .film--indexed { --film-index: 15.5rem; }
-}
-
-@media (min-width: 80rem) {
-  .film--indexed { --film-index: 17.5rem; }
+  .film--indexed { --film-index: 14rem; }
 }
 
 .film--indexed .scn__stage {
-  padding-inline-start: calc(clamp(1.25rem, 6.6vw, 7rem) + var(--film-index));
+  padding-inline-start: calc(var(--fg-gut) + var(--film-index));
 }
 
 /* THE SEVEN BLACK SCENES. Every colour in the film comes from the six tokens
@@ -15772,7 +15830,7 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
      than filling it. Anything that BLEEDS does so by leaving the stage's
      padding behind — see `.fg-bleed` — which is a deliberate act per scene
      rather than the default. */
-  padding-inline: clamp(1.25rem, 6.6vw, 7rem);
+  padding-inline: var(--fg-gut);
   padding-block: clamp(3rem, 8vh, 6.5rem);
 }
 
@@ -15997,7 +16055,7 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
    scene's copy lives and two things in one corner is one of them unread */
 .fg-cap {
   position: absolute;
-  right: clamp(1.25rem, 6.6vw, 7rem);
+  right: var(--fg-gut);
   bottom: clamp(1.5rem, 4vh, 3rem);
   text-align: right;
   font-size: 0.75rem;
@@ -16265,9 +16323,9 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 /* WHAT BLEEDS, AND HOW. A composition that leaves the stage's gutter is doing
    it on purpose: the negative margin is exactly the padding, so the element
    reaches the window's edge and is cut by it. */
-.fg-bleed { margin-inline: calc(-1 * clamp(1.25rem, 6.6vw, 7rem)); }
-.fg-bleed--l { margin-left: calc(-1 * clamp(1.25rem, 6.6vw, 7rem)); }
-.fg-bleed--r { margin-right: calc(-1 * clamp(1.25rem, 6.6vw, 7rem)); }
+.fg-bleed { margin-inline: calc(-1 * var(--fg-gut)); }
+.fg-bleed--l { margin-left: calc(-1 * var(--fg-gut)); }
+.fg-bleed--r { margin-right: calc(-1 * var(--fg-gut)); }
 
 /* --- 01 / 02 / 26 · an object, presented ---------------------------------- */
 
@@ -16348,7 +16406,7 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   width: min(46%, 92svh);
   height: auto;
   max-width: none;
-  margin: 0 clamp(1.25rem, 6.6vw, 7rem) 0 0;
+  margin: 0 var(--fg-gut) 0 0;
   rotate: none;
   border-radius: 0;
   filter: none;
@@ -16789,7 +16847,7 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   letter-spacing: -0.028em;
 }
 
-.scn--chain .fg-chain { margin-inline: calc(-1 * clamp(1.25rem, 6.6vw, 7rem)); padding-inline: 3vw; }
+.scn--chain .fg-chain { margin-inline: calc(-1 * var(--fg-gut)); padding-inline: 3vw; }
 
 /* --- 10 · one interface coming apart over another ------------------------ */
 
@@ -16858,7 +16916,7 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   width: 100%;
   max-width: none;
   align-items: center;
-  margin-right: calc(-1 * clamp(1.25rem, 6.6vw, 7rem));
+  margin-right: calc(-1 * var(--fg-gut));
 
   /* THE ANSWER'S OWN WINDOW, 0.5 to 0.83 — the frames the left column hands
      over in. It used to belong to the strew, which was the only thing using
@@ -17705,7 +17763,7 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
    screen is the evidence */
 .fg-pins__crop {
   position: absolute;
-  right: calc(-1 * clamp(1.25rem, 6.6vw, 7rem));
+  right: calc(-1 * var(--fg-gut));
   top: 50%;
   translate: 0 -50%;
   width: min(30vw, 22rem);
@@ -19387,7 +19445,7 @@ body[data-page='project'] .tmode { display: none; }
    same column instead. */
 .room__say {
   position: absolute;
-  left: clamp(1.25rem, 6.6vw, 7rem);
+  left: var(--fg-gut);
   top: 0;
   bottom: 0;
   padding-block: clamp(3rem, 9vh, 6rem);
