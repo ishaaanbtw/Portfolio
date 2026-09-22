@@ -4693,6 +4693,66 @@
         `</div>`;
     },
 
+    /* --- 02b · THE KIT, CUT UP, WITH THE CLAIM IN THE MIDDLE -------------
+
+       WHAT THIS REPLACES, AND WHY. The claim scene used to be a traced line
+       drawing of the vault and its four cards with the sentence beside it. It
+       was the most expensive thing in the film to build and it argued the
+       wrong case: a drawing says "here is the shape of the object", and the
+       sentence it sits next to is about the object being ALREADY GOOD — a
+       finished, photographed, manufactured product at $199. A drawing of a
+       thing cannot carry the claim that the thing was never the problem. A
+       photograph of it can, and the press kit already had one.
+
+       A BENTO RATHER THAN THE PHOTOGRAPH. The kit is a contact sheet: eight
+       shots of one product on one sheet. Dropped in whole it reads as a press
+       release. Cut apart and re-laid, each piece is a separate look at the
+       same object — the joystick, the contact plate, the contactless mark, the
+       stepped edges — and the sentence sits in the hole they leave in the
+       middle, which is the composition the reference asked for.
+
+       THE LAYOUT IS THE STYLESHEET'S, NOT THE CONTENT'S. `tiles` is an ordered
+       list of pictures and nothing else; which cell each one lands in is
+       `:nth-child` in the CSS. So the composition can be retuned — and it was,
+       several times — without the content file being opened, and a study that
+       wants the same scene with different photographs states only the
+       photographs.
+
+       THE TILES ARRIVE, THEN THE MIDDLE. Staggered across the first third so
+       the frame assembles, and the claim lands at 0.4 on a board that is
+       already built rather than into an empty stage. */
+    bento: (s) => {
+      /* THE TAIL IS PULLED IN, for the reason the object scene's own note
+         gives: a beat that is still fading in at 90% of the scene is on screen
+         for one flick before the scene leaves. Everything has arrived by about
+         0.85, which leaves the pause this scene is built around — the board
+         assembled, the claim made, and then a beat of nothing. */
+      const b = SPREAD((s.facts || []).length, 0.48, 0.56);
+      const P = SCENE.PILL;
+      return `<div class="fg-bento">` +
+        (s.tiles || []).map((t, i) =>
+          `<figure${AT(0.04 + i * 0.045)} class="fg-bento__t beat">` +
+            `<img src="${url(t.src)}" alt="${esc(t.alt || '')}" decoding="async"` +
+            (t.pos ? ` style="object-position:${esc(t.pos)}"` : '') + `>` +
+          `</figure>`).join('') +
+        `<div class="fg-bento__mid">` +
+          (s.kicker ? `<span${AT(0.4)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+          (s.h ? `<h2${AT(0.44)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+          ((s.facts || []).length
+            ? `<ul class="fg-facts">` + s.facts.map((f, i) =>
+                `<li${AT(b[i])} class="beat">${f}</li>`).join('') + `</ul>`
+            : '') +
+          (s.turn ? `<p${AT(0.62)} class="fg-turn beat">${s.turn}</p>` : '') +
+          ((s.pills || []).length
+            ? `<ul class="fg-pills">` + s.pills.map((q, i) =>
+                `<li${AT(0.7 + i * 0.035)} class="beat"><svg viewBox="0 0 24 24"`
+                + ` aria-hidden="true">${P[q.i] || P.box}</svg>${esc(q.t)}</li>`).join('')
+              + `</ul>`
+            : '') +
+        `</div>` +
+      `</div>`;
+    },
+
     /* --- 03 · the market, as a field that becomes a phone ----------------
        Six hundred people would be six hundred pictures. They are dots, and
        the dots are generated here rather than drawn by hand, because the
@@ -6117,7 +6177,16 @@
         }, esc(p.back?.label || 'BACK')));
         const list = el('nav', { class: 'rail__list' });
         p.sections.forEach((sec) => {
-          const a = el('a', { class: 'rail__link', href: `#${sec.id}` }, esc(sec.nav || sec.eyebrow));
+          /* AND THE ROW CARRIES THE MARK, which used to be the film rail's
+             alone. The active row's weight has gone — see the note on
+             `.mast__row.is-here` — because 600 is wider than 400 and the word
+             changed length as you scrolled through its section. The 5px square
+             says the same thing and costs the row no width, and it is the same
+             square the sidebar's navigation parks at the end of its own
+             current row, so the three navigations on this site now report
+             where you are in one language. */
+          const a = el('a', { class: 'rail__link', href: `#${sec.id}` },
+            `${esc(sec.nav || sec.eyebrow)}<i class="rail__dot" aria-hidden="true"></i>`);
           list.appendChild(a);
           this.links.push(a);
         });
@@ -6594,10 +6663,16 @@
          value the section rail uses on every other case study. A study that
          states none still gets the index, because a page with no way out is
          not a decision anybody makes on purpose. */
+      /* NO `data-in`, AND THAT IS SO IT CAN HOVER LIKE THE RAIL'S. It still
+         rises on the same delay as the mark — see `.fhero__back` in section
+         44, which states the entrance on `translate` instead. What it gets out
+         of leaving the group is its `transform`: `.fhero [data-in]` puts a
+         900ms ease on that property at a specificity this element cannot
+         outrank, so the three-pixel walk on hover drifted while the rail's
+         identical walk sprang. Same word, same page, two different springs. */
       h.appendChild(el('a', {
         class: 'fhero__back',
         href: url((p.back && p.back.href) || 'index.html'),
-        'data-in': '1',
       }, esc((p.back && p.back.label) || 'BACK')));
 
       /* --- 1. the identifier, top left ---------------------------------
@@ -17085,7 +17160,16 @@
         getBoundingClientRect: () => ({ top: 0 }),
       };
       const darks = $$('.sec--dark, .proj__head--dark', scroll || document);
-      const links = $$('.rail__link', rail);
+      /* THE BACK LINK IS IN THIS LIST NOW, AND IT SHOULD ALWAYS HAVE BEEN.
+         Every row of this rail is re-inked as the dark bands pass under it and
+         the one row above them was not: BACK sat at `--ink-2`, a warm dark grey,
+         on a #122633 band — about 1.1:1, which is a word you cannot read. It is
+         asked the same question as the rows below it and answers it with the
+         same two greys. Nothing else in here changes: `links` is used for the
+         ink decision only, the active row is `SectionNav`'s own list, and each
+         entry's offset is measured independently so the order does not
+         matter. */
+      const links = $$('.rail__back, .rail__link', rail);
       if (!darks.length || !links.length) return;
 
       /* MEASURE ONCE. This used to read getBoundingClientRect() for every dark

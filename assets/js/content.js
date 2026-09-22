@@ -1029,7 +1029,43 @@ window.SITE = {
                `object` renders each one only if the scene carries it, so the
                end card — the other scene on this renderer — is untouched by
                all of it. */
-            { id: 'x0-x1', nav: 'Context', act: 'I · Premise', kind: 'object', dur: 150,
+            /* --- THE CLAIM, AS THE PRESS KIT CUT APART --------------------
+
+               THIS WAS `kind: 'object'` WITH THE TRACED DRAWING BELOW IT, and
+               the drawing argued the wrong case. A line drawing says "this is
+               the shape of the thing"; the sentence beside it says the thing
+               was already good at $199 — finished, manufactured, photographed.
+               A drawing cannot carry that. A photograph of the real product
+               can, and the press kit was already shot.
+
+               `tiles` IS AN ORDERED LIST AND NOTHING MORE. Which cell each
+               picture lands in is `:nth-child` in the stylesheet, so the
+               composition was retuned several times without this file being
+               opened. The eighth crop — the vault from above, `x1-vault` — is
+               cut and sitting beside these unused; it is the same device as
+               `x1-usb` from a second angle, and seven reads better than eight.
+
+               THE DRAWING SPEC BELOW IS NOW UNREFERENCED. It is roughly a
+               hundred kilobytes of traced path data that nothing renders any
+               more. It is left in place deliberately rather than deleted in
+               the same pass as the scene it belonged to. */
+            { id: 'x0-x1', nav: 'Context', act: 'I · Premise', kind: 'bento', dur: 150,
+              tiles: [
+                { src: 'assets/img/x0/kit/x1-fan.webp',
+                  alt: 'The flagship card fanned over the four numbered key cards' },
+                { src: 'assets/img/x0/kit/x1-joy.webp',
+                  alt: "The vault's joystick, close" },
+                { src: 'assets/img/x0/kit/x1-chip.webp',
+                  alt: 'The contact plate set into a card' },
+                { src: 'assets/img/x0/kit/x1-nfc.webp',
+                  alt: 'The contactless mark on a card corner' },
+                { src: 'assets/img/x0/kit/x1-usb.webp',
+                  alt: 'The vault on its side, USB-C port showing' },
+                { src: 'assets/img/x0/kit/x1-stack.webp',
+                  alt: 'The four cards squared up, the logo running across them' },
+                { src: 'assets/img/x0/kit/x1-edges.webp',
+                  alt: 'One, three and four read off the stepped card edges' },
+              ],
               /* THE DRAWING IS THE ORIGINAL. IT ARRIVES ONE ELEMENT AT A TIME.
 
                  `art` IS THE DRAWING AND IT IS NEVER TOUCHED. Traced from

@@ -1131,14 +1131,31 @@ body.pile-hold * { cursor: grabbing; }
   color: var(--ink);
 }
 
-.mast__row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+/* --- ONE NAVIGATION ROW, WRITTEN ONCE FOR BOTH NAVIGATIONS ---------------
+
+   THIS RULE IS ALSO THE CASE STUDY'S CONTENTS PAGE. `.rail__link` in sections
+   23 and 23a used to state its own type — 13px on a 32px line, weight 600
+   when active — and beside this column it read as a different site's
+   navigation: a step smaller, half again as loose, and bold where this one
+   only takes the ink. It is the same navigation doing the same job in the same
+   voice, so it is the same rule. What the studies still state for themselves
+   is only what genuinely differs: their greys, because seven of the film's
+   scenes are near-black and no one grey clears 4.5:1 on both grounds, and
+   where the list stands.
+
+   `--nav-ink` IS THE COLOUR RAMP AS A TERM, BECAUSE THE TWO RAMPS ARE NOT THE
+   SAME LENGTH. 180ms is a row answering a pointer. A rail also changes ink
+   when the ground changes underneath it — a scene going from paper to
+   near-black — and that is a crossfade, not a hover; at 180ms it snapped. So
+   the rails set 420ms on this same declaration rather than restating it, and
+   the fallback in the `var()` is the sidebar's own value. */
+.mast__row,
+.rail__link {
   /* 22.5px pitch, measured: 14px on 1.45 leading is 20.3, plus 2.2 of padding */
   padding: 0.07rem 0;
   font-size: inherit;
   line-height: 1.45;
+  font-weight: 400;
   color: var(--ink-dim);
   text-decoration: none;
   /* --- WHAT A HOVER IS WORTH HERE ---------------------------------------
@@ -1166,16 +1183,35 @@ body.pile-hold * { cursor: grabbing; }
      current section is to do as little as possible. It still takes the ink.
 
      `--hov-x` IS A TERM, NOT A TRANSFORM. See the transform rule below. */
-  transition: color 180ms var(--ease),
+  transition: color var(--nav-ink, 180ms) var(--ease),
+    opacity var(--nav-ink, 180ms) var(--ease),
     --hov-x 260ms cubic-bezier(0.32, 0, 0.36, 1);
 }
-:root:not(.hover-cold) .mast__row:hover { color: var(--ink-2); }
-:root:not(.hover-cold) .mast__row:not(.is-here):hover {
+
+/* AND THE SIDEBAR ROW'S OWN LAYOUT, WHICH THE RAIL HAS NO USE FOR. The row is
+   a flex box so that IshaanLLM's BETA pill sets beside the word on the row's
+   own centre line rather than after it in the text flow. A rail row is one
+   word and a mark, and the mark is set as punctuation — see `.rail__dot`. */
+.mast__row { display: flex; align-items: center; gap: 0.4rem; }
+
+:root:not(.hover-cold) .mast__row:hover,
+:root:not(.hover-cold) .rail__link:hover { color: var(--ink-2); }
+:root:not(.hover-cold) .mast__row:not(.is-here):hover,
+:root:not(.hover-cold) .rail__link:not(.is-active):hover {
   --hov-x: 2px;
-  transition: color 180ms var(--ease),
+  transition: color var(--nav-ink, 180ms) var(--ease),
     --hov-x 300ms cubic-bezier(0.34, 1.3, 0.64, 1);
 }
-.mast__row.is-here { color: var(--ink); }
+
+/* THE CURRENT ROW TAKES THE INK, AND THAT IS ALL IT TAKES. The rails used to
+   take a weight with it, which is the one thing a contents page cannot do
+   quietly: 600 is wider than 400, so the word grew as you scrolled into its
+   section and shrank again as you left it, and nine rows of that is a column
+   that never settles. The mark carries the state in both navigations — the
+   travelling square here, the square set after the word there — and a mark
+   costs the row no width. */
+.mast__row.is-here,
+.rail__link.is-active { color: var(--ink); }
 @property --hov-x { syntax: '<length>'; inherits: false; initial-value: 0px; }
 @property --press-s { syntax: '<number>'; inherits: false; initial-value: 1; }
 
@@ -1212,7 +1248,8 @@ body.pile-hold * { cursor: grabbing; }
    is a press that pushes AWAY from the finger. From `0 50%` the word compresses
    toward the column's own edge, which is the direction a key travels. 0.972 on
    a 14px row is about a pixel across a five-letter word. */
-.mast__row {
+.mast__row,
+.rail__link {
   transform:
     translate3d(calc(var(--shove-x, 0px) + var(--hov-x, 0px)), 0, 0)
     scale(var(--press-s, 1));
@@ -1220,15 +1257,18 @@ body.pile-hold * { cursor: grabbing; }
 }
 /* outranks `.pressable.is-press` (0,3,0 against 0,2,0), so the dip is a term
    in the row's own transform instead of a replacement for it */
-.mast__row.pressable.is-press {
+.mast__row.pressable.is-press,
+.rail__link.pressable.is-press {
   transform:
     translate3d(calc(var(--shove-x, 0px) + var(--hov-x, 0px)), 0, 0)
     scale(var(--press-s, 1));
   --press-s: 0.972;
-  transition: color 180ms var(--ease), --press-s 90ms cubic-bezier(0.3, 0, 0.4, 1);
+  transition: color var(--nav-ink, 180ms) var(--ease),
+    --press-s 90ms cubic-bezier(0.3, 0, 0.4, 1);
 }
-.mast__row.pressable {
-  transition: color 180ms var(--ease),
+.mast__row.pressable,
+.rail__link.pressable {
+  transition: color var(--nav-ink, 180ms) var(--ease),
     --hov-x 260ms cubic-bezier(0.32, 0, 0.36, 1),
     --press-s 340ms var(--spring);
 }
@@ -1239,9 +1279,13 @@ body.pile-hold * { cursor: grabbing; }
    hover state to answer. */
 @media (prefers-reduced-motion: reduce) {
   .mast__row,
-  .mast__row.pressable { transition: color 180ms var(--ease); }
-  .mast__row.pressable.is-press { --press-s: 1; }
-  :root:not(.hover-cold) .mast__row:not(.is-here):hover { --hov-x: 0px; }
+  .rail__link,
+  .mast__row.pressable,
+  .rail__link.pressable { transition: color var(--nav-ink, 180ms) var(--ease); }
+  .mast__row.pressable.is-press,
+  .rail__link.pressable.is-press { --press-s: 1; }
+  :root:not(.hover-cold) .mast__row:not(.is-here):hover,
+  :root:not(.hover-cold) .rail__link:not(.is-active):hover { --hov-x: 0px; }
 }
 
 /* THE ENTIRE ACTIVE INDICATOR. Five pixels of ink, square, on the row.
@@ -3608,49 +3652,87 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
   margin-left: 3.5rem;
   width: 11rem;
   z-index: 40;
-  font-size: 0.8125rem;              /* measured ~13px */
+  /* THE SIDEBAR'S 14PX, NOT THE REFERENCE'S 13. It was measured off the
+     reference at ~13px, and that measurement was right about the reference and
+     wrong about this site: the landing column's navigation is 14px flat, and
+     one step of difference between two lists of the same words in the same
+     typeface is exactly the near-match that reads as a mistake. The row
+     metrics themselves come from section 11 — this is only the size they
+     inherit, and the leading below is the back link's, not the list's. */
+  font-size: 0.875rem;
   line-height: 1.3;
 }
 
-.rail__back {
+/* --- THE WAY BACK, WRITTEN ONCE FOR BOTH PLACES IT STANDS ----------------
+
+   A CASE STUDY HAS TWO BACK LINKS AND THERE WAS NO REASON FOR THEM TO DIFFER.
+   This one stands at the top of the rail. `.fhero__back` stands in the corner
+   of the film's opening frame, and it was 10px mono, uppercase and tracked to
+   0.2em, because it was written as a piece of the hero's chrome rather than as
+   the navigation it actually is — so the same word, in the same corner of the
+   same page, changed typeface and lost four pixels the moment you scrolled
+   past the first screen. The type is stated here for both; section 44 keeps
+   only what is genuinely the hero's, which is where it stands and white ink
+   instead of the paper's.
+
+   THE ARROW IS PUNCTUATION, NOT AN ELEMENT. A `::before`, so it cannot be
+   tabbed to or read out, cannot be laid out apart from the word it belongs to,
+   and travels with it on the same spring. */
+.rail__back,
+.fhero__back {
   display: inline-block;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.45;
   letter-spacing: 0.09em;
-  color: var(--ink-2);
-  margin-bottom: 1.55rem;            /* measured: 52px to the first link */
-  transition: transform 480ms var(--spring), color 240ms ease;
+  text-transform: none;
+  text-decoration: none;
+  transition: transform 480ms var(--spring), color var(--nav-ink, 240ms) ease;
 }
-.rail__back:hover { transform: translateX(-3px); color: var(--ink); }
-.rail__back::before {
+.rail__back::before,
+.fhero__back::before {
   content: '←';
   display: inline-block;
   margin-right: 0.4em;
   transition: transform 480ms var(--spring);
 }
-.rail__back:hover::before { transform: translateX(-2px); }
+/* GATED, AND IT WAS NOT BEFORE. A touchscreen has no hover to answer, and the
+   sticky one some mobile browsers leave behind used to walk this link three
+   pixels left and keep it there. The hero's copy was already gated; this is
+   the two of them agreeing. */
+:root:not(.hover-cold) .rail__back:hover,
+:root:not(.hover-cold) .fhero__back:hover { transform: translateX(-3px); }
+:root:not(.hover-cold) .rail__back:hover::before,
+:root:not(.hover-cold) .fhero__back:hover::before { transform: translateX(-2px); }
+
+.rail__back {
+  color: var(--ink-2);
+  margin-bottom: 1.55rem;            /* measured: 52px to the first link */
+}
+:root:not(.hover-cold) .rail__back:hover { color: var(--ink); }
 
 .rail__list { display: grid; }
 
 .rail__link {
   display: block;
-  /* --- 32PX, DOWN FROM 40 ---------------------------------------------
+  /* --- 22.5PX, DOWN FROM 32, DOWN FROM 40 -----------------------------
 
-     The 40 was measured off the reference and it is a great deal of air for a
-     14px row: nine sections at that pitch read as nine separate things rather
-     than as one contents page, and it was the first thing marked as too loose.
-     32 is still more than twice the type's own height, so nothing is in danger
-     of touching; what goes is the sense that the column has been stretched to
-     fill a height it never needed. */
-  height: 2rem;
-  line-height: 2rem;
-  color: var(--ink-dim);
-  /* colour and weight are the whole active state — the reference has no
-     indicator bar, so there isn't one here either */
-  font-weight: 400;
-  transition: color 380ms var(--ease), transform 520ms var(--spring);
-  transform-origin: left center;
+     The 40 was measured off the reference and was a great deal of air for a
+     14px row; 32 was the answer to that, and was still this rail's own number
+     rather than the site's. The pitch is the sidebar's now — 14px on 1.45
+     leading with 1.12px of padding either side — for the same reason the type
+     is: the two lists are the same list. Nine rows come to 202px, which is the
+     first time this column has been as tight as the one it echoes.
+
+     EVERY OTHER PROPERTY THIS RULE USED TO STATE IS IN SECTION 11 NOW: the
+     height, the leading, the weight, the quiet ink, the active ink, the hover
+     travel and the press dip are `.mast__row`'s, shared by selector. What is
+     left here is the two ways a rail row is laid out differently — it is a
+     block, and it is only as wide as its own word, so the hover travel and the
+     press dip have something honest to pivot about. */
   width: max-content;
 }
-.rail__link:hover { color: var(--ink-2); transform: translateX(3px); }
 
 /* THE ROW THAT USED TO BE HERE IS IN THE CORNER NOW. IshaanLLM was a
    `.rail__link` in this list, matching Approach and Learnings — which is
@@ -3659,10 +3741,8 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
    tool, not a section, and its launcher is the collapsed state of the panel
    itself — see `.llm__chip` in section 45. This list is sections only. */
 
-.rail__link.is-active {
-  color: var(--ink);
-  font-weight: 600;
-}
+/* THE ACTIVE ROW IS IN SECTION 11 WITH THE SIDEBAR'S. It is the ink and a
+   5px square — see `.rail__dot` in 23a, which both rails now carry. */
 
 /* --- content column ------------------------------------------------------ */
 
@@ -4138,10 +4218,17 @@ body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: op
 .proj__head--dark .proj__eyebrow { color: #7e94a1; }
 .proj__head--dark .proj__title { color: #ffffff; }
 
-.rail__link { transition: color 420ms var(--ease), opacity 420ms var(--ease); }
+/* THE CROSSFADE, NOT A HOVER: this rail's ink is re-decided as the dark bands
+   pass under it, so its colour ramp is the long one. A term in section 11's
+   declaration rather than a second declaration that would replace it — the
+   whole transition used to be restated here, which silently dropped the hover
+   travel and the press dip from every rail link on the site. */
+.rail__link { --nav-ink: 420ms; }
+.rail__back[data-ink='light'],
 .rail__link[data-ink='light'] { color: #8ba0ad; }
 .rail__link[data-ink='light'].is-active,
 .rail__link[data-ink='light'][aria-current='true'] { color: #ffffff; }
+:root:not(.hover-cold) .rail__back[data-ink='light']:hover,
 :root:not(.hover-cold) .rail__link[data-ink='light']:hover { color: #dfe7ec; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5381,7 +5468,9 @@ body.is-lbox { overflow: hidden; }
   }
   .rail__back { margin-bottom: 0; }
   .rail__list { display: flex; gap: 1rem; }
-  .rail__link { height: auto; line-height: 1.6; white-space: nowrap; }
+  /* lying down, the pitch is the gap between the links and `height` has
+     nothing to do; the rows keep section 11's leading */
+  .rail__link { white-space: nowrap; }
   .blk-tiles { columns: 4 4.5rem; max-height: 18rem; }
 }
 
@@ -5485,21 +5574,28 @@ body.is-lbox { overflow: hidden; }
 .rail--film .rail__back,
 .rail--film .rail__link { color: var(--fg-quiet, #74757c); }
 
-.rail--film .rail__back:hover,
-.rail--film .rail__link:hover { color: #55565c; }
+/* GATED TO OUTRANK SECTION 11'S OWN HOVER, which is written under
+   `:root:not(.hover-cold)` and would otherwise win on specificity and hand a
+   white scene's rail the paper page's grey. */
+:root:not(.hover-cold) .rail--film .rail__back:hover,
+:root:not(.hover-cold) .rail--film .rail__link:hover { color: #55565c; }
 
-.rail--film .rail__link.is-active { color: #101012; font-weight: 600; }
+.rail--film .rail__link.is-active { color: #101012; }
 
 .rail--film[data-tone='dark'] .rail__back,
 .rail--film[data-tone='dark'] .rail__link { color: #8a8b91; }
 
-.rail--film[data-tone='dark'] .rail__back:hover,
-.rail--film[data-tone='dark'] .rail__link:hover { color: #c8c9ce; }
+:root:not(.hover-cold) .rail--film[data-tone='dark'] .rail__back:hover,
+:root:not(.hover-cold) .rail--film[data-tone='dark'] .rail__link:hover { color: #c8c9ce; }
 
 .rail--film[data-tone='dark'] .rail__link.is-active { color: #ffffff; }
 
+/* THE SAME LONG RAMP, AS A TERM. Twenty-five scenes change the ground under
+   this rail and its ink is re-decided each time; 180ms reads as a snap on a
+   crossfade. Setting the term rather than restating the transition is what
+   keeps the hover travel and the press dip that section 11 states. */
 .rail--film .rail__back,
-.rail--film .rail__link { transition: color 420ms var(--ease), transform 520ms var(--spring); }
+.rail--film .rail__link { --nav-ink: 420ms; }
 
 /* --- the mark ------------------------------------------------------------ */
 
@@ -5603,9 +5699,21 @@ body.is-lbox { overflow: hidden; }
     box-shadow: 0 0.75rem 2.5rem rgba(0, 0, 0, 0.5);
   }
 
+  /* OPEN ON A PHONE THE ROWS ARE TOUCH TARGETS, and 22.5px is not one. The
+     type, the weight and the ink are still section 11's — what is added here
+     is padding, which is the one thing a finger needs and a cursor does not.
+     40px a row, which is the pitch the list had before it was measured
+     against the sidebar — the difference is that all 40 of them are now
+     tappable instead of 24 with 16 of dead air between.
+
+     WHICH IS WHY THE GAP GOES. `.rail__list` becomes a flex row with a 1rem
+     gap below 70rem — section 23's strip — and this popover is neither that
+     strip nor a grid that wants a gutter: the gap was landing between the
+     rows as 16px that look like part of the row above and hit nothing. The
+     rows carry their own height and sit against each other. */
+  .rail--film .rail__list { gap: 0; }
   .rail--film .rail__link {
-    height: auto;
-    line-height: 1.75;
+    padding-block: 0.55rem;
     white-space: nowrap;
   }
 }
@@ -12148,7 +12256,10 @@ body[data-page='project'].phero-up .llm:not(.is-up) .llm__chip { animation: none
    out in a flow, because what each one is doing is standing in a corner. The
    shared type is stated once here: the mono, uppercase, tracked out, and
    small enough that it reads as a mark on a frame rather than as writing. */
-.fhero__back,
+/* `.fhero__back` IS NOT IN THIS LIST ANY MORE. It is the navigation's back
+   link, not a piece of the frame's lettering — see the shared rule in section
+   9 — and it took its 10px mono uppercase from here. What it still needs from
+   this block it states for itself below. */
 .fhero__mark,
 .fhero__anno,
 .fhero__meta,
@@ -12188,27 +12299,38 @@ body[data-page='project'].phero-up .llm:not(.is-up) .llm__chip { animation: none
    anything a visitor can reach. This is the single element in it that is
    meant to be hit, so it turns them back on for itself alone. */
 .fhero__back {
+  /* the two the chrome group used to give it, and nothing else from it */
+  position: absolute;
+  z-index: 2;
   top: var(--fh-pad);
   left: var(--fh-pad);
   pointer-events: auto;
+  /* THE ONE THING THAT IS GENUINELY THIS CORNER'S. The rail's back link is
+     ink on paper; this one is standing on the film's own black, so it takes
+     white at the same two opacities the rest of the hero's quiet type does.
+     Everything else about it — the typeface, the size, the weight, the
+     tracking, the arrow, the travel on hover — is the rail's, stated once in
+     section 9. */
   color: rgba(255, 255, 255, 0.42);
-  text-decoration: none;
-  letter-spacing: 0.2em;
+
+  /* AND ITS OWN ENTRANCE, ON `translate` RATHER THAN `transform`. It used to
+     be one of the hero's `data-in` elements, which is a 900ms ease on opacity
+     AND transform at a specificity nothing here can outrank — so this link's
+     three-pixel walk on hover drifted over 900ms while the rail's identical
+     walk sprang in 480. The two properties are separate in CSS, so the rise
+     can have the hero's long ease and the hover can have the navigation's
+     spring without either one arguing about the other. Same 8px, same 260ms
+     delay the mark beside it takes. */
+  opacity: 0;
+  translate: 0 8px;
   transition:
+    opacity 900ms var(--ease) 260ms,
+    translate 900ms var(--ease) 260ms,
     transform 480ms var(--spring),
-    color 240ms ease;
+    color var(--nav-ink, 240ms) ease;
 }
-.fhero__back::before {
-  content: '←';
-  display: inline-block;
-  margin-right: 0.5em;
-  transition: transform 480ms var(--spring);
-}
-:root:not(.hover-cold) .fhero__back:hover {
-  color: rgba(255, 255, 255, 0.92);
-  transform: translateX(-3px);
-}
-:root:not(.hover-cold) .fhero__back:hover::before { transform: translateX(-2px); }
+.fhero.is-in .fhero__back { opacity: 1; translate: 0 0; }
+:root:not(.hover-cold) .fhero__back:hover { color: rgba(255, 255, 255, 0.92); }
 .fhero__back:focus-visible {
   outline: none;
   color: #fff;
@@ -12571,6 +12693,8 @@ body[data-page='project'].phero-up .llm:not(.is-up) .llm__chip { animation: none
    brief rules out. `bindFilm` returns before it starts anything; this is the
    half of it that stops the chrome animating in. */
 @media (prefers-reduced-motion: reduce) {
+  .fhero__back,
+  .fhero.is-in .fhero__back,
   .fhero [data-in],
   .fhero.is-in [data-in] {
     opacity: 1;
@@ -15706,6 +15830,11 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
      paying 380px on one side against 100 on the other, and what that reads as
      is not air, it is the content being squeezed between two margins. */
   --fg-gut: clamp(1.25rem, 5vw, 6rem);
+  /* the same measurement for the stage's top and bottom. Named for the same
+     reason as the one above: the bento scene sizes itself from the stage's
+     content box and has to subtract this, and a second copy of the literal is
+     a second thing to remember. */
+  --fg-gut-b: clamp(3rem, 8vh, 6.5rem);
 }
 
 /* --- WHAT THE INDEX COSTS, WHICH IS ITS WIDTH AND NOTHING MORE -----------
@@ -15831,7 +15960,7 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
      padding behind — see `.fg-bleed` — which is a deliberate act per scene
      rather than the default. */
   padding-inline: var(--fg-gut);
-  padding-block: clamp(3rem, 8vh, 6.5rem);
+  padding-block: var(--fg-gut-b);
 }
 
 .scn__in {
@@ -16370,47 +16499,24 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 .scn--dark .fg-obj__art { filter: drop-shadow(0 2.5rem 4rem rgba(0, 0, 0, 0.75)); }
 .fg-obj__art--still { rotate: none; }
 
-/* SCENE 02 IS A DRAWING, AND THE DRAWING IS TWO THIRDS OF THE FRAME.
+/* --- WHAT USED TO BE HERE, AND WHY IT IS NOT ------------------------------
 
-   It used to be the other way round: the CySync grid cut off by the LEFT
-   edge with the copy pushed to the bottom right, which put four hundred
-   dark screens under the reader's eye first and a right-ragged column of
-   text in the corner it lands on last. Both halves were fighting. What is
-   here now is a left column read top to bottom and a line drawing filling
-   the right, and the two do not touch.
+   SCENE 02 WAS A LINE DRAWING BESIDE A COLUMN AND IT IS A BENTO NOW. Several
+   rules lived here for that arrangement: where the object sat in the frame,
+   how wide the drawing was allowed to be, how its column was anchored, and
+   the same again in the narrow block further down. Every one of them selected
+   `.fg-obj`, `.fg-obj__art` or `.scn__in--foot`, and this scene has none of
+   those elements any more — `.fg-bento` is the whole layout and needs no
+   per-scene help.
 
-   NO MASK, NO GROUND, NO CROP — WHICH IS WHY IT IS A DRAWING. A photograph
-   needs all three: its own white has to be dissolved into the page's white
-   with a fade, and a rectangle that does not match the frame's aspect has
-   to be cropped to fill it. An outline on a transparent ground needs none
-   of it. The page's white IS the drawing's white, there is no edge to hide,
-   and the object is shown whole at its own proportions.
+   Deleted rather than left to match nothing. Dead rules keyed to a scene id
+   are the worst kind to leave behind, because they read as the rules that
+   govern the scene: the next person to change it starts by editing
+   declarations that have no effect on anything.
 
-   SIZED BY WIDTH, CAPPED BY HEIGHT, AND IT NO LONGER BLEEDS. 46% of the frame
-   and inset by the stage's own gutter, so the drawing sits INSIDE the margin
-   every other scene's content sits inside instead of running off the right
-   edge. It was 65% and full-bleed — the measure the reference frame was drawn
-   at — and at that size it was the scene rather than an object on the page: it
-   crowded the column and left the headline arguing with a card corner. At 46%,
-   contained, the white around it is doing the work. The `svh` cap is for
-   wide-and-short windows, where 46% of the width is taller than the frame —
-   there the height decides instead and the drawing simply sits smaller. */
-[data-scene='x0-x1'] .fg-obj { place-items: center end; }
-/* `.film` IS CARRIED HERE FOR ONE REASON: the whitespace pass near the end of
-   this file states `.film .fg-obj__art { width: min(52vw, 32rem) }` to grow
-   the end card's object into its air. Same specificity as a `[data-scene]`
-   rule and further down the file, so it silently won this one too and capped
-   the drawing at 512px — which is not a bleed, it is a picture parked on the
-   right. One extra class, and the drawing is the two thirds it was drawn as. */
-.film [data-scene='x0-x1'] .fg-obj__art {
-  width: min(46%, 92svh);
-  height: auto;
-  max-width: none;
-  margin: 0 var(--fg-gut) 0 0;
-  rotate: none;
-  border-radius: 0;
-  filter: none;
-}
+   WHAT SURVIVED is below, and it is one idea — the facts line's pipes. Three
+   specifications on one baseline still want a hairline between them rather
+   than a gap, in a bento exactly as beside a drawing. */
 
 /* --- THE DRAWING ARRIVES ONE ELEMENT AT A TIME -----------------------------
 
@@ -16477,33 +16583,6 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   stroke: #fff;
 }
 
-/* THE COLUMN IS CENTRED IN THE FRAME, NOT SAT ON ITS FLOOR. Every other
-   scene in the film anchors its copy to the bottom, because every other
-   scene has something above it to leave room for. This one has a picture
-   beside it instead, and a column hugging the floor next to a full-height
-   object reads as having slipped down the frame. */
-[data-scene='x0-x1'] .scn__in--foot {
-  justify-items: start;
-  text-align: left;
-  align-content: center;
-  justify-self: start;
-  max-width: min(46%, 40rem);
-  gap: 1rem;
-}
-
-/* SMALLER THAN THE FILM'S POSTER SIZE, and deliberately. `--fg-poster-l` is
-   set for a headline that owns the whole frame; this one owns half of it,
-   and at 103px next to the plate it stopped being a sentence and became a
-   wall. Two lines, thirteen characters to the line, is the measure the
-   frame was drawn at. */
-[data-scene='x0-x1'] .fg-h {
-  font-size: min(clamp(2.5rem, 5.4vw, 5.5rem), 9.6svh);
-  line-height: 0.94;
-  letter-spacing: -0.038em;
-  font-weight: 620;
-  max-width: 13ch;
-}
-
 /* NO CARET. A 2px bar sat after the full stop, on the argument that it made
    the sentence read as just typed. In a frame with no other cursor in it, and
    next to a drawing that is genuinely mid-construction, it was one more small
@@ -16520,7 +16599,6 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   opacity: 0.4;
   font-weight: 400;
 }
-[data-scene='x0-x1'] .fg-turn { max-width: 34ch; }
 
 /* THE FRAME'S OWN MARKS ARE GONE, and this note is what is left of them.
 
@@ -16610,6 +16688,199 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   margin: 0;
   max-width: 32ch;
   font-weight: 500;
+}
+
+
+/* --- 02b · the kit, cut into a bento with the claim in the middle --------
+
+   THREE ROWS OF TWELVE COLUMNS WITH A HOLE IN IT. Seven pictures ring the
+   frame and the eighth cell is not a picture — it is the gap the sentence
+   sits in. Which picture lands where is `:nth-child` below rather than
+   anything the content states, so the composition is retunable without
+   opening the content file.
+
+   THE MIDDLE OVERLAPS, AND THAT IS THE WHOLE EFFECT. It is placed in the
+   centre row but given more height than the row has, and grid does not clip
+   an item that outgrows its track — so it rides over the row above and the
+   row below and reads as one card laid on top of the others rather than as a
+   seventh tile in a gap. `align-self: center` is what makes the overlap
+   symmetrical; without it the item grows downward only. */
+.fg-bento {
+  width: 100%;
+  /* the film's own measure. Wider than this and the tiles turn into bands */
+  max-width: 74rem;
+  /* --- THE HEIGHT IS THE STAGE'S, WORKED OUT RATHER THAN INHERITED ------
+
+     `height: min(100%, 42rem)` WAS WRONG AND LOOKED IT. The stage centres its
+     one child, which means the child is auto-height, which means the row it
+     sits in is sized BY the child — so a percentage height on the child has
+     nothing definite to resolve against. It fell back to the content's own
+     size, the seven photographs took whatever they wanted, and the frame ran
+     off the bottom of the screen.
+
+     The stage is `100svh` tall with `--fg-gut-b` above and below, so its
+     content box is a number this can be written down from. Capped at 42rem so
+     the tiles stay tiles on a tall window instead of becoming panels. */
+  height: min(42rem, calc(100svh - 2 * var(--fg-gut-b)));
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  /* `minmax(0, 1fr)` for the same reason the stage uses it one section up: a
+     row that can be pushed taller than its share by its own content is a row
+     that will be, and the frame stops being three equal bands. */
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.4rem, 0.85vw, 0.85rem);
+}
+
+.fg-bento__t {
+  margin: 0;
+  overflow: clip;
+  border-radius: 0.375rem;
+  /* --- THE BED IS THE DEEPER OF THE TWO FILLS, AND THAT IS ON PURPOSE ---
+
+     `--fg-fill` is what every other reserved frame in the film sits on, and
+     it is the wrong one here. Two of these photographs were shot on white
+     seamless, so on `--fg-fill` (#f1f1f3) their corners were within a couple
+     of values of the page and those cells had no edge at all — the vault read
+     as an object floating on the paper while the six beside it read as tiles.
+     `--fg-fill-2` is a clear step off white, so a white-background shot still
+     sits in something.
+
+     AND STILL NO BORDER. The film's own rule, stated where these tokens are
+     defined: a hairline around a picture is a caption telling you where to
+     look, and the picture should be doing that. A deeper bed is not a border. */
+  background: var(--fg-fill-2);
+}
+
+/* `cover` AND NOT `contain`. These are crops of one contact sheet, each one
+   already framed on its subject, so the cell is allowed to take whatever it
+   needs — letterboxing them would put eight grey margins inside eight grey
+   tiles. `object-position` is per picture, in the content, for the two whose
+   subject is not centred. */
+.fg-bento__t img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fg-bento__t:nth-child(1) { grid-area: 1 / 1 / 2 / 8; }
+.fg-bento__t:nth-child(2) { grid-area: 1 / 8 / 2 / 13; }
+.fg-bento__t:nth-child(3) { grid-area: 2 / 1 / 3 / 4; }
+.fg-bento__t:nth-child(4) { grid-area: 2 / 10 / 3 / 13; }
+.fg-bento__t:nth-child(5) { grid-area: 3 / 1 / 4 / 5; }
+.fg-bento__t:nth-child(6) { grid-area: 3 / 5 / 4 / 9; }
+.fg-bento__t:nth-child(7) { grid-area: 3 / 9 / 4 / 13; }
+
+.fg-bento__mid {
+  grid-area: 2 / 4 / 3 / 10;
+  align-self: center;
+  z-index: 2;
+  background: var(--fg-ground);
+  /* AND IT IS PADDED ON ITS OWN TERMS. The overlap is this padding: the card
+     is the middle row plus two paddings, so the amount it rides over its
+     neighbours and the amount of air around the sentence are one number. */
+  padding: clamp(1.1rem, 2.2vw, 2.1rem) clamp(1.1rem, 2.4vw, 2.4rem);
+  display: grid;
+  align-content: center;
+  gap: 0.55rem;
+  /* white on white needs SOMETHING, and a border is not it — a hairlined box
+     around a sentence is a caption. The shadow is almost nothing: enough that
+     the eye reads the card as nearer than the photographs it crosses. */
+  box-shadow: 0 1px 2px rgba(20, 16, 12, 0.05), 0 10px 30px rgba(20, 16, 12, 0.07);
+  border-radius: 0.375rem;
+}
+
+/* THE POSTER SIZE IS THE STAGE'S, AND IT IS FAR TOO BIG FOR HALF A COLUMN.
+   `--fg-poster` is set for a headline with a whole frame to itself; in a
+   six-column card it wraps to five lines and the card swallows the bento. The
+   token is redefined rather than the rule overridden, so everything in here
+   that reads it — the headline is not the only thing — stays in proportion. */
+.fg-bento__mid {
+  --fg-poster: min(clamp(1.5rem, 3.1vw, 2.6rem), 7svh);
+}
+.fg-bento__mid .fg-h { max-width: 18ch; }
+.fg-bento__mid .fg-turn { max-width: 34ch; }
+
+/* --- AND BETWEEN 992 AND 1280 THE MIDDLE TAKES TWO MORE COLUMNS ---------
+
+   THE CARD IS SIX OF TWELVE EVERYWHERE ELSE and that is right everywhere else.
+   In this band it is not: the index has already taken 224px off the left, the
+   gutters take another hundred, and six columns of what is left is about 345px
+   — narrow enough that the three claims wrap onto three rows and the card
+   grows into a tall white block sitting on top of its own bento.
+
+   Two more columns, taken one from each of the tiles beside it, puts the
+   claims back on two rows and the card back in proportion. Nothing else about
+   the composition changes: same seven pictures, same hole, same overlap. */
+@media (min-width: 62rem) and (max-width: 80rem) {
+  .fg-bento__t:nth-child(3) { grid-area: 2 / 1 / 3 / 3; }
+  .fg-bento__t:nth-child(4) { grid-area: 2 / 11 / 3 / 13; }
+  .fg-bento__mid { grid-area: 2 / 3 / 3 / 11; }
+}
+
+/* --- AND ON A NARROW SCREEN IT IS THE SAME IDEA, SMALLER -----------------
+
+   NOT A STACK. The first version of this rule turned the bento into a list —
+   claim, then pictures two abreast underneath — and that is a different scene
+   wearing the same content. What makes this one work is a card laid ON the
+   photographs, and that survives being narrow; it is the ring with a hole in
+   the middle that does not, because three of twelve columns at 390px is an
+   eighty-pixel sliver and the sentence needs the other nine.
+
+   So the hole goes and the overlap stays. The pictures become a plain grid —
+   the hero as a band across the top at the proportion it was cut, six details
+   two abreast under it — and the card is placed on the middle row of details
+   and allowed to outgrow it exactly as it does on a desktop. What you see is
+   a smaller bento with the claim lying across it.
+
+   THE HEIGHT IS THE STAGE'S, and that is not cosmetic. Sized by aspect ratio
+   instead, the column ran to whatever the tiles added up to — 837px of bento
+   in a 743px stage on a phone — and the stage clips, so the bottom two
+   pictures were simply not there. 94px over at 390, 242px over on a tablet.
+   Stated as a height with the rows sharing what is left, it cannot happen. */
+@media (max-width: 62rem) {
+  .fg-bento {
+    max-width: 34rem;
+    height: min(46rem, calc(100svh - 2 * var(--fg-gut-b)));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* the hero at its own proportion, then three rows of pairs sharing the
+       remainder however much that turns out to be */
+    grid-template-rows: auto repeat(3, minmax(0, 1fr));
+    gap: clamp(0.3rem, 1.4vw, 0.55rem);
+  }
+  .fg-bento__t:nth-child(1) {
+    grid-area: 1 / 1 / 2 / 3;
+    /* a 2.7:1 strip cropped square is not the same picture */
+    aspect-ratio: 890 / 330;
+  }
+  .fg-bento__t:nth-child(2) { grid-area: 2 / 1 / 3 / 2; }
+  .fg-bento__t:nth-child(3) { grid-area: 2 / 2 / 3 / 3; }
+  .fg-bento__t:nth-child(4) { grid-area: 3 / 1 / 4 / 2; }
+  .fg-bento__t:nth-child(5) { grid-area: 3 / 2 / 4 / 3; }
+  .fg-bento__t:nth-child(6) { grid-area: 4 / 1 / 5 / 2; }
+  .fg-bento__t:nth-child(7) { grid-area: 4 / 2 / 5 / 3; }
+
+  /* THE CARD KEEPS ITS CARD. It is inset from the sides rather than filling
+     them, so the pictures it lies on are visible past both edges — which is
+     the whole reason it reads as laid on top of them rather than as a row of
+     the grid. */
+  .fg-bento__mid {
+    grid-area: 3 / 1 / 4 / 3;
+    margin-inline: clamp(0.4rem, 2.2vw, 1rem);
+    padding: clamp(0.85rem, 3.4vw, 1.25rem) clamp(0.9rem, 3.6vw, 1.35rem);
+    gap: 0.45rem;
+    --fg-poster: clamp(1.25rem, 6.4vw, 1.9rem);
+  }
+  .fg-bento__mid .fg-h { max-width: 16ch; }
+  .fg-bento__mid .fg-turn { max-width: 40ch; }
+  /* TWO CLAIMS TO A ROW, NOT ONE. The film's narrow pill is 155px wide and the
+     inset card is about 326 at 390px — two of them plus the gap came to 324,
+     which is to say they fitted by two pixels and therefore did not. A little
+     off the padding and they sit two-up, which takes a whole row of height out
+     of the card and gives it back to the photographs underneath. */
+  .fg-bento__mid .fg-pills { gap: 0.4rem 0.5rem; }
+  .fg-bento__mid .fg-pills li { padding: 0.45rem 0.7rem; font-size: 0.75rem; }
+  .fg-bento__mid .fg-pills svg { width: 0.85rem; height: 0.85rem; }
 }
 
 /* --- 03 · the market, as a quantity -------------------------------------- */
@@ -18421,33 +18692,8 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   .fg-beat--turn::before { width: 1.4rem; left: -0.4rem; height: 1px; }
   .fg-cap { position: static; margin-top: 0.75rem; text-align: left; }
   .fg-obj__art { width: min(72vw, 17rem); }
-  /* NARROW PUTS THE PLATE BEHIND THE COLUMN, not beside it. There is no
-     half of a 390px frame wide enough for both, and stacking them would
-     make the scene twice as tall as the stage it has to fit in. The plate
-     fills the frame, drops to a quarter of its strength, and the column
-     reads over it — which is the same composition seen from further away. */
-  [data-scene='x0-x1'] .fg-obj { place-items: start center; }
-  .film [data-scene='x0-x1'] .fg-obj__art {
-    width: 124%;
-    height: auto;
-    margin-top: 9svh;
-    /* THE DRAWING IS INHERITED, THE STRENGTH IS NOT. At this width it sits
-       behind the column rather than beside it, so it is dropped to a third
-       — but it still rules itself in, because that is the scene and not a
-       decoration on the wide layout. */
-    opacity: 0.3;
-  }
-  [data-scene='x0-x1'] .scn__in--foot {
-    justify-items: start;
-    text-align: left;
-    max-width: 100%;
-    align-content: end;
-    /* the three claims wrap to two rows at this width, and the film's own
-       control sits in the bottom-left corner — this is the gap between the
-       last pill and it */
-    padding-bottom: 2.25rem;
-  }
-  [data-scene='x0-x1'] .fg-h { font-size: min(clamp(2.25rem, 11vw, 3.5rem), 10svh); max-width: 11ch; }
+  /* the narrow rules for this scene went with the drawing — see the note in
+     the wide block. The bento states its own one-column layout. */
   [data-scene='x0-x1'] .fg-facts { justify-content: flex-start; }
   [data-scene='x0-x1'] .fg-facts li + li::before { margin: 0 0.9rem; }
   .fg-pills { gap: 0.5rem 0.9rem; }
