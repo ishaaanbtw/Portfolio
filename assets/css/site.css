@@ -20177,3 +20177,658 @@ body[data-page='project'] .tmode { display: none; }
   .gate__box { transition: none; }
   .gate__box { transform: none; }
 }
+
+/* --- 03 · the insight ------------------------------------------------------
+
+   A FILM OF WHERE THE MONEY ALREADY LIVES, and the type stands on a white wash
+   rather than on a panel. The frame is the video's own 16:9 box, sized to
+   cover the stage and pushed a little right of centre, so the phone lands in
+   the right half and the left edge it gives up is under the wash anyway. The
+   cards sit inside that box, which is what keeps them pinned to the phone at
+   any window shape. */
+/* `--in` and `--out` are written by `Film.tick`; the defaults are the
+   finished frame, which is what a visitor with motion off gets */
+.scn--insight { --in: 1; --out: 0; }
+.scn--insight .scn__stage { background: #ffffff; }
+
+.fg-ins__bg {
+  position: absolute; inset: 0; overflow: clip; z-index: 0; pointer-events: none;
+  /* THE SEAM WITH THE SCENES EITHER SIDE. The photograph rises out of the
+     page's white from the top as the scene arrives and sinks back into it
+     from the bottom as it leaves, so there is never a hard edge of picture
+     sliding across the screen. Two soft 40% ramps, positioned by --in/--out. */
+  --k: calc((1 - var(--in)) * 160%);
+  --j: calc(var(--out) * 160%);
+  -webkit-mask-image: linear-gradient(180deg,
+    transparent calc(var(--k) - 40%), #000 var(--k),
+    #000 calc(100% - var(--j)), transparent calc(140% - var(--j)));
+  mask-image: linear-gradient(180deg,
+    transparent calc(var(--k) - 40%), #000 var(--k),
+    #000 calc(100% - var(--j)), transparent calc(140% - var(--j)));
+  opacity: calc(0.25 + var(--in) * 0.75 - var(--out) * 0.5);
+}
+
+.fg-ins__frame {
+  position: absolute;
+  left: 66%;
+  top: 50%;
+  /* 80% OF A COVERING FRAME, so the picture reads as a scene beside the
+     copy rather than a wall behind it. It no longer reaches the top and
+     bottom of the stage, so the video's own edges fade into the white. */
+  width: max(80%, 142.22svh);
+  aspect-ratio: 16 / 9;
+  translate: -50% -50%;
+  /* a slow push-in against the scroll, on top of the film's own drift */
+  scale: calc(1.06 + (1 - var(--in)) * 0.05 - var(--p) * 0.06);
+}
+
+.fg-ins__vid {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%),
+    linear-gradient(90deg, #000 88%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%),
+    linear-gradient(90deg, #000 88%, transparent 100%);
+  mask-composite: intersect;
+}
+
+/* THE WASH: near-white across the reading column, then a long soft falloff
+   into the picture, with a little haze at the top and the foot so the frame
+   does not end on a hard edge of photograph. */
+.fg-ins__wash {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg,
+      #ffffff 0%,
+      rgba(255, 255, 255, 0.97) 30%,
+      rgba(255, 255, 255, 0.88) 40%,
+      rgba(255, 255, 255, 0.55) 50%,
+      rgba(255, 255, 255, 0.16) 60%,
+      rgba(255, 255, 255, 0) 68%),
+    radial-gradient(70% 90% at 8% 50%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 18%),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 16%);
+}
+
+/* the glass cards, around the phone */
+.fg-ins__cards { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; }
+
+.fg-ins__card {
+  position: absolute;
+  left: calc(var(--cx) * 1%);
+  top: calc(var(--cy) * 1%);
+  display: flex;
+  align-items: center;
+  gap: 0.85em;
+  padding: 0.95em 1.3em 0.95em 1.05em;
+  border-radius: 1.1em;
+  background: rgba(64, 56, 48, 0.34);
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  backdrop-filter: blur(16px) saturate(1.25);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 12px 34px rgba(20, 14, 8, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: clamp(0.75rem, 0.9vw, 1rem);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.fg-ins__card svg {
+  width: 2em; height: 2em; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+}
+
+.fg-ins__card b { display: block; font-size: 1.12em; font-weight: 560; letter-spacing: -0.01em; }
+.fg-ins__card small { display: block; font-size: 0.82em; opacity: 0.82; margin-top: 0.15em; white-space: normal; max-width: 9.5em; }
+
+/* the corner line, top right, over the picture */
+.fg-ins__tag {
+  position: absolute;
+  top: clamp(1.5rem, 7vh, 4.5rem);
+  right: var(--fg-gut);
+  z-index: 2;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  line-height: 1.7;
+  text-transform: uppercase;
+  text-align: right;
+  color: rgba(16, 16, 18, 0.78);
+}
+.fg-ins__tag::after { content: ''; width: 2.75rem; height: 1px; background: currentColor; opacity: 0.75; }
+
+/* the copy */
+.scn--insight .fg-ins__copy { position: relative; z-index: 2; left: calc(-1 * clamp(0rem, 4.5vw, 4.5rem)); }
+
+.film .scn--insight .fg-h {
+  font-size: min(clamp(2.5rem, 5.4vw, 5.5rem), 10.5svh);
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+  max-width: 10.5ch;
+}
+
+.fg-ins__sub {
+  display: block;
+  margin-top: 0.3em;
+  font-size: 0.62em;
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: #6c6d73;
+  max-width: 14ch;
+}
+
+.film .scn--insight .fg-p { max-width: 34ch; color: #3c3d42; }
+
+.fg-ins__stats {
+  list-style: none;
+  margin: clamp(0.5rem, 2.5vh, 1.75rem) 0 0;
+  padding: 0;
+  display: flex;
+}
+.fg-ins__stats li {
+  padding-inline: clamp(1rem, 2.4vw, 2.25rem);
+  border-left: 1px solid rgba(16, 16, 18, 0.16);
+}
+.fg-ins__stats li:first-child { padding-left: 0; border-left: 0; }
+.fg-ins__stats b {
+  display: block;
+  font-size: clamp(1.25rem, 1.8vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--fg-ink);
+}
+.fg-ins__stats li > span {
+  display: block;
+  margin-top: 0.35rem;
+  max-width: 12ch;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--fg-dim);
+}
+
+/* THE CARDS NEED ROOM BESIDE THE COPY. Below a wide desktop they would sit on
+   the headline, so they go, and the film carries the scene on its own. */
+@media (max-width: 80rem) {
+  .fg-ins__cards { display: none; }
+}
+@media (min-width: 46.01rem) and (max-width: 80rem) {
+  .fg-ins__frame { left: 76%; width: max(84%, 150svh); }
+  .fg-ins__wash {
+    background:
+      linear-gradient(90deg,
+        #ffffff 0%,
+        rgba(255, 255, 255, 0.97) 44%,
+        rgba(255, 255, 255, 0.8) 56%,
+        rgba(255, 255, 255, 0.3) 64%,
+        rgba(255, 255, 255, 0) 72%);
+  }
+}
+
+/* NARROW: the copy takes the top of the frame, the phone the bottom, and the
+   wash turns to run top to bottom. The frame is placed so the phone's centre
+   sits at 62% of the width whatever the height. */
+@media (max-width: 46rem) {
+  /* the phone's centre lands at 60% of the width, in the lower half */
+  .fg-ins__frame { width: 180vw; left: 44%; top: auto; bottom: 0; translate: -50% 0; }
+  .scn--insight .fg-ins__copy { left: 0; }
+  .fg-ins__frame + .fg-ins__wash + .fg-ins__frame { display: none; }
+  .fg-ins__wash {
+    background:
+      linear-gradient(180deg,
+        #ffffff 0%,
+        rgba(255, 255, 255, 0.96) 46%,
+        rgba(255, 255, 255, 0.7) 56%,
+        rgba(255, 255, 255, 0) 70%);
+  }
+  .scn--insight .fg-ins__copy { align-content: start; min-height: 100%; padding-top: 8svh; }
+  .fg-ins__tag { display: none; }
+  .fg-ins__stats li { padding-inline: 0.9rem; }
+  .fg-ins__stats li > span { font-size: 0.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fg-ins__frame { scale: 1; }
+  .fg-ins__bg { -webkit-mask-image: none; mask-image: none; opacity: 1; }
+}
+
+/* --- 03 · the stat reels --------------------------------------------------
+   One cell per digit, one line tall, clipping a reel of 30 numerals. The reel
+   rests on 0 and travels to its digit in the third turn, each digit landing a
+   beat after the one before it and each figure a beat after the last — so
+   the row settles left to right like reels stopping. */
+.fg-roll__row { display: inline-flex; align-items: flex-start; line-height: 1.1; }
+.fg-roll { display: inline-block; height: 1.1em; overflow: clip; }
+.fg-roll__reel {
+  display: flex; flex-direction: column;
+  translate: 0 0;
+  transition: translate calc(1.25s + var(--di) * 0.28s) cubic-bezier(0.16, 0.8, 0.12, 1.04);
+  transition-delay: calc(var(--si) * 0.16s + var(--di) * 0.06s);
+}
+.fg-roll__reel i { display: block; height: 1.1em; font-style: normal; text-align: center; }
+.fg-roll__ch { display: inline-block; height: 1.1em; }
+.scn--insight.is-rolled .fg-roll__reel { translate: 0 calc((20 + var(--d)) * -1.1em); }
+/* back to rest instantly, so the next spin starts from 0 and not from the digit */
+.scn--insight:not(.is-rolled) .fg-roll__reel { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fg-roll__reel { transition: none; translate: 0 calc((20 + var(--d)) * -1.1em); }
+}
+
+/* --- 04 · the problem: copy and comparison left, one render right -------- */
+.scn--problem .scn__stage { background: #ffffff; }
+
+/* the grey stand-in for any picture that has not arrived yet */
+.fg-ph {
+  display: grid;
+  place-items: center;
+  background: #e8e8eb;
+  border-radius: 1rem;
+  color: #8b8c92;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.fg-prob {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 84rem;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(1.5rem, 3vw, 3.5rem);
+  align-items: center;
+}
+
+.fg-prob__copy { display: grid; gap: clamp(0.85rem, 2.1vh, 1.4rem); justify-items: start; }
+
+.fg-prob__kick {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--fg-quiet);
+}
+.fg-prob__kick b { font-size: 1rem; font-weight: 600; letter-spacing: 0.08em; color: #bcbdc2; }
+
+.film .scn--problem .fg-h {
+  font-size: min(clamp(2.2rem, 4.3vw, 4.75rem), 8.2svh);
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+  max-width: none;
+}
+.fg-prob__main { display: block; max-width: 11.5ch; }
+.fg-prob__sub { display: block; max-width: 17ch; color: #8e8f95; }
+.film .scn--problem .fg-p { max-width: 40ch; }
+
+/* the two-up comparison */
+.fg-prob__cmp {
+  list-style: none;
+  margin: clamp(0.5rem, 2.4vh, 1.5rem) 0 0;
+  padding: 0;
+  width: 100%;
+  max-width: 38rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.fg-prob__cmp li {
+  position: relative;
+  min-height: min(10.5rem, 19svh);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border: 1px solid rgba(16, 16, 18, 0.08);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 14px 32px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+.fg-prob__cmp b { position: relative; z-index: 1; font-size: 0.875rem; font-weight: 540; color: var(--fg-ink); }
+.fg-prob__cmp span { position: relative; z-index: 1; max-width: 22ch; font-size: 0.75rem; line-height: 1.45; color: var(--fg-dim); }
+.fg-prob__cmpimg { margin-top: auto; align-self: flex-end; width: 55%; height: clamp(3.5rem, 9svh, 5.5rem); object-fit: contain; }
+.fg-prob__cmp .fg-ph { border-radius: 0.7rem; }
+img.fg-prob__cmpimg { mix-blend-mode: multiply; }
+/* the pair: one device in from each side, about four-fifths showing */
+.fg-prob__cmp li:has(.fg-prob__pair) { min-height: min(13rem, 24svh); }
+.fg-prob__pair {
+  position: absolute;
+  bottom: -12%;
+  height: 64%;
+  width: auto;
+  pointer-events: none;
+}
+.fg-prob__pair--l { left: -5%; }
+.fg-prob__pair--r { right: -7%; }
+/* the two-wallet shot is nearly square, so it sits lower and smaller than
+   the fan to stay clear of the copy */
+.fg-prob__cmp li:first-child .fg-prob__cmpimg--bleed { width: min(56%, 10.5rem); right: 5%; bottom: -12%; }
+.fg-prob__cmp li:has(.fg-prob__cmpimg--bleed) { min-height: min(13rem, 24svh); }
+/* A BLEEDING PICTURE: larger than the card and cut by its bottom and right
+   edges, so the object reads as sitting in the card rather than pasted on. */
+.fg-prob__cmp li:has(.fg-prob__cmpimg--bleed) { padding-bottom: 0; }
+.fg-prob__cmp .fg-prob__cmpimg--bleed {
+  position: absolute;
+  right: -12%;
+  bottom: -22%;
+  width: min(80%, 13rem);
+  height: auto;
+  margin: 0;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* the render and its notes */
+.fg-prob__art { position: relative; height: min(84svh, 50rem); display: grid; align-items: center; }
+.fg-prob__stage {
+  position: relative;
+  width: min(92%, 42rem, calc(68svh * 0.982));
+  aspect-ratio: 1200 / 1222;
+  justify-self: start;
+}
+.fg-prob__herowrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  scale: calc(0.97 + var(--p) * 0.03);
+}
+.fg-prob__hero { width: 100%; height: 100%; }
+img.fg-prob__hero { object-fit: contain; display: block; filter: drop-shadow(0 30px 40px rgba(20, 20, 24, 0.14)); }
+.fg-prob__herowrap .fg-ph { border-radius: 1.5rem; }
+
+/* two faint orbit rings behind everything */
+.fg-prob__ring {
+  position: absolute; left: 52%; top: 50%;
+  width: 118%; aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 1px solid rgba(16, 16, 18, 0.06);
+  pointer-events: none;
+}
+.fg-prob__ring--2 { width: 78%; border-color: rgba(16, 16, 18, 0.05); }
+
+/* the soft floor shadow the object floats over */
+.fg-prob__floor {
+  position: absolute; left: 30%; right: -4%; bottom: -5%; height: 12%;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(20, 20, 24, 0.2), rgba(20, 20, 24, 0) 70%);
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+/* THE GHOST CARDS. Same size and tilt as the card in the render (it sits at
+   about 50% / 32% of the picture, turned ~9.5°), frosted and stepping back.
+   `--f` fans them out of the card over the first half of the scene. */
+.fg-prob__ghost {
+  --f: clamp(0, calc((var(--p) - 0.06) * 2.6), 1);
+  position: absolute;
+  left: 53%; top: 33%;
+  width: 45%; height: 58%;
+  rotate: var(--r, 9.5deg);
+  border-radius: 7% / 5.5%;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(226, 228, 232, 0.55));
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 18px 40px rgba(20, 20, 24, 0.07), inset 0 0 0 1px rgba(16, 16, 18, 0.04);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  translate: calc(var(--gx) * var(--f)) calc(var(--gy) * var(--f));
+  opacity: calc(var(--go) * var(--f));
+  pointer-events: none;
+}
+/* a faint chip outline on each, so they read as cards and not as panes */
+.fg-prob__ghost::before {
+  content: ''; position: absolute; left: 34%; top: 14%;
+  width: 13%; height: 13%;
+  border-radius: 18%;
+  border: 1px solid rgba(16, 16, 18, 0.08);
+}
+.fg-prob__ghost--1 { --gx: -4%;  --gy: -26%; --r: 4deg;  --go: 1; }
+.fg-prob__ghost--2 { --gx: 10%;  --gy: -34%; --r: 8deg;  --go: 0.85; }
+.fg-prob__ghost--3 { --gx: 22%;  --gy: -18%; --r: 13deg; --go: 0.7; }
+
+.fg-prob__lines { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.fg-prob__lines line {
+  stroke: rgba(16, 16, 18, 0.38);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  translate: none;
+}
+
+.fg-prob__dot {
+  position: absolute;
+  z-index: 2;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--fg-ink);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.85);
+  transform: translate(-50%, -50%);
+}
+
+.fg-prob__note { position: absolute; z-index: 3; display: flex; align-items: stretch; gap: 0.5rem; width: max-content; }
+.fg-prob__note > * { flex: none; }
+.fg-prob__note--right { transform: translateY(-50%); }
+.fg-prob__note p {
+  margin: 0;
+  width: 8.75rem;
+  padding: 0.95rem 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--fg-ink);
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(16, 16, 18, 0.07);
+  border-radius: 0.9rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+.fg-prob__thumb { width: 6.5rem; min-height: 6.5rem; border-radius: 0.9rem; object-fit: cover; }
+
+/* below a wide desktop the thumbnails go, and the notes are text only */
+@media (max-width: 80rem) {
+  .fg-prob__thumb { display: none; }
+  .fg-prob__cmpimg { height: 3rem; }
+  .fg-prob__cmp li { min-height: 0; }
+  .fg-prob__cmp li:has(.fg-prob__cmpimg--bleed) { min-height: 14rem; }
+  .fg-prob__cmp li:has(.fg-prob__pair) { min-height: 14rem; }
+  .fg-prob__pair { height: 52%; }
+  .fg-prob__cmp .fg-prob__cmpimg--bleed { width: 100%; right: -16%; bottom: -16%; }
+  .fg-prob__cmp li:first-child .fg-prob__cmpimg--bleed { width: 72%; right: 6%; bottom: -12%; }
+  .fg-prob__note p { width: 8rem; }
+}
+
+/* NARROW: one column — the copy, a short band of render, the comparison.
+   The paragraph and the notes go; the headline and the two cards carry it. */
+@media (max-width: 46rem) {
+  .fg-prob { grid-template-columns: minmax(0, 1fr); gap: 1rem; align-content: center; }
+  .fg-prob__copy { display: contents; }
+  .fg-prob__kick { order: 1; }
+  .scn--problem .fg-h { order: 2; }
+  .fg-prob__art { order: 3; height: 24svh; }
+  .fg-prob__cmp { order: 4; margin-top: 0; gap: 0.6rem; }
+  .scn--problem .fg-p,
+  .fg-prob__lines, .fg-prob__dot, .fg-prob__note { display: none; }
+  .fg-prob__stage { width: auto; height: 100%; max-width: 100%; justify-self: center; }
+  .fg-prob__art { overflow: visible; }
+  .fg-prob__ghost, .fg-prob__ring { display: none; }
+  .fg-prob__cmp li { min-height: 0; padding: 0.8rem; }
+  .fg-prob__cmp span { font-size: 0.6875rem; }
+  .fg-prob__cmpimg { width: 62%; height: 3.25rem; }
+  .fg-prob__cmp li:has(.fg-prob__cmpimg--bleed) { min-height: 11.5rem; }
+  .fg-prob__cmp li:has(.fg-prob__pair) { min-height: 11.5rem; }
+  .fg-prob__pair { height: 54%; }
+  .fg-prob__cmp .fg-prob__cmpimg--bleed { width: 92%; height: auto; right: -16%; bottom: -22%; }
+  .fg-prob__cmp li:first-child .fg-prob__cmpimg--bleed { width: 58%; right: 6%; bottom: -12%; }
+  .fg-prob__main, .fg-prob__sub { max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fg-prob__herowrap { scale: 1; }
+  .fg-prob__ghost { --f: 1; }
+}
+
+/* --- 04 · the comparison cards, staged -----------------------------------
+   A soft spotlight rising from the foot of each card, a pool of shadow under
+   the objects, and a real drop shadow on the objects themselves, so they sit
+   IN the card with some weight instead of being printed on it. Layers: the
+   pool (0), the objects (1), the copy (2). */
+.fg-prob__cmp li:has(.fg-prob__pair),
+.fg-prob__cmp li:has(.fg-prob__cmpimg--bleed) {
+  background:
+    radial-gradient(120% 75% at 50% 112%, #e9ebef 0%, #f4f5f7 38%, #ffffff 68%);
+}
+.fg-prob__cmp li:has(.fg-prob__pair)::after,
+.fg-prob__cmp li:has(.fg-prob__cmpimg--bleed)::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: 10%; right: 10%; bottom: -10%;
+  height: 34%;
+  background: radial-gradient(closest-side, rgba(20, 20, 26, 0.2), rgba(20, 20, 26, 0));
+  filter: blur(12px);
+  pointer-events: none;
+}
+.fg-prob__cmp b, .fg-prob__cmp span { z-index: 2; }
+.fg-prob__pair,
+.fg-prob__cmp .fg-prob__cmpimg--bleed {
+  z-index: 1;
+  mix-blend-mode: normal;
+  filter:
+    drop-shadow(0 22px 24px rgba(20, 20, 26, 0.26))
+    drop-shadow(0 6px 8px rgba(20, 20, 26, 0.14));
+}
+/* the pair leans in a touch more, for a little drama */
+.fg-prob__pair { height: 68%; }
+.fg-prob__pair--l { rotate: -4deg; transform-origin: 0 100%; }
+.fg-prob__pair--r { rotate: 4deg; transform-origin: 100% 100%; }
+
+/* the phone and its four cards, centred in their card */
+.fg-prob__cmp li:last-child .fg-prob__cmpimg--bleed {
+  left: 50%;
+  right: auto;
+  translate: -50% 0;
+  width: min(84%, 14rem);
+  bottom: -24%;
+}
+@media (max-width: 80rem) {
+  .fg-prob__pair { height: 54%; }
+  .fg-prob__cmp li:last-child .fg-prob__cmpimg--bleed { width: 96%; bottom: -16%; }
+}
+@media (max-width: 46rem) {
+  .fg-prob__pair { height: 56%; }
+  .fg-prob__cmp li:last-child .fg-prob__cmpimg--bleed { width: 90%; bottom: -20%; }
+}
+
+/* --- 04 · the X1 card: meta line, tag, and the vault-and-cards shot ------ */
+.fg-prob__cmpmeta {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  margin-top: 0.15rem;
+  font-style: normal;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--fg-ink);
+}
+.fg-prob__cmptag {
+  font-style: normal;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #101012;
+  color: #fff;
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+}
+/* the X1 set (vault and four cards), tilted, centred and rising out of the
+   foot of the card — only its top half shows */
+.fg-prob__cmp li:last-child .fg-prob__cmpimg--bleed {
+  left: 50%;
+  right: auto;
+  top: 44%;
+  bottom: auto;
+  translate: -50% 0;
+  width: min(80%, 14rem);
+}
+@media (max-width: 80rem) {
+  .fg-prob__cmp li:last-child .fg-prob__cmpimg--bleed { width: 88%; top: 50%; }
+}
+@media (max-width: 46rem) {
+  .fg-prob__cmp li:last-child .fg-prob__cmpimg--bleed { width: 76%; top: 50%; }
+}
+
+/* --- 04 · the render, composed like a poster ------------------------------
+   THE OBJECT IS TOO BIG FOR THE FRAME ON PURPOSE: the phone is cut by the top
+   of the screen and crowds the headline, and the two notes sit out at the
+   right edge at different heights and in different arrangements. A tidy,
+   centred object with matched callouts reads as a template; this reads as a
+   decision. */
+.fg-prob__art { overflow: visible; }
+.fg-prob__stage {
+  width: min(100%, 48rem, calc(98svh * 0.982));
+  margin-left: -20%;
+  translate: 0 -12svh;
+}
+.fg-prob__ring { width: 130%; left: 60%; border-color: rgba(16, 16, 18, 0.07); }
+.fg-prob__ring--2 { width: 92%; }
+
+/* the ghost cards read more — a fan rising out of the real one */
+.fg-prob__ghost {
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.96), rgba(232, 234, 238, 0.7));
+  border: 1px solid rgba(16, 16, 18, 0.06);
+  box-shadow: 0 24px 50px rgba(20, 20, 24, 0.08), inset 0 1px 0 #fff;
+}
+.fg-prob__ghost--1 { --gx: -2%;  --gy: -30%; --r: 3deg;  --go: 1; }
+.fg-prob__ghost--2 { --gx: 12%;  --gy: -40%; --r: 7deg;  --go: 0.9; }
+.fg-prob__ghost--3 { --gx: 26%;  --gy: -20%; --r: 14deg; --go: 0.75; }
+
+/* notes: smaller, and not the same shape twice */
+.fg-prob__note { gap: 0.6rem; }
+.fg-prob__note p {
+  width: 7.5rem;
+  padding: 0.85rem 0.95rem;
+  font-size: 0.75rem;
+  line-height: 1.42;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 14px 34px rgba(20, 20, 24, 0.07);
+}
+.fg-prob__thumb { width: 7.25rem; min-height: 0; height: 7.25rem; border-radius: 0.75rem;
+  box-shadow: 0 14px 34px rgba(20, 20, 24, 0.1); }
+/* row: text, then the picture a step lower */
+.fg-prob__note--row { align-items: flex-start; }
+.fg-prob__note--row .fg-prob__thumb { margin-top: 0.75rem; }
+/* stack: the picture behind and up to the right, the text in front of it */
+.fg-prob__note--stack { display: block; width: 12.5rem; height: 11rem; }
+.fg-prob__note--stack .fg-prob__thumb { position: absolute; right: 0; top: 0; }
+.fg-prob__note--stack p { position: absolute; left: 0; bottom: 0; z-index: 1; }
+.fg-prob__note--right, .fg-prob__note--up { transform: none; }
+
+@media (max-width: 80rem) {
+  .fg-prob__stage { width: min(108%, 46rem, calc(94svh * 0.982)); margin-left: -8%; }
+  .fg-prob__note--stack { width: 8rem; height: auto; margin-left: -5rem; }
+  .fg-prob__note--stack p { position: static; }
+}
+@media (max-width: 46rem) {
+  .fg-prob__stage { width: auto; margin-left: 0; translate: none; }
+  .scn--problem .fg-prob__note,
+  .scn--problem .fg-prob__lines,
+  .scn--problem .fg-prob__dot { display: none; }
+  .fg-prob__art { overflow: clip; }
+}

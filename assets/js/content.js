@@ -1451,10 +1451,26 @@ window.SITE = {
                first draft — the market, then the insight — merged here
                because it is one gesture: the field of people ignites and
                resolves into the device they are already holding. */
-            { id: 'x0-market', kind: 'field', dur: 170, count: 460, seed: 19,
-              art: 'assets/img/x0/onboarding/01-splash.webp',
-              h: 'Mobile isn’t a platform decision. It’s where the money already lives.',
-              p: 'Price and complexity were screening out the people self-custody was meant to protect.' },
+            { id: 'x0-market', kind: 'insight', dur: 170,
+              film: 'assets/media/x0/insight.webm',
+              film2: 'assets/media/x0/insight.mp4',
+              poster: 'assets/media/x0/insight.webp',
+              kicker: 'The insight',
+              h: 'Mobile isn’t a platform decision.',
+              h2: 'It’s where the money already lives.',
+              p: 'Price and complexity were screening out the people self-custody was meant to protect.',
+              stats: [
+                { n: '6.8B+', l: 'smartphone users worldwide' },
+                { n: '91%',   l: 'of crypto users use mobile daily' },
+                { n: '<$50',  l: 'was the expected price range' },
+              ],
+              /* x / y are percentages of the video frame, around the phone */
+              cards: [
+                { i: 'bank',  t: 'Banking',   s: 'Salary, savings, bills.', x: 33, y: 10 },
+                { i: 'cart',  t: 'Shopping',  s: 'Everyday payments.',      x: 31, y: 41 },
+                { i: 'chart', t: 'Investing', s: 'Building wealth.',        x: 71, y: 19 },
+                { i: 'coins', t: 'Crypto',    s: 'Your money, your control.', x: 71, y: 52 },
+              ] },
 
             /* ==============================================================
                ACT II — THE QUESTION (06–10)
@@ -1474,23 +1490,44 @@ window.SITE = {
                BEFORE IT. Two scenes have just argued that X1 was correct and
                that the correctness stopped mattering; this rules a line under
                that and names what the next three scenes are about. */
-            { id: 'x0-ch-1', nav: 'The Problem', kind: 'mark', dur: 118,
-              n: '01', h: 'The problem',
-              p: 'X1 was not broken. The market it was built for had moved.' },
+            /* (the 01 · The problem chapter card was removed; the rail entry
+               now points at the scene below) */
 
             /* THE PRODUCT'S ACTUAL REASON TO EXIST, AND IT IS A SUBTRACTION.
                This is the strongest idea in the project and it was missing
                from both earlier versions of the study. The vault device
                leaves the frame slowly and does not come back; three costs are
                struck through behind it. */
-            { id: 'x0-subtract', kind: 'strike', dur: 180,
-              gone: { kind: 'render', dia: 'object', subject: 'The X1 vault device', treat: 'lift',
-                of: 'The X1 device on a light ground, same key light as the card. This is the object that exits the frame and does not return.' },
-              stays: { kind: 'render', dia: 'tap', subject: 'The card held against a phone, mid-tap', ratio: 0.8, treat: 'lift',
-                of: 'The X0 card held against the back of a phone, mid-tap, same lighting. The two objects that are left.' },
-              h: 'The phone was already in their hand. So we stopped shipping a screen.',
-              items: ['Hardware to manufacture', 'Freight and returns', 'Certification, per market'],
-              p: 'The same distributed-key security, at a fraction of the price — because of what isn’t in the box.' },
+            { id: 'x0-subtract', nav: 'The Problem', kind: 'problem', dur: 170,
+              n: '03', kicker: 'The problem',
+              h: 'The phone was already in their hand.',
+              h2: 'So we stopped shipping a screen.',
+              p: 'Most hardware wallets still rely on their own screen and buttons. It adds cost, complexity and friction — for something people already have in their pocket.',
+              /* IMAGES TO COME. Leave `src` empty and the frame shows a grey
+                 placeholder with its label; fill `src` with a path under
+                 assets/img/x0/ and the picture takes its place. */
+              hero: { src: 'assets/img/x0/problem/hero.webp', label: 'Hero render · phone + X0 card', alt: 'An X0 card tapped against the back of a phone' },
+              compare: [
+                { t: 'Traditional hardware wallet', s: 'A separate device, screen, buttons and a learning curve.',
+                  label: 'Hardware wallet',
+                  pair: [
+                    { src: 'assets/img/x0/problem/hw-trezor.webp', side: 'l', alt: 'A Trezor Safe 7' },
+                    { src: 'assets/img/x0/problem/hw-ledger.webp', side: 'r', alt: 'A Ledger Nano X' },
+                  ] },
+                { t: 'Cypherock X1', s: 'High-end security with EAL6+ and Shamir Secret Sharing.',
+                  src: 'assets/img/x0/problem/x1-set.webp', label: 'Cypherock X1',
+                  alt: 'The Cypherock X1 vault and its cards', bleed: true, fade: true },
+              ],
+              /* x / y: where the note's corner sits; dx / dy: the dot on the
+                 render. Both in % of the render's own box. */
+              notes: [
+                { t: 'The same security layer. Just without the screen.', layout: 'row',
+                  x: 76, y: 6, lx: 80, ly: 23, dx: 72, dy: 34,
+                  src: 'assets/img/x0/problem/thumb-chip.webp', label: 'Detail', alt: 'Close-up of the X0 card chip' },
+                { t: 'A card that lives in your wallet. Not on your desk.', layout: 'stack',
+                  x: 92, y: 66, lx: 92, ly: 84, dx: 76, dy: 84,
+                  src: 'assets/img/x0/problem/thumb-edge.webp', label: 'Detail', alt: 'Close-up of the X0 card edge' },
+              ] },
 
             /* THE TITLE CARD, and the one the reader will screenshot. The
                fourth word holds because it is the one nobody expects to
@@ -1506,9 +1543,8 @@ window.SITE = {
                ON the brief — five words, a stack of assumptions, and eight
                questions nobody had written down. Calling it "understanding the
                user" would be the template’s word for it, not the project’s. */
-            { id: 'x0-ch-2', nav: 'Research', kind: 'mark', dur: 118,
-              n: '02', h: 'Understanding the brief',
-              p: 'What was actually handed over, and what it turned out to be asking for.' },
+            /* (the 02 · Understanding the brief chapter card was removed; the
+               Research rail entry now points at the scene below) */
 
             /* THE SPINE, and the only white frame in the film. Nothing moves
                in it: after five scenes of motion, stillness is the effect,
@@ -1519,7 +1555,7 @@ window.SITE = {
                away — which is why it arrived all at once and then left the
                reader staring at white. At 210 the sentence is read across
                real scroll and then sat with. */
-            { id: 'x0-question', act: 'II · Question', kind: 'ask', dur: 210,
+            { id: 'x0-question', nav: 'Research', act: 'II · Question', kind: 'ask', dur: 210,
               kicker: 'The actual question',
               /* THREE LINES, NOT SIX. Set at the old poster size this ran
                  down the whole frame and stopped being a sentence you read in

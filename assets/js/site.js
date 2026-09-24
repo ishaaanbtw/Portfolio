@@ -4792,6 +4792,126 @@
         `</div>`;
     },
 
+    /* --- 03 · the insight, over the film of where the money already lives --
+       A real hand, a real phone, a real table: the argument is that this is
+       where money already sits, so it is shown rather than diagrammed. The
+       film is slowed to half speed and ping-ponged so the loop has no seam,
+       and it only plays while the scene is on screen (see `bgloop` below).
+       The white wash on the left is what the type stands on. The cards live
+       inside the video's own 16:9 frame, so they stay pinned to the phone at
+       any window shape. */
+    insight: (s) => {
+      const ICON = {
+        bank: '<path d="M3 10h18M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18M12 3.5l8.5 4.5h-17z"/>',
+        cart: '<path d="M3 4h2.2l2.3 10.5h10.3L20 7.5H6.3"/><circle cx="9" cy="19" r="1.3"/><circle cx="17" cy="19" r="1.3"/>',
+        chart: '<path d="M4 20v-5M9 20v-8M14 20v-5M19 20V10M4 11.5l5-4 5 3 6-6M16 4.5h4v4"/>',
+        coins: '<ellipse cx="12" cy="6" rx="7" ry="2.8"/><path d="M5 6v6c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6M5 12v6c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-6"/>',
+      };
+      const src = REDUCED ? '' : [s.film, s.film2].filter(Boolean).map((f) =>
+        `<source src="${url(f)}" type="${/\.webm$/i.test(f) ? 'video/webm' : 'video/mp4'}">`).join('');
+      const cards = (s.cards || []).map((c, i) =>
+        `<li class="fg-ins__card beat" style="--at:${(0.16 + i * 0.06).toFixed(3)};--cx:${c.x};--cy:${c.y}">` +
+          `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[c.i] || ICON.bank}</svg>` +
+          `<span><b>${esc(c.t)}</b>${c.s ? `<small>${esc(c.s)}</small>` : ''}</span></li>`).join('');
+      /* THE NUMBERS ROLL IN LIKE A SLOT MACHINE. Each digit is a reel of
+         0–9 three times over, stopped on its own digit in the last turn;
+         punctuation (. B + % < $) stands still. `Film.tick` adds `is-rolled`
+         to the scene when the stats arrive and takes it off when the reader
+         scrolls back above them, so the reels spin again on the way down.
+         The real figure is the element's label; the reels are decoration. */
+      const REEL = Array.from({ length: 30 }, (_, k) => `<i>${k % 10}</i>`).join('');
+      const roll = (str, si) => {
+        let di = 0;
+        return Array.from(String(str)).map((ch) => (/[0-9]/.test(ch)
+          ? `<span class="fg-roll"><span class="fg-roll__reel" style="--d:${ch};--si:${si};--di:${di++}">${REEL}</span></span>`
+          : `<span class="fg-roll__ch">${esc(ch)}</span>`)).join('');
+      };
+      const stats = (s.stats || []).map((t, i) =>
+        `<li${AT(0.34 + i * 0.05)} class="beat"><b aria-label="${esc(t.n)}">` +
+          `<span class="fg-roll__row" aria-hidden="true">${roll(t.n, i)}</span></b>` +
+          `<span>${esc(t.l)}</span></li>`).join('');
+      return `<div class="fg-ins__bg" aria-hidden="true">` +
+          `<div class="fg-ins__frame">` +
+            `<video class="fg-ins__vid" data-bgloop muted loop playsinline preload="metadata"` +
+              ` disablepictureinpicture disableremoteplayback tabindex="-1"` +
+              `${s.poster ? ` poster="${url(s.poster)}"` : ''}>${src}</video>` +
+          `</div>` +
+          `<div class="fg-ins__wash"></div>` +
+          /* the cards get a second copy of the frame, ABOVE the wash, so the
+             ones on the light side of the picture are not bleached by it */
+          (cards ? `<div class="fg-ins__frame"><ul class="fg-ins__cards">${cards}</ul></div>` : '') +
+        `</div>` +
+        (s.tag ? `<p${AT(0.1)} class="fg-ins__tag beat">${s.tag}</p>` : '') +
+        `<div class="scn__in fg-ins__copy">` +
+          (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+          `<h2${AT(0.04)} class="fg-h beat beat--still">${s.h}` +
+            (s.h2 ? ` <span${AT(0.12)} class="fg-ins__sub beat">${s.h2}</span>` : '') +
+          `</h2>` +
+          (s.p ? `<p${AT(0.22)} class="fg-p beat">${s.p}</p>` : '') +
+          (stats ? `<ul class="fg-ins__stats">${stats}</ul>` : '') +
+        `</div>`;
+    },
+
+    /* --- 04 · the problem, as a render and two notes -----------------------
+       The copy on the left carries the argument and a two-up comparison; the
+       right is one large render with two notes pinned to it by hairlines.
+       Every picture slot takes `src`; without one it draws a grey placeholder
+       with its label, so the layout can be judged before the renders exist. */
+    problem: (s) => {
+      const PH = (o, cls) => (o && o.src
+        ? `<img class="${cls}" src="${url(o.src)}" alt="${esc(o.alt || '')}" decoding="async" loading="lazy">`
+        : `<div class="${cls} fg-ph" role="img" aria-label="${esc((o && (o.alt || o.label)) || 'Image to come')}">` +
+            `<span>${esc((o && o.label) || 'Image')}</span></div>`);
+      const st = (at, extra) => ` style="--at:${(+at).toFixed(3)}${extra ? ';' + extra : ''}"`;
+      const notes = s.notes || [];
+      const lines = notes.map((n, i) =>
+        `<line class="beat"${st(0.42 + i * 0.1)} x1="${n.dx}" y1="${n.dy}" x2="${n.lx == null ? n.x : n.lx}" y2="${n.ly == null ? n.y : n.ly}"/>`).join('');
+      const dots = notes.map((n, i) =>
+        `<i class="fg-prob__dot beat"${st(0.4 + i * 0.1, `left:${n.dx}%;top:${n.dy}%`)}></i>`).join('');
+      /* NOTES ARE PLACED BY THEIR TOP-LEFT CORNER, and each has its own
+         arrangement ('row' or 'stack') so the two do not read as copies of
+         one component: the irregularity is the point. */
+      const cards = notes.map((n, i) =>
+        `<div class="fg-prob__note fg-prob__note--${n.layout || 'row'} beat"` +
+          st(0.48 + i * 0.1, `left:${n.x}%;top:${n.y}%`) + `>` +
+          `<p>${esc(n.t)}</p>${PH(n, 'fg-prob__thumb')}</div>`).join('');
+      const cmp = (s.compare || []).map((c, i) =>
+        `<li${AT(0.3 + i * 0.06)} class="beat"><b>${esc(c.t)}</b>${c.s ? `<span>${esc(c.s)}</span>` : ''}` +
+          (c.meta || c.tag ? `<em class="fg-prob__cmpmeta">${c.meta ? esc(c.meta) : ''}` +
+            (c.tag ? `<i class="fg-prob__cmptag">${esc(c.tag)}</i>` : '') + `</em>` : '') +
+          (c.pair
+          /* TWO OBJECTS, ONE FROM EACH SIDE — each cut by its own edge of
+             the card, so the pair reads as entering the frame */
+          ? c.pair.map((o) => `<img class="fg-prob__pair fg-prob__pair--${o.side === 'r' ? 'r' : 'l'}"` +
+              ` src="${url(o.src)}" alt="${esc(o.alt || '')}" decoding="async" loading="lazy">`).join('')
+          : PH(c, 'fg-prob__cmpimg' + (c.bleed ? ' fg-prob__cmpimg--bleed' : ''))) + `</li>`).join('');
+      return `<div class="fg-prob">` +
+        `<div class="fg-prob__copy">` +
+          ((s.n || s.kicker) ? `<span${AT(0.02)} class="fg-prob__kick beat">` +
+            (s.n ? `<b>${esc(s.n)}</b>` : '') + (s.kicker ? esc(s.kicker) : '') + `</span>` : '') +
+          `<h2${AT(0.04)} class="fg-h beat beat--still"><span class="fg-prob__main">${s.h}</span>` +
+            (s.h2 ? ` <span${AT(0.12)} class="fg-prob__sub beat">${s.h2}</span>` : '') + `</h2>` +
+          (s.p ? `<p${AT(0.2)} class="fg-p beat">${s.p}</p>` : '') +
+          (cmp ? `<ul class="fg-prob__cmp">${cmp}</ul>` : '') +
+        `</div>` +
+        `<div class="fg-prob__art">` +
+          /* THE STAGE IS THE RENDER'S OWN BOX (its aspect ratio), so the ghost
+             cards, the dots and the notes are all placed in the picture's
+             coordinates and stay on the object at any window size. */
+          `<div class="fg-prob__stage">` +
+            `<i class="fg-prob__ring" aria-hidden="true"></i><i class="fg-prob__ring fg-prob__ring--2" aria-hidden="true"></i>` +
+            `<i class="fg-prob__floor" aria-hidden="true"></i>` +
+            /* three frosted copies of the card behind it — the other cards in
+               the set — fanning out of the card as the scene plays */
+            [0, 1, 2].map((g) => `<i class="fg-prob__ghost fg-prob__ghost--${g + 1}" aria-hidden="true"></i>`).join('') +
+            `<div${AT(0.04)} class="fg-prob__herowrap beat">${PH(s.hero, 'fg-prob__hero')}</div>` +
+            (notes.length ? `<svg class="fg-prob__lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>` : '') +
+            dots + cards +
+          `</div>` +
+        `</div>` +
+      `</div>`;
+    },
+
     /* --- 04 · what was taken out -----------------------------------------
        A subtraction, so the removal has to be visible as an event: the vault
        device leaves and does not come back, and three costs are struck
@@ -5757,6 +5877,24 @@
          contents for a film that is meant to be watched rather than
          navigated. It competed with the work at every scroll position and it
          answered a question nobody was asking. */
+      /* BACKGROUND LOOPS PLAY ONLY WHILE THEY ARE ON SCREEN. No `autoplay`
+         attribute, for the same reason the hero has none: with motion off
+         there are no sources at all and the poster is the frame. */
+      if (!REDUCED && 'IntersectionObserver' in window) {
+        const loops = film.querySelectorAll('video[data-bgloop]');
+        if (loops.length) {
+          const io = new IntersectionObserver((es) => es.forEach((e) => {
+            const v = e.target;
+            if (e.isIntersecting) {
+              v.muted = true;
+              const pr = v.play();
+              if (pr && pr.catch) pr.catch(() => {});
+            } else v.pause();
+          }), { rootMargin: '25% 0px' });
+          loops.forEach((v) => { v.muted = true; v.defaultMuted = true; io.observe(v); });
+        }
+      }
+
       const bar = el('div', { class: 'film__bar', 'aria-hidden': 'true' }, '<i></i>');
       film.appendChild(bar);
       this.bar = $('i', bar);
@@ -5820,6 +5958,10 @@
           || n.classList.contains('scn--room'),
         act: Number(n.dataset.act) || 0,
         vid: $('.fg-vid[data-scrub] video', n),
+        /* scenes that dissolve in and out of the page rather than cutting */
+        fade: n.classList.contains('scn--insight'),
+        q: -1,
+        o: -1,
         p: -1,
       }));
       if (!this.scenes.length) return;
@@ -5894,6 +6036,22 @@
 
         let p = (y - s.top) / s.len;
         p = p < 0 ? 0 : p > 1 ? 1 : p;
+        /* ENTRANCE AND EXIT, for a scene with a picture edge-to-edge in it.
+           `--in` runs 0→1 over the screen of travel before the scene pins,
+           `--out` 0→1 over the screen after it lets go — so the photograph
+           can come up out of the white and go back into it, instead of
+           arriving as a hard horizontal edge. */
+        if (s.fade && !this.still) {
+          let q = 1 - rTop / vh;
+          q = q < 0 ? 0 : q > 1 ? 1 : q;
+          let o = (y - s.top - s.len) / vh;
+          o = o < 0 ? 0 : o > 1 ? 1 : o;
+          if (Math.abs(q - s.q) > 0.002) { s.q = q; s.n.style.setProperty('--in', q.toFixed(4)); }
+          if (Math.abs(o - s.o) > 0.002) { s.o = o; s.n.style.setProperty('--out', o.toFixed(4)); }
+          /* the stat reels: spin once the stats are in, reset well above them */
+          if (p >= 0.36 && !s.rolled) { s.rolled = true; s.n.classList.add('is-rolled'); }
+          else if (p < 0.2 && s.rolled) { s.rolled = false; s.n.classList.remove('is-rolled'); }
+        }
         if (!this.still && Math.abs(p - s.p) > 0.002) {
           s.p = p;
           s.n.style.setProperty('--p', p.toFixed(4));
