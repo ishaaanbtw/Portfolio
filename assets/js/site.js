@@ -4774,10 +4774,30 @@
       const at = (e) => e.target.closest && (e.target.closest('.fg-ia__n') || e.target.closest('.fg-ia__g'));
       const show = (x) => (x.classList.contains('fg-ia__g') ? group(x) : node(x));
 
+      /* HOVER ONLY ONCE THE MAP IS BUILT, AND NEVER WHILE SCROLLING. The map
+         draws itself on scroll, so a resting cursor would otherwise catch
+         whatever node slid under it and freeze that branch lit mid-build. */
+      let scrolledAt = 0;
+      const sceneEl = canvas.closest('.scn');
+      const built = () => {
+        const p = sceneEl ? parseFloat(sceneEl.style.getPropertyValue('--p')) : 1;
+        return isNaN(p) || p >= 0.72;
+      };
+      addEventListener('scroll', () => {
+        scrolledAt = performance.now();
+        if (!pinned) clear();
+      }, { passive: true });
       canvas.addEventListener('pointerover', (e) => {
         if (e.pointerType === 'touch' || pinned) return;
+        if (performance.now() - scrolledAt < 350 || !built()) return;
         const x = at(e);
         if (x) show(x);
+      });
+      canvas.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch' || pinned) return;
+        if (performance.now() - scrolledAt < 350 || !built()) return;
+        const x = at(e);
+        if (x && !x.classList.contains('is-lit')) show(x);
       });
       canvas.addEventListener('pointerleave', (e) => {
         if (e.pointerType === 'touch' || pinned) return;
@@ -4826,7 +4846,7 @@
       chip: '<rect x="5" y="5" width="14" height="14" rx="2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/>'
         + '<path d="M9 2.5V5M15 2.5V5M9 19v2.5M15 19v2.5M2.5 9H5M2.5 15H5M19 9h2.5M19 15h2.5"/>',
       /* a key split in two, for Shamir's Secret Sharing */
-      split: '<circle cx="7.5" cy="12" r="3.6"/><path d="M11.1 12H21M17 12v3M20 12v2.2"/><path d="M7.5 5.2V3M7.5 21v-2.2"/>',
+      split: '<circle cx="8" cy="16" r="4.6"/><path d="m11.3 12.7 8.7-8.7M16.6 7.4l2.8 2.8M14.2 9.8l2.2 2.2"/>',
       /* angle brackets, for open source */
       code: '<path d="m8.5 7-5 5 5 5M15.5 7l5 5-5 5M13.6 4.5l-3.2 15"/>',
       /* a shield with a tick, for the independent audit */
@@ -4887,6 +4907,17 @@
          there is half a screen of nothing before the market moves. */
       const b = SPREAD((s.facts || []).length, 0.28, 0.44);
       const P = SCENE.PILL;
+      if (s.video) {
+        return `<div class="fg-obj fg-obj--video">` +
+            `<video class="fg-obj__vid" src="${url(s.video)}"${s.poster ? ` poster="${url(s.poster)}"` : ''}` +
+            ` autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>` +
+            `<div class="fg-obj__shade"></div>` +
+          `</div>` +
+          `<div class="scn__in scn__in--foot">` +
+            (s.h ? `<h2${AT(0.1)} class="fg-h fg-h--l beat beat--still">${s.h}</h2>` : '') +
+            (s.meta ? `<p${AT(0.3)} class="fg-meta beat">${s.meta}</p>` : '') +
+          `</div>`;
+      }
       return `<div class="fg-obj">` +
           (s.word ? `<span class="fg-word" aria-hidden="true">${esc(s.word)}</span>` : '') +
           /* A DRAWING THAT RULES ITSELF IN IS NOT AN IMAGE, so it cannot be
@@ -6026,6 +6057,131 @@
        sorting is what analysis actually is. The fourth group — what the
        competition got right — is deliberately quiet: crediting them reads as
        confidence. */
+    /* --- competitor teardown: the wall of names first, then the layers ----
+       The logos arrive large and centred (who we studied), shrink away as the
+       headline lands, and come back as a quiet strip above the findings. The
+       findings are never tied to a brand. */
+    rivals: (s) => {
+      const L = s.logos || [];
+      const logo = (l) => `<img src="${url(l.src)}" alt="${esc(l.name)}" loading="eager"` +
+        ` onerror="this.replaceWith(Object.assign(document.createElement('b'),{textContent:this.alt}))">`;
+      const row = (cls, t0, dt) => `<ul class="fg-riv__logos ${cls}">` +
+        L.map((l, i) => `<li${AT(t0 + i * dt)} class="beat" data-k="${esc(l.k || '')}">${logo(l)}</li>`).join('') +
+        (s.more ? `<li${AT(t0 + L.length * dt)} class="beat fg-riv__more">${esc(s.more)}</li>` : '') +
+        `</ul>`;
+      const Ls = s.layers || [];
+      return `<div class="fg-riv__wall">` +
+          (s.lead ? `<p class="fg-riv__lead" aria-label="${esc(s.lead)}">` + String(s.lead).split(' ').map((w, i) =>
+            `<span class="fg-riv__w" aria-hidden="true" style="--wi:${i}">${esc(w)}</span>`).join(' ') + `</p>` : '') +
+          row('fg-riv__logos--big', 0.004, 0.032) +
+        `</div>` +
+        `<div class="scn__in fg-riv__body">` +
+          row('fg-riv__logos--strip', 0.3, 0.012) +
+          (s.h ? `<h2${AT(0.39)} class="fg-h fg-riv__h beat beat--still">${s.h}</h2>` : '') +
+          (s.sub ? `<p${AT(0.42)} class="fg-riv__sub beat">${esc(s.sub)}</p>` : '') +
+          `<div class="fg-riv__layers">` + Ls.map((c, ci) => {
+            const t = 0.46 + ci * 0.07;
+            const bp = SPREAD((c.pts || []).length, t + 0.08, t + 0.15);
+            return `<div class="fg-riv__layer">` +
+              `<span${AT(t)} class="fg-riv__lh beat"><i>${String(ci + 1).padStart(2, '0')}</i>${esc(c.h)}</span>` +
+              (c.lead ? `<p${AT(t + 0.04)} class="fg-riv__lead2 beat">${esc(c.lead)}</p>` : '') +
+              `<ul>` + (c.pts || []).map((w, i) => `<li${AT(bp[i])} class="beat">${esc(w)}</li>`).join('') + `</ul>` +
+              (c.role ? `<p${AT(t + 0.19)} class="fg-riv__role beat">${esc(c.role)}</p>` : '') +
+            `</div>`;
+          }).join('') + `</div>` +
+          (s.p ? `<p${AT(0.84)} class="fg-p fg-riv__p beat">${s.p}</p>` : '') +
+        `</div>`;
+    },
+
+    /* --- shipped: the last chapter of the product story -----------------
+       One headline, one status, and the three places X0 now lives, shown
+       as the real listings at their natural proportions. A surface with no
+       `src` yet draws a labelled placeholder rather than an invented UI. */
+    shipped: (s) => {
+      const S = s.surfaces || [];
+      const b = SPREAD(S.length, 0.2, 0.36);
+      const fig = (x, i) =>
+        `<figure${AT(b[i])} class="fg-ship__s beat" style="--r:${x.ratio || 0.46}">` +
+          `<div class="fg-ship__frame${x.src ? '' : ' is-empty'}">` +
+            (x.src
+              ? `<img src="${url(x.src)}" alt="${esc(x.alt || x.name)}" loading="eager">`
+              : `<span class="fg-ship__ph"><b>${esc(x.name)}</b>${esc(x.ph || 'Screenshot to come')}</span>`) +
+          `</div>` +
+          `<figcaption><b>${esc(x.name)}</b><span><i></i>${esc(x.state || 'Live')}</span></figcaption>` +
+          (x.note ? `<p class="fg-ship__note">${esc(x.note)}</p>` : '') +
+        `</figure>`;
+      const hw = s.hw
+        ? `<figure${AT(0.16)} class="fg-ship__hw beat" style="--r:${s.hw.ratio || 1}">` +
+            (s.hw.src ? `<img src="${url(s.hw.src)}" alt="${esc(s.hw.alt || 'X0')}">`
+                      : `<span class="fg-ship__ph"><b>X0</b>${esc(s.hw.ph || 'Hardware image to come')}</span>`) +
+          `</figure>`
+        : '';
+      const e = s.end || {};
+      return `<div class="scn__in fg-ship">` +
+        `<div class="fg-ship__top">` +
+          (s.kicker ? `<span${AT(0.02)} class="fg-ship__k beat">${esc(s.kicker)}</span>` : '') +
+          (s.status ? `<span${AT(0.04)} class="fg-ship__st beat"><i></i>${esc(s.status)}</span>` : '') +
+        `</div>` +
+        (s.h ? `<h2${AT(0.05)} class="fg-h fg-ship__h beat beat--still">${s.h}</h2>` : '') +
+        (s.p ? `<p${AT(0.11)} class="fg-ship__p beat">${esc(s.p)}</p>` : '') +
+        `<div class="fg-ship__row">${hw}${S.map(fig).join('')}</div>` +
+        `<div class="fg-ship__end">` +
+          (e.steps ? `<ol${AT(0.62)} class="fg-ship__steps beat">` + e.steps.map((t, i) =>
+            `<li${i === e.steps.length - 1 ? ' class="is-now"' : ''}>${esc(t)}</li>`).join('') + `</ol>` : '') +
+          (e.h ? `<h3${AT(0.68)} class="fg-ship__eh beat">${esc(e.h)}</h3>` : '') +
+          (e.p ? `<p${AT(0.72)} class="fg-ship__ep beat">${esc(e.p)}</p>` : '') +
+        `</div>` +
+      `</div>`;
+    },
+
+    /* --- a process, told as it happened --------------------------------
+       One large frame on the right, one list of steps on the left. Scroll
+       walks the list; the frame shows the real screenshot for the step
+       that is current. */
+    steps: (s) => {
+      const S = s.steps || [];
+      const a0 = 0.2, a1 = 0.98, w = (a1 - a0) / Math.max(1, S.length);
+      const win = (i) => ` style="--at:${(a0 + i * w).toFixed(3)};--to:${(i === S.length - 1 ? 2 : a0 + (i + 1) * w).toFixed(3)}"`;
+      return `<div class="scn__in fg-steps">` +
+        `<div class="fg-steps__side">` +
+          (s.n ? `<p${AT(0)} class="fg-steps__n beat beat--lead">${esc(s.n)}</p>` : '') +
+          (s.sub ? `<span${AT(0.01)} class="fg-kick fg-steps__sub beat beat--lead">${esc(s.sub)}</span>` : '') +
+          (s.k ? `<span${AT(0.01)} class="fg-kick beat">${esc(s.k)}</span>` : '') +
+          (s.h ? `<h2${AT(0.02)} class="fg-h fg-steps__h beat beat--lead">${s.h}` +
+            ((s.ais || []).length ? `<span class="fg-steps__ais">` + s.ais.map((x) =>
+              `<span class="fg-ai" data-t="${esc(x.t)}" data-k="${esc(x.k || '')}" tabindex="0"><img src="${url(x.src)}" alt="${esc(x.t)}"></span>`).join('') + `</span>` : '') +
+            `</h2>` : '') +
+          `<ol class="fg-steps__list">` + S.map((x, i) =>
+            `<li class="fg-steps__i"${win(i)}><i>${String(i + 1).padStart(2, '0')}</i>` +
+            `<div><b>${esc(x.t)}</b><span>${esc(x.d)}</span></div></li>`).join('') + `</ol>` +
+        `</div>` +
+        `<div class="fg-steps__stage">` + S.map((x, i) =>
+          `<figure class="fg-steps__f"${win(i)}><img src="${url(x.src)}" alt="${esc(x.alt || x.t)}" loading="eager"></figure>`).join('') +
+        `</div>` +
+      `</div>`;
+    },
+
+    /* --- a retrospective, pinned to a wall ------------------------------
+       Six cards, each arriving on its own beat with a small settle, like a
+       note pressed onto a board. */
+    board: (s) => {
+      const C = s.cards || [];
+      const b = SPREAD(C.length, 0.14, 0.62);
+      const tilt = [-0.35, 0.8, -0.6, 1, -0.9, 0.6];
+      return `<div class="scn__in fg-board">` +
+        (s.k ? `<span${AT(0.01)} class="fg-kick beat">${esc(s.k)}</span>` : '') +
+        (s.h ? `<h2${AT(0.03)} class="fg-h fg-board__h beat beat--still">${s.h}</h2>` : '') +
+        `<div class="fg-board__grid">` + C.map((c, i) =>
+          `<article class="fg-board__c${c.size ? ` fg-board__c--${c.size}` : ''}" style="--at:${b[i].toFixed(3)};--r:${tilt[i % tilt.length]}deg">` +
+            `<span class="fg-board__k"><i>${String(i + 1).padStart(2, '0')}</i>${esc(c.k)}</span>` +
+            (c.n ? `<span class="fg-board__n">${esc(c.n)}</span>` : '') +
+            `<b class="fg-board__t">${esc(c.t)}</b>` +
+            `<p class="fg-board__b">${c.b}</p>` +
+          `</article>`).join('') + `</div>` +
+        (s.p ? `<p${AT(0.74)} class="fg-board__p beat">${s.p}</p>` : '') +
+      `</div>`;
+    },
+
     pins: (s) => {
       const g = s.groups || [];
       return `<div class="scn__in">` +
@@ -6122,7 +6278,11 @@
           ? `<div class="fg-out">` + s.out.map((sh, i) =>
               `<div${AT(0.6 + i * 0.08)} class="beat">${FSHOT(sh)}</div>`).join('') + `</div>`
           : '') +
-        (s.p ? `<p${AT(0.86)} class="fg-p beat">${s.p}</p>` : '') +
+        (s.p ? `<p${AT(s.pat == null ? 0.86 : s.pat)} class="fg-p beat">${s.p}</p>` : '') +
+        ((s.pipe || []).length
+          ? `<ol class="fg-pipe">` + s.pipe.map((t, i) =>
+              `<li${AT(0.36 + i * 0.06)} class="beat">${esc(t)}</li>`).join('') + `</ol>`
+          : '') +
       `</div>`,
 
     /* --- 26 · looking back -----------------------------------------------
@@ -6308,7 +6468,7 @@
         act: Number(n.dataset.act) || 0,
         vid: $('.fg-vid[data-scrub] video', n),
         /* scenes that dissolve in and out of the page rather than cutting */
-        fade: n.classList.contains('scn--insight') || n.classList.contains('scn--wall') || n.classList.contains('scn--showcase'),
+        fade: n.classList.contains('scn--insight') || n.classList.contains('scn--wall') || n.classList.contains('scn--showcase') || n.classList.contains('scn--rivals'),
         q: -1,
         o: -1,
         p: -1,
@@ -23639,9 +23799,105 @@
   const tick = () => {
     document.querySelectorAll('.scn--showcase').forEach((sec) => {
       const p = parseFloat(sec.style.getPropertyValue('--p')) || 0;
-      sec.classList.toggle('is-tapping', p > 0.085 && p < 0.25);
+      sec.classList.toggle('is-tapping', p > 0.105 && p < 0.205);
     });
     requestAnimationFrame(tick);
   };
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) requestAnimationFrame(tick);
+})();
+
+/* ---- RailMark: the case-study rail gets the landing sidebar's travelling
+   square. One 5px mark in the list, sprung to the end of the hovered word,
+   and back to the current section when the pointer leaves. ---- */
+(function RailMark() {
+  const boot = () => {
+    const rail = document.querySelector('.rail--film');
+    const list = rail && rail.querySelector('.rail__list');
+    if (!list || list.querySelector('.rail__mark')) return !!list;
+    rail.classList.add('rail--mast');
+    const bk = rail.querySelector('.rail__back');
+    if (bk) { bk.setAttribute('aria-label', 'Back'); bk.setAttribute('title', 'Back'); }
+    const mk = document.createElement('i');
+    mk.className = 'rail__mark'; mk.setAttribute('aria-hidden', 'true');
+    list.appendChild(mk);
+    const S = (v) => ({ v, t: v, vel: 0 });
+    let x = null, y = null, hover = null, raf = 0, last = 0, shown = false;
+    const links = () => [...list.querySelectorAll('.rail__link')];
+    const at = (a) => {
+      let w = a.offsetWidth;
+      try { const r = document.createRange(); r.selectNodeContents(a.firstChild || a); w = r.getBoundingClientRect().width; } catch (e) {}
+      return { x: a.offsetLeft + w + 7, y: a.offsetTop + (a.offsetHeight - 5) / 2 };
+    };
+    const step = (s, dt) => {
+      const f = -380 * (s.v - s.t) - 26 * s.vel;
+      s.vel += f * dt; s.v += s.vel * dt;
+      if (Math.abs(s.v - s.t) < 0.02 && Math.abs(s.vel) < 0.05) { s.v = s.t; s.vel = 0; return false; }
+      return true;
+    };
+    const paint = () => { mk.style.transform = `translate3d(${x.v.toFixed(2)}px,${y.v.toFixed(2)}px,0)`; };
+    const loop = (ts) => {
+      const dt = Math.min((ts - (last || ts)) / 1000 || 1 / 60, 1 / 30); last = ts;
+      const m = step(x, dt) | step(y, dt); paint();
+      raf = m ? requestAnimationFrame(loop) : 0; if (!m) last = 0;
+    };
+    const aim = (now) => {
+      const a = hover || list.querySelector('.rail__link.is-active');
+      mk.classList.toggle('is-on', !!a);
+      if (!a) return;
+      const p = at(a);
+      if (!x || now || !shown) { x = S(p.x); y = S(p.y); shown = true; paint(); return; }
+      x.t = p.x; y.t = p.y;
+      if (!raf) raf = requestAnimationFrame(loop);
+    };
+    /* hover only lifts the ink and nudges the word (shared row CSS); the
+       square moves to the section you are in, like the landing sidebar */
+    new MutationObserver(() => { if (!hover) aim(); })
+      .observe(list, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    addEventListener('resize', () => aim(true), { passive: true });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => aim(true)).catch(() => {});
+    requestAnimationFrame(() => aim(true));
+    return true;
+  };
+  let n = 0;
+  const tryBoot = () => { if (!boot() && ++n < 40) setTimeout(tryBoot, 150); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tryBoot); else tryBoot();
+})();
+
+
+
+/* ---- RivalsSettle: after the wall has revealed, each logo travels to its
+   own spot in the strip above the headline (no fade-out). Offsets are
+   measured per logo and handed to CSS; the move runs off --p. ---- */
+(function RivalsSettle() {
+  const fit = () => {
+    document.querySelectorAll('.scn').forEach((scn) => {
+      /* the wall sits on the centre of the window, not of the stage */
+      const wall = scn.querySelector('.fg-riv__wall');
+      if (wall && wall.offsetParent) {
+        const hb = wall.offsetParent.getBoundingClientRect();
+        wall.style.left = (innerWidth / 2 - hb.left).toFixed(1) + 'px';
+      }
+      const big = [...scn.querySelectorAll('.fg-riv__logos--big > li')];
+      const ghost = [...scn.querySelectorAll('.fg-riv__logos--strip > li')];
+      if (!big.length || big.length !== ghost.length) return;
+      big.forEach((li, i) => {
+        const g = ghost[i];
+        const kt = li.style.transform, kr = li.style.translate;
+        li.style.transform = 'none'; li.style.translate = '0px 0px';
+        const gt = g.style.translate; g.style.translate = '0px 0px';
+        const a = li.getBoundingClientRect(), b = g.getBoundingClientRect();
+        li.style.transform = kt; li.style.translate = kr; g.style.translate = gt;
+        if (!b.width || !a.height) { li.style.removeProperty('--dx'); return; }
+        li.style.setProperty('--dx', (b.left - a.left).toFixed(1) + 'px');
+        li.style.setProperty('--dy', (b.top - a.top).toFixed(1) + 'px');
+        li.style.setProperty('--k', (b.height / a.height).toFixed(4));
+      });
+    });
+  };
+  const go = () => { fit(); requestAnimationFrame(fit); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(go, 60)); else setTimeout(go, 60);
+  addEventListener('load', go);
+  addEventListener('resize', go, { passive: true });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(go).catch(() => {});
+  document.addEventListener('load', (e) => { if (e.target && e.target.closest && e.target.closest('.fg-riv__logos')) go(); }, true);
 })();

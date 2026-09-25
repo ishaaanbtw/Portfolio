@@ -1898,7 +1898,6 @@ window.SITE = {
               /* PIECES OF THE CYSYNC DESIGN FILE: its colour ramp (the real
                  hexes), its components and a few of the screens built from
                  them, each on a matching plate under its plain name. */
-              cap: 'From the CySync design file.',
               items: [
                 { t: 'Portfolio graph',         src: 'assets/img/x0/cysync/cysync-graph.png' },
                 { t: 'Buttons',                 src: 'assets/img/x0/cysync/sys/buttons.webp' },
@@ -1924,15 +1923,14 @@ window.SITE = {
               ],
               /* what CySync was never asked to do, and so why X0 needed its own */
               needs: { k: 'What X0 needed', v: [
+                { t: 'To be readable by AI', icon: 'spark', b: 'Clean tokens and components Claude could read through Figma’s MCP, for quick iterations.' },
                 { t: 'To live on a phone', icon: 'phone', b: 'One-handed, on iOS and Android, not a 1024 × 700 window.' },
                 { t: 'To ship on time', icon: 'bolt', b: 'A small, reusable kit to design every flow in the map and hand it to developers.' },
-                { t: 'To be readable by AI', icon: 'spark', b: 'Clean tokens and components Claude could read through Figma’s MCP, for quick iterations.' },
               ] } },
 
             /* THE DECISION. One sentence on black, after CySync has been
                credited and the needs are on the table. */
             { id: 'x0-dec-1', kind: 'ask', dur: 110, dark: true,
-              n: 'Decision 01',
               h: 'Let’s give Cypherock X0 its <span class="fg-key">own design system</span>.' },
 
             /* THE ASSEMBLY, and the longest scene in the film. The system is
@@ -2219,11 +2217,11 @@ window.SITE = {
               p: '250+ screens and counting. One system underneath all of them.',
               base: 'assets/img/x0/app/',
               frame: 'assets/img/x0/system/iphone.webp',
-              hero: ['09', '01', '05', '13', '15', '16', '14', '22'],
-              stops: [0, 0.3, 0.39, 0.48, 0.57, 0.66, 0.75, 0.84],
+              hero: ['09', '01', '13', '15', '16', '14', '05', '22'],
+              stops: [0, 0.33, 0.415, 0.5, 0.585, 0.67, 0.755, 0.84],
               cards: ['assets/img/x0/cards/c1.webp', 'assets/img/x0/cards/c2.webp', 'assets/img/x0/cards/c3.webp', 'assets/img/x0/cards/c4.webp'],
               cardAt: 0.08, cardGap: 0.075,
-              alts: ['Portfolio', 'Onboarding', 'Tap to approve', 'Send', 'Swap token selector', 'Swap', 'Receive', 'Wallet recovered'],
+              alts: ['Portfolio', 'Onboarding', 'Send', 'Swap token selector', 'Swap', 'Receive', 'Tap to approve', 'Wallet recovered'],
               cols: [
                 ['02', '10', '19', '26', '07', '24'],
                 ['04', '11', '17', '28', '21', '03'],
@@ -2316,40 +2314,49 @@ window.SITE = {
                reproduced, and each finding is stated as a category rather
                than as an exploit. This is the one scene in the film with
                legal exposure and it is written to survive a lawyer. */
-            { id: 'x0-competitors', kind: 'pins', dur: 180,
-              kicker: 'Competitor teardown',
-              h: 'Some of it was carelessness. Some of it was on purpose.',
-              groups: [
-                { h: 'Real vulnerabilities',
-                  items: [
-                    'Recovery material recoverable from the device itself',
-                    'Confirmation screens that could be spoofed',
-                    'Sensitive state persisting after a session ended',
-                  ] },
-                { h: 'Plain UX failures',
-                  items: [
-                    'Setup that assumed vocabulary a first owner does not have',
-                    'Irreversible actions with no confirmation',
-                    'Error states that named a code and not a fix',
-                  ] },
-                { h: 'Clearly intentional',
-                  items: [
-                    'The safe path made slower than the convenient one',
-                    'Export and exit buried several levels down',
-                    'Defaults set in the company’s interest, not the owner’s',
-                  ] },
-                { h: 'And what they got right', quiet: true,
-                  items: [
-                    'Portfolio screens that opened fast and said one thing',
-                    'Honest language about what a device cannot protect you from',
-                  ] },
+            { id: 'x0-competitors', kind: 'rivals', dur: 230,
+              /* WHO WE STUDIED, BY NAME; WHAT WE FOUND, BY CATEGORY. The logos
+                 say which products were taken apart. No finding below is tied
+                 to any one of them. Official marks live in
+                 assets/img/logos/rivals; a missing file shows its name. */
+              lead: 'Every wallet claims to be the safest. We studied them all before drawing a single screen.',
+              logos: [
+                { k: 'trezor', name: 'Trezor', src: 'assets/img/logos/rivals/trezor.png' },
+                { k: 'ledger', name: 'Ledger', src: 'assets/img/logos/rivals/ledger.png' },
+                { k: 'tangem', name: 'Tangem', src: 'assets/img/logos/rivals/tangem.png' },
+                { k: 'dcent',  name: 'D’CENT', src: 'assets/img/logos/rivals/dcent.svg' },
+                { k: 'ellipal', name: 'Ellipal', src: 'assets/img/logos/rivals/ellipal.png' },
               ],
-              p: 'We fixed the first two in ours — and took the things they’d got right.',
-              /* the macro crop, enlarged past its frame and cut by the right
-                 edge of the window — so the scene has an object in it and is
-                 not three columns of prose */
-              shot: { kind: 'device', dia: 'phonescreen', subject: 'A competitor setup screen, cropped close', treat: 'macro', ratio: 0.487,
-                of: 'On the step that fails. No brand mark in frame.' } },
+              more: 'and many more',
+              h: 'We didn\u2019t reinvent the category. We <span class="fg-key">understood</span> it first.',
+              sub: 'Every competitor had already shaped what people expect from a hardware wallet. We studied those patterns, their trade-offs and the technology underneath, then decided where X0 should feel familiar and where it had to be different.',
+              layers: [
+                { h: 'Experience',
+                  lead: 'The category had already taught people how to use a hardware wallet.',
+                  pts: [
+                    'Onboarding, setup, transactions and recovery followed the same mental models across competitors.',
+                    'Rather than reinvent them, we used that familiarity to shorten X0\u2019s learning curve.',
+                    'A late-mover advantage: familiar where it should be, different where it mattered.',
+                  ],
+                  role: 'I was designing for a category, not in a vacuum.' },
+                { h: 'Security',
+                  lead: 'Security claims are easy to compare. Security itself isn\u2019t.',
+                  pts: [
+                    'I studied how each approach surfaced in the product: authentication, recovery, confirmations, failure states.',
+                    'Some patterns were worth adopting because users already knew them; others added friction we had to balance.',
+                    'X0 brings multi-factor authentication and secure recovery, built with the security team.',
+                  ],
+                  role: 'My job wasn\u2019t to rank security architectures. It was to design around what they mean for people.' },
+                { h: 'Firmware & constraints',
+                  lead: 'The interface was only one layer of the problem.',
+                  pts: [
+                    'Firmware, device capabilities and security requirements shaped what the UI could and couldn\u2019t do.',
+                    'Decisions like Shamir Secret Sharing were cross-functional engineering calls, not visual ones.',
+                    'Understanding them early meant they informed the experience instead of surprising it later.',
+                  ],
+                  role: 'Constraints were part of the brief, not someone else\u2019s problem.' },
+              ],
+            },
 
             /* THE EMOTIONAL PEAK, AND THE PAYOFF FOR SCENE 04. The video is
                scrubbed by scroll, so the reader controls the tap and can hold
@@ -2363,91 +2370,87 @@ window.SITE = {
               h: 'This is what replaced the hardware.',
               p: 'Everything about it is designed around a hand doing something physical. Stand-in footage — the shot to take is the hand, the card and the phone on a tripod, one key light, dark ground.' },
 
-            /* THE PRODUCT LANDS IN REALITY AND STOPS BEING SCREENS. The dark
-               mode arrives as a wipe rather than a fade, because a fade says
-               the lights dimmed and a wipe says a second set of token values
-               was switched on — which is what dark mode is. */
-            { id: 'x0-world', kind: 'world', dur: 160,
-              icon: 'X0',
-              h: 'At 60 pixels it still has to be the one you trust.',
-              homes: [
-                { kind: 'device', dia: 'homescreen', subject: 'X0 on a real iPhone home screen', ratio: 0.62,
-                  of: 'The X0 icon in place on a real iPhone home screen, among ordinary apps.' },
-                { kind: 'device', dia: 'homescreen', subject: 'The same, on Android', ratio: 0.62 },
-                { kind: 'device', dia: 'phonescreen', subject: 'One product screen in dark mode', ratio: 0.62 },
+            /* THE LAST CHAPTER OF THE PRODUCT: IT SHIPPED. One headline, a
+               status, and the three places X0 lives now, shown as the real
+               listings. No metrics are claimed here; the listings speak for
+               themselves. Amazon (and, optionally, `hw` for the hardware
+               photo) draw a labelled placeholder until a `src` is given. */
+            { id: 'x0-world', kind: 'shipped', dur: 200,
+              kicker: 'Product / Shipped',
+              status: 'Status \u00b7 Live',
+              h: 'X0 is no longer<br>a concept.<br>It\u2019s out in the <span class="fg-key">world</span>.',
+              p: 'X0 is now live across iOS and Android, with the hardware available through Amazon. The product is shipped, and the work continues.',
+              surfaces: [
+                { name: 'iOS', state: 'Live', src: 'assets/img/x0/launch/ios.webp', ratio: 786 / 1704,
+                  alt: 'Cypherock X0 Wallet on the App Store' },
+                { name: 'Android', state: 'Live', src: 'assets/img/x0/launch/android.webp', ratio: 610 / 1081,
+                  alt: 'Cypherock X0 Wallet on Google Play' },
+                { name: 'Amazon', state: 'Available', ratio: 786 / 1704,
+                  note: 'US \u00b7 UK \u00b7 Singapore. Not yet in India.',
+                  ph: 'Listing screenshot to come' },
               ],
-              p: 'The icon had to survive being one of forty things on somebody’s home screen.' },
+              end: {
+                steps: ['Designed', 'Shipped', 'Available', 'Evolving'],
+                h: 'Shipped is a milestone, not the finish line.',
+                p: 'X0 is live today, but the product will keep evolving. New releases, refinements and improvements will continue to shape the experience as more people use it.',
+              } },
 
-            /* SEVEN MONTHS, AND THE SHIPPED VERSION WAS THE FOURTH ANSWER
-               RATHER THAN THE FIRST. The two months where an earlier answer
-               was abandoned carry a brass dot, because those are the two the
-               reader should feel. */
-            { id: 'x0-timeline', nav: 'Outcomes', kind: 'spine', dur: 180,
-              kicker: 'Seven months',
-              beats: [
-                { w: 'Month 1',
-                  t: 'Started by adapting X1. <span>The fastest route, and the one that made X0 look like a discount version of a product it wasn’t related to.</span>' },
-                { w: 'Month 2', turn: true,
-                  t: 'Abandoned the adapted components. <span>The reversal that cost the most and bought the most.</span>' },
-                { w: 'Month 3', turn: true,
-                  t: 'Rebuilt the navigation. <span>The second thing that turned out to be inherited rather than designed.</span>' },
-                { w: 'Month 5',
-                  t: 'N45 carrying surfaces it wasn’t written for. <span>The test of whether it was a system or a catalogue.</span>' },
-                { w: 'Month 6',
-                  t: 'Onboarding settled at twelve screens. <span>Down from more, and each one with a reason.</span>' },
-                { w: 'Month 7',
-                  t: 'Beta, on both platforms.' },
-              ] },
-
-            /* THE MOST FORWARD-LOOKING CLAIM IN THE PROJECT, and the only
-               real number in the film. It is there at rest rather than
-               counting up: a counter would make it a statistic, and it is a
-               position. The generated output is shown unretouched, because
-               the imperfection is the honesty of the scene. */
-            { id: 'x0-67', kind: 'num', dur: 170,
+            /* HOW THE 67% IS MADE: the real files, in the order the work
+               happens. The system is documented and tokenised in Figma, an
+               AI reads it through MCP, and a plain prompt gives a usable
+               screen to argue over; the final pass is still by hand. */
+            { id: 'x0-ai', nav: 'Outcomes', kind: 'steps', dur: 280,
               n: '67%',
-              sub: 'accuracy of designs generated from N45 by prompt, today',
-              h: 'I’m building the system so it can be read by a model, not just by a designer.',
-              prompt: 'a portfolio screen using N45, one primary action',
-              out: [
-                { kind: 'figma', dia: 'namelist', subject: 'The component naming convention', ratio: 1.5,
-                  of: 'Close crop of the component naming panel, showing the convention that makes this possible.' },
-                { kind: 'device', dia: 'phonescreen', subject: 'The screen that prompt produced', ratio: 0.62,
-                  of: 'Unretouched — the flaws are the point.' },
-                { kind: 'device', dia: 'phonescreen', subject: 'The same screen, corrected', ratio: 0.62,
-                  of: 'The same screen after correction, for the delta.' },
+              sub: 'Accuracy when AI designs with N45.',
+              h: 'A design system AI can actually use.',
+              ais: [
+                { t: 'Figma AI', k: 'figma', src: 'assets/img/logos/figma.png' },
+                { t: 'Claude Code', k: 'claude', src: 'assets/img/logos/claude.png' },
+                { t: 'Codex', k: 'gpt', src: 'assets/img/logos/chatgpt.png' },
               ],
-              /* the closing line moved into the label under the number: the
-                 scene is a number, a claim and a prompt, and a fourth
-                 element restating the claim is the thing that made this
-                 frame feel busy. */
-              sub: 'accuracy of designs generated from N45 by prompt, today — and the system has to grow as the app does' },
+              steps: [
+                { t: 'Document the system', src: 'assets/img/x0/ai/01-docs.webp',
+                  d: 'N45 lives in Figma with its own documentation: usage maps, component tokens and decision rules written for an AI to read.' },
+                { t: 'Tokenise every decision', src: 'assets/img/x0/ai/02-vars.webp',
+                  d: 'Colours, surfaces and components are variables with semantic names, so a model picks \u201csurface/raised\u201d, not a hex code.' },
+                { t: 'Let the AI read N45', src: 'assets/img/x0/ai/03-chat.webp',
+                  d: 'Connected as a library, the AI searches N45\u2019s components, styles and variables. A plain prompt like \u201cbuild the next step\u201d is enough.' },
+                { t: 'Iterate, then polish by hand', src: 'assets/img/x0/ai/04-polish.webp',
+                  d: 'The output is a usable screen to discuss and iterate on. Once decisions are final, I polish it manually.' },
+              ] },
 
             /* THE ONLY REFLECTIVE SCENE, at reading size rather than poster
                size, and the scale shift is the signal: this one is meant to
                be read. After twenty-five scenes of cinema, near-stillness
                reads as candour. */
-            { id: 'x0-back', kind: 'cards', dur: 140,
+            /* THE RETROSPECTIVE, as a wall of pinned notes rather than a
+               wall of text: each card is one lesson, arriving on its own. */
+            { id: 'x0-back', kind: 'board', dur: 200,
               h: 'Looking back.',
-              items: [
-                { h: 'What worked',
-                  body: ['<b>Building the system before the screens.</b> Extracting a system from finished work produces a catalogue of what you already did; building it first produces something the next product can use — and by month six there were surfaces running on it that did not exist when it was written.'] },
-                { h: 'The biggest trade-off', lift: true,
-                  body: ['Two months in, <b>abandoning the adapted CySync components cost real time</b> — the fastest path was already half walked. It bought X0 an identity of its own, which is the thing the project was actually for.'] },
-                { h: 'What I’d improve',
-                  body: ['<b>Segmentation is a design problem before it is a marketing one.</b> Making X0 feel approachable without making it feel like the cheap option comes down to type, spacing and tone rather than a badge or a price — and that is the part I would keep pushing on with real users in front of it.'] },
-              ] },
+              cards: [
+                { size: 'lead', k: 'The role', t: 'Head of product design, in practice.',
+                  b: 'As the only designer, I owned every design, UX and CX decision, working alongside our PM, who helped shape them. Most of those calls were really product calls, and they carried real stakes. I bet on a new design system to let X0 scale, built the product alongside it, and made that system AI-ready at the same time. Not all of it is solved. These are still open challenges, but we\u2019re navigating them and making real progress.' },
+                { size: 'stat', k: 'Design to development', n: '1 week \u2192 1\u20132 days',
+                  t: 'Up to 5\u00d7 faster.',
+                  b: 'What used to take a designer a week now takes me one or two days, because the system does the repeat work.' },
+                { k: '', t: 'Designers and developers on the same page.',
+                  b: 'Developers build with AI on the same N45 system I design with, so handoff is shorter and delivery more predictable.' },
+                { k: '', t: 'More time for testing.',
+                  b: 'The time we save goes into testing, security and edge cases. In a crypto finance product, that\u2019s where it matters most.' },
+                { k: '', t: 'Segmentation isn\u2019t finished.',
+                  b: 'Keeping X0 approachable without feeling like a cheaper X1 comes from small decisions in type, spacing and tone. I\u2019ll keep validating it with real users.' },
+              ],
+              p: 'I built the foundation that let the product, the engineering team and an AI-assisted workflow scale together.' },
 
             /* THE END CARD, closing the loop opened in scene 01: the same
                card, the same light, the same position, and the giant letters
                behind it gone. The object no longer needs the title. No
                flourish on the last frame. */
             { id: 'x0-end', kind: 'object', dur: 120, dark: true, rest: true,
-              shot: { kind: 'render', dia: 'object', subject: 'The X0 card, lit from one side', treat: 'lift',
-                of: 'Scene 01’s render, reused exactly. The repetition is the point — do not reshoot it.' },
+              video: 'assets/media/x0/x0-end.mp4', poster: 'assets/media/x0/x0-end.webp',
               still: true,
-              h: 'Cypherock X0',
-              meta: '7 months · Senior Product Designer · Product strategy, UX, UI, design system, information architecture, engineering collaboration' },
+              h: 'Glad you made it here.',
+              meta: 'That\u2019s the Cypherock X0 mobile app and its design system. I also designed the X0 hardware cards, the packaging and everything that goes inside the box.' },
           ],
         } },
       /* ------------------------------------------------------------ Onefinnet

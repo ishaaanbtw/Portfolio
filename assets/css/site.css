@@ -22165,3 +22165,770 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
   --g0: clamp(0, calc((var(--p) - 0.25 - var(--k) * 0.012) / 0.065), 1);
 }
 .fg-show__col { --q: clamp(0, calc((var(--p) - 0.25 - var(--i) * 0.015) * 7), 1); }
+
+/* ---- showcase v7: snappy. Card 1 snaps onto the phone (ease-out-back),
+   holds with the pulse; then all four spring into a tight fan around the
+   top of the phone and are flung out, fast, while the screens take over. */
+.fg-show__card {
+  --side: calc(var(--ci) - 1.5);
+  /* card 1 in: 0.04 → 0.075, overshoots a hair and settles */
+  --a0: clamp(0, calc((var(--p) - 0.04) / 0.035), 1);
+  --au: calc(var(--a0) - 1);
+  --a: calc(1 + 2.70158 * var(--au) * var(--au) * var(--au) + 1.70158 * var(--au) * var(--au));
+  /* into the fan: 2–4 burst from behind the phone, card 1 swings up to join */
+  --f0: clamp(0, calc((var(--p) - 0.24 - var(--oth) * var(--k) * 0.008) / 0.03), 1);
+  --fu: calc(var(--f0) - 1);
+  --f: calc(1 + 2.2 * var(--fu) * var(--fu) * var(--fu) + 1.2 * var(--fu) * var(--fu));
+  /* flung out: accelerating */
+  --x0: clamp(0, calc((var(--p) - 0.275 - var(--ci) * 0.006) / 0.045), 1);
+  --x: calc(var(--x0) * var(--x0) * var(--x0));
+  --sy: calc(-50svh - var(--H) * 0.7);
+  --ty: calc(var(--H) * -0.44);
+  --fx: calc(var(--H) * var(--side) * 0.2);
+  --fy: calc(var(--H) * (-0.3 + var(--side) * var(--side) * 0.03));
+  /* start: card 1 at its tap, 2–4 tucked behind the phone */
+  --px: 0px;
+  --py: calc(var(--one) * (var(--sy) + (var(--ty) - var(--sy)) * var(--a)) + var(--oth) * var(--H) * -0.1);
+  --pr: calc(var(--one) * 90deg);
+  translate:
+    calc(-50% + var(--px) + (var(--fx) - var(--px)) * var(--f) + (30vw + var(--side) * 12vw) * var(--x))
+    calc(-50% + var(--py) + (var(--fy) - var(--py)) * var(--f) - 85svh * var(--x));
+  rotate: calc(var(--pr) + (var(--side) * 14deg - var(--pr)) * var(--f) + 35deg * var(--x));
+  opacity: calc(clamp(0, calc(var(--one) * var(--a0) * 40 + var(--oth) * var(--f0) * 40), 1) * (1 - clamp(0, calc((var(--x0) - 0.7) / 0.3), 1)));
+  transform-origin: 50% 50%;
+}
+.fg-show__col { --q: clamp(0, calc((var(--p) - 0.24 - var(--i) * 0.012) * 8), 1); }
+.fg-show__card { transform-origin: 50% 50%; height: calc(var(--H) * 0.5); }
+
+/* ---- showcase v8: tap, pulse, tuck back; then all four fan out, gone ---- */
+.fg-show__card {
+  --side: calc(var(--ci) - 1.5);
+  /* card 1 snaps onto the back of the phone */
+  --a0: clamp(0, calc((var(--p) - 0.04) / 0.04), 1);
+  --au: calc(var(--a0) - 1);
+  --a: calc(1 + 2.70158 * var(--au) * var(--au) * var(--au) + 1.70158 * var(--au) * var(--au));
+  /* ...then slides back down behind the phone */
+  --b0: clamp(0, calc((var(--p) - 0.2) / 0.04), 1);
+  --b: calc(var(--b0) * var(--b0) * (3 - 2 * var(--b0)));
+  /* all four fan out from behind */
+  --f0: clamp(0, calc((var(--p) - 0.25 - var(--ci) * 0.008) / 0.035), 1);
+  --fu: calc(var(--f0) - 1);
+  --f: calc(1 + 2.2 * var(--fu) * var(--fu) * var(--fu) + 1.2 * var(--fu) * var(--fu));
+  /* and away, fast */
+  --x0: clamp(0, calc((var(--p) - 0.32 - var(--ci) * 0.006) / 0.04), 1);
+  --x: calc(var(--x0) * var(--x0) * var(--x0));
+  --sy: calc(-50svh - var(--H) * 0.7);
+  --ty: calc(var(--H) * -0.44);
+  --hy: calc(var(--H) * -0.05);
+  --fx: calc(var(--H) * var(--side) * 0.2);
+  --fy: calc(var(--H) * (-0.3 + var(--side) * var(--side) * 0.03));
+  --px: 0px;
+  --py: calc(var(--one) * ((var(--sy) + (var(--ty) - var(--sy)) * var(--a)) * (1 - var(--b)) + var(--hy) * var(--b)) + var(--oth) * var(--hy));
+  --pr: calc(var(--one) * 90deg * (1 - var(--b)));
+  height: calc(var(--H) * 0.5);
+  transform-origin: 50% 50%;
+  translate:
+    calc(-50% + var(--px) + (var(--fx) - var(--px)) * var(--f) + (30vw + var(--side) * 12vw) * var(--x))
+    calc(-50% + var(--py) + (var(--fy) - var(--py)) * var(--f) - 85svh * var(--x));
+  rotate: calc(var(--pr) + (var(--side) * 14deg - var(--pr)) * var(--f) + 35deg * var(--x));
+  opacity: calc(clamp(0, calc(var(--one) * var(--a0) * 40 + var(--oth) * var(--f0) * 40), 1) * (1 - clamp(0, calc((var(--x0) - 0.7) / 0.3), 1)));
+}
+.fg-show__col { --q: clamp(0, calc((var(--p) - 0.3 - var(--i) * 0.012) * 8), 1); }
+
+/* ---- showcase v9: card 1 glides in (no bounce), presses once, and a slow
+   soft ripple of signal spreads behind the phone -------------------------- */
+.fg-show__card {
+  /* glide in: ease-out-cubic, slower */
+  --a0: clamp(0, calc((var(--p) - 0.03) / 0.07), 1);
+  --au: calc(1 - var(--a0));
+  --a: calc(1 - var(--au) * var(--au) * var(--au));
+  /* the tap: one gentle press toward the phone, then release */
+  --t0: clamp(0, calc((var(--p) - 0.1) / 0.025), 1);
+  --tp: calc(var(--t0) * (1 - var(--t0)) * 4);
+  /* all four fan out smoothly (ease-out-cubic, no overshoot) */
+  --fu: calc(1 - var(--f0));
+  --f: calc(1 - var(--fu) * var(--fu) * var(--fu));
+  --py: calc(var(--one) * ((var(--sy) + (var(--ty) - var(--sy)) * var(--a) + var(--H) * 0.018 * var(--tp)) * (1 - var(--b)) + var(--hy) * var(--b)) + var(--oth) * var(--hy));
+  filter: drop-shadow(0 1.4vh 2.4vh rgba(0,0,0,0.55)) brightness(calc(1 + var(--one) * var(--tp) * 0.06));
+}
+/* the signal: two slow, soft, blurred rings and a faint bloom at the contact */
+.fg-show__pulse { width: calc(var(--H) * 0.62); }
+.fg-show__pulse::before {
+  content: ''; position: absolute; inset: 15%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.14), rgba(255,255,255,0) 65%);
+  opacity: 0; transition: opacity 1.2s ease;
+}
+.scn--showcase.is-tapping .fg-show__pulse::before { opacity: 1; }
+.fg-show__pulse i {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: 0 0 24px 2px rgba(255,255,255,0.08), inset 0 0 24px 2px rgba(255,255,255,0.06);
+  filter: blur(0.6px);
+}
+.scn--showcase.is-tapping .fg-show__pulse i { animation: fgPulseSoft 3.6s cubic-bezier(0.16, 0.6, 0.3, 1) infinite; }
+.scn--showcase.is-tapping .fg-show__pulse i:nth-child(2) { animation-delay: 1.8s; }
+.scn--showcase.is-tapping .fg-show__pulse i:nth-child(3) { animation: none; opacity: 0; }
+@keyframes fgPulseSoft {
+  0% { opacity: 0; scale: 0.35; }
+  18% { opacity: 0.8; }
+  100% { opacity: 0; scale: 2; }
+}
+
+
+/* ---- cards: real shadows. A tight contact shadow and a soft ambient one on
+   every card, so each reads as lifted off the one behind it; the phone throws
+   a soft shadow onto the cards it sits in front of; the outer cards sit a
+   touch further from the light. */
+.fg-show__card {
+  filter:
+    brightness(calc(1 + var(--one) * var(--tp, 0) * 0.06 - (var(--side) * var(--side)) * 0.02))
+    drop-shadow(0 0.35vh 0.5vh rgba(0, 0, 0, 0.45))
+    drop-shadow(0 1.8vh 3.2vh rgba(0, 0, 0, 0.55));
+}
+.fg-show__phone {
+  filter:
+    drop-shadow(0 0 2.2vh rgba(0, 0, 0, 0.75))
+    drop-shadow(0 3vh 5vh rgba(0, 0, 0, 0.65));
+}
+
+/* ==== rail v2: the case-study rail sits like the landing sidebar ==== */
+.rail--film.rail--mast {
+  left: calc(var(--mast-pad) + var(--sa-left, 0px));
+  top: calc(var(--mast-pad) + 0.35rem);
+}
+.rail--film.rail--mast .rail__back {
+  letter-spacing: 0;
+  text-transform: none;
+  margin-bottom: 1.1rem;
+}
+.rail--film.rail--mast .rail__list { position: relative; }
+.rail--film.rail--mast .rail__dot { display: none; }
+.rail__mark {
+  position: absolute; top: 0; left: 0;
+  width: 5px; height: 5px;
+  background: #101012;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 320ms var(--ease), background-color 420ms var(--ease);
+}
+.rail__mark.is-on { opacity: 1; }
+.rail--film[data-tone='dark'] .rail__mark { background: #ffffff; }
+@media (max-width: 63.9375rem) {
+  .rail--film.rail--mast { left: calc(var(--gut) + var(--sa-left, 0px)); top: auto; }
+  .rail__mark { display: none; }
+}
+
+/* ==== pills v2: four equal chips, content centred ==== */
+.fg-pills {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: max-content;
+  max-width: 100%;
+  gap: 0.6rem;
+}
+.fg-pills li {
+  justify-content: center;
+  padding: 0.62rem 1.15rem;
+  gap: 0.55rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.fg-pills svg { width: 1rem; height: 1rem; stroke-width: 1.5; }
+@media (max-width: 46rem) {
+  .fg-pills { width: 100%; gap: 0.45rem; }
+  .fg-pills li { padding: 0.5rem 0.8rem; white-space: normal; text-align: center; }
+}
+
+/* ==== needs v2: no card fill, the rows sit on the page ==== */
+.fg-kept__needs ol { gap: 1.1rem; }
+.fg-kept__needs li { background: none; padding: 0; border-radius: 0; gap: 0.9rem; }
+
+/* ==== rail v3: back is the arrow alone ==== */
+.rail--film.rail--mast .rail__back { font-size: 0; line-height: 0; padding: 0.15rem 0.3rem 0.15rem 0; margin-bottom: 0.85rem; }
+.rail--film.rail--mast .rail__back::before { font-size: 0.9375rem; line-height: 1.45; margin-right: 0; }
+
+/* ==== rivals: competitor teardown ==== */
+.scn--rivals .scn__in { max-width: none; }
+.fg-riv__wall {
+  --m: clamp(0, calc((var(--p) - 0.22) / 0.1), 1);
+  --me: calc(1 - (1 - var(--m)) * (1 - var(--m)) * (1 - var(--m)));
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.6rem, 4vh, 2.6rem);
+  width: min(88vw, 60rem);
+  translate: -50% calc(-50% - var(--me) * 26vh);
+  scale: calc(1 - var(--me) * 0.45);
+  opacity: calc(1 - var(--me));
+  pointer-events: none;
+}
+.fg-riv__lead {
+  margin: 0;
+  font-size: clamp(1rem, 1.35vw, 1.25rem);
+  line-height: 1.4;
+  color: var(--fg-dim);
+  text-align: center;
+  max-width: 30ch;
+}
+.fg-riv__logos {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+}
+.fg-riv__logos li { display: flex; align-items: center; }
+.fg-riv__logos img {
+  display: block; width: auto;
+  filter: grayscale(1) brightness(0);
+  opacity: 0.78;
+}
+.fg-riv__logos b { font-weight: 600; letter-spacing: -0.01em; color: var(--fg-ink); opacity: 0.78; }
+.fg-riv__more { color: var(--fg-quiet); }
+
+.fg-riv__logos--big { gap: clamp(2rem, 4.5vw, 4.5rem); }
+.fg-riv__logos li { --s: 1; }
+.fg-riv__logos li[data-k='ledger'] { --s: 1.3; }
+.fg-riv__logos li[data-k='dcent'] { --s: 0.62; }
+.fg-riv__logos li[data-k='tangem'] { --s: 0.95; }
+.fg-riv__logos li[data-k='trezor'] { --s: 0.9; }
+.fg-riv__logos li[data-k='ellipal'] { --s: 1.05; }
+.fg-riv__logos--big img { height: calc(clamp(1.6rem, 2.8vw, 2.4rem) * var(--s)); }
+.fg-riv__logos--big b { font-size: clamp(1.5rem, 2.6vw, 2.2rem); }
+.fg-riv__logos--big .fg-riv__more { font-size: clamp(0.95rem, 1.2vw, 1.1rem); }
+
+/* the body waits for the wall to leave */
+.fg-riv__body { display: grid; gap: 0; align-content: center; }
+.fg-riv__logos--strip {
+  justify-content: flex-start;
+  gap: clamp(1.25rem, 2.2vw, 2rem);
+  margin-bottom: clamp(1.25rem, 3vh, 2rem);
+}
+.fg-riv__logos--strip img { height: calc(1.1rem * var(--s)); opacity: 0.45; }
+.fg-riv__logos--strip b { font-size: 0.95rem; opacity: 0.5; }
+.fg-riv__logos--strip .fg-riv__more { font-size: 0.75rem; }
+
+.fg-riv__h { max-width: 20ch; font-size: clamp(2rem, 3.9vw, 3.6rem); line-height: 1.04; margin: 0 0 clamp(1.5rem, 4vh, 2.5rem); }
+
+.fg-riv__layers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 3rem);
+  width: min(100%, 62rem);
+}
+.fg-riv__layer { display: grid; gap: 0.6rem; align-content: start; }
+.fg-riv__lh {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.075em; text-transform: uppercase;
+  color: var(--fg-ink);
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--fg-line);
+}
+.fg-riv__lh i { font-style: normal; color: var(--fg-quiet); font-variant-numeric: tabular-nums; }
+.fg-riv__right {
+  display: grid; gap: 0.2rem;
+  font-size: 0.8125rem; line-height: 1.45; color: var(--fg-ink);
+  padding-bottom: 0.4rem;
+}
+.fg-riv__right em, .fg-riv__wk {
+  font-style: normal; font-size: 0.625rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.fg-riv__right em { color: #2f8f5b; }
+.fg-riv__wk { color: #b4533f; }
+.fg-riv__layer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.fg-riv__layer li { font-size: 0.8125rem; line-height: 1.45; color: var(--fg-dim); }
+.fg-riv__p { margin-top: clamp(1.5rem, 4vh, 2.5rem); max-width: 50ch; }
+
+@media (max-width: 46rem) {
+  .fg-riv__layers { grid-template-columns: 1fr; gap: 1.1rem; }
+  .fg-riv__logos--strip { display: none; }
+  .fg-riv__wall { width: 90vw; }
+}
+
+/* ==== rivals v2: saw / did ==== */
+.fg-riv__saw, .fg-riv__did { display: grid; gap: 0.3rem; font-size: 0.8125rem; line-height: 1.5; }
+.fg-riv__saw { color: var(--fg-dim); padding-bottom: 0.35rem; }
+.fg-riv__did { color: var(--fg-ink); }
+.fg-riv__saw em, .fg-riv__did em {
+  font-style: normal; font-size: 0.625rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-quiet);
+}
+.fg-riv__did em { color: var(--fg-ink); }
+.fg-riv__layer { gap: 0.75rem; }
+.fg-riv__layers { width: min(100%, 60rem); }
+.fg-riv__h { max-width: 25ch; }
+
+/* ==== rivals v3: three lenses ==== */
+.fg-riv__h { max-width: 24ch; font-size: clamp(1.9rem, 3.4vw, 3.2rem); margin-bottom: clamp(0.8rem, 2vh, 1.2rem); }
+.fg-riv__sub { margin: 0 0 clamp(1.6rem, 4vh, 2.6rem); max-width: 62ch; font-size: 0.9375rem; line-height: 1.55; color: var(--fg-dim); }
+.fg-riv__layers { width: min(100%, 64rem); gap: clamp(1.25rem, 3vw, 2.75rem); }
+.fg-riv__layer { gap: 0.7rem; }
+.fg-riv__lead2 { margin: 0; font-size: 0.9375rem; line-height: 1.4; font-weight: 500; color: var(--fg-ink); }
+.fg-riv__layer ul { gap: 0.45rem; }
+.fg-riv__layer li { position: relative; padding-left: 0.9rem; font-size: 0.8125rem; line-height: 1.5; color: var(--fg-dim); }
+.fg-riv__layer li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 4px; height: 4px; background: var(--fg-quiet); }
+.fg-riv__role { margin: 0.2rem 0 0; padding-top: 0.7rem; border-top: 1px solid var(--fg-line); font-size: 0.8125rem; line-height: 1.45; font-style: italic; color: var(--fg-ink); }
+.fg-riv__p { margin-top: clamp(1.4rem, 3.5vh, 2.2rem); max-width: 56ch; }
+.fg-riv__layers { align-items: stretch; }
+.fg-riv__layer { grid-template-rows: auto auto 1fr auto; align-content: stretch; }
+@media (max-height: 820px) and (min-width: 46.01rem) {
+  .fg-riv__logos--strip { margin-bottom: 0.9rem; }
+  .fg-riv__sub { margin-bottom: 1.3rem; }
+  .fg-riv__layer li:nth-child(3) { display: none; }
+}
+
+/* ==== rivals v5: logos land one by one, each a quick distinct fade ==== */
+.fg-riv__logos--big li.beat { --fg-rise: 22; translate: 0 calc((1 - var(--o)) * 0.9rem); }
+
+/* ==== rivals v6: reveal, then every logo settles into the strip ==== */
+.fg-riv__wall {
+  --m: clamp(0, calc((var(--p) - 0.23) / 0.13), 1);
+  --me: calc(var(--m) * var(--m) * (3 - 2 * var(--m)));
+  translate: -50% -50%;
+  scale: 1;
+  opacity: 1;
+}
+.fg-riv__lead { opacity: clamp(0, calc(1 - var(--me) * 2.5), 1); }
+.fg-riv__logos--big > li {
+  transform-origin: 0 0;
+  transform: translate(calc(var(--me) * var(--dx, 0px)), calc(var(--me) * var(--dy, 0px)))
+    scale(calc(1 - var(--me) * (1 - var(--k, 1))));
+}
+.fg-riv__logos--big img { opacity: calc(0.78 - var(--me) * 0.3); }
+.fg-riv__logos--big .fg-riv__more { white-space: nowrap; }
+/* the strip is only the landing spot now */
+.fg-riv__logos--strip { visibility: hidden; }
+.fg-riv__logos--strip > li.beat { translate: 0 0; }
+.fg-riv__logos--strip .fg-riv__more { white-space: nowrap; }
+/* more air, and the intro runs the full width of the columns */
+.fg-riv__logos--strip { margin-bottom: clamp(1.6rem, 4vh, 2.6rem); }
+.fg-riv__h { margin-bottom: clamp(1.1rem, 2.8vh, 1.8rem); }
+.fg-riv__sub { max-width: min(100%, 64rem); margin-bottom: clamp(2rem, 5vh, 3.25rem); }
+.fg-riv__role { min-height: calc(2 * 1.45em + 0.7rem); }
+.fg-riv__p { max-width: min(100%, 64rem); }
+@media (max-width: 46rem) {
+  .fg-riv__logos--big > li { transform: none; }
+  .fg-riv__wall { opacity: calc(1 - var(--me)); }
+}
+
+/* ==== rivals v7: the reveal plays while the scene slides in (--in),
+   so there is no empty screen between the last scene and this one ==== */
+.fg-riv__wall .fg-riv__lead.beat { --o: clamp(0, calc((var(--in, 1) - 0.3) * 4), 1); translate: 0 calc((1 - var(--o)) * 0.8rem); }
+.fg-riv__wall .fg-riv__logos--big > li.beat { --o: clamp(0, calc((var(--in, 1) - var(--t)) * 7), 1); }
+.fg-riv__logos--big > li:nth-child(1) { --t: 0.42; }
+.fg-riv__logos--big > li:nth-child(2) { --t: 0.5; }
+.fg-riv__logos--big > li:nth-child(3) { --t: 0.58; }
+.fg-riv__logos--big > li:nth-child(4) { --t: 0.66; }
+.fg-riv__logos--big > li:nth-child(5) { --t: 0.74; }
+.fg-riv__logos--big > li:nth-child(6) { --t: 0.8; }
+.fg-riv__wall { --m: clamp(0, calc((var(--p) - 0.1) / 0.14), 1); }
+
+/* ==== rivals v8: one scroll timeline for the reveal.
+   --u runs 0 -> 0.3 over the last third of the slide-in, then carries on
+   with --p once the scene pins. The line reveals as it arrives; the logos
+   only come one by one as you keep scrolling. ==== */
+.fg-riv__wall {
+  --u: calc(clamp(0, calc((var(--in, 1) - 0.7) / 0.3), 1) * 0.3 + var(--p));
+  --m: clamp(0, calc((var(--p) - 0.27) / 0.12), 1);
+}
+.fg-riv__wall .fg-riv__lead.beat { --o: clamp(0, calc((var(--u) - 0.04) * 5), 1); translate: 0 calc((1 - var(--o)) * 1.25rem); }
+.fg-riv__wall .fg-riv__logos--big > li.beat { --o: clamp(0, calc((var(--u) - var(--t)) * 14), 1); translate: 0 calc((1 - var(--o)) * 1rem); }
+.fg-riv__logos--big > li:nth-child(1) { --t: 0.31; }
+.fg-riv__logos--big > li:nth-child(2) { --t: 0.345; }
+.fg-riv__logos--big > li:nth-child(3) { --t: 0.38; }
+.fg-riv__logos--big > li:nth-child(4) { --t: 0.415; }
+.fg-riv__logos--big > li:nth-child(5) { --t: 0.45; }
+.fg-riv__logos--big > li:nth-child(6) { --t: 0.485; }
+.fg-riv__wall .fg-riv__lead.beat { opacity: calc(var(--o) * clamp(0, calc(1 - var(--me) * 2.5), 1)); }
+
+/* ==== rivals v9: the line arrives word by word out of a blur, and leaves
+   upward ahead of the logos instead of fading in place under them ==== */
+.fg-riv__wall .fg-riv__lead {
+  opacity: clamp(0, calc(1 - var(--me) * 2.4), 1);
+  translate: 0 calc(var(--me) * -34vh);
+  filter: blur(calc(var(--me) * 6px));
+  perspective: 40rem;
+}
+.fg-riv__w {
+  --wo: clamp(0, calc((var(--u) - 0.02 - var(--wi) * 0.013) * 11), 1);
+  --we: calc(1 - (1 - var(--wo)) * (1 - var(--wo)) * (1 - var(--wo)));
+  display: inline-block;
+  opacity: var(--wo);
+  transform-origin: 50% 100%;
+  transform: translateY(calc((1 - var(--we)) * 0.85em)) rotateX(calc((1 - var(--we)) * 55deg));
+  filter: blur(calc((1 - var(--we)) * 9px));
+  color: color-mix(in srgb, var(--fg-ink) calc((1 - var(--we)) * 100%), var(--fg-dim));
+}
+
+/* ==== shipped: X0 is out in the world ==== */
+.scn--shipped .scn__in { max-width: none; }
+.fg-ship { --sh: clamp(13rem, 33vh, 24rem); display: grid; align-content: center; }
+.fg-ship__top { display: flex; align-items: center; gap: 1.5rem; margin-bottom: clamp(0.9rem, 2.2vh, 1.4rem); }
+.fg-ship__k, .fg-ship__st, .fg-ship figcaption, .fg-ship__steps {
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.fg-ship__k { color: var(--fg-quiet); }
+.fg-ship__st { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--fg-ink); padding-left: 1.5rem; border-left: 1px solid var(--fg-line); }
+.fg-ship__st i, .fg-ship figcaption i {
+  width: 5px; height: 5px; background: currentColor; display: inline-block;
+}
+.fg-ship__st i { animation: fgShipLive 2.4s ease-in-out infinite; }
+@keyframes fgShipLive { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.fg-ship__h { max-width: 18ch; font-size: clamp(2rem, 3.6vw, 3.4rem); line-height: 1.04; margin: 0 0 clamp(0.8rem, 2vh, 1.2rem); }
+.fg-ship__p { margin: 0 0 clamp(1.3rem, 3.6vh, 2.4rem); max-width: 56ch; font-size: 0.9375rem; line-height: 1.55; color: var(--fg-dim); }
+
+.fg-ship__row { display: flex; align-items: flex-end; gap: clamp(1.5rem, 3.4vw, 3.5rem); }
+.fg-ship__s { margin: 0; display: grid; gap: 0.85rem; }
+.fg-ship__frame {
+  height: var(--sh); width: calc(var(--sh) * var(--r));
+  border-radius: calc(var(--sh) * 0.06);
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(16, 16, 18, 0.08), 0 1.2rem 2.4rem -1.2rem rgba(16, 16, 18, 0.22);
+}
+.fg-ship__frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.fg-ship__frame.is-empty {
+  box-shadow: none; background: transparent;
+  outline: 1px dashed rgba(16, 16, 18, 0.22); outline-offset: -1px;
+  display: grid; place-items: center;
+}
+.fg-ship__s, .fg-ship__frame { min-width: 0; flex: none; }
+.fg-ship__ph { overflow-wrap: anywhere; display: grid; gap: 0.35rem; text-align: center; padding: 1rem; font-size: 0.75rem; line-height: 1.4; color: var(--fg-quiet); }
+.fg-ship__ph b { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-dim); }
+.fg-ship figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-top: 0.7rem; border-top: 1px solid var(--fg-line); }
+.fg-ship figcaption b { font-weight: 600; color: var(--fg-ink); text-transform: none; letter-spacing: 0.02em; font-size: 0.8125rem; }
+.fg-ship figcaption span { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--fg-quiet); }
+.fg-ship__hw { margin: 0; height: var(--sh); width: calc(var(--sh) * var(--r)); display: grid; place-items: center; }
+.fg-ship__hw img { max-width: 100%; max-height: 100%; }
+.fg-ship__hw:has(.fg-ship__ph) { outline: 1px dashed rgba(16, 16, 18, 0.22); }
+
+.fg-ship__end {
+  margin-top: clamp(1.4rem, 3.6vh, 2.4rem);
+  padding-top: clamp(1rem, 2.4vh, 1.4rem);
+  border-top: 1px solid var(--fg-line);
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.4rem clamp(2rem, 5vw, 4rem);
+  align-items: baseline; max-width: 64rem;
+}
+.fg-ship__steps { grid-column: 1 / -1; list-style: none; margin: 0 0 0.5rem; padding: 0; display: flex; gap: 0.75rem; color: var(--fg-quiet); }
+.fg-ship__steps li { display: inline-flex; align-items: center; gap: 0.75rem; }
+.fg-ship__steps li + li::before { content: ''; width: 1.75rem; height: 1px; background: var(--fg-line); }
+.fg-ship__steps li.is-now { color: var(--fg-ink); }
+.fg-ship__steps li.is-now::after { content: ''; width: 2.5rem; height: 0; border-top: 1px dashed rgba(16, 16, 18, 0.3); }
+.fg-ship__eh { margin: 0; font-size: clamp(1.1rem, 1.5vw, 1.35rem); font-weight: 500; line-height: 1.3; letter-spacing: -0.01em; color: var(--fg-ink); }
+.fg-ship__ep { margin: 0; font-size: 0.875rem; line-height: 1.55; color: var(--fg-dim); max-width: 56ch; }
+
+@media (max-width: 46rem) {
+  .fg-ship { --sh: 17rem; }
+  .fg-ship__row { overflow-x: auto; padding-bottom: 0.5rem; }
+  .fg-ship__end { grid-template-columns: 1fr; }
+}
+/* two-column: the statement on the left, the three listings as the focus */
+@media (min-width: 60rem) {
+  .fg-ship {
+    --sh: clamp(16rem, 42vh, 30rem);
+    grid-template-columns: minmax(0, 27rem) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr auto;
+    column-gap: clamp(2.5rem, 5vw, 5rem);
+    align-items: start;
+  }
+  .fg-ship__top, .fg-ship__h, .fg-ship__p { grid-column: 1; }
+  .fg-ship__h { font-size: clamp(1.8rem, 2.6vw, 2.55rem); max-width: none; }
+  .fg-ship__p { max-width: 42ch; }
+  .fg-ship__p { margin-bottom: 0; }
+  .fg-ship__row { grid-column: 2; grid-row: 1 / span 3; align-self: end; gap: clamp(1.25rem, 2.6vw, 2.75rem); }
+  .fg-ship__end { grid-column: 1 / -1; max-width: none; }
+}
+@media (min-width: 60rem) {
+  .fg-ship { container-type: inline-size; }
+  .fg-ship__row { --sh: min(44vh, 30rem, calc((100cqw - 27rem - clamp(2.5rem, 5vw, 5rem) - 2 * clamp(1.25rem, 2.6vw, 2.75rem)) / 1.49)); }
+}
+.fg-ship__frame.is-empty { max-width: calc(var(--sh) * var(--r)); min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.fg-ship__ph { min-width: 0; }
+.fg-ship .fg-ship__end { max-width: none; }
+
+/* ==== shipped v2: live indicators are green and twinkle ==== */
+.fg-ship__st i, .fg-ship figcaption i {
+  background: #22a35a;
+  border-radius: 50%;
+  width: 6px; height: 6px;
+  box-shadow: 0 0 0 0 rgba(34, 163, 90, 0.45);
+  animation: fgShipTwinkle 2.4s ease-in-out infinite;
+}
+.fg-ship figcaption figure:nth-child(2) i, .fg-ship__s:nth-child(2) figcaption i { animation-delay: 0.4s; }
+.fg-ship__s:nth-child(3) figcaption i { animation-delay: 0.8s; }
+@keyframes fgShipTwinkle {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 163, 90, 0.45); }
+  50% { opacity: 0.45; box-shadow: 0 0 0 4px rgba(34, 163, 90, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .fg-ship__st i, .fg-ship figcaption i { animation: none; } }
+
+/* ==== the highlighter becomes the gold underline used everywhere else ==== */
+.fg-h mark::before {
+  left: 0; right: 0; bottom: 0.02em;
+  height: 0.06em;
+  border-radius: 1em;
+  background: linear-gradient(90deg, #c99a4c, #f0d49a);
+  rotate: 0deg;
+  mix-blend-mode: normal;
+  opacity: 0.9;
+  z-index: 0;
+  transform-origin: left center;
+  scale: var(--he) 1;
+}
+
+/* ==== shipped v3: a quiet regional note under a surface ==== */
+.fg-ship__note { margin: -0.35rem 0 0; font-size: 0.75rem; line-height: 1.45; color: var(--fg-quiet); }
+
+/* ==== shipped v4: the note hangs below the caption, out of the layout,
+   so the three surfaces stay on one baseline ==== */
+.fg-ship__s { position: relative; }
+.fg-ship__note { position: absolute; top: 100%; left: 0; right: 0; margin: 0.5rem 0 0; }
+
+/* ==== shipped v5: room under the row for the hanging note ==== */
+.fg-ship__row { padding-bottom: 2.9rem; }
+.fg-ship .fg-ship__end { margin-top: clamp(1.25rem, 3vh, 2rem); }
+
+/* ==== shipped v6: no rule above the closing thought ==== */
+.fg-ship .fg-ship__end { border-top: 0; padding-top: 0; }
+
+/* ==== the end card: the X0 film, darkened on the left for the title ==== */
+.fg-obj__vid {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: 72% 50%;
+  scale: calc(1.06 - var(--p, 0) * 0.06);
+}
+.fg-obj__shade {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(90deg, #08080a 0%, #08080a 28%, rgba(8, 8, 10, 0.88) 42%, rgba(8, 8, 10, 0.45) 56%, rgba(8, 8, 10, 0) 72%),
+    linear-gradient(0deg, rgba(8, 8, 10, 0.85) 0%, rgba(8, 8, 10, 0) 38%);
+}
+.fg-obj--video { place-items: stretch; overflow: hidden; }
+/* the film sits in the right of the frame; the left is ground for the title */
+.fg-obj--video .fg-obj__vid { inset: 0 -4% 0 auto; width: 76%; object-position: 62% 50%; }
+.fg-obj--video .fg-obj__shade {
+  background:
+    linear-gradient(90deg, #08080a 0%, #08080a 34%, rgba(8, 8, 10, 0.92) 44%, rgba(8, 8, 10, 0.55) 56%, rgba(8, 8, 10, 0) 72%),
+    linear-gradient(0deg, rgba(8, 8, 10, 0.8) 0%, rgba(8, 8, 10, 0) 34%);
+}
+
+/* ==== end card v2: the title sits in the dark half, centred on the frame ==== */
+.fg-obj--video ~ .scn__in--foot { align-content: center; gap: clamp(0.9rem, 2vh, 1.4rem); }
+.fg-obj--video ~ .scn__in--foot .fg-h {
+  font-size: clamp(2.8rem, 5.6vw, 5.6rem);
+  line-height: 0.95;
+  max-width: 7ch;
+  margin: 0;
+}
+.fg-obj--video ~ .scn__in--foot .fg-meta { max-width: 34ch; margin: 0; line-height: 1.55; }
+
+/* ==== end card v3: back to the foot of the frame, with proper spacing ==== */
+.fg-obj--video ~ .scn__in--foot {
+  align-content: end;
+  gap: clamp(1.1rem, 2.4vh, 1.6rem);
+  padding-bottom: clamp(3.5rem, 9vh, 6rem);
+}
+.fg-obj--video ~ .scn__in--foot .fg-h {
+  font-size: clamp(3rem, 6.4vw, 6.6rem);
+  line-height: 1.05;
+  max-width: none;
+  white-space: nowrap;
+  margin: 0;
+}
+.fg-obj--video ~ .scn__in--foot .fg-meta { max-width: 52ch; margin: 0; }
+
+/* ==== end card v4: the sign-off wraps in the dark half ==== */
+.fg-obj--video ~ .scn__in--foot .fg-h { white-space: normal; max-width: 11ch; line-height: 1; }
+.fg-obj--video ~ .scn__in--foot .fg-meta { max-width: 44ch; }
+
+/* ==== end card v5: a smaller sign-off ==== */
+.fg-obj--video ~ .scn__in--foot .fg-h { font-size: clamp(2.4rem, 4.8vw, 4.8rem); max-width: 12ch; }
+
+/* ==== the 67 scene v2: number, bet, how it connects ==== */
+#x0-67 .fg-h { font-size: clamp(1.9rem, 3.6vw, 3.6rem); line-height: 1.05; max-width: 22ch; margin-top: clamp(0.8rem, 2vh, 1.2rem); }
+#x0-67 .fg-kick { display: block; margin-top: 0.4rem; }
+#x0-67 .fg-p { max-width: 58ch; margin-top: clamp(0.8rem, 2vh, 1.2rem); }
+.fg-pipe {
+  list-style: none; margin: clamp(1.4rem, 3.6vh, 2.2rem) 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--fg-ink);
+}
+.fg-pipe li { display: inline-flex; align-items: center; gap: 0.6rem; }
+.fg-pipe li + li::before { content: ''; width: 2.25rem; height: 1px; background: var(--fg-line); }
+.fg-pipe li:last-child { color: #b88a3e; }
+
+/* ==== steps: the N45 x AI process ==== */
+.scn--steps .scn__in { max-width: none; }
+.fg-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+  gap: clamp(2rem, 4.5vw, 4.5rem);
+  align-items: center;
+  min-height: 100%;
+}
+.fg-steps__h { font-size: clamp(1.7rem, 2.6vw, 2.6rem); line-height: 1.08; margin: 0.6rem 0 clamp(1.4rem, 3.5vh, 2.2rem); }
+.fg-steps__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.fg-steps__i {
+  --w: clamp(0, min(calc((var(--p) - var(--at)) * 20), calc((var(--to) - var(--p)) * 20)), 1);
+  display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0.4rem;
+  padding: 0.85rem 0; border-top: 1px solid var(--fg-line);
+  opacity: calc(0.32 + var(--w) * 0.68);
+  transition: opacity 200ms linear;
+}
+.fg-steps__i:last-child { border-bottom: 1px solid var(--fg-line); }
+.fg-steps__i i { font-style: normal; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; color: var(--fg-quiet); padding-top: 0.2rem; font-variant-numeric: tabular-nums; }
+.fg-steps__i b { display: block; font-weight: 560; font-size: 0.9375rem; color: var(--fg-ink); }
+.fg-steps__i span {
+  display: block; font-size: 0.8125rem; line-height: 1.5; color: var(--fg-dim);
+  max-height: calc(var(--w) * 6em); overflow: hidden; margin-top: calc(var(--w) * 0.3rem);
+}
+.fg-steps__stage { position: relative; aspect-ratio: 1470 / 900; width: 100%; max-height: 74vh; justify-self: center; }
+.fg-steps__f {
+  --w: clamp(0, min(calc((var(--p) - var(--at)) * 16), calc((var(--to) - var(--p)) * 16)), 1);
+  position: absolute; inset: 0; margin: 0;
+  display: grid; place-items: center;
+  opacity: var(--w);
+  translate: 0 calc((1 - var(--w)) * 1.2rem);
+  scale: calc(0.985 + var(--w) * 0.015);
+}
+.fg-steps__f img {
+  max-width: 100%; max-height: 100%; display: block;
+  border-radius: 0.75rem;
+  box-shadow: 0 0 0 1px rgba(16, 16, 18, 0.08), 0 1.6rem 3.2rem -1.6rem rgba(16, 16, 18, 0.35);
+}
+@media (max-width: 60rem) {
+  .fg-steps { grid-template-columns: 1fr; align-content: center; }
+  .fg-steps__stage { order: -1; max-height: 42vh; }
+}
+
+/* ==== steps v2: the 67% opens the process ==== */
+.fg-steps__n {
+  margin: 0; font-size: clamp(4.5rem, 9vw, 8.5rem); font-weight: 560;
+  line-height: 0.85; letter-spacing: -0.045em; color: var(--fg-ink);
+}
+.fg-steps__sub { display: block; margin-top: 0.75rem; }
+.fg-steps .fg-steps__h { font-size: clamp(1.5rem, 2.2vw, 2.2rem); margin: clamp(0.8rem, 2vh, 1.2rem) 0 clamp(1.1rem, 2.8vh, 1.8rem); }
+.fg-steps__i { padding: 0.7rem 0; }
+
+
+/* ==== steps v4: the earlier look, anchored so nothing jumps ==== */
+.fg-steps { align-items: start; align-content: start; padding-top: clamp(4rem, 12vh, 8rem); }
+.fg-steps__side { align-self: start; }
+.fg-steps__stage { align-self: start; margin-top: clamp(2rem, 6vh, 4rem); }
+/* the description opens smoothly, one reserved height for all of them */
+.fg-steps__i span {
+  max-height: calc(var(--w) * 4.6em);
+  opacity: var(--w);
+  transition: max-height 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 260ms ease;
+}
+.fg-steps__i { transition: opacity 260ms ease; }
+/* frames stack and only fade in: no white flash between two */
+.fg-steps__f {
+  --w: clamp(0, calc((var(--p) - var(--at) + 0.02) * 14), 1);
+  translate: 0 calc((1 - var(--w)) * 0.6rem);
+  scale: 1;
+}
+.fg-steps__f:nth-child(1) { --w: 1; z-index: 1; }
+.fg-steps__f:nth-child(2) { z-index: 2; }
+.fg-steps__f:nth-child(3) { z-index: 3; }
+.fg-steps__f:nth-child(4) { z-index: 4; }
+
+/* ==== steps v5: the 67% and the first frame arrive together; the steps
+   are disclosed only once you start scrolling ==== */
+.fg-steps__list {
+  --r: clamp(0, calc((var(--p) - 0.06) * 8), 1);
+  opacity: var(--r);
+  translate: 0 calc((1 - var(--r)) * 1.25rem);
+}
+.fg-steps__f:nth-child(1) { --w: 1; }
+
+/* ==== steps v6: the tools, set after the headline ==== */
+.fg-steps__ais { display: inline-flex; gap: 0.3em; margin-left: 0.35em; vertical-align: -0.06em; white-space: nowrap; }
+.fg-steps__ais img { width: 0.82em; height: 0.82em; object-fit: contain; border-radius: 0.18em; display: block; }
+
+/* ==== steps v7: the tools as an overlapping stack, named on hover ==== */
+.fg-steps__ais { display: inline-flex; gap: 0; margin-left: 0.3em; vertical-align: -0.12em; pointer-events: auto; }
+.fg-ai {
+  position: relative; display: inline-grid; place-items: center;
+  width: 1em; height: 1em; border-radius: 50%;
+  background: #fff; overflow: visible;
+  box-shadow: 0 0 0 0.07em #fff, 0 0.08em 0.25em rgba(16, 16, 18, 0.18);
+  cursor: default; outline: none;
+  transition: translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fg-ai + .fg-ai { margin-left: -0.2em; }
+.fg-ai img { width: 58%; height: 58%; object-fit: contain; border-radius: 0; display: block; }
+.fg-ai[data-k='claude'] { background: #d97757; }
+.fg-ai[data-k='claude'] img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.fg-ai:nth-child(1) { z-index: 1; } .fg-ai:nth-child(2) { z-index: 2; } .fg-ai:nth-child(3) { z-index: 3; }
+.fg-ai:hover, .fg-ai:focus-visible { translate: 0 -0.06em; z-index: 5; }
+.fg-ai::after {
+  content: attr(data-t);
+  position: absolute; left: 50%; bottom: calc(100% + 0.35rem);
+  translate: -50% 0.25rem; opacity: 0; pointer-events: none;
+  padding: 0.4rem 0.8rem; border-radius: 999px;
+  background: #111113; color: #fff;
+  font-size: 0.8125rem; font-weight: 500; letter-spacing: 0; line-height: 1; white-space: nowrap;
+  box-shadow: 0 0.5rem 1.2rem -0.4rem rgba(0, 0, 0, 0.35);
+  transition: opacity 180ms ease, translate 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.fg-ai:hover::after, .fg-ai:focus-visible::after { opacity: 1; translate: -50% 0; }
+
+/* ==== steps v8: more air, a bigger frame ==== */
+.fg-steps { grid-template-columns: minmax(0, 23rem) minmax(0, 1fr); gap: clamp(2.5rem, 5vw, 5.5rem); padding-top: clamp(3rem, 9vh, 6rem); }
+.fg-steps__n { line-height: 0.9; }
+.fg-steps .fg-kick.fg-steps__sub { margin-top: clamp(0.9rem, 2vh, 1.3rem); }
+.fg-steps .fg-steps__h { margin: clamp(1.2rem, 3vh, 1.8rem) 0 clamp(1.8rem, 4.5vh, 2.8rem); line-height: 1.12; }
+.fg-steps__ais { margin-left: 0.4em; }
+.fg-steps__i { padding: 1rem 0; }
+.fg-steps__i span { margin-top: calc(var(--w) * 0.45rem); }
+.fg-steps__stage { max-height: 80vh; margin-top: clamp(1rem, 4vh, 3rem); width: calc(100% + 3vw); }
+
+/* ==== board: the retrospective ==== */
+.scn--board .scn__in { max-width: none; }
+.fg-board { display: grid; align-content: center; min-height: 100%; }
+.fg-board__h { font-size: clamp(2.2rem, 4.2vw, 4.2rem); line-height: 1; margin: 0.6rem 0 clamp(1.4rem, 3.4vh, 2.2rem); }
+.fg-board__grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.9rem, 1.6vw, 1.4rem); width: min(100%, 68rem);
+}
+.fg-board__c {
+  --o: clamp(0, calc((var(--p) - var(--at)) * 9), 1);
+  --e: calc(1 - (1 - var(--o)) * (1 - var(--o)) * (1 - var(--o)));
+  display: grid; gap: 0.5rem; align-content: start;
+  padding: clamp(1rem, 1.8vw, 1.35rem);
+  background: #fff;
+  border: 1px solid rgba(16, 16, 18, 0.08);
+  border-radius: 0.75rem;
+  box-shadow: 0 0.1rem 0.2rem rgba(16, 16, 18, 0.04), 0 calc(0.6rem + (1 - var(--e)) * 1.4rem) calc(1.4rem + (1 - var(--e)) * 1.6rem) -1rem rgba(16, 16, 18, calc(0.14 + (1 - var(--e)) * 0.1));
+  opacity: var(--o);
+  transform: translateY(calc((1 - var(--e)) * -1.4rem)) scale(calc(1.04 - var(--e) * 0.04)) rotate(calc(var(--r) * var(--e)));
+  transform-origin: 50% 0;
+}
+.fg-board__k {
+  display: flex; align-items: baseline; gap: 0.55rem;
+  font-size: 0.625rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--fg-quiet);
+}
+.fg-board__k i { font-style: normal; color: #b88a3e; font-variant-numeric: tabular-nums; }
+.fg-board__t { font-weight: 560; font-size: clamp(0.95rem, 1.15vw, 1.1rem); line-height: 1.3; color: var(--fg-ink); }
+.fg-board__b { margin: 0; font-size: 0.8125rem; line-height: 1.55; color: var(--fg-dim); }
+.fg-board__b b { color: var(--fg-ink); font-weight: 560; }
+.fg-board__p { margin: clamp(1.4rem, 3.6vh, 2.2rem) 0 0; max-width: 60ch; font-size: clamp(0.95rem, 1.15vw, 1.1rem); line-height: 1.5; color: var(--fg-ink); }
+@media (max-width: 60rem) { .fg-board__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 40rem) { .fg-board__grid { grid-template-columns: 1fr; } .fg-board__c { transform: none; } }
+
+/* ==== board v2: weighted, not equal ==== */
+.fg-board__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: dense; width: min(100%, 72rem); }
+.fg-board__c--lead {
+  grid-column: span 2; background: #111113; border-color: #111113; color: #fff;
+  padding: clamp(1.4rem, 2.4vw, 2rem); gap: 0.8rem;
+}
+.fg-board__c--lead .fg-board__k { color: rgba(255, 255, 255, 0.55); }
+.fg-board__c--lead .fg-board__t { color: #fff; font-size: clamp(1.4rem, 2.2vw, 2.1rem); line-height: 1.12; letter-spacing: -0.01em; }
+.fg-board__c--lead .fg-board__b { color: rgba(255, 255, 255, 0.72); font-size: clamp(0.875rem, 1vw, 0.975rem); max-width: 56ch; }
+.fg-board__c--stat { align-content: space-between; }
+.fg-board__n { white-space: nowrap; font-size: clamp(1.5rem, 2.3vw, 2.2rem); font-weight: 560; letter-spacing: -0.03em; line-height: 1; color: var(--fg-ink); margin-top: 0.4rem; }
+.fg-board__c--stat .fg-board__t { color: #b88a3e; }
+@media (max-width: 60rem) { .fg-board__c--lead { grid-column: 1 / -1; } }
