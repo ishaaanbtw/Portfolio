@@ -5375,7 +5375,7 @@
        any one screen competing with the phone. */
     showcase: (s) => {
       const H = s.hero || [], C = s.cols || [];
-      const hb = SPREAD(H.length, 0.2, 0.86);
+      const hb = s.stops || SPREAD(H.length, 0.2, 0.86);
       const col = (list, i) =>
         `<div class="fg-show__col" style="--i:${i};--dir:${i % 2 ? 1 : -1};--sp:${(0.8 + (i % 3) * 0.22).toFixed(2)}">` +
           `<div class="fg-show__track">` +
@@ -5385,6 +5385,11 @@
           `<div class="fg-show__river">${C.map(col).join('')}</div>` +
           `<i class="fg-show__veil"></i>` +
         `</div>` +
+        /* the four cards: each taps the back of the phone lying flat, then
+           turns upright and settles into a column beside it */
+        `<div class="fg-show__pulse" aria-hidden="true"><i></i><i></i><i></i></div>` +
+        (s.cards || []).map((c, i) => `<img class="fg-show__card" style="--ci:${i};--one:${i ? 0 : 1};--oth:${i ? 1 : 0}" ` +
+          `src="${url(c)}" alt="X0 card ${i + 1}" width="600" height="955" loading="lazy" decoding="async">`).join('') +
         `<div class="fg-show__phone">` +
           `<div class="fg-show__screen">` +
             H.map((n, i) => `<img style="--a:${hb[i].toFixed(3)};--b:${(hb[i + 1] || 2).toFixed(3)}" ` +
@@ -5399,6 +5404,7 @@
         `</div>`;
     },
 
+    /* (the showcase's tap feedback lives in TapBuzz below) */
     /* --- 12 + 13 · the case against, then the answer ---------------------
        One scene, two phases, one pin. The left column fills while the right
        stays empty — the asymmetry is uncomfortable on purpose, and the
@@ -23494,4 +23500,17 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+})();
+
+/* ---- TapPulse: while card 1 is held against the back of the phone, a soft
+   signal pulses out from behind it. On only inside the hold window. */
+(() => {
+  const tick = () => {
+    document.querySelectorAll('.scn--showcase').forEach((sec) => {
+      const p = parseFloat(sec.style.getPropertyValue('--p')) || 0;
+      sec.classList.toggle('is-tapping', p > 0.085 && p < 0.25);
+    });
+    requestAnimationFrame(tick);
+  };
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) requestAnimationFrame(tick);
 })();

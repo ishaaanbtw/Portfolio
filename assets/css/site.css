@@ -22071,7 +22071,6 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .fg-show__col { --q: 1; } .scn--showcase { --rise: 1; }
 }
-/* keep the words clear of the river behind them */
 .fg-show__veil {
   background:
     radial-gradient(34% 58% at 56% 52%, rgba(8,8,10,0.92) 0%, rgba(8,8,10,0.6) 55%, rgba(8,8,10,0) 100%),
@@ -22079,6 +22078,166 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
     linear-gradient(180deg, rgba(8,8,10,0.7), transparent 18%, transparent 82%, rgba(8,8,10,0.8));
 }
 .fg-show__p { color: rgba(244,243,239,0.62); }
-@media (max-width: 46rem) {
-  .fg-show__veil { background: linear-gradient(180deg, rgba(8,8,10,0.97) 0%, rgba(8,8,10,0.85) 32%, rgba(8,8,10,0.4) 55%, rgba(8,8,10,0.9)); }
+
+/* ---- the four cards tap the phone, then stand beside it ----------------- */
+.scn--showcase .scn__stage { --H: min(80svh, 46vw); --PX: 56%; --PY: 50%; }
+.fg-show__phone { left: var(--PX); top: var(--PY); height: var(--H); }
+.fg-show__col { --q: clamp(0, calc((var(--p) - 0.42 - var(--i) * 0.02) * 6), 1); }
+.fg-show__card {
+  --c: clamp(0, calc((var(--p) - var(--cs)) / 0.1), 1);
+  --a0: clamp(0, calc(var(--c) / 0.35), 1);
+  --a: calc(var(--a0) * var(--a0) * (3 - 2 * var(--a0)));
+  --t: clamp(0, calc((var(--c) - 0.35) / 0.2), 1);
+  --dip: calc(var(--t) * (1 - var(--t)) * 4);
+  --r0: clamp(0, calc((var(--c) - 0.55) / 0.45), 1);
+  --r: calc(var(--r0) * var(--r0) * (3 - 2 * var(--r0)));
+  /* where it starts, where it taps, where it rests */
+  --sy: calc(-50svh - var(--H) * 0.6);
+  --ty: calc(var(--H) * -0.47);
+  --rx: calc(var(--H) * (0.47 + var(--ci) * 0.075));
+  --ry: calc(var(--H) * (-0.09 + var(--ci) * 0.06));
+  position: absolute; z-index: 2;
+  left: var(--PX); top: var(--PY);
+  height: calc(var(--H) * 0.42); width: auto; aspect-ratio: 600 / 955;
+  translate:
+    calc(-50% + var(--rx) * var(--r))
+    calc(-50% + var(--sy) + (var(--ty) - var(--sy)) * var(--a) + var(--H) * 0.035 * var(--dip) + (var(--ry) - var(--ty)) * var(--r));
+  rotate: calc(90deg * (1 - var(--r)) + (var(--ci) - 1.5) * 1.2deg * var(--r));
+  opacity: clamp(0, calc(var(--c) * 30), 1);
+  filter: drop-shadow(0 1.4vh 2.4vh rgba(0,0,0,0.55)) brightness(calc(1 + var(--dip) * 0.12));
+  pointer-events: none;
 }
+@media (max-width: 46rem) {
+  .scn--showcase .scn__stage { --H: min(62svh, 110vw); --PX: 50%; --PY: 58%; }
+  .fg-show__card { --rx: calc(var(--H) * (0.16 + var(--ci) * 0.04)); --ry: calc(var(--H) * (-0.3 + var(--ci) * 0.03)); }
+}
+@media (prefers-reduced-motion: reduce) { .fg-show__card { --c: 1; } }
+.scn--showcase .scn__stage { --PY: 54%; } @media (max-width: 46rem) { .scn--showcase .scn__stage { --PY: 60%; } }
+
+/* ---- showcase v3: smaller phone, a real tap, cards fanned behind -------- */
+.scn--showcase .scn__stage { --H: min(64svh, 37vw); --PX: 61%; --PY: 52%; }
+.fg-show__card {
+  height: calc(var(--H) * 0.5);
+  --ty: calc(var(--H) * -0.44);
+  --rx: calc(var(--H) * (var(--ci) - 1.5) * 0.22);
+  --ry: calc(var(--H) * (-0.2 + (var(--ci) - 1.5) * (var(--ci) - 1.5) * 0.035));
+  rotate: calc(90deg * (1 - var(--r)) + (var(--ci) - 1.5) * 9deg * var(--r));
+  filter: drop-shadow(0 1.4vh 2.4vh rgba(0,0,0,0.55));
+  transform-origin: 50% 100%;
+}
+/* the tap: a ring of signal from the contact point, and the phone shivers */
+.fg-show__wave {
+  position: absolute; z-index: 3; left: 50%; top: 4%;
+  width: 40%; aspect-ratio: 1; translate: -50% -50%;
+  border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.8);
+  box-shadow: 0 0 18px rgba(255,255,255,0.35), inset 0 0 12px rgba(255,255,255,0.25);
+  opacity: 0; scale: 0.2; pointer-events: none;
+}
+.fg-show__phone.is-tap .fg-show__wave { animation: fgTapWave 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.fg-show__phone.is-tap .fg-show__wave--2 { animation-delay: 0.14s; }
+@keyframes fgTapWave {
+  0% { opacity: 0; scale: 0.2; }
+  15% { opacity: 0.9; }
+  100% { opacity: 0; scale: 2.6; }
+}
+.fg-show__phone.is-tap .fg-show__frame, .fg-show__phone.is-tap .fg-show__screen { animation: fgTapBuzz 0.34s linear both; }
+@keyframes fgTapBuzz {
+  0%, 100% { translate: 0 0; }
+  15% { translate: -2px 1px; } 30% { translate: 2px -1px; } 45% { translate: -1.5px 0; }
+  60% { translate: 1.5px 1px; } 75% { translate: -1px 0; } 90% { translate: 0.5px 0; }
+}
+@media (max-width: 46rem) {
+  .scn--showcase .scn__stage { --H: min(52svh, 92vw); --PX: 50%; --PY: 62%; }
+  .fg-show__card { --rx: calc(var(--H) * (var(--ci) - 1.5) * 0.2); }
+}
+
+/* ---- showcase v4: one card taps and holds; then all four arrive and leave -- */
+.fg-show__phone.is-tap .fg-show__frame, .fg-show__phone.is-tap .fg-show__screen { animation: none; }
+.fg-show__card {
+  /* card 1: in, tap and hold */
+  --a0: clamp(0, calc((var(--p) - 0.04) / 0.05), 1);
+  --a: calc(var(--a0) * var(--a0) * (3 - 2 * var(--a0)));
+  /* into the fan: card 1 first, then 2–4 */
+  --f0: clamp(0, calc((var(--p) - 0.22 - var(--oth) * (0.02 + (var(--ci) - 1) * 0.02)) / 0.08), 1);
+  --f: calc(var(--f0) * var(--f0) * (3 - 2 * var(--f0)));
+  /* and away */
+  --x0: clamp(0, calc((var(--p) - 0.37 - var(--ci) * 0.008) / 0.08), 1);
+  --x: calc(var(--x0) * var(--x0));
+  --side: calc(var(--ci) - 1.5);
+  --tx: 0px; --ty: calc(var(--H) * -0.44);
+  --sx: calc(var(--H) * var(--side) * 0.5);
+  --sy: calc(-50svh - var(--H) * 0.7);
+  /* before the fan: card 1 at its tap, the others off-screen above */
+  --px: calc(var(--one) * var(--tx) + var(--oth) * var(--sx));
+  --py: calc(var(--one) * (var(--sy) + (var(--ty) - var(--sy)) * var(--a)) + var(--oth) * var(--sy));
+  --prot: calc(var(--one) * 90deg + var(--oth) * var(--side) * 30deg);
+  translate:
+    calc(-50% + var(--px) + (var(--rx) - var(--px)) * var(--f) + var(--side) * 60vw * var(--x) + (1 - var(--oth)) * -0vw)
+    calc(-50% + var(--py) + (var(--ry) - var(--py)) * var(--f) - var(--x) * 12vh);
+  rotate: calc(var(--prot) + (var(--side) * 9deg - var(--prot)) * var(--f) + var(--side) * 25deg * var(--x));
+  opacity: calc(clamp(0, calc(var(--one) * var(--a0) * 30 + var(--oth) * var(--f0) * 30), 1) * (1 - var(--x0)));
+  --c: 1;
+}
+/* card 1 must not be pushed outward to a side on exit more than the others */
+.fg-show__card[style*="--ci:1"] { --side: -0.5; }
+/* the pulse: soft rings breathing out from behind the phone at the contact point */
+.fg-show__pulse {
+  position: absolute; z-index: 1; left: var(--PX); top: calc(var(--PY) - var(--H) * 0.44);
+  width: calc(var(--H) * 0.5); aspect-ratio: 1; translate: -50% -50%; pointer-events: none;
+}
+.fg-show__pulse i {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0) 58%, rgba(255,255,255,0.22) 68%, rgba(255,255,255,0) 72%);
+  opacity: 0; scale: 0.3;
+}
+.scn--showcase.is-tapping .fg-show__pulse i { animation: fgPulse 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) infinite; }
+.scn--showcase.is-tapping .fg-show__pulse i:nth-child(2) { animation-delay: 0.8s; }
+.scn--showcase.is-tapping .fg-show__pulse i:nth-child(3) { animation-delay: 1.6s; }
+@keyframes fgPulse {
+  0% { opacity: 0; scale: 0.3; }
+  20% { opacity: 1; }
+  100% { opacity: 0; scale: 2.4; }
+}
+.fg-show__col { --q: clamp(0, calc((var(--p) - 0.42 - var(--i) * 0.02) * 6), 1); }
+@media (prefers-reduced-motion: reduce) { .fg-show__card { opacity: 0; } }
+.fg-show__card { transform-origin: 50% 50%; }
+.fg-show__card {
+  translate:
+    calc(-50% + var(--px) + (var(--rx) - var(--px)) * var(--f) + var(--side) * 14vw * var(--x))
+    calc(-50% + var(--py) + (var(--ry) - var(--py)) * var(--f) - var(--x) * 85svh);
+  opacity: calc(clamp(0, calc(var(--one) * var(--a0) * 30 + var(--oth) * var(--f0) * 30), 1) * (1 - var(--x0) * var(--x0)));
+}
+
+/* ---- showcase v5: card 1 taps, holds, flies right; 2–4 slide out from
+   behind the phone and follow it off to the right ------------------------ */
+.fg-show__card {
+  --k: calc(var(--ci) - 1);
+  /* card 1 */
+  --a0: clamp(0, calc((var(--p) - 0.04) / 0.05), 1);
+  --a: calc(var(--a0) * var(--a0) * (3 - 2 * var(--a0)));
+  --e0: clamp(0, calc((var(--p) - 0.22) / 0.1), 1);
+  --e: calc(var(--e0) * var(--e0));
+  /* cards 2–4, from behind the phone */
+  --g0: clamp(0, calc((var(--p) - 0.28 - var(--k) * 0.025) / 0.13), 1);
+  --g: calc(var(--g0) * var(--g0) * (3 - 2 * var(--g0)) * 0.55 + var(--g0) * var(--g0) * 0.45);
+  --sy: calc(-50svh - var(--H) * 0.7);
+  --ty: calc(var(--H) * -0.44);
+  translate:
+    calc(-50% + var(--one) * (var(--e) * 75vw)
+               + var(--oth) * (var(--g) * 78vw))
+    calc(-50% + var(--one) * (var(--sy) + (var(--ty) - var(--sy)) * var(--a) - var(--e) * 18vh)
+               + var(--oth) * ((var(--k) - 1) * var(--H) * 0.12 - var(--g) * (8vh + var(--k) * 4vh)));
+  rotate: calc(var(--one) * (90deg - var(--e) * 55deg) + var(--oth) * (var(--g) * (8deg + var(--k) * 7deg)));
+  opacity: calc(
+    var(--one) * clamp(0, calc(var(--a0) * 30), 1) * (1 - clamp(0, calc((var(--e0) - 0.75) / 0.25), 1))
+    + var(--oth) * clamp(0, calc(var(--g0) * 60), 1) * (1 - clamp(0, calc((var(--g0) - 0.8) / 0.2), 1)));
+  filter: drop-shadow(0 1.4vh 2.4vh rgba(0,0,0,0.55));
+}
+.fg-show__col { --q: clamp(0, calc((var(--p) - 0.4 - var(--i) * 0.02) * 6), 1); }
+/* v6 timing: long tap + pulse; the rest of the cards are quick; the river and
+   the screens come in underneath them */
+.fg-show__card {
+  --e0: clamp(0, calc((var(--p) - 0.24) / 0.06), 1);
+  --g0: clamp(0, calc((var(--p) - 0.25 - var(--k) * 0.012) / 0.065), 1);
+}
+.fg-show__col { --q: clamp(0, calc((var(--p) - 0.25 - var(--i) * 0.015) * 7), 1); }

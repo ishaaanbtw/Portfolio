@@ -2184,13 +2184,16 @@ window.SITE = {
 
             /* THE RESULT. The X0 app itself: one phone playing through its key
                moments while every other screen flows past behind it. */
-            { id: 'x0-app', kind: 'showcase', dur: 300, dark: true,
+            { id: 'x0-app', kind: 'showcase', dur: 440, dark: true,
               k: 'The result',
               h: 'X0, built on N45.',
               p: '250+ screens and counting. One system underneath all of them.',
               base: 'assets/img/x0/app/',
               frame: 'assets/img/x0/system/iphone.webp',
               hero: ['09', '01', '05', '13', '15', '16', '14', '22'],
+              stops: [0, 0.3, 0.39, 0.48, 0.57, 0.66, 0.75, 0.84],
+              cards: ['assets/img/x0/cards/c1.webp', 'assets/img/x0/cards/c2.webp', 'assets/img/x0/cards/c3.webp', 'assets/img/x0/cards/c4.webp'],
+              cardAt: 0.08, cardGap: 0.075,
               alts: ['Portfolio', 'Onboarding', 'Tap to approve', 'Send', 'Swap token selector', 'Swap', 'Receive', 'Wallet recovered'],
               cols: [
                 ['02', '10', '19', '26', '07', '24'],
