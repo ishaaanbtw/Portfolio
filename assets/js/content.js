@@ -1687,6 +1687,191 @@ window.SITE = {
                 ],
               } },
 
+            /* WHY THE MAP CAME BEFORE THE LOOK. The architecture was drawn
+               first because it was the planning tool: count the flows, and
+               the build and the team's schedule can be sized from them. The
+               copy says plainly that this was an estimate, not a deadline. */
+            { id: 'x0-plan', kind: 'ask', dur: 150,
+              kicker: 'Before the interface',
+              h: 'First, how the app fits together.',
+              p: 'Before deciding how the UI would look and feel, we mapped its structure. It showed how many flows the app had, how long development would take, and roughly how long the whole team would need to finish. Not a final timeline, but a first estimate everyone could plan around.' },
+
+            /* THE ARCHITECTURE, DRAWN FROM THE FILE AND NOT FROM MEMORY.
+               Every node below is a section of the X0 Mobile App Figma file
+               (page "1. UI"), and every line is a path the screens in that
+               file actually take — read off the frames, their order and the
+               arrows drawn between them, not off what a crypto wallet usually
+               has. Buy is a button on Home with no flow behind it, so it is
+               not here; Cypherock Cover is an option on the wallet screen
+               with no screens behind it, so it is drawn as an option only.
+
+               FIVE COLUMNS, TWO ROWS. The top row is the product's loop —
+               first run, a wallet, Home, what you do from Home, where it
+               lands. The bottom row is everything you manage from Profile.
+               Multi-screen flows are one node each; the screens themselves
+               are `steps`, read out underneath when a node is pointed at.
+
+               THE GEOMETRY IS STATED, in canvas units (1180 × 720), because
+               a layout that avoids crossings is a set of decisions and not a
+               solver's output. `x`/`y`/`w`/`h` place a node; an edge names
+               its two ends, how it is routed, and the trunk it runs along.
+               `flow` marks a node whose steps are a sequence (read out with
+               arrows) rather than a list of what it holds. Drawn by `IA` in
+               site.js. */
+            { id: 'x0-ia', kind: 'ia', dur: 230,
+              k: 'Information architecture',
+              ia: {
+                W: 1180, H: 720,
+                groups: [
+                  { id: 'run',   n: '01', t: 'First run',         x: 0,   y: 0,   at: 0.04 },
+                  { id: 'setup', n: '02', t: 'Wallet setup',      x: 248, y: 0,   at: 0.13 },
+                  { id: 'home',  n: '03', t: 'Home',              x: 496, y: 0,   at: 0.22 },
+                  { id: 'act',   n: '04', t: 'From Home',         x: 744, y: 0,   at: 0.31 },
+                  { id: 'log',   n: '05', t: 'Activity',          x: 992, y: 0,   at: 0.40 },
+                  { id: 'prof',  n: '06', t: 'Profile',           x: 496, y: 504, at: 0.49 },
+                  { id: 'wal',   n: '07', t: 'Wallet management', x: 0,   y: 504, at: 0.58 },
+                  { id: 'set',   n: '08', t: 'Settings',          x: 744, y: 504, at: 0.67 },
+                ],
+                nodes: [
+                  /* 01 · first run */
+                  { id: 'welcome', flow: true, g: 'run', t: 'Welcome', m: '4 intro screens · Consent', x: 0, y: 36,
+                    steps: ['Welcome', 'Meet X0', 'Security across cards', 'No seed phrase backup', '22,000+ currencies', 'Data consent'] },
+                  { id: 'device', g: 'run', t: 'Choose device', m: 'X0 or X1 · 1–4 cards', x: 0, y: 100,
+                    steps: ['Cypherock X0 or X1', 'How many cards'] },
+                  { id: 'tap', flow: true, g: 'run', t: 'Tap a card', m: 'Checks for wallets', x: 0, y: 164, card: true,
+                    steps: ['Intro', 'Tap to approve', 'New or existing user'] },
+                  { id: 'who', g: 'run', t: 'New or existing?', kind: 'decide', x: 0, y: 234, w: 150, h: 36,
+                    steps: ['New user: set up the cards', 'Existing user: read the wallets already on them'] },
+                  { id: 'cards', flow: true, g: 'run', t: 'New cards', m: 'Scan · Authenticate · Pair', x: 24, y: 292, w: 164, card: true,
+                    steps: ['Scan all four cards', 'Authenticate all four', 'Pair all four', 'Cards ready'] },
+                  { id: 'existing', flow: true, g: 'run', t: 'Existing cards', m: 'Reads wallets on cards', x: 24, y: 356, w: 164,
+                    steps: ['Tap the cards', 'Wallets found on them'] },
+
+                  /* 02 · a wallet */
+                  { id: 'options', g: 'setup', t: 'Wallet options', m: 'Open · Create · Import', kind: 'hub', x: 248, y: 36,
+                    steps: ['Wallets found on the cards', 'Create a new wallet', 'Import from a seed phrase', 'Restore with Cypherock Cover'] },
+                  { id: 'found', flow: true, g: 'setup', t: 'Found wallet', m: 'Open it directly', x: 272, y: 100, w: 164,
+                    steps: ['Pick a wallet found on the cards', 'Straight to Home'] },
+                  { id: 'create', flow: true, g: 'setup', t: 'Create wallet', m: 'Name · PIN · 4 cards', x: 272, y: 164, w: 164, card: true, pin: true,
+                    steps: ['Tap to approve', 'Up to four wallets', 'Name it', 'Confirm name & seed length', 'Set a PIN', 'Tap four cards in order', 'Created', 'First asset'] },
+                  { id: 'import', flow: true, g: 'setup', t: 'Import wallet', m: 'Seed phrase · 4 cards', x: 272, y: 228, w: 164, card: true,
+                    steps: ['Tap to approve', 'About seed phrases', 'Enter phrase or private key', 'Tap four cards in order', 'Imported', 'First asset'] },
+                  { id: 'cover', g: 'setup', t: 'Cypherock Cover', m: 'Subscription restore', kind: 'option', x: 272, y: 292, w: 164,
+                    steps: ['Offered on wallet options', 'No flow designed behind it yet'] },
+
+                  /* 03 · Home */
+                  { id: 'home', g: 'home', t: 'Home', m: ['Wallet switcher · Balance', 'Actions · Accounts'], kind: 'hub', tag: 'Tab 1', x: 496, y: 100, h: 64,
+                    steps: ['Combine portfolio, or one wallet', 'Balance', 'Send · Receive · Swap · Buy · Earn', 'Your accounts', 'Bell and gear in the header'] },
+                  { id: 'empty', flow: true, g: 'home', t: 'Empty', m: 'No wallets yet', kind: 'state', x: 520, y: 184, w: 164, h: 40,
+                    steps: ['No wallets', 'Add wallet', 'Wallet options'] },
+                  { id: 'offline', flow: true, g: 'home', t: 'Offline', m: 'Last synced · Retry', kind: 'state', x: 520, y: 236, w: 164, h: 40,
+                    steps: ['Prices may be outdated', 'Last synced', 'Tap to retry'] },
+
+                  /* 04 · from Home */
+                  { id: 'portfolio', g: 'act', t: 'Portfolio', m: 'Chart · Allocation · Assets', x: 744, y: 36,
+                    steps: ['1D to 1Y', 'Asset allocation', 'Asset list', 'Recent transactions'] },
+                  { id: 'notif', g: 'act', t: 'Notifications', m: 'Transactions · Security', x: 744, y: 100,
+                    steps: ['Received', 'Sent', 'Swapped', 'Swap failed', 'Transfer failed', 'Face ID enabled'] },
+                  { id: 'send', flow: true, g: 'act', t: 'Send', m: 'Recipient · Fee · Review', x: 744, y: 164, card: true, pin: true,
+                    steps: ['Wallet', 'Token', 'Recipient', 'Amount & note', 'Network fee', 'Review', 'PIN', 'Tap a card', 'Broadcast'] },
+                  { id: 'receive', flow: true, g: 'act', t: 'Receive', m: 'Token · Network · QR', x: 744, y: 228,
+                    steps: ['Wallet', 'Token', 'Confirm', 'Address & QR, per network', 'Address options'] },
+                  { id: 'swap', flow: true, g: 'act', t: 'Swap', m: 'Pair · Provider · Review', tag: 'Tab 2', x: 744, y: 292, card: true,
+                    steps: ['Wallet', 'Pay token', 'Receive token', 'Amount', 'Provider', 'Quote', 'Review', 'Tap a card', 'Complete — or failed, back to the start'] },
+                  { id: 'addacct', flow: true, g: 'act', t: 'Add account', m: 'Asset · Network · Accounts', x: 744, y: 356, card: true,
+                    steps: ['Select asset', 'Network', 'Tap a card', 'Checking the blockchain', 'Choose accounts', 'Added to portfolio'] },
+                  { id: 'earn', flow: true, g: 'act', t: 'Earn', m: 'Waitlist', tag: 'Tab 3', x: 744, y: 420,
+                    steps: ['Join the waitlist', 'Email', 'Notify me'] },
+
+                  /* 05 · where it lands */
+                  { id: 'txns', g: 'log', t: 'Transactions', m: 'Grouped by day · Filter', x: 992, y: 68,
+                    steps: ['Today, yesterday, by date', 'Filter sheet'] },
+                  { id: 'txd', g: 'log', t: 'Transaction details', m: 'Per type · Pending', kind: 'hub', x: 992, y: 228,
+                    steps: ['Sent', 'Received', 'Swapped', 'Pending'] },
+
+                  /* 06 · Profile */
+                  { id: 'profile', g: 'prof', t: 'Profile', m: 'Wallets · dApps · App', kind: 'hub', tag: 'Tab 4', x: 496, y: 540,
+                    steps: ['WalletConnect', 'Manage wallets', 'Add wallet', 'Recover wallet', 'App settings', 'Support · Terms'] },
+                  { id: 'wc', flow: true, g: 'prof', t: 'WalletConnect', m: 'URL · Wallet · Accounts', x: 520, y: 604, w: 164,
+                    steps: ['Paste a URL', 'Select wallet', 'Select accounts', 'Connecting', 'Connection details'] },
+
+                  /* 07 · the wallet's life */
+                  { id: 'addw', flow: true, g: 'wal', t: 'Add wallet', m: 'Returns to setup', x: 248, y: 540,
+                    steps: ['Opens wallet options', 'Create or import'] },
+                  { id: 'manage', g: 'wal', t: 'Manage wallets', m: 'Up to 4 · Swipe to delete', x: 248, y: 604,
+                    steps: ['Wallets, 3 of 4', 'Wallet settings', 'Swipe to delete'] },
+                  { id: 'recover', flow: true, g: 'wal', t: 'Recover wallet', m: '4 cards · Pick · PIN', x: 248, y: 668, card: true, pin: true,
+                    steps: ['Instructions', 'Tap all four cards', 'Wallets found', 'PIN', 'Tap two cards', 'The card missing it', 'The rest', 'Recovered — or none found, or no free slot'] },
+                  { id: 'wset', g: 'wal', t: 'Wallet settings', m: 'One wallet', x: 0, y: 540,
+                    steps: ['View seed phrase', 'Delete wallet'] },
+                  { id: 'seed', flow: true, g: 'wal', t: 'View seed phrase', m: 'Face ID · Tap to reveal', x: 24, y: 604, w: 164,
+                    steps: ['Face ID', 'Tap to reveal', '12, 18 or 24 words', 'Screenshots blocked'] },
+                  { id: 'delete', flow: true, g: 'wal', t: 'Delete wallet', m: '4 cards · PIN · Caution', kind: 'danger', x: 24, y: 668, w: 164, card: true, pin: true,
+                    steps: ['All four cards needed', 'PIN', 'Caution, confirmed', 'Tap four cards in order', 'Deleted'] },
+
+                  /* 08 · settings */
+                  { id: 'settings', g: 'set', t: 'Settings', m: 'Also from Home', kind: 'hub', x: 744, y: 540,
+                    steps: ['Account', 'Notifications', 'Security', 'Support · About', 'Legal'] },
+                  { id: 'prefs', g: 'set', t: 'Preferences', m: 'Currency · Language', x: 992, y: 540,
+                    steps: ['Preferred currency', 'Display language', 'Notifications'] },
+                  { id: 'security', g: 'set', t: 'Security', m: 'Passcode · Biometrics', x: 992, y: 604,
+                    steps: ['App lock', 'Set passcode', 'Biometrics', 'Manage passcode'] },
+                  { id: 'help', g: 'set', t: 'Help & legal', m: 'Support · About · Terms', x: 992, y: 668,
+                    steps: ['Support', 'About', 'Policies', 'Terms of use'] },
+                ],
+                /* `down` runs a column; `spine` hangs children off a node's
+                   left edge; `r` and `l` leave a node's side, run the trunk
+                   at `x` and enter the other node's facing side; `ret` is a
+                   return and carries its own points. */
+                edges: [
+                  { f: 'welcome', t: 'device', r: 'down' },
+                  { f: 'device', t: 'tap', r: 'down' },
+                  { f: 'tap', t: 'who', r: 'down' },
+                  { f: 'who', t: 'cards', r: 'spine' },
+                  { f: 'who', t: 'existing', r: 'spine' },
+                  { f: 'cards', t: 'options', r: 'r', x: 210, ty: 70 },
+                  { f: 'existing', t: 'options', r: 'r', x: 210, ty: 70 },
+
+                  { f: 'options', t: 'found', r: 'spine' },
+                  { f: 'options', t: 'create', r: 'spine' },
+                  { f: 'options', t: 'import', r: 'spine' },
+                  { f: 'options', t: 'cover', r: 'spine', soft: true },
+                  { f: 'found', t: 'home', r: 'r', x: 466 },
+                  { f: 'create', t: 'home', r: 'r', x: 466 },
+                  { f: 'import', t: 'home', r: 'r', x: 466 },
+
+                  { f: 'home', t: 'empty', r: 'spine', soft: true },
+                  { f: 'home', t: 'offline', r: 'spine', soft: true },
+                  { f: 'home', t: 'portfolio', r: 'r', x: 714 },
+                  { f: 'home', t: 'notif', r: 'r', x: 714 },
+                  { f: 'home', t: 'send', r: 'r', x: 714 },
+                  { f: 'home', t: 'receive', r: 'r', x: 714 },
+                  { f: 'home', t: 'swap', r: 'r', x: 714 },
+                  { f: 'home', t: 'addacct', r: 'r', x: 714 },
+                  { f: 'home', t: 'earn', r: 'r', x: 714 },
+
+                  { f: 'portfolio', t: 'txns', r: 'r', x: 962 },
+                  { f: 'notif', t: 'txns', r: 'r', x: 962 },
+                  { f: 'txns', t: 'txd', r: 'down', x: 1086 },
+                  { f: 'send', t: 'txd', r: 'r', x: 962 },
+                  { f: 'swap', t: 'txd', r: 'r', x: 962 },
+
+                  { f: 'profile', t: 'wc', r: 'spine' },
+                  { f: 'profile', t: 'settings', r: 'r', x: 714 },
+                  { f: 'profile', t: 'addw', r: 'l', x: 466 },
+                  { f: 'profile', t: 'manage', r: 'l', x: 466 },
+                  { f: 'profile', t: 'recover', r: 'l', x: 466 },
+                  { f: 'manage', t: 'wset', r: 'l', x: 210, ty: 564 },
+                  { f: 'wset', t: 'seed', r: 'spine' },
+                  { f: 'wset', t: 'delete', r: 'spine' },
+                  { f: 'addw', t: 'options', r: 'ret', pts: [[342, 540], [342, 400], [230, 400], [230, 50], [248, 50]] },
+
+                  { f: 'settings', t: 'prefs', r: 'r', x: 962 },
+                  { f: 'settings', t: 'security', r: 'r', x: 962 },
+                  { f: 'settings', t: 'help', r: 'r', x: 962 },
+                ],
+              } },
+
             /* ==============================================================
                ACT III — THE DECISIONS (11–20)
                Understanding. Each decision with the alternative taken
@@ -1694,11 +1879,6 @@ window.SITE = {
                preference.
                ============================================================== */
 
-            /* The second of the film's two motionless scenes. A decision is
-               being announced, and the film slows down to announce it. */
-            { id: 'x0-dec-1', act: 'III · Decisions', kind: 'ask', dur: 110, dark: true,
-              n: 'Decision 01',
-              h: '<span class="fg-key">Don’t reuse</span> the design system that already existed.' },
             /* --- CHAPTER 04 · BUILDING THE SYSTEM ---------------------------------
 
                THE LONGEST CHAPTER IN THE FILM SITS BEHIND THIS CARD: the split,
@@ -1707,204 +1887,53 @@ window.SITE = {
                changes ground and holds for six screens. */
             /* x0-ch-4 chapter card removed. */
 
-            /* THE CASE AGAINST, THEN THE ANSWER, on one pin. The left column
-               fills while the right stays black — the asymmetry is
-               uncomfortable on purpose, and the reader starting to want the
-               answer is the scene's job. Then the left dims as the right
-               fills, which is the whole argument in one gesture. */
-            { id: 'x0-n45', nav: 'Design System', kind: 'split', dur: 190,
-              left: {
-                title: 'Why not CySync',
-                items: [
-                  'Built for a desktop window, not a thumb.',
-                  'Component-heavy where X0 needed few clear parts.',
-                  'Interaction patterns from another platform.',
-                  'And carrying X1’s language into X0 would have made X0 look like a discount X1.',
-                ],
-              },
-              right: {
-                title: 'What replaced it',
-                name: 'N45',
-                items: [
-                  'Atomic.',
-                  'Mobile-specific, with no inheritance from CySync.',
-                  'Reusable.',
-                  'Built to scale to features nobody had specced.',
-                  'Developer friendly.',
-                ],
-              },
-              /* THE THIRD TRACK, AND IT IS A SPECIFICATION RATHER THAN A
-                 PICTURE. Every number here was read out of the CySync file
-                 itself — 65 variables in two collections, 31 paint styles,
-                 1,664 components in 150 sets across 84 pages, and no text
-                 styles at all. A screenshot of a component sheet at a quarter
-                 of a column would say "there were a lot of things", which the
-                 sentence on the left already says better.
+            /* WHAT CYSYNC ALREADY HAD, SHOWN WITH RESPECT. X1's desktop app
+               came first and a lot of work went into it; this scene credits
+               that before anything new is introduced, by showing its design
+               system level by level with plain names and no verdicts. What X0
+               needed sits under the words, and the decision follows. */
+            { id: 'x0-cysync', nav: 'Design System', act: 'III · Decisions', kind: 'kept', dur: 130,
+              h: 'We started from what CySync already had.',
+              p: 'CySync is the desktop app for X1, and a lot of care had gone into it. Its flows came with us: how sending, receiving and reading a transaction work. Its visual parts were made for a desktop window.',
+              /* PIECES OF THE CYSYNC DESIGN FILE: its colour ramp (the real
+                 hexes), its components and a few of the screens built from
+                 them, each on a matching plate under its plain name. */
+              cap: 'From the CySync design file.',
+              items: [
+                { t: 'Portfolio graph',         src: 'assets/img/x0/cysync/cysync-graph.png' },
+                { t: 'Buttons',                 src: 'assets/img/x0/cysync/sys/buttons.webp' },
+                { t: 'Transactions table',      src: 'assets/img/x0/cysync/cysync-tables.png' },
+                { t: 'Colour',                  swatches: ['#1e1a15', '#211c18', '#27221d', '#2c2520', '#39322c',
+                  '#8b8682', '#ccc4be', '#e9b873', '#fedd8f', '#b78d51'] },
+                { t: 'Date range picker',       src: 'assets/img/x0/cysync/cysync-date-range.png' },
+                { t: 'Toasts',                  src: 'assets/img/x0/cysync/sys/toasts.webp' },
+                { t: 'Send window',             src: 'assets/img/x0/cysync/cysync-desktop-layout.png' },
+                { t: 'Inputs',                  src: 'assets/img/x0/cysync/sys/inputs.webp' },
+                { t: 'Dialogue',                src: 'assets/img/x0/cysync/cysync-dialogue.png' },
+                { t: 'Icons',                   src: 'assets/img/x0/cysync/sys/icons.webp' },
+                { t: 'Transaction details',     src: 'assets/img/x0/cysync/cysync-transaction-details.png' },
+                { t: 'Switches',                src: 'assets/img/x0/cysync/sys/switch.webp' },
+                { t: 'Component documentation', src: 'assets/img/x0/cysync/cysync-component-documentation.png' },
+                { t: 'Dropdown',                src: 'assets/img/x0/cysync/sys/dropdown.webp' },
+                { t: 'Type',                    src: 'assets/img/x0/cysync/sys/type.webp' },
+                { t: 'X1 card and vault',       src: 'assets/img/x0/cysync/cysync-x1-vault-and-card.png' },
+                { t: 'Sidebar',                 src: 'assets/img/x0/cysync/sys/sidebar.webp' },
+                { t: 'Tags',                    src: 'assets/img/x0/cysync/sys/tags.webp' },
+                { t: 'Topbar',                  src: 'assets/img/x0/cysync/sys/topbar.webp' },
+                { t: 'Dialogues',               src: 'assets/img/x0/cysync/sys/dialogue.webp' },
+              ],
+              /* what CySync was never asked to do, and so why X0 needed its own */
+              needs: { k: 'What X0 needed', v: [
+                { t: 'To live on a phone', icon: 'phone', b: 'One-handed, on iOS and Android, not a 1024 × 700 window.' },
+                { t: 'To ship on time', icon: 'bolt', b: 'A small, reusable kit to design every flow in the map and hand it to developers.' },
+                { t: 'To be readable by AI', icon: 'spark', b: 'Clean tokens and components Claude could read through Figma’s MCP, for quick iterations.' },
+              ] } },
 
-                 THE HEADLINE IS THE SYSTEM'S OWN VARIABLE. `Mini Width` is
-                 1024 and `Mini Height` is 700: the smallest window CySync is
-                 prepared to be, written down, by CySync. There is no stronger
-                 way to say "built for a desktop window, not a thumb" than to
-                 quote the system saying it about itself — and nothing here is
-                 unkind, because none of it is an opinion. */
-              art: { kind: 'spec', ratio: 0.74,
-                n: 'CySync · what we did not inherit',
-                head: { k: 'Minimum window', v: '1024 × 700',
-                  of: 'Not a guideline — two variables in the file. Mini Width, Mini Height.' },
-                rows: [
-                  /* the real hexes, darkest to lightest: the sidebar, the
-                     ground, the inputs, the borders, the paragraph grey, the
-                     hover, and the three golds */
-                  { k: 'Colour', v: '46 variables · 2 modes',
-                    swatches: ['#1e1a15', '#211c18', '#27221d', '#2c2520', '#39322c',
-                      '#8b8682', '#ccc4be', '#e9b873', '#fedd8f', '#b78d51'] },
-                  { k: 'Spacing', v: '14 steps · 8pt',
-                    ticks: [0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104] },
-                  { k: 'Type', v: 'No text styles',
-                    of: 'Typography lived in one frame of website headings. It was never tokenised, so there was nothing to inherit.' },
-                  { k: 'Components', v: '1,664 in 150 sets',
-                    of: '1,086 of them icons. 192 buttons across 27 sets. Eighty-four pages.' },
-                ],
-                foot: 'Read out of the CySync file, September 2026.' },
-
-              /* --- THE OLD SYSTEM, STILL ON THE TABLE ---------------------
-
-                 NINE REAL ARTEFACTS OUT OF THE CYSYNC FILE, strewn across the
-                 bands the three text tracks do not use — above the reasons,
-                 below them, and off all four edges. They are not decoration
-                 and they are not a gallery: the argument on the left is that
-                 CySync was a finished desktop language, and a reader is owed
-                 the evidence while they are being asked to accept it. So the
-                 field fills through the whole first half of the pin, one
-                 piece at a time, WHILE the reasons are being read.
-
-                 AND THEN IT GOES BACK. At 0.5 — the exact frame the left
-                 column starts dimming and N45 starts arriving — the whole
-                 field recedes to a quarter on the same clock. Nothing is
-                 removed, nothing is mocked, nothing is redrawn worse than it
-                 is: the old system is simply put behind the new one, which is
-                 what actually happened and is a truer read of "legacy" than
-                 any amount of distressing would be. It is still legible over
-                 there, which is the point — you can see it was good, and you
-                 can see it was not this.
-
-                 EVERY PIECE IS CROPPED BY SOMETHING — the window, the stage,
-                 or another piece. A system you can see all of looks like a
-                 catalogue; a system running off every edge looks like one you
-                 inherited. `dia` is the interim drawing and `src` is the real
-                 export; adding the second changes nothing else about the
-                 composition.
-
-                 The nine are the curated set: the sidebar, the topbar, the
-                 button sheet, the range picker, the transactions table, the
-                 desktop Send window, the truncation rules, the type scale and
-                 the account dropdown. */
-              strew: [
-                /* --- THE FIELD IS TWELVE, AND IT USED TO BE FIFTEEN --------
-
-                   THE FIRST CUT OVERLAPPED. Every one of these exports carries
-                   its own soft drop shadow in its alpha, so a piece's box is a
-                   good deal bigger than the thing you can see in it; three of
-                   them crossing each other turned the bottom of the frame into
-                   grey haze rather than into depth. Depth needs one edge in
-                   front of another edge — not four translucent rectangles
-                   averaging out.
-
-                   So the count came down and the spacing went up. Pieces are
-                   now cropped by the WINDOW, which reads as a system running
-                   off the edges, rather than by each other, which reads as a
-                   rendering fault. Where two do meet it is a deliberate
-                   corner-over-corner, never a face over a face. */
-
-                /* --- the top band ---------------------------------------- */
-
-                /* FIRST IN, AND IT MAKES THE WHOLE ARGUMENT: 300px of screen
-                   the product assumed it would always have. */
-                { at: 0.030, sp: 9, x: '3%', y: '14%', w: 'min(9vw, 12rem)', ratio: 0.36, z: 2,
-                  src: 'assets/img/x0/cysync/cysync-navigation.png',
-                  dim: 0.95, dy: '-3vh', rot: '-6deg', dep: '-14px',
-                  alt: 'The CySync sidebar — nine permanent destinations in a 300px rail' },
-
-                /* a 34:1 hairline along the very top edge */
-                { at: 0.065, sp: 9, x: '44%', y: '0%', w: 'min(46vw, 54rem)', ratio: 34.6, z: 1,
-                  src: 'assets/img/x0/cysync/cysync-notifications.png',
-                  dim: 0.85, dy: '-4vh', rot: '-2deg', dep: '-6px',
-                  alt: 'The CySync firmware update notification bar, 1384px wide' },
-
-                /* 1416 x 100, and the least portable object in the system */
-                { at: 0.100, sp: 9, x: '71%', y: '2%', w: 'min(32vw, 38rem)', ratio: 14.16, z: 1,
-                  src: 'assets/img/x0/cysync/cysync-topbar.png',
-                  dim: 0.9, dx: '3vw', dy: '-3vh', rot: '1.4deg', dep: '-8px',
-                  alt: 'The CySync topbar at 1416px wide' },
-
-                /* THE POINTER ARGUMENT, AND IT IS THE BEST ONE IN THE FILE.
-                   Five range tabs, a wallet dropdown and two tooltips pinned to
-                   a crosshair — every one of them something you do with a
-                   cursor you can rest somewhere and hold still. */
-                { at: 0.135, sp: 9, x: '26%', y: '12%', w: 'min(30vw, 36rem)', ratio: 2.52, z: 2,
-                  src: 'assets/img/x0/cysync/cysync-graph.png',
-                  dim: 0.95, dx: '-4vw', dy: '-3vh', rot: '3deg', dep: '-20px',
-                  alt: 'The CySync portfolio graph — range tabs, wallet dropdown, hover tooltips' },
-
-                /* THE HARDWARE, AND IT IS WHY A DESKTOP APP EXISTED AT ALL.
-                   The one object in the field X0 could not redraw smaller,
-                   because the thing it is about is physical and plugs in. */
-                { at: 0.170, sp: 9, x: '69%', y: '19%', w: 'min(17.5vw, 21rem)', ratio: 2.43, z: 2,
-                  src: 'assets/img/x0/cysync/cysync-x1-vault.png',
-                  dim: 1, dx: '4vw', dy: '-2vh', rot: '2.4deg', dep: '16px',
-                  alt: 'The Cypherock X1 vault' },
-
-                /* the modal, cropped by the right edge above the spec sheet */
-                { at: 0.205, sp: 9, x: '97%', y: '2%', w: 'min(12.5vw, 15rem)', ratio: 1.393, z: 2,
-                  src: 'assets/img/x0/cysync/cysync-dialogue.png',
-                  dim: 0.9, dx: '5vw', dy: '-2vh', rot: '-2.6deg', dep: '-16px',
-                  alt: 'A CySync error dialogue — the X1 Card has malfunctioned' },
-
-                /* the small crisp accent: a range dragged across a month grid */
-                { at: 0.240, sp: 9, x: '51%', y: '13%', w: 'min(7vw, 8rem)', ratio: 0.875, z: 3,
-                  src: 'assets/img/x0/cysync/cysync-date-range.png',
-                  dim: 1, dy: '-2.5vh', rot: '3.6deg', dep: '12px',
-                  alt: 'The CySync date range picker, a range dragged across a month grid' },
-
-                /* the one confirmation the system ever drew — slotted into
-                   the clear line between the graph and the first reason */
-                { at: 0.275, sp: 9, x: '30%', y: '32%', w: 'min(18.5vw, 22rem)', ratio: 10.6, z: 2,
-                  src: 'assets/img/x0/cysync/cysync-success.png',
-                  dim: 0.95, dx: '-4vw', rot: '-2.8deg', dep: '8px',
-                  alt: 'The CySync success message bar' },
-
-                /* --- the bottom band ------------------------------------- */
-
-                /* five sortable columns, date group headers and asset names
-                   already truncating. There is no thumb-sized version of this
-                   object, only a different object. */
-                { at: 0.310, sp: 9, x: '8%', y: '92%', w: 'min(27vw, 32rem)', ratio: 1.46, z: 2,
-                  src: 'assets/img/x0/cysync/cysync-tables.png',
-                  dim: 0.95, dx: '-3vw', dy: '4vh', rot: '-4deg', dep: '-16px',
-                  alt: 'The CySync transactions table — five sortable columns' },
-
-                /* the pairing step, and the only picture in the section with
-                   physical objects in it */
-                { at: 0.345, sp: 9, x: '37%', y: '94%', w: 'min(14.6vw, 18rem)', ratio: 0.964, z: 3,
-                  src: 'assets/img/x0/cysync/cysync-enter-pin.png',
-                  dim: 1, dy: '5vh', rot: '2.8deg', dep: '20px',
-                  alt: 'The X1 card and vault, entering a PIN on the device' },
-
-                /* the whole product in one frame: a five-step rail down the
-                   left, a 400px modal in the middle of a 1440px window, and a
-                   great deal of chrome around both */
-                { at: 0.380, sp: 9, x: '64%', y: '94%', w: 'min(26vw, 31rem)', ratio: 1.6, z: 1,
-                  src: 'assets/img/x0/cysync/cysync-desktop-layout.png',
-                  dim: 0.9, dy: '5vh', rot: '-5deg', dep: '-22px',
-                  alt: 'The CySync Send window at 1440 x 900' },
-
-                /* the densest single panel in the system, last in, bottom
-                   right, under the spec sheet rather than across it */
-                { at: 0.415, sp: 9, x: '97%', y: '97%', w: 'min(12.3vw, 15rem)', ratio: 0.904, z: 2,
-                  src: 'assets/img/x0/cysync/cysync-transaction-details.png',
-                  dim: 0.95, dx: '3vw', dy: '4vh', rot: '-3.4deg', dep: '-12px',
-                  alt: 'The CySync transaction details panel' },
-              ] },
+            /* THE DECISION. One sentence on black, after CySync has been
+               credited and the needs are on the table. */
+            { id: 'x0-dec-1', kind: 'ask', dur: 110, dark: true,
+              n: 'Decision 01',
+              h: 'Let’s give Cypherock X0 its <span class="fg-key">own design system</span>.' },
 
             /* THE ASSEMBLY, and the longest scene in the film. The system is
                proved by building the product out of it on screen: eight parts
@@ -2205,245 +2234,78 @@ window.SITE = {
               ] },
 
 
-            /* BEFORE THE SYSTEM, THE ROUNDS. What the reader has just been
-               shown — N45 and the app built on it — reads as if it arrived
-               finished. It did not: the direction was iterated many times
-               and taken, round after round, to the product managers, the
-               business development team and the CEO before one version was
-               kept. No count of iterations and no quotes, because neither
-               is on record.
+            /* BEFORE THE SYSTEM, AN EXCERPT OF THE ARCHIVE. What the reader
+               has just been shown — N45 and the app built on it — reads as if
+               it arrived finished. It did not: direction after direction was
+               explored — quick Figma mockups, Figma Make prototypes, Claude
+               Code prototypes, GPT image generation — and taken to the
+               product managers, business development and the CEO before one
+               held. This says so quietly and moves on.
 
-               A WALL, NOT A ROW. Ten sheets pinned up at whatever angle they
-               landed, overlapping, running off the edge — the irregularity
-               is what makes it read as a working wall rather than a gallery.
-               Each round stamps the wall and crosses sheets out; the one that
-               survives all three is the only one left clean, and it lifts.
+               AN EXCERPT, NOT A COUNT. Thirty-five real exploration screens
+               from the V1, "Vik AI des" and App v2 Figma files, in an even
+               grid that runs off the right edge of the frame — the sheet
+               continues past what you can see, because the archive does. No
+               frame numbers and no order: numbered frames ending on the
+               shipped screen read as "the twenty-fourth idea won". The
+               shipped X0 screen sits among them at `kept.at` (the grid fills
+               column by column, two rows, so 14 is the eighth column), and as the
+               scene holds everything else steps back to grey around it.
 
-               `wall` places each sheet: x / y in % of the wall, w in % of its
-               width, r in degrees, g picks the sketch drawn on it. `rounds`
-               name who reviewed, which sheets they cut, and which sheet
-               carries their stamp. */
-            { id: 'x0-rounds', nav: 'Explorations', kind: 'rounds', dur: 220,
+               `tools` is the "explored with" line under the copy, set as a
+               spec row, key left, values right. */
+            { id: 'x0-contact', nav: 'Explorations', kind: 'contact', dur: 200,
               kicker: 'Before N45',
               h: 'None of this was the first version.',
-              p: 'Direction after direction, taken to the product managers, business development and the CEO — reworked, and taken back, until one held.',
-              wall: [
-                { x: 0,  y: 10, w: 12, r: -5.5, g: 0 },
-                { x: 10, y: 38, w: 10, r: 7,    g: 1 },
-                { x: 19, y: 0,  w: 13, r: 2.5,  g: 2 },
-                { x: 30, y: 30, w: 11, r: -8,   g: 3 },
-                { x: 40, y: 4,  w: 12, r: 4.5,  g: 4 },
-                { x: 51, y: 16, w: 15, r: -1.5, g: 6 },
-                { x: 66, y: 0,  w: 11, r: 6,    g: 5 },
-                { x: 74, y: 34, w: 12, r: -4,   g: 1 },
-                { x: 85, y: 6,  w: 11, r: 3,    g: 2 },
-                { x: 93, y: 38, w: 10, r: -9,   g: 0 },
+              p: 'We set a fixed timeframe to explore every direction we could. Each one was reviewed with the product managers, business development and the CEO, so the team could agree on one and commit to it.',
+              shots: [
+                'assets/img/x0/explore/c001.webp',
+                'assets/img/x0/explore/c165.webp',
+                'assets/img/x0/explore/c057.webp',
+                'assets/img/x0/explore/c060.webp',
+                'assets/img/x0/explore/c111.webp',
+                'assets/img/x0/explore/c168.webp',
+                'assets/img/x0/explore/c067.webp',
+                'assets/img/x0/explore/c182.webp',
+                'assets/img/x0/explore/c002.webp',
+                'assets/img/x0/explore/c059.webp',
+                'assets/img/x0/explore/c170.webp',
+                'assets/img/x0/explore/c064.webp',
+                'assets/img/x0/explore/c113.webp',
+                'assets/img/x0/explore/c177.webp',
+                'assets/img/x0/app/09.webp',
+                'assets/img/x0/explore/c061.webp',
+                'assets/img/x0/explore/c087.webp',
+                'assets/img/x0/explore/c003.webp',
+                'assets/img/x0/explore/c173.webp',
+                'assets/img/x0/explore/c058.webp',
+                'assets/img/x0/explore/c181.webp',
+                'assets/img/x0/explore/c066.webp',
+                'assets/img/x0/explore/c112.webp',
+                'assets/img/x0/explore/c068.webp',
+                'assets/img/x0/explore/c174.webp',
+                'assets/img/x0/explore/c114.webp',
+                'assets/img/x0/explore/c169.webp',
+                'assets/img/x0/explore/c063.webp',
+                'assets/img/x0/explore/c176.webp',
+                'assets/img/x0/explore/c171.webp',
+                'assets/img/x0/explore/c065.webp',
+                'assets/img/x0/explore/c166.webp',
+                'assets/img/x0/explore/c183.webp',
+                'assets/img/x0/explore/c178.webp',
+                'assets/img/x0/explore/c184.webp',
+                'assets/img/x0/explore/c167.webp',
               ],
-              rounds: [
-                { k: 'Product review', cut: [0, 3, 8], stamp: 3, r: -9 },
-                { k: 'BD review',      cut: [1, 6, 9], stamp: 6, r: 7 },
-                { k: 'CEO review',     cut: [2, 4, 7], stamp: 4, r: -5 },
-              ],
-              kept: { i: 5, k: 'Kept', r: -3 } },
-
-            /* THE ARCHITECTURE, DRAWN FROM THE FILE AND NOT FROM MEMORY.
-               Every node below is a section of the X0 Mobile App Figma file
-               (page "1. UI"), and every line is a path the screens in that
-               file actually take — read off the frames, their order and the
-               arrows drawn between them, not off what a crypto wallet usually
-               has. Buy is a button on Home with no flow behind it, so it is
-               not here; Cypherock Cover is an option on the wallet screen
-               with no screens behind it, so it is drawn as an option only.
-
-               FIVE COLUMNS, TWO ROWS. The top row is the product's loop —
-               first run, a wallet, Home, what you do from Home, where it
-               lands. The bottom row is everything you manage from Profile.
-               Multi-screen flows are one node each; the screens themselves
-               are `steps`, read out underneath when a node is pointed at.
-
-               THE GEOMETRY IS STATED, in canvas units (1180 × 720), because
-               a layout that avoids crossings is a set of decisions and not a
-               solver's output. `x`/`y`/`w`/`h` place a node; an edge names
-               its two ends, how it is routed, and the trunk it runs along.
-               `flow` marks a node whose steps are a sequence (read out with
-               arrows) rather than a list of what it holds. Drawn by `IA` in
-               site.js. */
-            { id: 'x0-ia', kind: 'ia', dur: 230,
-              k: 'Information architecture',
-              ia: {
-                W: 1180, H: 720,
-                groups: [
-                  { id: 'run',   n: '01', t: 'First run',         x: 0,   y: 0,   at: 0.04 },
-                  { id: 'setup', n: '02', t: 'Wallet setup',      x: 248, y: 0,   at: 0.13 },
-                  { id: 'home',  n: '03', t: 'Home',              x: 496, y: 0,   at: 0.22 },
-                  { id: 'act',   n: '04', t: 'From Home',         x: 744, y: 0,   at: 0.31 },
-                  { id: 'log',   n: '05', t: 'Activity',          x: 992, y: 0,   at: 0.40 },
-                  { id: 'prof',  n: '06', t: 'Profile',           x: 496, y: 504, at: 0.49 },
-                  { id: 'wal',   n: '07', t: 'Wallet management', x: 0,   y: 504, at: 0.58 },
-                  { id: 'set',   n: '08', t: 'Settings',          x: 744, y: 504, at: 0.67 },
-                ],
-                nodes: [
-                  /* 01 · first run */
-                  { id: 'welcome', flow: true, g: 'run', t: 'Welcome', m: '4 intro screens · Consent', x: 0, y: 36,
-                    steps: ['Welcome', 'Meet X0', 'Security across cards', 'No seed phrase backup', '22,000+ currencies', 'Data consent'] },
-                  { id: 'device', g: 'run', t: 'Choose device', m: 'X0 or X1 · 1–4 cards', x: 0, y: 100,
-                    steps: ['Cypherock X0 or X1', 'How many cards'] },
-                  { id: 'tap', flow: true, g: 'run', t: 'Tap a card', m: 'Checks for wallets', x: 0, y: 164, card: true,
-                    steps: ['Intro', 'Tap to approve', 'New or existing user'] },
-                  { id: 'who', g: 'run', t: 'New or existing?', kind: 'decide', x: 0, y: 234, w: 150, h: 36,
-                    steps: ['New user: set up the cards', 'Existing user: read the wallets already on them'] },
-                  { id: 'cards', flow: true, g: 'run', t: 'New cards', m: 'Scan · Authenticate · Pair', x: 24, y: 292, w: 164, card: true,
-                    steps: ['Scan all four cards', 'Authenticate all four', 'Pair all four', 'Cards ready'] },
-                  { id: 'existing', flow: true, g: 'run', t: 'Existing cards', m: 'Reads wallets on cards', x: 24, y: 356, w: 164,
-                    steps: ['Tap the cards', 'Wallets found on them'] },
-
-                  /* 02 · a wallet */
-                  { id: 'options', g: 'setup', t: 'Wallet options', m: 'Open · Create · Import', kind: 'hub', x: 248, y: 36,
-                    steps: ['Wallets found on the cards', 'Create a new wallet', 'Import from a seed phrase', 'Restore with Cypherock Cover'] },
-                  { id: 'found', flow: true, g: 'setup', t: 'Found wallet', m: 'Open it directly', x: 272, y: 100, w: 164,
-                    steps: ['Pick a wallet found on the cards', 'Straight to Home'] },
-                  { id: 'create', flow: true, g: 'setup', t: 'Create wallet', m: 'Name · PIN · 4 cards', x: 272, y: 164, w: 164, card: true, pin: true,
-                    steps: ['Tap to approve', 'Up to four wallets', 'Name it', 'Confirm name & seed length', 'Set a PIN', 'Tap four cards in order', 'Created', 'First asset'] },
-                  { id: 'import', flow: true, g: 'setup', t: 'Import wallet', m: 'Seed phrase · 4 cards', x: 272, y: 228, w: 164, card: true,
-                    steps: ['Tap to approve', 'About seed phrases', 'Enter phrase or private key', 'Tap four cards in order', 'Imported', 'First asset'] },
-                  { id: 'cover', g: 'setup', t: 'Cypherock Cover', m: 'Subscription restore', kind: 'option', x: 272, y: 292, w: 164,
-                    steps: ['Offered on wallet options', 'No flow designed behind it yet'] },
-
-                  /* 03 · Home */
-                  { id: 'home', g: 'home', t: 'Home', m: ['Wallet switcher · Balance', 'Actions · Accounts'], kind: 'hub', tag: 'Tab 1', x: 496, y: 100, h: 64,
-                    steps: ['Combine portfolio, or one wallet', 'Balance', 'Send · Receive · Swap · Buy · Earn', 'Your accounts', 'Bell and gear in the header'] },
-                  { id: 'empty', flow: true, g: 'home', t: 'Empty', m: 'No wallets yet', kind: 'state', x: 520, y: 184, w: 164, h: 40,
-                    steps: ['No wallets', 'Add wallet', 'Wallet options'] },
-                  { id: 'offline', flow: true, g: 'home', t: 'Offline', m: 'Last synced · Retry', kind: 'state', x: 520, y: 236, w: 164, h: 40,
-                    steps: ['Prices may be outdated', 'Last synced', 'Tap to retry'] },
-
-                  /* 04 · from Home */
-                  { id: 'portfolio', g: 'act', t: 'Portfolio', m: 'Chart · Allocation · Assets', x: 744, y: 36,
-                    steps: ['1D to 1Y', 'Asset allocation', 'Asset list', 'Recent transactions'] },
-                  { id: 'notif', g: 'act', t: 'Notifications', m: 'Transactions · Security', x: 744, y: 100,
-                    steps: ['Received', 'Sent', 'Swapped', 'Swap failed', 'Transfer failed', 'Face ID enabled'] },
-                  { id: 'send', flow: true, g: 'act', t: 'Send', m: 'Recipient · Fee · Review', x: 744, y: 164, card: true, pin: true,
-                    steps: ['Wallet', 'Token', 'Recipient', 'Amount & note', 'Network fee', 'Review', 'PIN', 'Tap a card', 'Broadcast'] },
-                  { id: 'receive', flow: true, g: 'act', t: 'Receive', m: 'Token · Network · QR', x: 744, y: 228,
-                    steps: ['Wallet', 'Token', 'Confirm', 'Address & QR, per network', 'Address options'] },
-                  { id: 'swap', flow: true, g: 'act', t: 'Swap', m: 'Pair · Provider · Review', tag: 'Tab 2', x: 744, y: 292, card: true,
-                    steps: ['Wallet', 'Pay token', 'Receive token', 'Amount', 'Provider', 'Quote', 'Review', 'Tap a card', 'Complete — or failed, back to the start'] },
-                  { id: 'addacct', flow: true, g: 'act', t: 'Add account', m: 'Asset · Network · Accounts', x: 744, y: 356, card: true,
-                    steps: ['Select asset', 'Network', 'Tap a card', 'Checking the blockchain', 'Choose accounts', 'Added to portfolio'] },
-                  { id: 'earn', flow: true, g: 'act', t: 'Earn', m: 'Waitlist', tag: 'Tab 3', x: 744, y: 420,
-                    steps: ['Join the waitlist', 'Email', 'Notify me'] },
-
-                  /* 05 · where it lands */
-                  { id: 'txns', g: 'log', t: 'Transactions', m: 'Grouped by day · Filter', x: 992, y: 68,
-                    steps: ['Today, yesterday, by date', 'Filter sheet'] },
-                  { id: 'txd', g: 'log', t: 'Transaction details', m: 'Per type · Pending', kind: 'hub', x: 992, y: 228,
-                    steps: ['Sent', 'Received', 'Swapped', 'Pending'] },
-
-                  /* 06 · Profile */
-                  { id: 'profile', g: 'prof', t: 'Profile', m: 'Wallets · dApps · App', kind: 'hub', tag: 'Tab 4', x: 496, y: 540,
-                    steps: ['WalletConnect', 'Manage wallets', 'Add wallet', 'Recover wallet', 'App settings', 'Support · Terms'] },
-                  { id: 'wc', flow: true, g: 'prof', t: 'WalletConnect', m: 'URL · Wallet · Accounts', x: 520, y: 604, w: 164,
-                    steps: ['Paste a URL', 'Select wallet', 'Select accounts', 'Connecting', 'Connection details'] },
-
-                  /* 07 · the wallet's life */
-                  { id: 'addw', flow: true, g: 'wal', t: 'Add wallet', m: 'Returns to setup', x: 248, y: 540,
-                    steps: ['Opens wallet options', 'Create or import'] },
-                  { id: 'manage', g: 'wal', t: 'Manage wallets', m: 'Up to 4 · Swipe to delete', x: 248, y: 604,
-                    steps: ['Wallets, 3 of 4', 'Wallet settings', 'Swipe to delete'] },
-                  { id: 'recover', flow: true, g: 'wal', t: 'Recover wallet', m: '4 cards · Pick · PIN', x: 248, y: 668, card: true, pin: true,
-                    steps: ['Instructions', 'Tap all four cards', 'Wallets found', 'PIN', 'Tap two cards', 'The card missing it', 'The rest', 'Recovered — or none found, or no free slot'] },
-                  { id: 'wset', g: 'wal', t: 'Wallet settings', m: 'One wallet', x: 0, y: 540,
-                    steps: ['View seed phrase', 'Delete wallet'] },
-                  { id: 'seed', flow: true, g: 'wal', t: 'View seed phrase', m: 'Face ID · Tap to reveal', x: 24, y: 604, w: 164,
-                    steps: ['Face ID', 'Tap to reveal', '12, 18 or 24 words', 'Screenshots blocked'] },
-                  { id: 'delete', flow: true, g: 'wal', t: 'Delete wallet', m: '4 cards · PIN · Caution', kind: 'danger', x: 24, y: 668, w: 164, card: true, pin: true,
-                    steps: ['All four cards needed', 'PIN', 'Caution, confirmed', 'Tap four cards in order', 'Deleted'] },
-
-                  /* 08 · settings */
-                  { id: 'settings', g: 'set', t: 'Settings', m: 'Also from Home', kind: 'hub', x: 744, y: 540,
-                    steps: ['Account', 'Notifications', 'Security', 'Support · About', 'Legal'] },
-                  { id: 'prefs', g: 'set', t: 'Preferences', m: 'Currency · Language', x: 992, y: 540,
-                    steps: ['Preferred currency', 'Display language', 'Notifications'] },
-                  { id: 'security', g: 'set', t: 'Security', m: 'Passcode · Biometrics', x: 992, y: 604,
-                    steps: ['App lock', 'Set passcode', 'Biometrics', 'Manage passcode'] },
-                  { id: 'help', g: 'set', t: 'Help & legal', m: 'Support · About · Terms', x: 992, y: 668,
-                    steps: ['Support', 'About', 'Policies', 'Terms of use'] },
-                ],
-                /* `down` runs a column; `spine` hangs children off a node's
-                   left edge; `r` and `l` leave a node's side, run the trunk
-                   at `x` and enter the other node's facing side; `ret` is a
-                   return and carries its own points. */
-                edges: [
-                  { f: 'welcome', t: 'device', r: 'down' },
-                  { f: 'device', t: 'tap', r: 'down' },
-                  { f: 'tap', t: 'who', r: 'down' },
-                  { f: 'who', t: 'cards', r: 'spine' },
-                  { f: 'who', t: 'existing', r: 'spine' },
-                  { f: 'cards', t: 'options', r: 'r', x: 210, ty: 70 },
-                  { f: 'existing', t: 'options', r: 'r', x: 210, ty: 70 },
-
-                  { f: 'options', t: 'found', r: 'spine' },
-                  { f: 'options', t: 'create', r: 'spine' },
-                  { f: 'options', t: 'import', r: 'spine' },
-                  { f: 'options', t: 'cover', r: 'spine', soft: true },
-                  { f: 'found', t: 'home', r: 'r', x: 466 },
-                  { f: 'create', t: 'home', r: 'r', x: 466 },
-                  { f: 'import', t: 'home', r: 'r', x: 466 },
-
-                  { f: 'home', t: 'empty', r: 'spine', soft: true },
-                  { f: 'home', t: 'offline', r: 'spine', soft: true },
-                  { f: 'home', t: 'portfolio', r: 'r', x: 714 },
-                  { f: 'home', t: 'notif', r: 'r', x: 714 },
-                  { f: 'home', t: 'send', r: 'r', x: 714 },
-                  { f: 'home', t: 'receive', r: 'r', x: 714 },
-                  { f: 'home', t: 'swap', r: 'r', x: 714 },
-                  { f: 'home', t: 'addacct', r: 'r', x: 714 },
-                  { f: 'home', t: 'earn', r: 'r', x: 714 },
-
-                  { f: 'portfolio', t: 'txns', r: 'r', x: 962 },
-                  { f: 'notif', t: 'txns', r: 'r', x: 962 },
-                  { f: 'txns', t: 'txd', r: 'down', x: 1086 },
-                  { f: 'send', t: 'txd', r: 'r', x: 962 },
-                  { f: 'swap', t: 'txd', r: 'r', x: 962 },
-
-                  { f: 'profile', t: 'wc', r: 'spine' },
-                  { f: 'profile', t: 'settings', r: 'r', x: 714 },
-                  { f: 'profile', t: 'addw', r: 'l', x: 466 },
-                  { f: 'profile', t: 'manage', r: 'l', x: 466 },
-                  { f: 'profile', t: 'recover', r: 'l', x: 466 },
-                  { f: 'manage', t: 'wset', r: 'l', x: 210, ty: 564 },
-                  { f: 'wset', t: 'seed', r: 'spine' },
-                  { f: 'wset', t: 'delete', r: 'spine' },
-                  { f: 'addw', t: 'options', r: 'ret', pts: [[342, 540], [342, 400], [230, 400], [230, 50], [248, 50]] },
-
-                  { f: 'settings', t: 'prefs', r: 'r', x: 962 },
-                  { f: 'settings', t: 'security', r: 'r', x: 962 },
-                  { f: 'settings', t: 'help', r: 'r', x: 962 },
-                ],
-              } },
-
-            /* HOW THE WORK ACTUALLY MOVED. Both tracks advance at once,
-               which is the point: the system churning and the low-fidelity
-               flows going out were parallel, and a reader shown them in
-               sequence would conclude one waited for the other. */
-            { id: 'x0-tracks', kind: 'tracks', dur: 170,
-              lanes: [
-                { t: 'The system, churning', stack: true,
-                  p: 'It went through rigorous back-and-forth. It was the foundation, so it had to.',
-                  shots: [
-                    { kind: 'figma', dia: 'versions', subject: 'One component, first version', ratio: 1.4 },
-                    { kind: 'figma', dia: 'versions', subject: 'The same component, second version', ratio: 1.4 },
-                    { kind: 'figma', dia: 'versions', subject: 'Third version — the one that stayed', ratio: 1.4 },
-                  ] },
-                { t: 'Everyone else, unblocked', stack: true,
-                  p: 'Low-fidelity flows kept stakeholders and engineers moving. Most of the simplification in the shipped app started as somebody else’s comment.',
-                  shots: [
-                    { kind: 'figma', dia: 'flow', subject: 'The low-fidelity flow, as presented', ratio: 1.6, of: 'The low-fidelity flow frames as presented to stakeholders.' },
-                    { kind: 'thread', subject: 'A real design-review thread', ratio: 1.5,
-                      of: 'Blur names, faces and any unreleased feature names before this is public.' },
-                    { kind: 'screenshot', dia: 'beforeafter', subject: 'The affected screen, before and after', ratio: 1.5 },
-                  ] },
-              ] },
+              cap: 'An excerpt of the exploration files',
+              tools: { k: 'Explored with', v: [
+                /* the marks are the official files from each company's brand
+                   page, dropped into assets/img/logos under these names; a
+                   row whose file is missing simply shows its words */
+                { t: 'Quick mockups in Figma', icon: 'assets/img/logos/figma.png' },
+                { t: 'Figma Make prototypes',  icon: 'assets/img/logos/figma.png' },
+                { t: 'Claude Code prototypes', icon: 'assets/img/logos/claude.png' },
+                { t: 'GPT image generation',   icon: 'assets/img/logos/chatgpt.png' },
+              ] } },
 
             /* A SECURITY PRODUCT FINDING SECURITY PROBLEMS IN ITS
                COMPETITORS, sorted into groups — because sorting is what
@@ -2489,108 +2351,17 @@ window.SITE = {
               shot: { kind: 'device', dia: 'phonescreen', subject: 'A competitor setup screen, cropped close', treat: 'macro', ratio: 0.487,
                 of: 'On the step that fails. No brand mark in frame.' } },
 
-            /* ITERATION AS CRAFT RATHER THAN INDECISION, and it is credible
-               because it is small and specific. The one place in the film
-               where the reader's axis and the content's axis differ, which is
-               worth it because six versions of one component genuinely is a
-               horizontal idea. */
-            /* TRAVEL IS MEASURED, NOT GUESSED. It was 150vw, and at 1440 the
-               track is six 232px cells plus a 36vw lead-in — about 133vw
-               end to end. Sweeping it 150vw takes every one of the six off
-               the left edge, so the scene's last quarter was an empty frame
-               with a headline in it. 46vw brings the sixth to centre-right
-               and holds it there while the line arrives. */
-            { id: 'x0-button', kind: 'rail', dur: 170, travel: '46vw',
-              items: [
-                { n: '01', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v1', ratio: 1.2, treat: 'strip', of: 'Button, first version. Identical crop across all six.' },
-                { n: '02', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v2', ratio: 1.2, treat: 'strip', of: 'Second version.' },
-                { n: '03', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v3', ratio: 1.2, treat: 'strip', of: 'Third version.' },
-                { n: '04', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v4', ratio: 1.2, treat: 'strip', of: 'Fourth version.' },
-                { n: '05', kind: 'figma', tight: true, dia: 'button', subject: 'Button, v5', ratio: 1.2, treat: 'strip', of: 'Fifth version.' },
-                { n: '06', kind: 'figma', tight: true, dia: 'button', subject: 'The sixth — shipped', ratio: 1.2, treat: 'strip', of: 'The sixth — the one every primary action in the product was built from.' },
-              ],
-              h: 'Six versions. Then every primary action in the product was built from it.' },
-
-            /* THE DEEPEST ARTEFACT IN THE FILM, and the only place the reader
-               handles a real flow. The device never moves; only what is
-               inside it changes, and the caption beside it swaps on the same
-               beat. Twelve screens and twelve reasons, all of them already
-               written. */
-            { id: 'x0-onboarding', kind: 'device', dur: 240,
-              screens: [
-                { src: 'assets/img/x0/onboarding/01-splash.webp',
-                  t: 'Hold the first second',
-                  b: 'A cold start has real work to do. That second exists either way, so it carries the mark rather than a spinner.' },
-                { src: 'assets/img/x0/onboarding/02-welcome.webp',
-                  t: 'One decision, and no account',
-                  b: 'No sign-up, no email. The first screen offers the only two things a new owner can want.' },
-                { src: 'assets/img/x0/onboarding/03-meet.webp',
-                  t: 'The object before the process',
-                  b: 'You are about to trust a piece of plastic with your savings. It gets introduced first.' },
-                { src: 'assets/img/x0/onboarding/04-no-seed.webp',
-                  t: 'Lead with the objection',
-                  b: 'Everyone who has held crypto knows the seed phrase problem. Naming it early is what buys the next four screens.' },
-                { src: 'assets/img/x0/onboarding/05-distributed.webp',
-                  t: 'Answer the obvious question',
-                  b: 'If there is no seed phrase, what is there? One sentence and one diagram, before any setup begins.' },
-                { src: 'assets/img/x0/onboarding/06-currencies.webp',
-                  t: 'Will it hold mine?',
-                  b: 'A hardware wallet that does not support your coin is an ornament. Asked and answered before setup.' },
-                { src: 'assets/img/x0/onboarding/07-consent.webp',
-                  t: 'Ask before collecting',
-                  b: 'The analytics question is asked plainly, once, with the default off.' },
-                { src: 'assets/img/x0/onboarding/08-card-stack.webp',
-                  t: 'Name what is about to happen',
-                  b: 'Four cards, and what each one is for, before the first tap is requested.' },
-                { src: 'assets/img/x0/onboarding/09-tap-idle.webp',
-                  t: 'A sheet, not a new screen',
-                  b: 'The tap is a physical act against a phone. It belongs on top of where you already are.' },
-                { src: 'assets/img/x0/onboarding/10-tap-loading.webp',
-                  t: 'Hold is a state, so it has one',
-                  b: 'The card has to stay against the phone. The screen says so for as long as it is true.' },
-                { src: 'assets/img/x0/onboarding/11-tap-success.webp',
-                  t: 'Confirm where it was asked',
-                  b: 'The confirmation lands in the same sheet the request was made in.' },
-                { src: 'assets/img/x0/onboarding/12-user-type.webp',
-                  t: 'One fork, asked once',
-                  b: 'The only branch in the flow, at the end, in the terms a first-time owner would use.' },
-              ] },
-            /* --- CHAPTER 05 · BRINGING X0 TO LIFE ---------------------------------
-
-               THE LAST BREAK. Act IV opens on the tap, which is the first time in
-               the study a hand touches the product — so the card ruled in front
-               of it is the film clearing its throat before the payoff. */
-            { id: 'x0-ch-5', nav: 'Product', kind: 'mark', dur: 118,
-              n: '05', h: 'Bringing X0 to life',
-              p: 'The card, the app, and the four ideas the screens exist to prove.' },
-
             /* THE EMOTIONAL PEAK, AND THE PAYOFF FOR SCENE 04. The video is
                scrubbed by scroll, so the reader controls the tap and can hold
                it at the moment of contact — and that control is the scene.
                This is the interaction that replaced a whole device; letting
                someone stop it half way is the only way a page can say so. */
-            { id: 'x0-tap', act: 'IV · Product', kind: 'video', dur: 170, dark: true,
+            { id: 'x0-tap', nav: 'Product', act: 'IV · Product', kind: 'video', dur: 170, dark: true,
               src: 'assets/media/x0/app-walkthrough.mp4',
               poster: 'assets/media/x0/app-walkthrough.webp',
               alt: 'The X0 card tapped against the back of a phone, and the confirmation that follows',
               h: 'This is what replaced the hardware.',
               p: 'Everything about it is designed around a hand doing something physical. Stand-in footage — the shot to take is the hand, the card and the phone on a tripod, one key light, dark ground.' },
-
-            /* THE PHILOSOPHY WHERE IT CAN BE CHECKED AGAINST EVIDENCE. One
-               line per principle, maximum, with a real screen beside it: a
-               principle that needs a paragraph to defend it was not a
-               principle. */
-            { id: 'x0-principles', kind: 'prin', dur: 180,
-              items: [
-                { w: 'Familiar', src: 'assets/img/x0/onboarding/12-user-type.webp',
-                  l: 'Patterns a first-time owner has already used somewhere else.' },
-                { w: 'Guided', src: 'assets/img/x0/onboarding/03-meet.webp',
-                  l: 'Never more than one thing to understand at a time.' },
-                { w: 'Secure', src: 'assets/img/x0/onboarding/05-distributed.webp',
-                  l: 'The safe path is the fast path, or the safe path loses.' },
-                { w: 'Minimal', src: 'assets/img/x0/onboarding/02-welcome.webp',
-                  l: 'One decision per screen. Where a screen had two, one of them wasn’t a decision.' },
-              ] },
 
             /* THE PRODUCT LANDS IN REALITY AND STOPS BEING SCREENS. The dark
                mode arrives as a wipe rather than a fade, because a fade says

@@ -4384,56 +4384,8 @@
     : r >= 0.55 ? 'Portrait'
     : 'Phone frame');
 
-  /* --- A SPEC SHEET, AND EVERY NUMBER ON IT IS READ OFF THE REAL FILE -----
-
-     NOT A PICTURE OF A DESIGN SYSTEM. A reserved frame saying "the CySync
-     component sheet goes here" asks the reader to take the argument on trust,
-     and a screenshot of a component sheet is unreadable at a quarter of a
-     column anyway — you would see that there were a lot of things, which is
-     the one thing a sentence can already say.
-
-     So the frame states the system instead: the counts, the ramps, the scale
-     and the window, at the size type is meant to be read at. Every figure
-     below came out of the file over the plugin bridge — 65 variables in two
-     collections, 31 paint styles, 1,664 components in 150 sets across 84
-     pages, zero text styles — and the swatches are the real hexes.
-
-     THE HEADLINE IS A VARIABLE, NOT A CLAIM. `Mini Width: 1024` and
-     `Mini Height: 700` are two numbers the system keeps about itself: the
-     smallest window it is prepared to be. That is the whole of "built for a
-     desktop window, not a thumb", written by the system, about the system,
-     and it is the reason this frame is a specification rather than a photo. */
-  const FSPEC = (s) => {
-    const row = (r) => `<div class="fg-spec__r">` +
-        `<span class="fg-spec__k">${esc(r.k)}</span>` +
-        `<span class="fg-spec__v">${esc(r.v)}</span>` +
-        (r.swatches
-          ? `<span class="fg-spec__ramp">` + r.swatches.map((c) =>
-              `<i style="--c:${c}"></i>`).join('') + `</span>`
-          : '') +
-        (r.ticks
-          ? `<span class="fg-spec__ruler">` + r.ticks.map((t, i) =>
-              `<i style="--h:${20 + i * 6}%"></i>`).join('') + `</span>`
-          : '') +
-        (r.of ? `<span class="fg-spec__o">${esc(r.of)}</span>` : '') +
-      `</div>`;
-    return `<figure class="fg-spec"${s.ratio ? ` style="--ratio:${+s.ratio}"` : ''}>` +
-      `<span class="fg-spec__n">${esc(s.n || 'Spec sheet')}</span>` +
-      (s.head
-        ? `<div class="fg-spec__head">` +
-            `<span class="fg-spec__k">${esc(s.head.k)}</span>` +
-            `<strong class="fg-spec__big">${esc(s.head.v)}</strong>` +
-            (s.head.of ? `<span class="fg-spec__o">${esc(s.head.of)}</span>` : '') +
-          `</div>`
-        : '') +
-      (s.rows || []).map(row).join('') +
-      (s.foot ? `<span class="fg-spec__f">${esc(s.foot)}</span>` : '') +
-    `</figure>`;
-  };
-
   const FSHOT = (s) => {
     if (!s) return '';
-    if (s.kind === 'spec') return FSPEC(s);
     const ratio = +s.ratio || 1.586;
     const r = s.ratio ? ` style="--ratio:${+s.ratio}"` : '';
     let near = NAMED[0];
@@ -4848,6 +4800,13 @@
     },
   };
 
+  /* line icons for the "what X0 needed" cards, 24-unit, stroked in currentColor */
+  const NEED_ICON = {
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg>',
+    bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6L13 3Z"/></svg>',
+    spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6.5c.6 3.2 2.3 4.9 5.5 5.5-3.2.6-4.9 2.3-5.5 5.5-.6-3.2-2.3-4.9-5.5-5.5 3.2-.6 4.9-2.3 5.5-5.5Z"/><path d="M17.5 3c.25 1.3.95 2 2.25 2.25-1.3.25-2 .95-2.25 2.25-.25-1.3-.95-2-2.25-2.25 1.3-.25 2-.95 2.25-2.25Z"/><path d="M18 15.5c.2 1 .75 1.55 1.75 1.75-1 .2-1.55.75-1.75 1.75-.2-1-.75-1.55-1.75-1.75 1-.2 1.55-.75 1.75-1.75Z"/></svg>',
+  };
+
   const SCENE = {
     /* --- an object on the black, with the title behind it ----------------
        Scenes 01, 02 and 27. The card sits in front of the letters and the
@@ -4917,38 +4876,6 @@
         (s.foot ? `<span${AT(0.4)} class="fg-rec__f beat">${esc(s.foot)}</span>` : '') +
       `</div>`;
     },
-
-    /* --- THE CHAPTER CARD ------------------------------------------------
-
-       WHAT THIS REPLACED. A fixed two-line readout in the bottom-left
-       corner — `01 / 04 · PREMISE` — which told you where you were at every
-       scroll position and was therefore never anywhere. It was the right
-       answer while the film had no index; with an index down the left edge
-       the corner readout is a second thing saying the same thing, so the
-       position is carried by the rail and the CHAPTER is carried here, in
-       the flow, once.
-
-       AND IT IS PUNCTUATION, NOT A SECTION. A chapter card that holds is a
-       title slide the reader has to wait out five times. This one is short
-       — `dur` a little over one screen in the data, so the stage never
-       sticks and the card passes through at reading speed — and it is the
-       full width of the frame with two things on it. The number is large
-       because it is the only thing in the film that is allowed to be large
-       and say nothing; the title beside it is small for the same reason.
-
-       ONE RULE UNDER IT AND NOTHING ELSE. No ground change, no shot, no
-       paragraph: the card's job is to end the previous chapter, and a card
-       with an argument on it has started the next one instead. */
-    mark: (s) => `<div class="scn__in fg-mark">` +
-        `<div class="fg-mark__row">` +
-          `<span${AT(0.04)} class="fg-mark__n beat beat--still">${esc(s.n)}</span>` +
-          `<span class="fg-mark__t">` +
-            `<span${AT(0.1)} class="fg-mark__l beat">${esc(s.h)}</span>` +
-            (s.p ? `<span${AT(0.16)} class="fg-mark__s beat">${s.p}</span>` : '') +
-          `</span>` +
-        `</div>` +
-        `<i${AT(0.06)} class="fg-mark__rule beat" aria-hidden="true"></i>` +
-      `</div>`,
 
     object: (s) => {
       /* THE BEATS WERE REBALANCED WHEN THE FRAME WAS. They used to end on
@@ -5710,73 +5637,50 @@
        stays empty — the asymmetry is uncomfortable on purpose, and the
        reader starting to want the answer is the scene's job. Then the left
        dims as the right fills, which is the argument in one gesture. */
-    split: (s) => {
-      const L = s.left || {};
-      const R = s.right || {};
-      const lb = SPREAD((L.items || []).length, 0.08, 0.44);
-      const rb = SPREAD((R.items || []).length, 0.56, 0.86);
-      /* A MAGAZINE SPREAD, THREE TRACKS. Reasons in small type, the answer
-         at poster scale, and a full-height picture column that leaves the
-         stage's gutter and is cut by the window. The picture was inside the
-         left column in the first build, which made the scene two stacked
-         text blocks with a thumbnail. */
-      /* THE OLD SYSTEM, STILL ON THE TABLE. Absolutely positioned against the
-         STAGE rather than against the spread — `.scn__stage` is sticky, which
-         makes it the containing block — so the field covers the whole window
-         and is cut by the stage's own `overflow: clip` rather than by the
-         spread's padding. That is what lets a piece run off an edge.
-
-         It is emitted FIRST and the three text tracks are lifted above it, so
-         nothing in the argument is ever competing with the evidence. */
-      const strew = (s.strew || []).length
-        ? `<div class="fg-strew" aria-hidden="true">` + s.strew.map((o, i) => {
-            const dia = SKEL[o.dia] || SKEL.gridmany;
-            /* HOW FAR THIS PIECE TRAVELS ON THE ONE SHARED PATH, and it is
-               read off the depth the composition already states rather than
-               invented here. `dep` is the piece's scroll parallax in pixels,
-               negative behind the plane and positive in front; over a spread
-               of 60 that becomes roughly 0.63 for the furthest and 1.33 for
-               the nearest. Everything moves together; the near things move
-               more. See `worldDrift` in section 46. */
-            const par = (1 + (parseFloat(o.dep) || 0) / 60).toFixed(3);
-            return `<div class="fg-strew__o" style="--par:${par}` +
-              `;--x:${o.x};--y:${o.y};--w:${o.w}` +
-              `;--at:${o.at};--sp:${o.sp == null ? 9 : o.sp};--z:${o.z == null ? 1 : o.z}` +
-              `;--dx:${o.dx || '0px'};--dy:${o.dy || '0px'};--dep:${o.dep || '0px'}` +
-              `;--rot:${o.rot || '0deg'};--dim:${o.dim == null ? 1 : o.dim}` +
-              `;--ratio:${+o.ratio || 1.5}">` +
-              /* a real export the moment one exists, and the interim drawing
-                 until then — the slot, the place and the clock do not change */
-              (o.src
-                ? `<img src="${url(o.src)}" alt="" loading="lazy" decoding="async">`
-                : `<i class="fg-strew__skel">${dia}</i>`) +
-            `</div>`;
-          }).join('') + `</div>`
-        : '';
-
-      /* THE LIGHT THAT REPLACED THE FADE. After the field so it paints over it,
-         before the text tracks so it paints under them — see `.fg-glow`. Only
-         where there is a field to light. */
-      const glow = (s.strew || []).length
-        ? '<div class="fg-glow" aria-hidden="true"></div>' : '';
-
-      return `<div class="fg-split">` + strew + glow +
-          `<div class="fg-half fg-half--fades">` +
-            (L.title ? `<span${AT(0.02)} class="fg-lane__t beat">${esc(L.title)}</span>` : '') +
-            `<ul class="fg-reasons">` + (L.items || []).map((t, i) =>
-              `<li${AT(lb[i])} class="beat">${t}</li>`).join('') + `</ul>` +
+    /* --- what CySync already had -----------------------------------------
+       Words on the left; on the right the CySync design system's own
+       components on matching plates, in four columns that run on their own,
+       alternately up and down, so every piece passes by without the reader
+       having to scroll for it. */
+    kept: (s) => {
+      const all = s.items || [];
+      const tile = (o, again) => `<figure class="fg-sys__t${again ? ' fg-sys__t--rep" aria-hidden="true' : ''}">` +
+          (o.swatches
+            ? `<span class="fg-sys__sw">` + o.swatches.map((c) =>
+                `<i style="background:${c}"></i>`).join('') + `</span>`
+            : `<img src="${url(o.src)}" alt="${esc(o.t)}" loading="lazy" decoding="async">`) +
+          `<figcaption>${esc(o.t)}</figcaption>` +
+        `</figure>`;
+      return `<div class="fg-kept">` +
+          `<div class="fg-kept__copy">` +
+            (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+            (s.h ? `<h2${AT(0.04)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+            (s.p ? `<p${AT(0.08)} class="fg-p beat">${s.p}</p>` : '') +
+            (s.needs ? `<div${AT(0.3)} class="fg-kept__needs beat">` +
+                `<span class="fg-kept__nk">${esc(s.needs.k)}</span>` +
+                `<ol>` + (s.needs.v || []).map((n) =>
+                  `<li>` +
+                    `<span class="fg-kept__ni" aria-hidden="true">${NEED_ICON[n.icon] || ''}</span>` +
+                    `<span class="fg-kept__nt"><b>${esc(n.t)}</b><span>${n.b}</span></span>` +
+                  `</li>`).join('') + `</ol>` +
+              `</div>` : '') +
+            (s.cap ? `<p${AT(0.3)} class="fg-sys__cap beat">${esc(s.cap)}</p>` : '') +
           `</div>` +
-          `<div class="fg-half">` +
-            (R.title ? `<span${AT(0.52)} class="fg-lane__t beat">${esc(R.title)}</span>` : '') +
-            (R.name ? `<p${AT(0.54)} class="fg-name beat beat--still">${esc(R.name)}</p>` : '') +
-            `<ul class="fg-ticks">` + (R.items || []).map((t, i) =>
-              `<li${AT(rb[i])} class="beat">${t}</li>`).join('') + `</ul>` +
-            /* 0.86 AND NOT 0.9. The reveal is `(p - at) * 8`, so a beat at
-               0.9 tops out at 0.8 opacity and never finishes arriving. 0.875
-               is the real boundary; 0.86 leaves it some room. */
-            (R.note ? `<p${AT(0.86)} class="fg-meta beat">${R.note}</p>` : '') +
+          `<div${AT(0.02)} class="fg-sys beat" aria-label="Components from the CySync design file">` +
+            /* dealt round-robin into four columns; each column is shown three
+               times so its loop is seamless and never runs short on a tall
+               screen */
+            `<div class="fg-sys__grid">` +
+              [0, 1, 2, 3].map((c) => {
+                const col = all.filter((o, i) => i % 4 === c);
+                return `<div class="fg-sys__col">` +
+                  `<div class="fg-sys__loop">` +
+                    col.map((o) => tile(o)).join('') + col.map((o) => tile(o, true)).join('') + col.map((o) => tile(o, true)).join('') +
+                  `</div>` +
+                `</div>`;
+              }).join('') +
+            `</div>` +
           `</div>` +
-          (s.art ? `<div${AT(0.16)} class="fg-half__art beat">${FSHOT(s.art)}</div>` : '') +
         `</div>`;
     },
 
@@ -6059,75 +5963,55 @@
           `</div>` +
         `</div>`;
     },
-    /* --- 15 · the rounds before the system ------------------------------
-       A wall of sheets pinned up at whatever angle they landed. They arrive
-       one at a time; then each review round slams its stamp onto the wall
-       and crosses its sheets out, a hand-drawn X drawing itself on the
-       scroll. The one sheet no round cut is left clean and lifts off the
-       wall. The headline holds at poster size over the dark foot, the way
-       the decision cards do. */
-    rounds: (s) => {
-      const W = s.wall || [];
-      const R = s.rounds || [];
-      const K = s.kept || {};
-      const arrive = SPREAD(W.length, 0.04, 0.34);
-      const rb = SPREAD(R.length, 0.42, 0.66);
-      /* sheet -> the round that cut it, and whose stamp it carries */
-      const cutAt = {};
-      const stampOn = {};
-      R.forEach((r, ri) => {
-        (r.cut || []).forEach((i) => { cutAt[i] = rb[ri] + 0.04; });
-        if (r.stamp != null) stampOn[r.stamp] = { k: r.k, r: r.r || 0, at: rb[ri] };
-      });
-      const keptAt = Math.min(0.8, rb[rb.length - 1] + 0.1);
-      if (K.i != null) stampOn[K.i] = { k: K.k || 'Kept', r: K.r || 0, at: keptAt, kept: true };
-      /* six first guesses and the one that stayed, in one 60 × 120 phone */
-      const GUESS = [
-        '<rect x="8" y="14" width="44" height="6" rx="1"/><rect x="8" y="26" width="44" height="30" rx="3"/>'
-          + '<path d="M8 66h44M8 76h44M8 86h44M8 96h30"/>',
-        '<rect x="8" y="16" width="26" height="8" rx="1"/><rect x="8" y="28" width="16" height="4" rx="1"/>'
-          + '<circle cx="14" cy="46" r="5"/><circle cx="26" cy="46" r="5"/><circle cx="38" cy="46" r="5"/><circle cx="50" cy="46" r="3"/>'
-          + '<path d="M8 64h44M8 74h44M8 84h44"/>',
-        '<rect x="8" y="14" width="20" height="20" rx="3"/><rect x="32" y="14" width="20" height="20" rx="3"/>'
-          + '<rect x="8" y="38" width="20" height="20" rx="3"/><rect x="32" y="38" width="20" height="20" rx="3"/>'
-          + '<path d="M8 70h44M8 80h44M8 90h44"/>',
-        '<rect x="12" y="14" width="36" height="22" rx="3"/><rect x="10" y="18" width="40" height="22" rx="3"/>'
-          + '<rect x="8" y="22" width="44" height="24" rx="3"/><rect x="8" y="54" width="20" height="8" rx="4"/>'
-          + '<rect x="32" y="54" width="20" height="8" rx="4"/><path d="M8 74h44M8 84h44"/>',
-        '<rect x="8" y="14" width="30" height="6" rx="1"/><path d="M8 44l8-6 7 4 9-10 8 5 12-9"/>'
-          + '<rect x="8" y="52" width="20" height="8" rx="4"/><rect x="32" y="52" width="20" height="8" rx="4"/>'
-          + '<path d="M8 72h44M8 82h44M8 92h44"/>',
-        '<path d="M8 16h12M24 16h12M40 16h12"/><path d="M8 20h12" stroke-width="2"/>'
-          + '<rect x="8" y="28" width="44" height="10" rx="2"/><rect x="8" y="42" width="44" height="10" rx="2"/>'
-          + '<rect x="8" y="56" width="44" height="10" rx="2"/><rect x="8" y="70" width="44" height="10" rx="2"/>',
-        /* the kept one: balance card with its line, two actions, the list, the bar */
-        '<rect x="8" y="12" width="44" height="34" rx="4" class="fill"/>'
-          + '<path d="M13 36l7-5 6 3 8-8 7 4 7-6"/><rect x="12" y="17" width="16" height="4" rx="1"/>'
-          + '<rect x="8" y="50" width="21" height="7" rx="3.5"/><rect x="31" y="50" width="21" height="7" rx="3.5"/>'
-          + '<path d="M8 66h44M8 76h44M8 86h44"/><rect x="10" y="102" width="40" height="10" rx="5"/>',
-      ];
-      /* the X is two strokes, each a little off true, as a marker would be */
-      const X = '<svg class="fg-rw__x" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
-        + '<path d="M9 12C34 34 58 58 93 89" pathLength="1"/><path d="M90 9C63 37 41 60 7 92" pathLength="1"/></svg>';
-      const sheets = W.map((w, i) => {
-        const st = stampOn[i];
-        const kept = K.i === i;
-        return `<div class="fg-rw__s beat${kept ? ' fg-rw__s--kept' : ''}" style="--x:${w.x};--y:${w.y};` +
-            `--w:${w.w};--r:${w.r}deg;--at:${arrive[i].toFixed(3)}` +
-            `${cutAt[i] != null ? `;--cut:${cutAt[i].toFixed(3)}` : ''}${kept ? `;--keep:${keptAt.toFixed(3)}` : ''}">` +
-            `<i class="fg-rw__pin"></i>` +
-            `<svg class="fg-rw__ph" viewBox="0 0 60 120" aria-hidden="true">` +
-              `<rect x="1" y="1" width="58" height="118" rx="9" class="body"/>${GUESS[(w.g || 0) % GUESS.length]}</svg>` +
-            (cutAt[i] != null ? X : '') +
-            (st ? `<span class="fg-rw__stamp${st.kept ? ' fg-rw__stamp--kept' : ''}"` +
-                ` style="--sr:${st.r}deg;--sa:${st.at.toFixed(3)}">${esc(st.k)}</span>` : '') +
-          `</div>`;
-      }).join('');
-      return `<div class="fg-rw" aria-hidden="true">${sheets}</div>` +
-        `<div class="scn__in scn__in--foot">` +
-          (s.kicker ? `<span${AT(0.02)} class="fg-dec__n beat">${esc(s.kicker)}</span>` : '') +
-          (s.h ? `<h2${AT(0.05)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
-          (s.p ? `<p${AT(0.36)} class="fg-p beat">${s.p}</p>` : '') +
+    /* --- 15 · an excerpt of the archive -----------------------------------
+       Every frame the same size, in an even grid that runs off the right
+       edge, unnumbered, unordered and unmarked — the shipped screen is one
+       frame among the rest. Each frame settles at its own opacity, from a
+       fixed seeded draw, so attention lands in scattered places rather than
+       on a hero. The frames arrive column by column. */
+    contact: (s) => {
+      const cells = s.shots || [];
+      const rows = 2;
+      const cols = Math.ceil(cells.length / rows);
+      const rnd = SEED(11);
+      const cell = (src, i) => {
+        const col = Math.floor(i / rows);
+        const at = 0.02 + (col / Math.max(1, cols - 1)) * 0.16;
+        /* every frame stays readable: nothing below 45%, the rest spread
+           evenly up to full, so the variation moves the eye without hiding
+           any screen */
+        const op = 0.45 + rnd() * 0.55;
+        return `<li class="fg-cs__c beat" style="--at:${at.toFixed(3)};--op:${op.toFixed(2)}">` +
+            `<span class="fg-cs__f"><img src="${url(src)}" alt="" loading="lazy" decoding="async"></span>` +
+          `</li>`;
+      };
+      const T = s.tools;
+      return `<div class="scn__in fg-cs">` +
+          `<div class="fg-cs__sheet">` +
+            `<ol class="fg-cs__grid" style="--cols:${cols}" aria-hidden="true">` +
+              cells.map(cell).join('') +
+            `</ol>` +
+            (s.cap ? `<span${AT(0.2)} class="fg-cs__cap beat">${esc(s.cap)}</span>` : '') +
+          `</div>` +
+          `<div class="fg-cs__copy">` +
+            `<div class="fg-cs__words">` +
+              (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
+              (s.h ? `<h2${AT(0.06)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+              (s.p ? `<p${AT(0.12)} class="fg-p beat">${s.p}</p>` : '') +
+            `</div>` +
+            (T ? `<dl${AT(0.18)} class="fg-cs__tools beat">` +
+                `<dt>${esc(T.k)}</dt>` +
+                (T.v || []).map((v) => {
+                  const t = typeof v === 'string' ? { t: v } : v;
+                  /* the mark leads the line so the tool is recognised before
+                     it is read; if its file is not there it removes itself */
+                  return `<dd>` + (t.icon
+                    ? `<img class="fg-cs__mark" src="${url(t.icon)}" alt="" width="18" height="18"` +
+                      ` onerror="this.remove()">`
+                    : '') + `<span>${esc(t.t)}</span></dd>`;
+                }).join('') +
+              `</dl>` : '') +
+          `</div>` +
         `</div>`;
     },
 
@@ -6136,28 +6020,6 @@
        redraw is the redraw itself, live: the app's structure from the design
        file, drawn in on the scroll and traced under the pointer. See `IA`. */
     ia: (s) => IA.html(s),
-
-    /* --- 17 · two tracks, on purpose ------------------------------------
-       Both advance at once, which is the point: the system churning and the
-       low-fidelity flows going out were parallel, not sequential, and a
-       reader shown them in sequence would conclude one waited for the
-       other. */
-    tracks: (s) => {
-      const lanes = s.lanes || [];
-      return `<div class="fg-track2">` + lanes.map((L, li) => {
-        const b = SPREAD((L.shots || []).length, 0.2 + li * 0.04, 0.82);
-        return `<div class="fg-lane">` +
-          `<span${AT(0.02 + li * 0.03)} class="fg-lane__t beat">${esc(L.t)}</span>` +
-          (L.p ? `<p${AT(0.08 + li * 0.03)} class="fg-lane__p beat">${L.p}</p>` : '') +
-          (L.stack
-            ? `<div class="fg-vers">` + (L.shots || []).map((sh, i) =>
-                `<div${AT(b[i], i === L.shots.length - 1 ? 1.2 : b[i + 1] + 0.02)}` +
-                ` class="beat beat--win">${FSHOT(sh)}</div>`).join('') + `</div>`
-            : (L.shots || []).map((sh, i) =>
-                `<div${AT(b[i])} class="beat">${FSHOT(sh)}</div>`).join('')) +
-        `</div>`;
-      }).join('') + `</div>`;
-    },
 
     /* --- 18 · the findings, sorting themselves --------------------------
        Pins arrive scattered and then migrate into three groups, because
@@ -6188,63 +6050,6 @@
       (s.shot ? `<div${AT(0.2)} class="fg-pins__crop beat">${FSHOT(s.shot)}</div>` : '');
     },
 
-    /* --- 19 · six tries at one button -----------------------------------
-       Vertical scroll drives horizontal travel while the stage is pinned,
-       which is the one place in the film where the reader's axis and the
-       content's axis differ. It is worth it here because six versions of one
-       component IS a horizontal idea, and the travel stops before the end so
-       the survivor is held rather than swept past. */
-    rail: (s) => {
-      const items = s.items || [];
-      return `<div class="fg-rail" style="--travel:${s.travel || '120vw'}">` +
-          /* NO ARROWS BETWEEN THEM. There were six, and they said "and then"
-             to a reader already looking at six things in a row. The strip is
-             flush — one gap of a single pixel — so the run reads as one
-             length of film rather than as a row of cards. */
-          items.map((it) =>
-            `<div class="fg-rail__i">${FSHOT(it)}` +
-              `<span class="fg-rail__n">${esc(it.n || '')}</span>` +
-            `</div>`).join('') +
-        `</div>` +
-        `<div class="scn__in scn__in--foot">` +
-          `<h2${AT(0.82)} class="fg-h fg-h--wide beat beat--still">${s.h}</h2>` +
-        `</div>`;
-    },
-
-    /* --- 20 · twelve screens, one decision each -------------------------
-       The device never moves; only what is inside it changes, and the caption
-       beside it swaps on the same beat. This is the deepest artefact in the
-       film and the only place the reader handles a real flow, so it is the
-       longest scene after the assembly. */
-    device: (s) => {
-      const sc = s.screens || [];
-      const n = sc.length || 1;
-      const step = 0.9 / n;
-      return `<div class="fg-dev-wrap">` +
-          `<div>` +
-            `<div class="fg-dev">` + sc.map((c, i) =>
-              `<div${AT(0.04 + i * step, 0.04 + (i + 1) * step + (i === n - 1 ? 0.3 : 0))}` +
-              ` class="fg-dev__s beat beat--win">` +
-                `<img src="${url(c.src)}" alt="${esc(c.t || '')}" loading="lazy" decoding="async">` +
-              `</div>`).join('') + `</div>` +
-            /* THE RULE UNDERNEATH IS TWELVE SEGMENTS, all of them always
-               visible, with the brass filling in over the top — so it reads
-               as a length of twelve rather than as a number that grows out of
-               nothing. The segment is the track; the `b` inside it is the
-               ink. */
-            `<div class="fg-prog" aria-hidden="true">` + sc.map((c, i) =>
-              `<i><b${AT(0.04 + i * step)} class="beat beat--still"></b></i>`).join('') +
-            `</div>` +
-          `</div>` +
-          `<div class="fg-side">` + sc.map((c, i) =>
-            `<div${AT(0.04 + i * step, 0.04 + (i + 1) * step + (i === n - 1 ? 0.3 : 0))}` +
-            ` class="fg-side__i beat beat--win">` +
-              `<p class="fg-side__t">${c.t}</p>` +
-              (c.b ? `<p class="fg-side__b">${c.b}</p>` : '') +
-            `</div>`).join('') + `</div>` +
-        `</div>`;
-    },
-
     /* --- 21 · the tap ---------------------------------------------------
        Scroll-scrubbed, so the reader controls the tap and can hold it at the
        moment of contact. That control IS the scene — this is the interaction
@@ -6259,31 +6064,6 @@
           (s.h ? `<h2${AT(0.2)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
           (s.p ? `<p${AT(0.5)} class="fg-p beat">${s.p}</p>` : '') +
         `</div>`,
-
-    /* --- 22 · four principles, four proofs ------------------------------
-       Each word pins while its screen holds beside it, then releases as the
-       next word arrives. No paragraph anywhere longer than a line: the
-       screen is the argument, and a principle that needs a paragraph to
-       defend it was not a principle. */
-    prin: (s) => {
-      const items = s.items || [];
-      const n = items.length || 1;
-      const step = 0.92 / n;
-      return `<div class="fg-prin">` +
-          `<div class="fg-prin__words">` + items.map((it, i) =>
-            `<div${AT(0.02 + i * step, 0.02 + (i + 1) * step)} class="beat beat--win">` +
-              `<p class="fg-prin__w">${esc(it.w)}</p>` +
-              (it.l ? `<p class="fg-prin__l">${it.l}</p>` : '') +
-            `</div>`).join('') + `</div>` +
-          `<div class="fg-prin__shots">` + items.map((it, i) =>
-            `<div${AT(0.02 + i * step, 0.02 + (i + 1) * step)} class="beat beat--win">` +
-              `<div class="fg-dev fg-dev--sm">` +
-                (it.src ? `<img src="${url(it.src)}" alt="" loading="lazy" decoding="async">`
-                        : FSHOT({ label: it.w, ratio: 0.487 })) +
-              `</div>` +
-            `</div>`).join('') + `</div>` +
-        `</div>`;
-    },
 
     /* --- 23 · in the world ----------------------------------------------
        The icon scales down into its place on a home screen in one continuous
