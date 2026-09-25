@@ -22932,3 +22932,21 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
 .fg-board__n { white-space: nowrap; font-size: clamp(1.5rem, 2.3vw, 2.2rem); font-weight: 560; letter-spacing: -0.03em; line-height: 1; color: var(--fg-ink); margin-top: 0.4rem; }
 .fg-board__c--stat .fg-board__t { color: #b88a3e; }
 @media (max-width: 60rem) { .fg-board__c--lead { grid-column: 1 / -1; } }
+
+/* ==== board v3: reveal once, then stay ==== */
+.scn--board .beat { --o: clamp(0, calc((var(--pm, var(--p)) - var(--at)) * var(--fg-rise)), 1); }
+.scn--board .fg-board__c { --o: clamp(0, calc((var(--pm, var(--p)) - var(--at)) * 9), 1); }
+
+/* ==== steps v9: the list, once shown, stays shown ==== */
+.fg-steps__list { --r: clamp(0, calc((var(--pm, var(--p)) - 0.06) * 8), 1); }
+.scn--steps .beat { --o: clamp(0, calc((var(--pm, var(--p)) - var(--at)) * var(--fg-rise)), 1); }
+
+/* ==== shipped v7: reveal once, then stay ==== */
+.scn--shipped .beat { --o: clamp(0, calc((var(--pm, var(--p)) - var(--at)) * var(--fg-rise)), 1); }
+
+/* ==== rivals v10: reveal once, then stay ==== */
+.scn--rivals .beat { --o: clamp(0, calc((var(--pm, var(--p)) - var(--at)) * var(--fg-rise)), 1); }
+.scn--rivals .fg-riv__wall {
+  --u: calc(clamp(0, calc((var(--in, 1) - 0.7) / 0.3), 1) * 0.3 + var(--pm, var(--p)));
+  --m: clamp(0, calc((var(--pm, var(--p)) - 0.27) / 0.12), 1);
+}

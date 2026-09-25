@@ -6469,6 +6469,9 @@
         vid: $('.fg-vid[data-scrub] video', n),
         /* scenes that dissolve in and out of the page rather than cutting */
         fade: n.classList.contains('scn--insight') || n.classList.contains('scn--wall') || n.classList.contains('scn--showcase') || n.classList.contains('scn--rivals'),
+        /* scenes that build with the scroll on the way down and then hold
+           what they have built: their --p only ever increases */
+        once: n.classList.contains('scn--contact') || n.classList.contains('scn--ia') || n.classList.contains('scn--kept') || n.classList.contains('scn--chain') || n.classList.contains('scn--stack') || n.classList.contains('scn--msgs') || n.id === 'x0-question' || n.id === 'x0-subtract' || n.id === 'x0-market' || n.id === 'x0-x1',
         q: -1,
         o: -1,
         p: -1,
@@ -6537,7 +6540,11 @@
       let ord = -1;
       let tone = this.tone || 'light';
 
+      /* set when a finished scene gives up its pin this frame: everything
+         below it has moved, so the rest wait for the next frame's reading */
+      let shifted = false;
       this.scenes.forEach((s) => {
+        if (shifted) return;
         /* off screen by more than a screen in either direction — leave it
            alone. Its last written value is already its end state. */
         const rTop = s.top - y;
@@ -6545,6 +6552,29 @@
 
         let p = (y - s.top) / s.len;
         p = p < 0 ? 0 : p > 1 ? 1 : p;
+        /* built by the scroll on the way down, and then kept: scrolling back
+           up never takes any of it away again */
+        if (s.once && s.p > p) p = s.p;
+        /* AND ONCE IT IS FULLY BUILT AND THE READER IS PAST IT, THE PIN GOES.
+           Holding a finished scene for its whole length again on the way back
+           up just feels stuck, so the scene shrinks to one screen and the
+           page is moved by exactly the height it lost, so nothing on screen
+           jumps. */
+        if (s.once && !s.done && p >= 1 && y >= s.top + s.len - 1) {
+          s.done = true;
+          s.p = 1;
+          s.n.style.setProperty('--p', '1');
+          const was = s.n.offsetHeight;
+          s.n.style.setProperty('--dur', '100svh');
+          s.n.style.setProperty('--ndur', '100svh');
+          const lost = was - s.n.offsetHeight;
+          if (lost > 0) {
+            window.scrollTo({ top: y - lost, behavior: 'instant' });
+            this.measure();
+            shifted = true;
+          }
+          return;
+        }
         /* ENTRANCE AND EXIT, for a scene with a picture edge-to-edge in it.
            `--in` runs 0→1 over the screen of travel before the scene pins,
            `--out` 0→1 over the screen after it lets go — so the photograph
@@ -23900,4 +23930,24 @@
   addEventListener('resize', go, { passive: true });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(go).catch(() => {});
   document.addEventListener('load', (e) => { if (e.target && e.target.closest && e.target.closest('.fg-riv__logos')) go(); }, true);
+})();
+
+
+/* ---- RevealLatch: in the retrospective, what has been revealed stays.
+   --pm holds the furthest --p reached; scrolling back up no longer
+   un-reveals. It resets only once the scene is fully below the window
+   again, so a reader arriving from above sees it build afresh. ---- */
+(function RevealLatch() {
+  const tick = () => {
+    document.querySelectorAll('.scn--board, .scn--steps, .scn--shipped, .scn--rivals').forEach((n) => {
+      const p = parseFloat(n.style.getPropertyValue('--p')) || 0;
+      const r = n.getBoundingClientRect();
+      let m = n.__pm || 0;
+      if (r.top > innerHeight) m = 0;
+      else if (p > m) m = p;
+      if (m !== n.__pm) { n.__pm = m; n.style.setProperty('--pm', m.toFixed(4)); }
+    });
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 })();
