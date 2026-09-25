@@ -17946,50 +17946,509 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   .fg-bub--keep p { font-size: 1.0625rem; }
 }
 
-/* --- 14 · the photograph ------------------------------------------------- */
+/* --- 14 · the rounds before the system ----------------------------------- */
 
-.fg-frame-full { position: absolute; inset: 0; }
-
-/* THE SCRIM IS THE ONLY THING DONE TO A PHOTOGRAPH IN THIS FILM. No filter,
-   no duotone, no grade: the jump from a rendered white frame to a real room
-   is the entire effect, and processing the photograph is how you throw it
-   away. The scrim exists so type can sit on it, and it is only ever at the
-   edge the type is on. */
-.fg-frame-full::after {
+/* A WALL OF SHEETS OVER A FOOT THAT GOES TO BLACK. The same frame the decision
+   cards use — type at poster size in white over a dark scrim — with the wall
+   above it pinned up irregularly: different sizes, different angles, some
+   running under the headline and some off the edge. Irregular on purpose; a
+   tidy row of iterations reads as a gallery, a wall reads as work. */
+.scn--rounds .scn__stage::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(8, 8, 10, 0.88) 0%, rgba(8, 8, 10, 0.1) 52%, rgba(8, 8, 10, 0) 100%);
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(8, 8, 10, 0.9) 0%, rgba(8, 8, 10, 0.55) 26%, rgba(8, 8, 10, 0) 58%);
+}
+.scn--rounds .scn__in--foot { --fg-ink: #f7f7f8; --fg-dim: #c9cace; --fg-quiet: #a0a1a6; color: #f7f7f8; }
+.scn--rounds .fg-h { color: #f7f7f8; font-size: var(--fg-poster-l); letter-spacing: -0.04em; max-width: 15ch; }
+.scn--rounds .fg-p { max-width: 46ch; }
+
+.fg-rw {
+  position: absolute;
+  z-index: 1;
+  top: var(--fg-gut-b);
+  left: calc(var(--fg-gut) + var(--film-index));
+  right: var(--fg-gut);
+  height: 62%;
+}
+
+.fg-rw__s {
+  --cut: 2;
+  --keep: 2;
+  /* how far through its own cut / its keep this sheet is */
+  --q: clamp(0, calc((var(--p) - var(--cut)) * 8), 1);
+  --k: clamp(0, calc((var(--p) - var(--keep)) * 8), 1);
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: calc(var(--w) * 1%);
+  aspect-ratio: 3 / 4;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  background: #fbfbfc;
+  border: 1px solid rgba(16, 16, 18, 0.22);
+  box-shadow: 0 1px 2px rgba(16, 16, 18, 0.06), 0 14px 30px -18px rgba(16, 16, 18, 0.35);
+  rotate: var(--r);
+  /* arrives dropped slightly high and settles; a cut sheet sinks back */
+  opacity: calc(var(--o) * (1 - 0.3 * var(--q)));
+  translate: 0 calc((1 - var(--o)) * -1.2rem);
+  scale: calc(1 + 0.08 * var(--k));
+}
+.fg-rw__s--kept {
+  z-index: 3;
+  rotate: calc(var(--r) * (1 - var(--k)));
+  border-color: rgba(16, 16, 18, calc(0.22 + 0.6 * var(--k)));
+  box-shadow: 0 1px 2px rgba(16, 16, 18, 0.06), 0 calc(14px + 16px * var(--k)) calc(30px + 26px * var(--k)) -18px rgba(16, 16, 18, 0.5);
+}
+
+/* the pin, where the old wall had it */
+.fg-rw__pin {
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  width: 11%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  border: 1px solid rgba(16, 16, 18, 0.45);
+  background: #fff;
+}
+
+.fg-rw__ph {
+  width: 46%;
+  height: auto;
+  aspect-ratio: 1 / 2;
+  margin-top: 8%;
+  fill: none;
+  stroke: rgba(16, 16, 18, 0.45);
+  stroke-width: 1;
+}
+.fg-rw__ph * { vector-effect: non-scaling-stroke; }
+.fg-rw__ph .body { stroke: rgba(16, 16, 18, 0.35); }
+.fg-rw__ph .fill { fill: #ececef; }
+.fg-rw__s--kept .fg-rw__ph { stroke: var(--fg-ink); }
+.fg-rw__s--kept .fg-rw__ph .body { stroke: var(--fg-ink); }
+
+/* the X, drawing itself when the round that cut this sheet happens */
+.fg-rw__x {
+  position: absolute;
+  inset: 6%;
+  width: 88%;
+  height: 88%;
+  overflow: visible;
+  fill: none;
+  stroke: #101012;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+}
+.fg-rw__x path {
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: calc(1 - clamp(0, calc((var(--p) - var(--cut)) * 14), 1));
+}
+.fg-rw__x path + path {
+  stroke-dashoffset: calc(1 - clamp(0, calc((var(--p) - var(--cut) - 0.04) * 14), 1));
+}
+
+/* THE STAMP LANDS HARD: in from oversized, no easing to speak of */
+.fg-rw__stamp {
+  --so: clamp(0, calc((var(--p) - var(--sa)) * 22), 1);
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 56%;
+  translate: -50% -50%;
+  rotate: var(--sr);
+  scale: calc(1 + (1 - var(--so)) * 0.7);
+  opacity: var(--so);
+  padding: 0.35em 0.6em;
+  font-family: var(--mono);
+  font-size: clamp(0.5625rem, 0.72vw, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #101012;
+  background: rgba(251, 251, 252, 0.92);
+  border: 1.5px solid #101012;
+  border-radius: 3px;
+}
+.fg-rw__stamp--kept { top: 86%; color: #fbfbfc; background: #101012; }
+
+@media (max-width: 46rem) {
+  /* the wall is cropped rather than shrunk: bigger sheets, fewer of them */
+  .fg-rw { height: 54%; left: var(--fg-gut); }
+  .fg-rw__s { width: calc(var(--w) * 2.1%); left: calc(var(--x) * 1.15% - 6%); }
+  .fg-rw__s:nth-child(n+9) { display: none; }
+  .fg-rw__stamp { font-size: 0.5625rem; }
+  .scn--rounds .fg-h { font-size: min(clamp(2.5rem, 12vw, 4rem), 9svh); }
+  /* clear of the phone's section readout and the launcher along the foot */
+  .scn--rounds .scn__in--foot { padding-bottom: 4.75rem; }
+  .scn--rounds .fg-p { font-size: 0.9375rem; }
+}
+
+/* --- 15 · the architecture ----------------------------------------------- */
+
+/* THE ONE SCENE YOU CAN POINT AT. The X0 app's structure, drawn from the
+   design file — see `IA` in site.js for why it is one scaled canvas rather
+   than a layout that reflows. Everything here is the film's own vocabulary:
+   the six neutrals, the hairline, the 0.75rem sans label. No accent, no
+   shadow on anything but the four hubs, and the lines are the drawing. */
+.scn--ia .scn__stage { background: var(--fg-fill); }
+
+.fg-ia {
+  width: 100%;
+  /* the stage's content box, stated, because the canvas is fitted to the
+     row it is given and a row in an auto-height grid is given nothing */
+  height: calc(100svh - 2 * var(--fg-gut-b));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(0.75rem, 2.2vh, 1.5rem);
+  position: relative;
+  z-index: 2;
+}
+
+.fg-ia__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
+}
+
+/* THE LABEL AND THE KEY ARE HOW THE DRAWING IS READ, so they are set to be
+   found first rather than as quiet as a caption plate. The label takes the
+   ink; the key is its own object — a white strip on the fill, the same
+   paper and hairline as the nodes it explains, with every mark at full ink. */
+.fg-ia__head { align-items: center; }
+.fg-ia__head .fg-kick {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-ink);
+}
+.fg-ia__key {
+  list-style: none;
+  margin: 0;
+  padding: 0.55rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--fg-ink);
+  background: var(--fg-ground);
+  border: 1px solid var(--fg-line);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(16, 16, 18, 0.04);
+}
+.fg-ia__key li { display: inline-flex; align-items: center; gap: 0.5rem; }
+.fg-ia__key svg:not(.fg-ia__card) {
+  width: 1.375rem;
+  height: 0.5rem;
+  fill: none;
+  stroke: var(--fg-ink);
+  stroke-width: 1.25;
+}
+.fg-ia__key .fg-ia__card { stroke: var(--fg-ink); }
+.fg-ia__key .fg-ia__pin { color: var(--fg-ink); border-color: rgba(16, 16, 18, 0.3); }
+.fg-ia__key .fg-ia__sw--danger { opacity: 0.8; }
+.fg-ia__key .fg-ia__sw--option { border-color: var(--fg-ink); }
+
+/* --- the canvas ---------------------------------------------------------- */
+
+.fg-ia__fit {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+/* too narrow to draw at a readable size: hold the size, pan the frame */
+.fg-ia__fit.is-pan {
+  place-items: center start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fg-ia__size {
+  --k: 0.8;
+  position: relative;
+  width: calc(var(--w) * var(--k));
+  height: calc(var(--h) * var(--k));
+  flex: none;
+}
+
+.fg-ia__canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  scale: var(--k);
+}
+
+.fg-ia__wires {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
   pointer-events: none;
 }
 
-/* a photograph scene carries its own ink regardless of the film's ground */
-.scn--photo .scn__in--foot,
-.scn--photo .fg-cap { --fg-ink: #f7f7f8; --fg-dim: #c9cace; --fg-quiet: #a0a1a6; color: #f7f7f8; }
-.scn--photo .fg-h { color: #f7f7f8; }
+/* A LINE DRAWS ITSELF, THEN ITS ARROWHEAD LANDS. `pathLength="1"` makes the
+   dash one path long, so the offset is the unlit fraction of the line. */
+.fg-ia__e {
+  --at: 0;
+  --o: clamp(0, calc((var(--p) - var(--at)) * var(--fg-rise)), 1);
+  fill: none;
+  stroke: rgba(16, 16, 18, 0.36);
+  stroke-width: 1;
+  /* BUTT, NOT ROUND: an undrawn dash with a round cap is still a dot, and
+     forty of them are a scatter across the frame before anything arrives */
+  stroke-linecap: butt;
+  stroke-linejoin: round;
+  transition: stroke 0.22s ease;
+}
+.fg-ia__line { stroke-dasharray: 1 2; stroke-dashoffset: calc(1 - var(--o)); vector-effect: non-scaling-stroke; }
+.fg-ia__head { opacity: clamp(0, calc((var(--o) - 0.86) * 8), 1); vector-effect: non-scaling-stroke; }
+/* a return is dashed, so it cannot also be drawn with a dash — it fades */
+.fg-ia__e--ret .fg-ia__line { stroke-dasharray: 3 4; stroke-dashoffset: 0; opacity: var(--o); }
+/* a state or an option hangs off its node rather than leading anywhere */
+.fg-ia__e--soft { stroke: rgba(16, 16, 18, 0.2); }
 
-/* --- 15 · the same thinking, cleaned up ---------------------------------- */
+/* --- the parts ----------------------------------------------------------- */
 
-/* PAPER ON A PAGE. The whiteboard photograph is printed and put down, very
-   slightly off-square, and the clean redraw cross-dissolves into the same
-   spot — aligned so two or three boxes sit in the same place in both, which
-   is what makes it read as one piece of thinking cleaned up rather than as
-   two unrelated pictures. The only physical object in the film. */
-/* THE STACK NEEDS A SIZE. Both prints sit in the same grid cell, so the cell
-   is as tall as the taller of them — and with the two of them absolutely
-   positioned it was as tall as nothing at all. The ratio is the shots' own. */
-.fg-cross {
-  position: relative;
-  width: min(72vw, 46rem);
-  justify-self: center;
-  display: grid;
+.fg-ia__g {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  cursor: default;
+  transition: color 0.22s ease;
+}
+.fg-ia__g b,
+.fg-ia__lh b {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-quiet);
 }
 
-.fg-cross > * { min-width: 0; }
+.fg-ia__n {
+  position: absolute;
+  box-sizing: border-box;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  margin: 0;
+  padding: 0 10px;
+  text-align: left;
+  font: inherit;
+  color: var(--fg-ink);
+  background: var(--fg-ground);
+  border: 1px solid var(--fg-line);
+  border-radius: 10px;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.22s ease, border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease;
+}
+.fg-ia__n:focus-visible { outline: 2px solid var(--fg-ink); outline-offset: 2px; }
 
-.fg-cross > * { grid-area: 1 / 1; }
-.fg-cross__b { opacity: clamp(0, calc((var(--p) - 0.4) * 4), 1); rotate: 0.6deg; }
-.scn--cross .scn__stage { background: var(--fg-fill); }
+.fg-ia__t {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.fg-ia__m {
+  display: block;
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--fg-quiet);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.22s ease;
+}
+
+/* the marks ride the title line, pushed to the far edge */
+.fg-ia__mk { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }
+.fg-ia__card {
+  width: 14px;
+  height: 10px;
+  flex: none;
+  fill: none;
+  stroke: var(--fg-dim);
+  stroke-width: 1;
+}
+.fg-ia__pin,
+.fg-ia__tag {
+  font-style: normal;
+  font-size: 8.5px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  border: 1px solid var(--fg-line);
+  white-space: nowrap;
+}
+.fg-ia__pin { padding: 2px 3px; border-radius: 3px; }
+.fg-ia__tag { padding: 2px 5px; border-radius: 999px; color: var(--fg-quiet); }
+
+/* the four places everything else hangs from */
+.fg-ia__n--hub {
+  border-color: rgba(16, 16, 18, 0.26);
+  box-shadow: 0 1px 2px rgba(16, 16, 18, 0.05), 0 8px 22px -14px rgba(16, 16, 18, 0.3);
+}
+.fg-ia__n--hub .fg-ia__t { font-weight: 600; }
+/* a question, not a place */
+.fg-ia__n--decide { border-radius: 999px; padding-inline: 14px; }
+.fg-ia__n--decide .fg-ia__t { font-weight: 400; color: var(--fg-dim); }
+/* how Home looks when something is missing — not somewhere you go */
+.fg-ia__n--state { background: transparent; border-style: dashed; border-color: rgba(16, 16, 18, 0.14); }
+.fg-ia__n--state .fg-ia__t { font-weight: 400; color: var(--fg-dim); }
+/* offered on a screen, with nothing designed behind it */
+.fg-ia__n--option { background: transparent; border-style: dashed; }
+.fg-ia__n--option .fg-ia__t { font-weight: 400; color: var(--fg-dim); }
+/* THE ONE THAT CANNOT BE UNDONE, marked by hatching rather than by colour:
+   the film has no red in it and a warning colour would be the loudest thing
+   on the frame. */
+.fg-ia__n--danger { padding-left: 16px; overflow: hidden; }
+.fg-ia__n--danger::before,
+.fg-ia__sw--danger {
+  background: repeating-linear-gradient(-45deg, var(--fg-ink) 0 1px, transparent 1px 3.5px);
+}
+.fg-ia__n--danger::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  opacity: 0.55;
+}
+.fg-ia__sw {
+  display: inline-block;
+  width: 12px;
+  height: 9px;
+  border-radius: 2px;
+}
+.fg-ia__sw--danger { opacity: 0.55; }
+.fg-ia__sw--option { border: 1px dashed var(--fg-quiet); }
+
+/* --- pointing at it ------------------------------------------------------ */
+
+/* THE REST STEPS BACK BY COLOUR, NOT OPACITY. Opacity is the reveal's — it is
+   `--o` on every one of these — and two things writing one property is one
+   of them losing. */
+.fg-ia.has-lit .fg-ia__n:not(.is-lit) {
+  color: rgba(16, 16, 18, 0.3);
+  border-color: rgba(16, 16, 18, 0.06);
+  background-color: rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+}
+.fg-ia.has-lit .fg-ia__n:not(.is-lit) .fg-ia__m,
+.fg-ia.has-lit .fg-ia__n:not(.is-lit) .fg-ia__t { color: inherit; }
+.fg-ia.has-lit .fg-ia__n:not(.is-lit) :is(.fg-ia__pin, .fg-ia__tag) { color: inherit; border-color: rgba(16, 16, 18, 0.08); }
+.fg-ia.has-lit .fg-ia__n:not(.is-lit) .fg-ia__card { stroke: rgba(16, 16, 18, 0.25); }
+.fg-ia.has-lit .fg-ia__g:not(.is-lit) { color: rgba(16, 16, 18, 0.28); }
+.fg-ia.has-lit .fg-ia__e { stroke: rgba(16, 16, 18, 0.1); }
+.fg-ia.has-lit .fg-ia__e.is-lit { stroke: var(--fg-ink); }
+.fg-ia__n.is-lit { border-color: rgba(16, 16, 18, 0.4); }
+.fg-ia__n.is-on { border-color: var(--fg-ink); box-shadow: 0 0 0 0.5px var(--fg-ink), 0 10px 24px -16px rgba(16, 16, 18, 0.45); }
+.fg-ia__g.is-lit { color: var(--fg-ink); }
+
+/* the readout: what the thing you are pointing at is made of */
+.fg-ia__read {
+  margin: 0;
+  min-height: 2.6em;
+  max-width: min(64ch, 62%);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--fg-dim);
+}
+.fg-ia__read b { font-weight: 500; color: var(--fg-ink); margin-right: 0.6rem; }
+.fg-ia__hint { color: var(--fg-quiet); }
+
+/* --- the outline, for a frame too narrow to draw in ---------------------- */
+
+.fg-ia__list { display: none; }
+
+@media (max-width: 46rem) {
+  /* NOT PINNED. An outline is read at the speed you scroll it; holding it in
+     a one-screen frame would clip the half that does not fit. */
+  .scn--ia { height: auto; }
+  .scn--ia .scn__stage { position: relative; height: auto; place-items: start; }
+  .scn--ia .beat { --o: 1; translate: 0; }
+  .fg-ia { height: auto; display: block; }
+  .fg-ia__key,
+  .fg-ia__fit,
+  .fg-ia__read { display: none; }
+
+  .fg-ia__list {
+    display: grid;
+    gap: 1.75rem;
+    list-style: none;
+    margin: 1.25rem 0 0;
+    padding: 0;
+  }
+  .fg-ia__lh {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    color: var(--fg-dim);
+  }
+  .fg-ia__list ul {
+    list-style: none;
+    margin: 0.65rem 0 0;
+    padding: 0 0 0 0.9rem;
+    border-left: 1px solid var(--fg-line);
+    display: grid;
+    gap: 0.4rem;
+  }
+  .fg-ia__list summary {
+    list-style: none;
+    display: grid;
+    gap: 2px;
+    padding: 0.55rem 0.75rem;
+    background: var(--fg-ground);
+    border: 1px solid var(--fg-line);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .fg-ia__list summary::-webkit-details-marker { display: none; }
+  .fg-ia__list .fg-ia__t { font-size: 0.9375rem; }
+  .fg-ia__list .fg-ia__m { font-size: 0.75rem; white-space: normal; }
+  .fg-ia__list details[open] summary { border-color: rgba(16, 16, 18, 0.3); }
+  .fg-ia__steps,
+  .fg-ia__to {
+    margin: 0.5rem 0.75rem 0.25rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--fg-dim);
+  }
+  .fg-ia__to { margin-top: 0; color: var(--fg-quiet); }
+}
 
 /* --- 16 · two tracks, on purpose ----------------------------------------- */
 

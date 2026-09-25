@@ -4548,6 +4548,306 @@
       `</svg>`;
   };
 
+  /* --- THE INFORMATION ARCHITECTURE, AS A LIVE DRAWING ------------------------
+
+     WHAT THIS IS. The X0 app's structure — eight areas, the flows inside them,
+     and the lines between them — drawn from `s.ia` in content.js. It replaces
+     a reserved whiteboard frame, and it is the one scene in the film you can
+     point at: a node lights itself, the lines that touch it and the nodes at
+     their other ends, and reads its screens out underneath.
+
+     ONE CANVAS, SCALED — NOT A LAYOUT THAT REFLOWS. The geometry is the
+     argument (what sits beside what, which lines never cross), so it is
+     stated once in canvas units and the whole canvas is scaled to the stage.
+     Below the scale at which 10px type stops being type, the canvas stops
+     shrinking and pans sideways instead; on a phone it is not drawn at all
+     and the same data is set as an outline, which is the form a hierarchy
+     actually reads in at 390px.
+
+     THE REVEAL IS THE FILM'S OWN. Every group, node and line is a beat on
+     `--p`: groups arrive in reading order, a line draws itself after both of
+     its ends are there, and its arrowhead lands last. No timers.
+
+     ROUTING IS FOUR RULES. `down` runs a column; `spine` hangs children off a
+     node's left edge; `r`/`l` leave a side, run the trunk at `x` and enter the
+     facing side of the other node; `ret` is a return with its own points.
+     Corners are rounded here rather than with `stroke-linejoin`, because a
+     join rounds by the stroke width and a hairline's join is a pixel. */
+  const IA = {
+    DW: 188,
+    DH: 48,
+
+    /* the card glyph — the same drawing as the X0 card, at mark size */
+    CARD: '<svg class="fg-ia__card" viewBox="0 0 14 10" aria-hidden="true">'
+      + '<rect x="0.5" y="0.5" width="13" height="9" rx="1.8"/><path d="M3 3.2h3.2"/></svg>',
+
+    box(n) {
+      const w = n.w || this.DW;
+      const h = n.h || this.DH;
+      return { x: n.x, y: n.y, w, h, r: n.x + w, b: n.y + h, cy: n.y + h / 2 };
+    },
+
+    /* the points an edge runs through, and which way it arrives */
+    route(e, N) {
+      const f = this.box(N[e.f]);
+      const t = this.box(N[e.t]);
+      let pts;
+      if (e.r === 'down') {
+        const x = e.x != null ? e.x : f.x + 10;
+        pts = [[x, f.b], [x, t.y]];
+      } else if (e.r === 'spine') {
+        const x = f.x + 10;
+        pts = [[x, f.b], [x, t.cy], [t.x, t.cy]];
+      } else if (e.r === 'r' || e.r === 'l') {
+        const fy = e.fy != null ? e.fy : f.cy;
+        const ty = e.ty != null ? e.ty : t.cy;
+        const fx = e.r === 'r' ? f.r : f.x;
+        const tx = e.r === 'r' ? t.x : t.r;
+        pts = [[fx, fy], [e.x, fy], [e.x, ty], [tx, ty]];
+      } else {
+        pts = e.pts.map((q) => q.slice());
+      }
+      /* a trunk that happens to meet both ends at one height is a straight
+         line, not a line with a zero-length corner in it */
+      return pts.filter((q, i) => i === 0 || q[0] !== pts[i - 1][0] || q[1] !== pts[i - 1][1]);
+    },
+
+    path(pts) {
+      const R = 6;
+      let d = `M${pts[0][0]} ${pts[0][1]}`;
+      for (let i = 1; i < pts.length; i += 1) {
+        const [x, y] = pts[i];
+        const nx = pts[i + 1];
+        if (!nx) { d += `L${x} ${y}`; break; }
+        const [px, py] = pts[i - 1];
+        const lin = Math.hypot(x - px, y - py);
+        const lout = Math.hypot(nx[0] - x, nx[1] - y);
+        const r = Math.min(R, lin / 2, lout / 2);
+        const ax = x - (Math.sign(x - px) * r);
+        const ay = y - (Math.sign(y - py) * r);
+        const bx = x + (Math.sign(nx[0] - x) * r);
+        const by = y + (Math.sign(nx[1] - y) * r);
+        d += `L${ax} ${ay}Q${x} ${y} ${bx} ${by}`;
+      }
+      return d;
+    },
+
+    head(pts) {
+      const [x, y] = pts[pts.length - 1];
+      const [px, py] = pts[pts.length - 2];
+      const dx = Math.sign(x - px);
+      const dy = Math.sign(y - py);
+      const L = 5;
+      const S = 3.2;
+      /* back along the arrival, then out either side of it */
+      const bx = x - dx * L;
+      const by = y - dy * L;
+      return `M${bx - dy * S} ${by + dx * S}L${x} ${y}L${bx + dy * S} ${by - dx * S}`;
+    },
+
+    read(n) {
+      const st = n.steps || [];
+      return st.join(n.flow ? ' → ' : ' · ');
+    },
+
+    html(s) {
+      const d = s.ia;
+      const G = {};
+      d.groups.forEach((g) => { G[g.id] = g; });
+      const N = {};
+      const count = {};
+      d.nodes.forEach((n) => {
+        N[n.id] = n;
+        count[n.g] = (count[n.g] || 0) + 1;
+        n._at = G[n.g].at + 0.012 * count[n.g];
+      });
+      const out = {};
+      d.edges.forEach((e) => { (out[e.f] = out[e.f] || []).push(e.t); });
+
+      const marks = (n) => {
+        const m = (n.card ? this.CARD : '') + (n.pin ? '<i class="fg-ia__pin">PIN</i>' : '')
+          + (n.tag ? `<i class="fg-ia__tag">${esc(n.tag)}</i>` : '');
+        return m ? `<span class="fg-ia__mk">${m}</span>` : '';
+      };
+      const meta = (n) => (n.m ? [].concat(n.m) : [])
+        .map((l) => `<span class="fg-ia__m">${esc(l)}</span>`).join('');
+
+      const groups = d.groups.map((g) =>
+        `<span class="fg-ia__g beat" data-g="${g.id}"` +
+          ` style="--at:${g.at.toFixed(3)};left:${g.x}px;top:${g.y}px">` +
+          `<b>${esc(g.n)}</b>${esc(g.t)}</span>`).join('');
+
+      const nodes = d.nodes.map((n) => {
+        const b = this.box(n);
+        return `<button type="button" class="fg-ia__n${n.kind ? ` fg-ia__n--${n.kind}` : ''} beat"` +
+            ` data-n="${n.id}" data-g="${n.g}" data-read="${esc(this.read(n))}"` +
+            ` style="--at:${n._at.toFixed(3)};left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">` +
+            `<span class="fg-ia__t"><span>${esc(n.t)}</span>${marks(n)}</span>` +
+            meta(n) +
+          `</button>`;
+      }).join('');
+
+      const wires = d.edges.map((e) => {
+        const pts = this.route(e, N);
+        const at = Math.min(0.84, Math.max(N[e.f]._at, N[e.t]._at) + 0.03);
+        const cls = `fg-ia__e${e.r === 'ret' ? ' fg-ia__e--ret' : ''}${e.soft ? ' fg-ia__e--soft' : ''}`;
+        return `<g class="${cls}" data-f="${e.f}" data-t="${e.t}" style="--at:${at.toFixed(3)}">` +
+            `<path class="fg-ia__line" d="${this.path(pts)}"${e.r === 'ret' ? '' : ' pathLength="1"'}/>` +
+            (e.soft ? '' : `<path class="fg-ia__head" d="${this.head(pts)}"/>`) +
+          `</g>`;
+      }).join('');
+
+      /* THE KEY, in the order the eye meets the marks */
+      const key = `<ul class="fg-ia__key beat" style="--at:0.03" aria-label="Key">` +
+          `<li><svg viewBox="0 0 22 8" aria-hidden="true"><path d="M1 4h19M16.5 1.2 20 4l-3.5 2.8"/></svg>Leads to</li>` +
+          `<li><svg viewBox="0 0 22 8" aria-hidden="true"><path d="M1 4h19" stroke-dasharray="3 3"/></svg>Returns</li>` +
+          `<li>${this.CARD}Card tap</li>` +
+          `<li><i class="fg-ia__pin">PIN</i>Wallet PIN</li>` +
+          `<li><i class="fg-ia__sw fg-ia__sw--danger"></i>Irreversible</li>` +
+          `<li><i class="fg-ia__sw fg-ia__sw--option"></i>Option only</li>` +
+        `</ul>`;
+
+      /* THE SAME DATA AS AN OUTLINE, for a frame too narrow to draw it in.
+         Each flow opens to its screens; "Leads to" is read off the edges, so
+         the outline cannot disagree with the drawing. */
+      const list = `<ol class="fg-ia__list">` + d.groups.map((g) =>
+          `<li><span class="fg-ia__lh"><b>${esc(g.n)}</b>${esc(g.t)}</span><ul>` +
+            d.nodes.filter((n) => n.g === g.id).map((n) => {
+              const to = (out[n.id] || []).map((id) => N[id].t);
+              return `<li><details><summary>` +
+                  `<span class="fg-ia__t"><span>${esc(n.t)}</span>${marks(n)}</span>` +
+                  (n.m ? `<span class="fg-ia__m">${esc([].concat(n.m).join(' · '))}</span>` : '') +
+                `</summary>` +
+                `<p class="fg-ia__steps">${esc(this.read(n))}</p>` +
+                (to.length ? `<p class="fg-ia__to">Leads to ${esc(to.join(', '))}</p>` : '') +
+              `</details></li>`;
+            }).join('') +
+          `</ul></li>`).join('') + `</ol>`;
+
+      return `<div class="fg-ia" data-ia="${esc(s.id)}">` +
+          `<div class="fg-ia__head">` +
+            (s.k ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.k)}</span>` : '') +
+            key +
+          `</div>` +
+          `<div class="fg-ia__fit">` +
+            `<div class="fg-ia__size" style="--w:${d.W}px;--h:${d.H}px">` +
+              `<div class="fg-ia__canvas" style="width:${d.W}px;height:${d.H}px">` +
+                `<svg class="fg-ia__wires" viewBox="0 0 ${d.W} ${d.H}" width="${d.W}" height="${d.H}"` +
+                  ` aria-hidden="true">${wires}</svg>` +
+                groups + nodes +
+              `</div>` +
+            `</div>` +
+          `</div>` +
+          `<p class="fg-ia__read beat" style="--at:0.1" aria-live="polite">` +
+            `<span class="fg-ia__hint">Point at any part to trace where it leads.</span></p>` +
+          list +
+        `</div>`;
+    },
+
+    /* --- fit, and the pointer ---------------------------------------------- */
+    bind(root) {
+      const scenes = $$('.fg-ia', root);
+      if (!scenes.length) return;
+      scenes.forEach((host) => this.wire(host));
+    },
+
+    wire(host) {
+      const fit = $('.fg-ia__fit', host);
+      const size = $('.fg-ia__size', host);
+      const canvas = $('.fg-ia__canvas', host);
+      const svg = $('.fg-ia__wires', host);
+      const read = $('.fg-ia__read', host);
+      const hint = read.innerHTML;
+      const W = parseFloat(size.style.getPropertyValue('--w'));
+      const H = parseFloat(size.style.getPropertyValue('--h'));
+
+      /* SCALE TO THE STAGE, WITH A FLOOR. 0.72 is where 10.5px meta type is
+         7.5px on screen — the smallest this drawing is allowed to get. Below
+         it the canvas holds that size and the frame pans instead. */
+      const MIN = 0.72;
+      const MAX = 1.12;
+      const doFit = () => {
+        const w = fit.clientWidth;
+        const h = fit.clientHeight;
+        if (!w || !h) return;
+        let k = Math.min(w / W, h / H, MAX);
+        const pan = k < MIN;
+        if (pan) k = Math.min(MIN, h / H);
+        size.style.setProperty('--k', k.toFixed(4));
+        fit.classList.toggle('is-pan', pan);
+      };
+      doFit();
+      if ('ResizeObserver' in window) new ResizeObserver(doFit).observe(fit);
+      else addEventListener('resize', doFit);
+
+      /* THE GRAPH, read back off the markup so there is one source for it */
+      const nodes = {};
+      $$('.fg-ia__n', canvas).forEach((b) => { nodes[b.dataset.n] = b; });
+      const wires = $$('.fg-ia__e', svg);
+
+      let pinned = null;
+      const clear = () => {
+        host.classList.remove('has-lit');
+        $$('.is-lit, .is-on', canvas).forEach((x) => x.classList.remove('is-lit', 'is-on'));
+        read.innerHTML = hint;
+      };
+      const light = (ids, on, label, text) => {
+        clear();
+        host.classList.add('has-lit');
+        const set = new Set(ids);
+        wires.forEach((w) => {
+          if (set.has(w.dataset.f) || set.has(w.dataset.t)) {
+            w.classList.add('is-lit');
+            /* last child paints last: a lit line is never under a dim one */
+            svg.appendChild(w);
+          }
+        });
+        const reach = new Set(ids);
+        wires.forEach((w) => {
+          if (w.classList.contains('is-lit')) { reach.add(w.dataset.f); reach.add(w.dataset.t); }
+        });
+        reach.forEach((id) => nodes[id] && nodes[id].classList.add('is-lit'));
+        ids.forEach((id) => nodes[id] && nodes[id].classList.add('is-on'));
+        if (on) on.classList.add('is-lit');
+        read.innerHTML = `<b>${esc(label)}</b><span>${esc(text || '')}</span>`;
+      };
+      const node = (b) => {
+        light([b.dataset.n], null, $('.fg-ia__t > span', b).textContent, b.dataset.read);
+      };
+      const group = (g) => {
+        const ids = Object.keys(nodes).filter((id) => nodes[id].dataset.g === g.dataset.g);
+        const names = ids.map((id) => $('.fg-ia__t > span', nodes[id]).textContent);
+        light(ids, g, g.textContent.replace(/^\d+/, ''), names.join(' · '));
+      };
+      const at = (e) => e.target.closest && (e.target.closest('.fg-ia__n') || e.target.closest('.fg-ia__g'));
+      const show = (x) => (x.classList.contains('fg-ia__g') ? group(x) : node(x));
+
+      canvas.addEventListener('pointerover', (e) => {
+        if (e.pointerType === 'touch' || pinned) return;
+        const x = at(e);
+        if (x) show(x);
+      });
+      canvas.addEventListener('pointerleave', (e) => {
+        if (e.pointerType === 'touch' || pinned) return;
+        clear();
+      });
+      /* A TAP PINS, a second tap on the same thing or on the paper lets go —
+         touch has no hover, and a highlight that vanishes as the finger
+         lifts has not been seen. */
+      canvas.addEventListener('click', (e) => {
+        const x = at(e);
+        if (!x || x === pinned) { pinned = null; clear(); return; }
+        pinned = x;
+        show(x);
+      });
+      canvas.addEventListener('focusin', (e) => { const x = at(e); if (x) show(x); });
+      canvas.addEventListener('focusout', () => { if (!pinned) clear(); });
+      host.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { pinned = null; clear(); if (document.activeElement) document.activeElement.blur(); }
+      });
+    },
+  };
+
   const SCENE = {
     /* --- an object on the black, with the title behind it ----------------
        Scenes 01, 02 and 27. The card sits in front of the letters and the
@@ -5759,34 +6059,83 @@
           `</div>` +
         `</div>`;
     },
-    /* --- 15 · a decision, and the photograph that answers it -------------
-       The film's texture changes exactly once, here: rendered black to a real
-       wall. The title card holds motionless and then the photograph arrives
-       as a hard cut. No effect is applied to the photographs — the jump is
-       the effect. */
-    photo: (s) => `<div class="fg-frame-full">${FSHOT(Object.assign({ full: true }, s.shot))}</div>` +
+    /* --- 15 · the rounds before the system ------------------------------
+       A wall of sheets pinned up at whatever angle they landed. They arrive
+       one at a time; then each review round slams its stamp onto the wall
+       and crosses its sheets out, a hand-drawn X drawing itself on the
+       scroll. The one sheet no round cut is left clean and lifts off the
+       wall. The headline holds at poster size over the dark foot, the way
+       the decision cards do. */
+    rounds: (s) => {
+      const W = s.wall || [];
+      const R = s.rounds || [];
+      const K = s.kept || {};
+      const arrive = SPREAD(W.length, 0.04, 0.34);
+      const rb = SPREAD(R.length, 0.42, 0.66);
+      /* sheet -> the round that cut it, and whose stamp it carries */
+      const cutAt = {};
+      const stampOn = {};
+      R.forEach((r, ri) => {
+        (r.cut || []).forEach((i) => { cutAt[i] = rb[ri] + 0.04; });
+        if (r.stamp != null) stampOn[r.stamp] = { k: r.k, r: r.r || 0, at: rb[ri] };
+      });
+      const keptAt = Math.min(0.8, rb[rb.length - 1] + 0.1);
+      if (K.i != null) stampOn[K.i] = { k: K.k || 'Kept', r: K.r || 0, at: keptAt, kept: true };
+      /* six first guesses and the one that stayed, in one 60 × 120 phone */
+      const GUESS = [
+        '<rect x="8" y="14" width="44" height="6" rx="1"/><rect x="8" y="26" width="44" height="30" rx="3"/>'
+          + '<path d="M8 66h44M8 76h44M8 86h44M8 96h30"/>',
+        '<rect x="8" y="16" width="26" height="8" rx="1"/><rect x="8" y="28" width="16" height="4" rx="1"/>'
+          + '<circle cx="14" cy="46" r="5"/><circle cx="26" cy="46" r="5"/><circle cx="38" cy="46" r="5"/><circle cx="50" cy="46" r="3"/>'
+          + '<path d="M8 64h44M8 74h44M8 84h44"/>',
+        '<rect x="8" y="14" width="20" height="20" rx="3"/><rect x="32" y="14" width="20" height="20" rx="3"/>'
+          + '<rect x="8" y="38" width="20" height="20" rx="3"/><rect x="32" y="38" width="20" height="20" rx="3"/>'
+          + '<path d="M8 70h44M8 80h44M8 90h44"/>',
+        '<rect x="12" y="14" width="36" height="22" rx="3"/><rect x="10" y="18" width="40" height="22" rx="3"/>'
+          + '<rect x="8" y="22" width="44" height="24" rx="3"/><rect x="8" y="54" width="20" height="8" rx="4"/>'
+          + '<rect x="32" y="54" width="20" height="8" rx="4"/><path d="M8 74h44M8 84h44"/>',
+        '<rect x="8" y="14" width="30" height="6" rx="1"/><path d="M8 44l8-6 7 4 9-10 8 5 12-9"/>'
+          + '<rect x="8" y="52" width="20" height="8" rx="4"/><rect x="32" y="52" width="20" height="8" rx="4"/>'
+          + '<path d="M8 72h44M8 82h44M8 92h44"/>',
+        '<path d="M8 16h12M24 16h12M40 16h12"/><path d="M8 20h12" stroke-width="2"/>'
+          + '<rect x="8" y="28" width="44" height="10" rx="2"/><rect x="8" y="42" width="44" height="10" rx="2"/>'
+          + '<rect x="8" y="56" width="44" height="10" rx="2"/><rect x="8" y="70" width="44" height="10" rx="2"/>',
+        /* the kept one: balance card with its line, two actions, the list, the bar */
+        '<rect x="8" y="12" width="44" height="34" rx="4" class="fill"/>'
+          + '<path d="M13 36l7-5 6 3 8-8 7 4 7-6"/><rect x="12" y="17" width="16" height="4" rx="1"/>'
+          + '<rect x="8" y="50" width="21" height="7" rx="3.5"/><rect x="31" y="50" width="21" height="7" rx="3.5"/>'
+          + '<path d="M8 66h44M8 76h44M8 86h44"/><rect x="10" y="102" width="40" height="10" rx="5"/>',
+      ];
+      /* the X is two strokes, each a little off true, as a marker would be */
+      const X = '<svg class="fg-rw__x" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
+        + '<path d="M9 12C34 34 58 58 93 89" pathLength="1"/><path d="M90 9C63 37 41 60 7 92" pathLength="1"/></svg>';
+      const sheets = W.map((w, i) => {
+        const st = stampOn[i];
+        const kept = K.i === i;
+        return `<div class="fg-rw__s beat${kept ? ' fg-rw__s--kept' : ''}" style="--x:${w.x};--y:${w.y};` +
+            `--w:${w.w};--r:${w.r}deg;--at:${arrive[i].toFixed(3)}` +
+            `${cutAt[i] != null ? `;--cut:${cutAt[i].toFixed(3)}` : ''}${kept ? `;--keep:${keptAt.toFixed(3)}` : ''}">` +
+            `<i class="fg-rw__pin"></i>` +
+            `<svg class="fg-rw__ph" viewBox="0 0 60 120" aria-hidden="true">` +
+              `<rect x="1" y="1" width="58" height="118" rx="9" class="body"/>${GUESS[(w.g || 0) % GUESS.length]}</svg>` +
+            (cutAt[i] != null ? X : '') +
+            (st ? `<span class="fg-rw__stamp${st.kept ? ' fg-rw__stamp--kept' : ''}"` +
+                ` style="--sr:${st.r}deg;--sa:${st.at.toFixed(3)}">${esc(st.k)}</span>` : '') +
+          `</div>`;
+      }).join('');
+      return `<div class="fg-rw" aria-hidden="true">${sheets}</div>` +
         `<div class="scn__in scn__in--foot">` +
-          (s.n ? `<span${AT(0.02)} class="fg-dec__n beat">${esc(s.n)}</span>` : '') +
+          (s.kicker ? `<span${AT(0.02)} class="fg-dec__n beat">${esc(s.kicker)}</span>` : '') +
           (s.h ? `<h2${AT(0.05)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
-          (s.p ? `<p${AT(0.42)} class="fg-p beat">${s.p}</p>` : '') +
-        `</div>` +
-        (s.cap ? `<p class="fg-cap">${esc(s.cap)}</p>` : ''),
+          (s.p ? `<p${AT(0.36)} class="fg-p beat">${s.p}</p>` : '') +
+        `</div>`;
+    },
 
-    /* --- 16 · the same thinking, cleaned up -----------------------------
-       A cross-dissolve rather than two pictures side by side, and the two
-       frames are aligned so a few boxes sit in the same place in both. That
-       alignment is what makes it read as one idea redrawn instead of two
-       unrelated images. */
-    /* NOT `full` HERE, and that was a real collapse. `full` means `position:
-       absolute; inset: 0` — it fills a frame that has its own size. These two
-       are PRINTED and put down: the paper treatment gives them padding, a
-       shadow and a degree of rotation, which needs a box of their own. Asking
-       for both left the scene as a 60px strip. */
-    cross: (s) => `<div class="fg-cross">` +
-          `<div>${FSHOT(s.a)}</div>` +
-          `<div class="fg-cross__b">${FSHOT(s.b)}</div>` +
-        `</div>` +
-        (s.cap ? `<p class="fg-cap">${esc(s.cap)}</p>` : ''),
+    /* --- 16 · the architecture -------------------------------------------
+       What was a whiteboard photograph cross-dissolving into its clean
+       redraw is the redraw itself, live: the app's structure from the design
+       file, drawn in on the scroll and traced under the pointer. See `IA`. */
+    ia: (s) => IA.html(s),
 
     /* --- 17 · two tracks, on purpose ------------------------------------
        Both advance at once, which is the point: the system churning and the
@@ -6798,6 +7147,8 @@
       if (Film.nav) film.classList.add('film--indexed');
 
       Film.bind(film);
+      /* the one scene you can point at, once it is in the document */
+      IA.bind(film);
 
       if (!location.hash) requestAnimationFrame(() => App.to(0));
     },

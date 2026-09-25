@@ -2205,29 +2205,222 @@ window.SITE = {
               ] },
 
 
-            /* THE SECOND DECISION AND ITS EVIDENCE IN ONE SCENE, because a
-               title card followed by its own proof is not two scenes. This is
-               also where the film's texture changes for the only time:
-               rendered black to a real wall, as a hard cut. */
-            { id: 'x0-dec-2', nav: 'Explorations', kind: 'photo', dur: 160,
-              n: 'Decision 02',
-              h: 'Four directions. Only one survived the people who’d have to sell it.',
-              p: 'The only way to argue about four directions is to see them at the same time.',
-              shot: { kind: 'photo', dia: 'wall', subject: 'Four directions pinned up together', ratio: 1.778,
-                of: 'Photograph — four shortlisted directions pinned up together, wide, shot straight on. Handheld and imperfect is right. Blur anything legible on the rejected three.' },
-              cap: 'Direction review — four candidates, one wall, everyone who had a say in the room' },
+            /* BEFORE THE SYSTEM, THE ROUNDS. What the reader has just been
+               shown — N45 and the app built on it — reads as if it arrived
+               finished. It did not: the direction was iterated many times
+               and taken, round after round, to the product managers, the
+               business development team and the CEO before one version was
+               kept. No count of iterations and no quotes, because neither
+               is on record.
 
-            /* THE STRUCTURE WAS ARGUED BEFORE IT WAS DRAWN, and the
-               cross-dissolve is aligned so two or three boxes sit in the same
-               place in both frames. Those anchors are what make it read as
-               one piece of thinking cleaned up rather than two unrelated
-               pictures. */
-            { id: 'x0-ia', kind: 'cross', dur: 130,
-              a: { kind: 'whiteboard', dia: 'board', subject: 'The IA session with the PM', ratio: 1.4, treat: 'paper',
-                of: 'Photograph — the information-architecture session with the PM. Boxes, arrows, crossings out. Shot square to the wall.' },
-              b: { kind: 'figma', dia: 'flow', subject: 'The same architecture, redrawn clean', ratio: 1.4, treat: 'paper',
-                of: 'The clean IA diagram in the product’s own type, aligned so its key boxes land on the photograph’s.' },
-              cap: 'Information architecture and flow mapping, with the PM, before a single screen was drawn' },
+               A WALL, NOT A ROW. Ten sheets pinned up at whatever angle they
+               landed, overlapping, running off the edge — the irregularity
+               is what makes it read as a working wall rather than a gallery.
+               Each round stamps the wall and crosses sheets out; the one that
+               survives all three is the only one left clean, and it lifts.
+
+               `wall` places each sheet: x / y in % of the wall, w in % of its
+               width, r in degrees, g picks the sketch drawn on it. `rounds`
+               name who reviewed, which sheets they cut, and which sheet
+               carries their stamp. */
+            { id: 'x0-rounds', nav: 'Explorations', kind: 'rounds', dur: 220,
+              kicker: 'Before N45',
+              h: 'None of this was the first version.',
+              p: 'Direction after direction, taken to the product managers, business development and the CEO — reworked, and taken back, until one held.',
+              wall: [
+                { x: 0,  y: 10, w: 12, r: -5.5, g: 0 },
+                { x: 10, y: 38, w: 10, r: 7,    g: 1 },
+                { x: 19, y: 0,  w: 13, r: 2.5,  g: 2 },
+                { x: 30, y: 30, w: 11, r: -8,   g: 3 },
+                { x: 40, y: 4,  w: 12, r: 4.5,  g: 4 },
+                { x: 51, y: 16, w: 15, r: -1.5, g: 6 },
+                { x: 66, y: 0,  w: 11, r: 6,    g: 5 },
+                { x: 74, y: 34, w: 12, r: -4,   g: 1 },
+                { x: 85, y: 6,  w: 11, r: 3,    g: 2 },
+                { x: 93, y: 38, w: 10, r: -9,   g: 0 },
+              ],
+              rounds: [
+                { k: 'Product review', cut: [0, 3, 8], stamp: 3, r: -9 },
+                { k: 'BD review',      cut: [1, 6, 9], stamp: 6, r: 7 },
+                { k: 'CEO review',     cut: [2, 4, 7], stamp: 4, r: -5 },
+              ],
+              kept: { i: 5, k: 'Kept', r: -3 } },
+
+            /* THE ARCHITECTURE, DRAWN FROM THE FILE AND NOT FROM MEMORY.
+               Every node below is a section of the X0 Mobile App Figma file
+               (page "1. UI"), and every line is a path the screens in that
+               file actually take — read off the frames, their order and the
+               arrows drawn between them, not off what a crypto wallet usually
+               has. Buy is a button on Home with no flow behind it, so it is
+               not here; Cypherock Cover is an option on the wallet screen
+               with no screens behind it, so it is drawn as an option only.
+
+               FIVE COLUMNS, TWO ROWS. The top row is the product's loop —
+               first run, a wallet, Home, what you do from Home, where it
+               lands. The bottom row is everything you manage from Profile.
+               Multi-screen flows are one node each; the screens themselves
+               are `steps`, read out underneath when a node is pointed at.
+
+               THE GEOMETRY IS STATED, in canvas units (1180 × 720), because
+               a layout that avoids crossings is a set of decisions and not a
+               solver's output. `x`/`y`/`w`/`h` place a node; an edge names
+               its two ends, how it is routed, and the trunk it runs along.
+               `flow` marks a node whose steps are a sequence (read out with
+               arrows) rather than a list of what it holds. Drawn by `IA` in
+               site.js. */
+            { id: 'x0-ia', kind: 'ia', dur: 230,
+              k: 'Information architecture',
+              ia: {
+                W: 1180, H: 720,
+                groups: [
+                  { id: 'run',   n: '01', t: 'First run',         x: 0,   y: 0,   at: 0.04 },
+                  { id: 'setup', n: '02', t: 'Wallet setup',      x: 248, y: 0,   at: 0.13 },
+                  { id: 'home',  n: '03', t: 'Home',              x: 496, y: 0,   at: 0.22 },
+                  { id: 'act',   n: '04', t: 'From Home',         x: 744, y: 0,   at: 0.31 },
+                  { id: 'log',   n: '05', t: 'Activity',          x: 992, y: 0,   at: 0.40 },
+                  { id: 'prof',  n: '06', t: 'Profile',           x: 496, y: 504, at: 0.49 },
+                  { id: 'wal',   n: '07', t: 'Wallet management', x: 0,   y: 504, at: 0.58 },
+                  { id: 'set',   n: '08', t: 'Settings',          x: 744, y: 504, at: 0.67 },
+                ],
+                nodes: [
+                  /* 01 · first run */
+                  { id: 'welcome', flow: true, g: 'run', t: 'Welcome', m: '4 intro screens · Consent', x: 0, y: 36,
+                    steps: ['Welcome', 'Meet X0', 'Security across cards', 'No seed phrase backup', '22,000+ currencies', 'Data consent'] },
+                  { id: 'device', g: 'run', t: 'Choose device', m: 'X0 or X1 · 1–4 cards', x: 0, y: 100,
+                    steps: ['Cypherock X0 or X1', 'How many cards'] },
+                  { id: 'tap', flow: true, g: 'run', t: 'Tap a card', m: 'Checks for wallets', x: 0, y: 164, card: true,
+                    steps: ['Intro', 'Tap to approve', 'New or existing user'] },
+                  { id: 'who', g: 'run', t: 'New or existing?', kind: 'decide', x: 0, y: 234, w: 150, h: 36,
+                    steps: ['New user: set up the cards', 'Existing user: read the wallets already on them'] },
+                  { id: 'cards', flow: true, g: 'run', t: 'New cards', m: 'Scan · Authenticate · Pair', x: 24, y: 292, w: 164, card: true,
+                    steps: ['Scan all four cards', 'Authenticate all four', 'Pair all four', 'Cards ready'] },
+                  { id: 'existing', flow: true, g: 'run', t: 'Existing cards', m: 'Reads wallets on cards', x: 24, y: 356, w: 164,
+                    steps: ['Tap the cards', 'Wallets found on them'] },
+
+                  /* 02 · a wallet */
+                  { id: 'options', g: 'setup', t: 'Wallet options', m: 'Open · Create · Import', kind: 'hub', x: 248, y: 36,
+                    steps: ['Wallets found on the cards', 'Create a new wallet', 'Import from a seed phrase', 'Restore with Cypherock Cover'] },
+                  { id: 'found', flow: true, g: 'setup', t: 'Found wallet', m: 'Open it directly', x: 272, y: 100, w: 164,
+                    steps: ['Pick a wallet found on the cards', 'Straight to Home'] },
+                  { id: 'create', flow: true, g: 'setup', t: 'Create wallet', m: 'Name · PIN · 4 cards', x: 272, y: 164, w: 164, card: true, pin: true,
+                    steps: ['Tap to approve', 'Up to four wallets', 'Name it', 'Confirm name & seed length', 'Set a PIN', 'Tap four cards in order', 'Created', 'First asset'] },
+                  { id: 'import', flow: true, g: 'setup', t: 'Import wallet', m: 'Seed phrase · 4 cards', x: 272, y: 228, w: 164, card: true,
+                    steps: ['Tap to approve', 'About seed phrases', 'Enter phrase or private key', 'Tap four cards in order', 'Imported', 'First asset'] },
+                  { id: 'cover', g: 'setup', t: 'Cypherock Cover', m: 'Subscription restore', kind: 'option', x: 272, y: 292, w: 164,
+                    steps: ['Offered on wallet options', 'No flow designed behind it yet'] },
+
+                  /* 03 · Home */
+                  { id: 'home', g: 'home', t: 'Home', m: ['Wallet switcher · Balance', 'Actions · Accounts'], kind: 'hub', tag: 'Tab 1', x: 496, y: 100, h: 64,
+                    steps: ['Combine portfolio, or one wallet', 'Balance', 'Send · Receive · Swap · Buy · Earn', 'Your accounts', 'Bell and gear in the header'] },
+                  { id: 'empty', flow: true, g: 'home', t: 'Empty', m: 'No wallets yet', kind: 'state', x: 520, y: 184, w: 164, h: 40,
+                    steps: ['No wallets', 'Add wallet', 'Wallet options'] },
+                  { id: 'offline', flow: true, g: 'home', t: 'Offline', m: 'Last synced · Retry', kind: 'state', x: 520, y: 236, w: 164, h: 40,
+                    steps: ['Prices may be outdated', 'Last synced', 'Tap to retry'] },
+
+                  /* 04 · from Home */
+                  { id: 'portfolio', g: 'act', t: 'Portfolio', m: 'Chart · Allocation · Assets', x: 744, y: 36,
+                    steps: ['1D to 1Y', 'Asset allocation', 'Asset list', 'Recent transactions'] },
+                  { id: 'notif', g: 'act', t: 'Notifications', m: 'Transactions · Security', x: 744, y: 100,
+                    steps: ['Received', 'Sent', 'Swapped', 'Swap failed', 'Transfer failed', 'Face ID enabled'] },
+                  { id: 'send', flow: true, g: 'act', t: 'Send', m: 'Recipient · Fee · Review', x: 744, y: 164, card: true, pin: true,
+                    steps: ['Wallet', 'Token', 'Recipient', 'Amount & note', 'Network fee', 'Review', 'PIN', 'Tap a card', 'Broadcast'] },
+                  { id: 'receive', flow: true, g: 'act', t: 'Receive', m: 'Token · Network · QR', x: 744, y: 228,
+                    steps: ['Wallet', 'Token', 'Confirm', 'Address & QR, per network', 'Address options'] },
+                  { id: 'swap', flow: true, g: 'act', t: 'Swap', m: 'Pair · Provider · Review', tag: 'Tab 2', x: 744, y: 292, card: true,
+                    steps: ['Wallet', 'Pay token', 'Receive token', 'Amount', 'Provider', 'Quote', 'Review', 'Tap a card', 'Complete — or failed, back to the start'] },
+                  { id: 'addacct', flow: true, g: 'act', t: 'Add account', m: 'Asset · Network · Accounts', x: 744, y: 356, card: true,
+                    steps: ['Select asset', 'Network', 'Tap a card', 'Checking the blockchain', 'Choose accounts', 'Added to portfolio'] },
+                  { id: 'earn', flow: true, g: 'act', t: 'Earn', m: 'Waitlist', tag: 'Tab 3', x: 744, y: 420,
+                    steps: ['Join the waitlist', 'Email', 'Notify me'] },
+
+                  /* 05 · where it lands */
+                  { id: 'txns', g: 'log', t: 'Transactions', m: 'Grouped by day · Filter', x: 992, y: 68,
+                    steps: ['Today, yesterday, by date', 'Filter sheet'] },
+                  { id: 'txd', g: 'log', t: 'Transaction details', m: 'Per type · Pending', kind: 'hub', x: 992, y: 228,
+                    steps: ['Sent', 'Received', 'Swapped', 'Pending'] },
+
+                  /* 06 · Profile */
+                  { id: 'profile', g: 'prof', t: 'Profile', m: 'Wallets · dApps · App', kind: 'hub', tag: 'Tab 4', x: 496, y: 540,
+                    steps: ['WalletConnect', 'Manage wallets', 'Add wallet', 'Recover wallet', 'App settings', 'Support · Terms'] },
+                  { id: 'wc', flow: true, g: 'prof', t: 'WalletConnect', m: 'URL · Wallet · Accounts', x: 520, y: 604, w: 164,
+                    steps: ['Paste a URL', 'Select wallet', 'Select accounts', 'Connecting', 'Connection details'] },
+
+                  /* 07 · the wallet's life */
+                  { id: 'addw', flow: true, g: 'wal', t: 'Add wallet', m: 'Returns to setup', x: 248, y: 540,
+                    steps: ['Opens wallet options', 'Create or import'] },
+                  { id: 'manage', g: 'wal', t: 'Manage wallets', m: 'Up to 4 · Swipe to delete', x: 248, y: 604,
+                    steps: ['Wallets, 3 of 4', 'Wallet settings', 'Swipe to delete'] },
+                  { id: 'recover', flow: true, g: 'wal', t: 'Recover wallet', m: '4 cards · Pick · PIN', x: 248, y: 668, card: true, pin: true,
+                    steps: ['Instructions', 'Tap all four cards', 'Wallets found', 'PIN', 'Tap two cards', 'The card missing it', 'The rest', 'Recovered — or none found, or no free slot'] },
+                  { id: 'wset', g: 'wal', t: 'Wallet settings', m: 'One wallet', x: 0, y: 540,
+                    steps: ['View seed phrase', 'Delete wallet'] },
+                  { id: 'seed', flow: true, g: 'wal', t: 'View seed phrase', m: 'Face ID · Tap to reveal', x: 24, y: 604, w: 164,
+                    steps: ['Face ID', 'Tap to reveal', '12, 18 or 24 words', 'Screenshots blocked'] },
+                  { id: 'delete', flow: true, g: 'wal', t: 'Delete wallet', m: '4 cards · PIN · Caution', kind: 'danger', x: 24, y: 668, w: 164, card: true, pin: true,
+                    steps: ['All four cards needed', 'PIN', 'Caution, confirmed', 'Tap four cards in order', 'Deleted'] },
+
+                  /* 08 · settings */
+                  { id: 'settings', g: 'set', t: 'Settings', m: 'Also from Home', kind: 'hub', x: 744, y: 540,
+                    steps: ['Account', 'Notifications', 'Security', 'Support · About', 'Legal'] },
+                  { id: 'prefs', g: 'set', t: 'Preferences', m: 'Currency · Language', x: 992, y: 540,
+                    steps: ['Preferred currency', 'Display language', 'Notifications'] },
+                  { id: 'security', g: 'set', t: 'Security', m: 'Passcode · Biometrics', x: 992, y: 604,
+                    steps: ['App lock', 'Set passcode', 'Biometrics', 'Manage passcode'] },
+                  { id: 'help', g: 'set', t: 'Help & legal', m: 'Support · About · Terms', x: 992, y: 668,
+                    steps: ['Support', 'About', 'Policies', 'Terms of use'] },
+                ],
+                /* `down` runs a column; `spine` hangs children off a node's
+                   left edge; `r` and `l` leave a node's side, run the trunk
+                   at `x` and enter the other node's facing side; `ret` is a
+                   return and carries its own points. */
+                edges: [
+                  { f: 'welcome', t: 'device', r: 'down' },
+                  { f: 'device', t: 'tap', r: 'down' },
+                  { f: 'tap', t: 'who', r: 'down' },
+                  { f: 'who', t: 'cards', r: 'spine' },
+                  { f: 'who', t: 'existing', r: 'spine' },
+                  { f: 'cards', t: 'options', r: 'r', x: 210, ty: 70 },
+                  { f: 'existing', t: 'options', r: 'r', x: 210, ty: 70 },
+
+                  { f: 'options', t: 'found', r: 'spine' },
+                  { f: 'options', t: 'create', r: 'spine' },
+                  { f: 'options', t: 'import', r: 'spine' },
+                  { f: 'options', t: 'cover', r: 'spine', soft: true },
+                  { f: 'found', t: 'home', r: 'r', x: 466 },
+                  { f: 'create', t: 'home', r: 'r', x: 466 },
+                  { f: 'import', t: 'home', r: 'r', x: 466 },
+
+                  { f: 'home', t: 'empty', r: 'spine', soft: true },
+                  { f: 'home', t: 'offline', r: 'spine', soft: true },
+                  { f: 'home', t: 'portfolio', r: 'r', x: 714 },
+                  { f: 'home', t: 'notif', r: 'r', x: 714 },
+                  { f: 'home', t: 'send', r: 'r', x: 714 },
+                  { f: 'home', t: 'receive', r: 'r', x: 714 },
+                  { f: 'home', t: 'swap', r: 'r', x: 714 },
+                  { f: 'home', t: 'addacct', r: 'r', x: 714 },
+                  { f: 'home', t: 'earn', r: 'r', x: 714 },
+
+                  { f: 'portfolio', t: 'txns', r: 'r', x: 962 },
+                  { f: 'notif', t: 'txns', r: 'r', x: 962 },
+                  { f: 'txns', t: 'txd', r: 'down', x: 1086 },
+                  { f: 'send', t: 'txd', r: 'r', x: 962 },
+                  { f: 'swap', t: 'txd', r: 'r', x: 962 },
+
+                  { f: 'profile', t: 'wc', r: 'spine' },
+                  { f: 'profile', t: 'settings', r: 'r', x: 714 },
+                  { f: 'profile', t: 'addw', r: 'l', x: 466 },
+                  { f: 'profile', t: 'manage', r: 'l', x: 466 },
+                  { f: 'profile', t: 'recover', r: 'l', x: 466 },
+                  { f: 'manage', t: 'wset', r: 'l', x: 210, ty: 564 },
+                  { f: 'wset', t: 'seed', r: 'spine' },
+                  { f: 'wset', t: 'delete', r: 'spine' },
+                  { f: 'addw', t: 'options', r: 'ret', pts: [[342, 540], [342, 400], [230, 400], [230, 50], [248, 50]] },
+
+                  { f: 'settings', t: 'prefs', r: 'r', x: 962 },
+                  { f: 'settings', t: 'security', r: 'r', x: 962 },
+                  { f: 'settings', t: 'help', r: 'r', x: 962 },
+                ],
+              } },
 
             /* HOW THE WORK ACTUALLY MOVED. Both tracks advance at once,
                which is the point: the system churning and the low-fidelity
