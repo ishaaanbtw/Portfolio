@@ -1441,9 +1441,10 @@ window.SITE = {
                  because they are the only place in the film where three
                  short phrases have to read as one row of equals. */
               pills: [
-                { i: 'box',    t: 'Same security' },
-                { i: 'people', t: 'More accessible' },
-                { i: 'bolt',   t: 'Built for everyone' },
+                { i: 'chip',   t: 'EAL6+' },
+                { i: 'split',  t: 'Shamir’s Secret Sharing' },
+                { i: 'code',   t: 'Open Source' },
+                { i: 'shield', t: 'Keylabs Audited' },
               ],
             },
 
@@ -1499,7 +1500,7 @@ window.SITE = {
                leaves the frame slowly and does not come back; three costs are
                struck through behind it. */
             { id: 'x0-subtract', nav: 'The Problem', kind: 'problem', dur: 170,
-              n: '03', kicker: 'The problem',
+              
               h: 'The phone was already in their hand.',
               h2: 'So we stopped shipping a screen.',
               p: 'Most hardware wallets still rely on their own screen and buttons. It adds cost, complexity and friction — for something people already have in their pocket.',
@@ -1522,17 +1523,18 @@ window.SITE = {
                  render. Both in % of the render's own box. */
               notes: [
                 { t: 'The same security layer. Just without the screen.', layout: 'row',
-                  x: 76, y: 6, lx: 80, ly: 23, dx: 72, dy: 34,
+                  x: 76, y: 6, lx: 80, ly: 23, dx: 71.5, dy: 38.8,
                   src: 'assets/img/x0/problem/thumb-chip.webp', label: 'Detail', alt: 'Close-up of the X0 card chip' },
                 { t: 'A card that lives in your wallet. Not on your desk.', layout: 'stack',
-                  x: 92, y: 66, lx: 92, ly: 84, dx: 76, dy: 84,
+                  x: 84, y: 70, lx: 84, ly: 88, dx: 73.2, dy: 88.6,
                   src: 'assets/img/x0/problem/thumb-edge.webp', label: 'Detail', alt: 'Close-up of the X0 card edge' },
               ] },
 
             /* THE TITLE CARD, and the one the reader will screenshot. The
                fourth word holds because it is the one nobody expects to
                survive the other three. */
-            { id: 'x0-brief', kind: 'words', dur: 140, dark: true,
+            { id: 'x0-brief', kind: 'words', dur: 200, dark: true,
+              mark: 'assets/img/x0/problem/mark-icon.webp',
               kicker: 'The brief, in four words',
               items: ['Affordable.', 'Mobile-first.', 'Simple.', 'Secure.'],
               p: 'The first three were the brief. The fourth was non-negotiable.' },
@@ -1588,7 +1590,7 @@ window.SITE = {
                a third of the column, the long one about unspecced features
                runs almost the full width, and `pad` opens a wider gap where
                the real conversation paused to think. */
-            { id: 'x0-brief-real', kind: 'msgs', dur: 190,
+            { id: 'x0-brief-real', kind: 'msgs', dur: 280,
               kicker: 'What was handed over',
               quotes: [
                 'They didn’t say <em>can you make us some screens.</em>',
@@ -1656,14 +1658,13 @@ window.SITE = {
 
                THE TURN. Everything before this chapter is the problem; everything
                after it is a consequence of the two decisions inside it. */
-            { id: 'x0-ch-3', nav: 'Direction', kind: 'mark', dur: 118,
-              n: '03', h: 'Finding the direction',
-              p: 'Two decisions, taken early, that every screen after them follows from.' },
+            /* (the 03 · Finding the direction chapter card was removed; the
+               Direction rail entry now points at the scene below) */
 
             /* THE CONTRADICTION CONVERTED INTO A DIRECTION. Each connector
                draws down and then its word appears, so the reader feels the
                logic close rather than reading a list of five nouns. */
-            { id: 'x0-logic', kind: 'chain', dur: 150,
+            { id: 'x0-logic', nav: 'Direction', kind: 'chain', dur: 200,
               items: [
                 'Same brand',
                 'Different audience',
@@ -1671,19 +1672,20 @@ window.SITE = {
                 'Different experience',
                 'A different design language',
               ],
-              h: 'A unique identity wasn’t a preference. It was the only way both products survive.' },
-
-            /* THE SET PIECE. The old interface comes apart in seven slices,
-               each on its own vector with its own lag, and the new one is
-               already underneath. Built from the two pictures the study
-               already had, and reversible: scrolling back reassembles X1,
-               because none of this is an animation with a direction. */
-            { id: 'x0-apart', kind: 'morph', dur: 180, dark: true,
-              over: 'assets/img/x0/x1.webp',
-              under: 'assets/img/x0/x0.webp',
-              underAlt: 'X0 — lighter, quieter, more air, a guided path through every flow',
-              h: 'Nothing was carried over except the reason to trust it.',
-              cap: 'CySync (X1, desktop) coming apart over X0 (mobile). Scroll back to reassemble it.' },
+              h: 'A unique identity wasn’t a preference. It was the only way both products survive.',
+              /* one brand in the middle, a product either side of it */
+              p: 'Two products. Distinct users. A shared foundation.<br>A design language built to unite, not compete.',
+              pair: {
+                left:  { src: 'assets/img/x0/problem/dir-fan.webp' },
+                right: { src: 'assets/img/x0/problem/dir-vault.webp' },
+                /* x / y: the stop, in the 2000 × 1183 grid; lift: dot to label top */
+                stops: [
+                  { x: 330,  y: 566,  at: 0.14, lift: 7.8,  k: 'Same brand',           t: 'A unified visual language<br>across both products.' },
+                  { x: 860,  y: 830,  at: 0.21, lift: 8.6,  k: 'Different audience',   t: 'Distinct needs.<br>Tailored experiences.' },
+                  { x: 1160, y: 1005, at: 0.28, lift: 10,   k: 'Different product',    t: 'Two form factors.<br>One cohesive identity.' },
+                  { x: 1700, y: 262,  at: 0.36, lift: -3.2, k: 'Different experience', t: 'Seamless, secure<br>and purpose-built.' },
+                ],
+              } },
 
             /* ==============================================================
                ACT III — THE DECISIONS (11–20)
@@ -1703,16 +1705,14 @@ window.SITE = {
                and then the eight-scene room. It is the one place a reader most
                needs to be told they are entering something, because the room
                changes ground and holds for six screens. */
-            { id: 'x0-ch-4', nav: 'Design System', kind: 'mark', dur: 118,
-              n: '04', h: 'Building the system',
-              p: 'N45 — the components, tokens and rules the product is assembled from.' },
+            /* x0-ch-4 chapter card removed. */
 
             /* THE CASE AGAINST, THEN THE ANSWER, on one pin. The left column
                fills while the right stays black — the asymmetry is
                uncomfortable on purpose, and the reader starting to want the
                answer is the scene's job. Then the left dims as the right
                fills, which is the whole argument in one gesture. */
-            { id: 'x0-n45', kind: 'split', dur: 190,
+            { id: 'x0-n45', nav: 'Design System', kind: 'split', dur: 190,
               left: {
                 title: 'Why not CySync',
                 items: [
@@ -2165,6 +2165,18 @@ window.SITE = {
                   src: 'assets/img/x0/system/controls.svg', pw: 265, ph: 52,
                   alt: 'Chip, toggle and stepper in their states' },
               ] },
+
+            /* THE SET PIECE. The old interface comes apart in seven slices,
+               each on its own vector with its own lag, and the new one is
+               already underneath. Built from the two pictures the study
+               already had, and reversible: scrolling back reassembles X1,
+               because none of this is an animation with a direction. */
+            { id: 'x0-apart', kind: 'morph', dur: 180, dark: true,
+              over: 'assets/img/x0/x1.webp',
+              under: 'assets/img/x0/x0.webp',
+              underAlt: 'X0 — lighter, quieter, more air, a guided path through every flow',
+              h: 'Nothing was carried over except the reason to trust it.',
+              cap: 'CySync (X1, desktop) coming apart over X0 (mobile). Scroll back to reassemble it.' },
 
             /* THE SECOND DECISION AND ITS EVIDENCE IN ONE SCENE, because a
                title card followed by its own proof is not two scenes. This is

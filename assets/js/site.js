@@ -4563,6 +4563,15 @@
       people: '<circle cx="9" cy="8" r="3.1"/><path d="M2.6 19.4c0-3.2 2.9-5.2 6.4-5.2s6.4 2 6.4 5.2"/>'
         + '<path d="M16.4 6.1a3.1 3.1 0 0 1 0 5.9M17.6 14.6c2.3.6 3.8 2.3 3.8 4.8"/>',
       bolt: '<path d="M13.4 2.4 5 13.4h5.6L10.6 21.6 19 10.6h-5.6Z"/>',
+      /* a chip, for the certified secure element */
+      chip: '<rect x="5" y="5" width="14" height="14" rx="2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/>'
+        + '<path d="M9 2.5V5M15 2.5V5M9 19v2.5M15 19v2.5M2.5 9H5M2.5 15H5M19 9h2.5M19 15h2.5"/>',
+      /* a key split in two, for Shamir's Secret Sharing */
+      split: '<circle cx="7.5" cy="12" r="3.6"/><path d="M11.1 12H21M17 12v3M20 12v2.2"/><path d="M7.5 5.2V3M7.5 21v-2.2"/>',
+      /* angle brackets, for open source */
+      code: '<path d="m8.5 7-5 5 5 5M15.5 7l5 5-5 5M13.6 4.5l-3.2 15"/>',
+      /* a shield with a tick, for the independent audit */
+      shield: '<path d="M12 2.8 19.6 5.6v6c0 4.6-3.2 8.2-7.6 9.6-4.4-1.4-7.6-5-7.6-9.6v-6Z"/><path d="m8.6 12 2.4 2.4 4.6-4.8"/>',
     },
 
     /* --- 00 · THE RECORD -------------------------------------------------
@@ -4942,7 +4951,30 @@
         `<ul class="fg-words">` + (s.items || []).map((t, i) =>
           `<li${AT(b[i])} class="beat">${esc(t)}</li>`).join('') + `</ul>` +
         (s.p ? `<p${AT(0.8)} class="fg-p beat">${s.p}</p>` : '') +
-      `</div>`;
+      `</div>` +
+      /* THE MARK, DRAWN AS THE WORDS ARRIVE. The outline of the Cypherock mark
+         is traced against the scroll (stroke-dashoffset off --p), its faces
+         fill in once the line closes, and then the finished app icon fades up
+         over it — from a sketch to the product in one scene. */
+      (s.mark ? `<div class="fg-brand" aria-hidden="true">` +
+          `<svg class="fg-brand__mark" viewBox="0 0 100 120.72" preserveAspectRatio="none">` +
+            /* a silver ramp for the line, top-left bright to bottom-right dim,
+               matching the light on the finished icon */
+            `<defs><linearGradient id="fgBrandInk" x1="0" y1="0" x2="1" y2="1">` +
+              `<stop offset="0" stop-color="#ffffff"/><stop offset="0.55" stop-color="#d9dbe0"/>` +
+              `<stop offset="1" stop-color="#8d9098"/></linearGradient>` +
+              `<linearGradient id="fgBrandFill" x1="0.1" y1="0" x2="0.9" y2="1">` +
+              `<stop offset="0" stop-color="#f2f3f5"/><stop offset="0.5" stop-color="#b9bbc1"/>` +
+              `<stop offset="1" stop-color="#6f727a"/></linearGradient></defs>` +
+            ['M0 64.71 39.42 120.52 69.94 75.61 85.38 75.5 64.4 106.3 60.14 100.23 55.63 106.99 64.56 120.72 100 68.64 65.55 68.49 39.63 106.56 15.18 72.01 30.67 71.83 43.74 90.1 48.25 83.31 35.29 64.94Z',
+             'M100 52.18 64.58 0 55.63 13.83 60.14 20.49 64.07 14.52 64.51 14.62 85.38 45.22 70.04 45.22 39.42 0.2 0.1 55.98 35.06 56.01 48.15 37.61 43.74 30.62 30.67 48.99 15.34 48.89 15.28 48.61 39.63 14.16 65.55 52.23Z']
+              .map((d, i) => `<path class="fg-brand__line fg-brand__line--${i + 1}" d="${d}" pathLength="1"/>`).join('') +
+          `</svg>` +
+          `<img class="fg-brand__icon" src="${url(s.mark)}" alt="" decoding="async" loading="lazy">` +
+          /* the shine: a band of light swept across the finished icon, masked
+             to the icon so it never spills onto the page */
+          `<i class="fg-brand__shine" style="--mk:url(${url(s.mark)})"></i>` +
+        `</div>` : '');
     },
 
     /* --- 06 / 11 · one thing, held --------------------------------------
@@ -5037,7 +5069,7 @@
       /* one at a time, and the last one lands with a third of the pin still
          to run — a conversation that finishes on the final frame has no
          silence after it, and the silence is where the reader thinks */
-      const b = SPREAD(items.length, 0.30, 0.72);
+      const b = SPREAD(items.length, 0.52, 0.9);
 
       const FRAG = {
         /* a wireframe card */
@@ -5072,8 +5104,10 @@
                throw the turn away. It clears before the first question. */
             (q.length
               ? `<div class="fg-swap fg-msgs__lead">` +
-                  `<p${AT(0.04, 0.19)} class="fg-quote beat beat--win beat--lead">${q[0]}</p>` +
-                  (q[1] ? `<p${AT(0.17, 0.30)} class="fg-quote beat beat--win">${q[1]}</p>` : '') +
+                  `<p${AT(0.02, 0.30)} class="fg-quote beat beat--win beat--lead">${q[0]}</p>` +
+                  /* THE FIRST LINE HOLDS FOR HALF A SCREEN; THE SECOND STAYS for the
+                     rest of the scene as the heading the conversation sits under. */
+                  (q[1] ? `<p${AT(0.28, 1.5)} class="fg-quote beat beat--win">${q[1]}</p>` : '') +
                 `</div>`
               : '') +
             /* THE TIME IS OUTSIDE THE BUBBLE, which is not a detail. Inside,
@@ -5151,12 +5185,88 @@
        reads as consequence. A list with arrows in it would read as a list. */
     chain: (s) => {
       const items = s.items || [];
-      const b = SPREAD(items.length, 0.08, 0.66);
-      return `<div class="scn__in scn__in--mid">` +
-        `<ul class="fg-chain">` + items.map((t, i) =>
-          `<li${AT(b[i])} class="beat">${esc(t)}</li>`).join('') + `</ul>` +
-        (s.h ? `<h2${AT(0.76)} class="fg-h fg-h--wide fg-h--mid beat">${s.h}</h2>` : '') +
-      `</div>`;
+      const P = s.pair;
+      if (!P) {
+        const b = SPREAD(items.length, 0.08, 0.66);
+        return `<div class="scn__in scn__in--mid">` +
+          `<ul class="fg-chain">` + items.map((t, i) =>
+            `<li${AT(b[i])} class="beat">${esc(t)}</li>`).join('') + `</ul>` +
+          (s.h ? `<h2${AT(0.76)} class="fg-h fg-h--wide fg-h--mid beat">${s.h}</h2>` : '') +
+        `</div>`;
+      }
+      /* THE ROAD, laid out on the reference's own 2000 × 1183 grid. The box
+         covers the stage at that aspect ratio (like object-fit: cover), every
+         element is placed in its percentages and every size is in cqw, so the
+         composition holds at any window and nothing drifts relative to the
+         road. The road draws itself through a mask; each stop lights as the
+         road reaches it. */
+      /* each sentence breaks after its third / fifth word, as in the
+         reference: "A unique identity / wasn't a preference. / It was the
+         only way / both products survive." */
+      const words = (h, from, to, cls, brk) => {
+        const w = String(h).split(' ');
+        const bb = SPREAD(w.length, from, to);
+        return `<span class="${cls}">` + w.map((t, i) =>
+          `<span class="fg-hw"><span style="--at:${bb[i].toFixed(3)}">${t}</span></span>` +
+          (i === brk - 1 ? '<br>' : '')).join(' ') + `</span>`;
+      };
+      const [h1, h2] = String(s.h || '').split(/(?<=\.)\s+/);
+      /* the road runs in from off the left edge and out past the right */
+      /* the road's line, from the sketch: in low from the left, over a hump,
+         down into a long trough, up and round a tight bend, and out along
+         the top to the right edge */
+      const S1 = 'M-400 700 C -266.7 680, -126.5 663.6, 0 640 C 115.7 618.4, 223.4 567.6, 330 566 C 429.6 564.5, 532.9 579.7, 620 622 C 710.3 665.9, 772.4 767.3, 860 830 C 951.6 895.6, 1057 980.9, 1160 1005 C 1254.2 1027, 1376.4 1024.5, 1450 985 C 1515.9 949.6, 1565.8 875.7, 1592 800 C 1623.2 709.9, 1572.9 565.1, 1596 470 C 1615.4 390.2, 1640.7 305.8, 1700 262 C 1767.8 211.9, 1892.5 224.4, 2000 212 C 2123.4 197.7, 2266.7 194.7, 2400 186';
+      const S2 = 'M0 0';
+      const S3 = 'M0 0';
+      const ROAD = S1;
+      const head = `<ul class="fg-dir__chain">` + items.slice(0, -1).map((t, i) =>
+            `<li${AT(0.02 + i * 0.03)} class="beat">${esc(t)}</li>`).join('') + `</ul>` +
+          `<h2 class="fg-h fg-dir__h">` + words(h1, 0.08, 0.14, 'fg-dir__h1', 3) + '<br>' +
+            (h2 ? words(h2, 0.13, 0.2, 'fg-dir__h2', 5) : '') + `</h2>` +
+          (s.p ? `<p${AT(0.2)} class="fg-dir__p beat">${s.p}</p>` : '');
+      const stops = (P.stops || []).map((st, i) =>
+        `<div class="fg-dir__stop" style="left:${(st.x / 20).toFixed(3)}%;top:${(st.y / 11.83).toFixed(3)}%;--at:${st.at};--lift:${st.lift}cqw">` +
+          `<i class="fg-dir__stem"></i><i class="fg-dir__dot"></i>` +
+          `<div class="fg-dir__lab"><b>${esc(st.k)}</b><span>${st.t}</span></div>` +
+        `</div>`).join('');
+      return `<div class="scn__in fg-dir__narrow">${head}</div>` +
+        `<div class="fg-dir"><div class="fg-dir__box">` +
+          `<div class="fg-dir__top">${head}</div>` +
+          `<i class="fg-dir__base fg-dir__base--l"></i>` +
+          `<svg class="fg-dir__road" viewBox="0 0 2000 1183" aria-hidden="true">` +
+            `<defs><mask id="fgDirMask" maskUnits="userSpaceOnUse" x="-700" y="-200" width="3400" height="1600">` +
+              `<path class="fg-dir__reveal" d="${ROAD}" pathLength="1"/></mask>` +
+              /* soft light: a wide low shadow, a tight contact shadow */
+              `<filter id="fgDirFar" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="18"/></filter>` +
+              `<filter id="fgDirNear" x="-10%" y="-10%" width="120%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>` +
+              `<filter id="fgDirSoft" x="-10%" y="-10%" width="120%" height="140%"><feGaussianBlur stdDeviation="1.2"/></filter>` +
+              `<filter id="fgDirCrown" x="-10%" y="-10%" width="120%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>` +
+              /* asphalt: fine fractal grain, tiled */
+              `<filter id="fgDirGrain" x="0" y="0" width="100%" height="100%">` +
+                `<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" stitchTiles="stitch"/>` +
+                `<feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.55 0"/></filter>` +
+              `<pattern id="fgDirAsphalt" patternUnits="userSpaceOnUse" width="240" height="240">` +
+                `<rect width="240" height="240" fill="#7a7b80"/>` +
+                `<rect width="240" height="240" filter="url(#fgDirGrain)" opacity="0.22"/></pattern></defs>` +
+            `<g mask="url(#fgDirMask)">` +
+              /* built up like a rendered slab: shadow, contact, side, rounded
+                 top edge, bevel, asphalt, a soft sheen down the crown, lanes */
+              `<path class="fg-dir__far" d="${ROAD}" filter="url(#fgDirFar)"/>` +
+              `<path class="fg-dir__near" d="${ROAD}" filter="url(#fgDirNear)"/>` +
+              `<path class="fg-dir__side" d="${ROAD}" filter="url(#fgDirSoft)"/>` +
+              `<path class="fg-dir__curb" d="${ROAD}"/>` +
+              `<path class="fg-dir__bevel" d="${ROAD}" filter="url(#fgDirSoft)"/>` +
+              `<path class="fg-dir__inner" d="${ROAD}" filter="url(#fgDirSoft)"/>` +
+              `<path class="fg-dir__tar" d="${ROAD}" stroke="url(#fgDirAsphalt)"/>` +
+              `<path class="fg-dir__crown" d="${ROAD}" filter="url(#fgDirCrown)"/>` +
+              `<path class="fg-dir__line" d="${S1}"/>` +
+            `</g>` +
+          `</svg>` +
+          `<img class="fg-dir__cards" src="${url(P.left.src)}" alt="" decoding="async" loading="lazy">` +
+          `<i class="fg-dir__plinth"></i>` +
+          `<img class="fg-dir__vault" src="${url(P.right.src)}" alt="" decoding="async" loading="lazy">` +
+          stops +
+        `</div></div>`;
     },
 
     /* --- 10 · one interface coming apart over another --------------------

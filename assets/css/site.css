@@ -20465,7 +20465,7 @@ body[data-page='project'] .tmode { display: none; }
 .fg-prob__kick b { font-size: 1rem; font-weight: 600; letter-spacing: 0.08em; color: #bcbdc2; }
 
 .film .scn--problem .fg-h {
-  font-size: min(clamp(2.2rem, 4.3vw, 4.75rem), 8.2svh);
+  font-size: min(clamp(2rem, 3.4vw, 3.75rem), 6.6svh);
   line-height: 0.95;
   letter-spacing: -0.045em;
   max-width: none;
@@ -20781,9 +20781,13 @@ img.fg-prob__hero { object-fit: contain; display: block; filter: drop-shadow(0 3
    decision. */
 .fg-prob__art { overflow: visible; }
 .fg-prob__stage {
-  width: min(100%, 48rem, calc(98svh * 0.982));
-  margin-left: -20%;
-  translate: 0 -12svh;
+  width: min(76%, 40rem, calc(80svh * 0.982));
+  /* CENTRED AS A GROUP: the notes hang ~12% past the render's right edge,
+     so the render sits that much left of true centre and the whole
+     composition — render plus notes — is centred in its column */
+  justify-self: center;
+  margin-left: 0;
+  translate: -6% 0;
 }
 .fg-prob__ring { width: 130%; left: 60%; border-color: rgba(16, 16, 18, 0.07); }
 .fg-prob__ring--2 { width: 92%; }
@@ -20832,3 +20836,712 @@ img.fg-prob__hero { object-fit: contain; display: block; filter: drop-shadow(0 3
   .scn--problem .fg-prob__dot { display: none; }
   .fg-prob__art { overflow: clip; }
 }
+
+/* --- the brief: the mark, traced and then made ------------------------------
+   Four overlapping phases off the scene's own --p, each a long ramp so no
+   step lands all at once:
+     in     0.00 → 0.10   the drawing area fades in (nothing is pre-drawn)
+     trace  0.04 → 0.48   both outlines draw, the lower one lagging
+     fill   0.36 → 0.60   the faces fill in, faint
+     icon   0.46 → 0.86   the finished icon rises out of the drawing — blur,
+                          scale and opacity together, eased — while the line
+                          work dissolves underneath it */
+.fg-brand {
+  --in: clamp(0, calc(var(--p) / 0.1), 1);
+  --t1: clamp(0, calc((var(--p) - 0.04) / 0.36), 1);
+  --t2: clamp(0, calc((var(--p) - 0.12) / 0.36), 1);
+  --fl: clamp(0, calc((var(--p) - 0.36) / 0.24), 1);
+  --icl: clamp(0, calc((var(--p) - 0.46) / 0.4), 1);
+  /* smoothstep, so the icon eases in and settles instead of ramping linearly */
+  --ic: calc(var(--icl) * var(--icl) * (3 - 2 * var(--icl)));
+  position: absolute;
+  z-index: 1;
+  right: calc(var(--fg-gut) + 4vw);
+  top: 50%;
+  translate: 0 -50%;
+  width: clamp(8rem, 13vw, 11.5rem);
+  aspect-ratio: 1;
+  pointer-events: none;
+  opacity: var(--in);
+}
+.fg-brand__mark {
+  /* PLACED ON THE ICON'S OWN LOGO — measured off the artwork: the metal mark
+     spans 21–78% across and 15–83% down the icon, so the line lands exactly
+     where the finished logo appears and the hand-off reads as one object */
+  position: absolute;
+  left: 21%;
+  top: 14.8%;
+  width: 57%;
+  height: 68.7%;
+  overflow: visible;
+  opacity: calc(1 - var(--ic));
+  /* a soft glow that builds with the line */
+  filter: drop-shadow(0 0 calc(var(--t1) * 6px) rgba(255, 255, 255, calc(var(--t1) * 0.35)));
+}
+/* THE LINE FADES IN AS IT DRAWS: faint and thin at the first stroke,
+   brightening and thickening to full as the outline closes, in a silver
+   ramp rather than flat white. */
+.fg-brand__line {
+  --tt: var(--t1);
+  fill: rgba(255, 255, 255, calc(var(--fl) * 0.1));
+  stroke: url(#fgBrandInk);
+  stroke-opacity: calc(0.12 + var(--tt) * 0.83);
+  stroke-width: calc(0.35px + var(--tt) * 0.5px);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: calc(1 - var(--tt));
+}
+.fg-brand__line--2 { --tt: var(--t2); }
+.fg-brand__icon {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: var(--ic);
+  /* no scale: the icon's logo has to sit exactly on the traced line */
+  /* no dark drop-shadow: on a near-black ground it only draws a darker ring */
+  filter: blur(calc((1 - var(--ic)) * 14px));
+}
+@media (max-width: 46rem) {
+  .fg-brand { top: auto; bottom: 7svh; translate: none; right: var(--fg-gut); width: 8rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-brand__mark { opacity: 0; }
+  .fg-brand__icon { opacity: 1; filter: none; scale: 1; }
+}
+
+/* --- ONE TYPE SCALE FOR THE LIGHT CHAPTER SCENES ---------------------------
+   The insight (03) and the problem (04) sit back to back and were set at
+   different sizes, leadings and label styles, so the second read as a
+   different document. They share one ramp now: the same headline size and
+   leading, the same grey second line at full size, the same label and the
+   same paragraph. */
+.film { --fg-chap-h: min(clamp(2.2rem, 3.9vw, 4.25rem), 7.4svh); }
+.film .scn--insight .fg-h,
+.film .scn--problem .fg-h {
+  font-size: var(--fg-chap-h);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+  font-weight: 560;
+}
+.film .scn--insight .fg-h { max-width: 12ch; }
+.fg-ins__sub,
+.fg-prob__sub {
+  display: block;
+  margin-top: 0;
+  font-size: 1em;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: #8e8f95;
+  max-width: 17ch;
+}
+.scn--insight .fg-kick,
+.fg-prob__kick {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--fg-quiet);
+}
+.film .scn--insight .fg-p,
+.film .scn--problem .fg-p {
+  font-size: clamp(0.9375rem, 1.1vw, 1.0625rem);
+  line-height: 1.55;
+  max-width: 40ch;
+  color: var(--fg-dim);
+}
+@media (max-width: 46rem) {
+  .film { --fg-chap-h: clamp(1.75rem, 8vw, 2.4rem); }
+}
+
+/* --- 04 · MIRRORED: the render on the left, the copy set right ------------
+   The words hang off the right margin, right-aligned, and the object takes
+   the left — the same composition this scene had when it was the strike. */
+@media (min-width: 46.01rem) {
+  .fg-prob { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
+  .fg-prob__art { order: -1; }
+  .fg-prob__copy { justify-items: end; text-align: right; }
+  .fg-prob__main, .fg-prob__sub { margin-left: auto; }
+  .fg-prob__cmp { justify-self: end; }
+  .fg-prob__cmp li { text-align: left; }
+  .fg-prob__stage { justify-self: start; translate: 0 0; margin-left: -2%; }
+}
+@media (min-width: 46.01rem) and (max-width: 80rem) {
+  .fg-prob { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
+  .fg-prob__stage { width: min(88%, 32rem); margin-left: 0; }
+}
+
+/* --- 04 · ARRIVAL, QUIETLY -------------------------------------------------
+   Nothing is on the stage before the object is: the orbit rings are gone,
+   and the floor shadow belongs to the render, so it arrives with it. Then,
+   in order and each on its own soft ramp:
+     0.02 → 0.26  the render rises 2rem out of a light blur and settles
+     0.06 → 0.30  its floor shadow gathers underneath
+     0.20 → 0.50  the ghost cards fan out of the card
+     0.04 → 0.34  headline, second line, paragraph (the existing beats)
+     0.30 → 0.40  the two comparison cards
+     0.40 → 0.60  the dots, the leader lines, the notes */
+.fg-prob__ring { display: none; }
+.fg-prob__stage {
+  --hr: clamp(0, calc((var(--p) - 0.02) / 0.24), 1);
+  --he: calc(var(--hr) * var(--hr) * (3 - 2 * var(--hr)));
+}
+.scn--problem .fg-prob__herowrap.beat {
+  opacity: var(--he);
+  translate: 0 calc((1 - var(--he)) * 2rem);
+  scale: calc(0.97 + var(--he) * 0.03);
+  filter: blur(calc((1 - var(--he)) * 8px));
+}
+.fg-prob__floor { opacity: clamp(0, calc((var(--p) - 0.06) / 0.24), 1); }
+.fg-prob__ghost { --f: clamp(0, calc((var(--p) - 0.2) / 0.3), 1); }
+/* the dots open rather than appear */
+.fg-prob__dot.beat { scale: var(--o); translate: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .scn--problem .fg-prob__herowrap.beat { opacity: 1; translate: 0; scale: 1; filter: none; }
+  .fg-prob__floor { opacity: 1; }
+  .fg-prob__ghost { --f: 1; }
+}
+
+/* --- 04 · THE NOTES FLOAT ABOVE THE RENDER --------------------------------
+   Depth by parallax: over the scene the render drifts slowly down, the note
+   text drifts up a little, and each close-up drifts up further still — three
+   planes moving at three speeds, so the notes read as hovering above the
+   object rather than printed on it. A deeper, softer two-layer shadow and a
+   hairline of light on the top edge give them height when still. */
+.scn--problem .fg-prob__herowrap.beat {
+  translate: 0 calc((1 - var(--he)) * 2rem + (var(--p) - 0.5) * 18px);
+}
+.fg-prob__note p,
+.fg-prob__thumb {
+  will-change: translate;
+  transition: none;
+}
+.fg-prob__note p {
+  translate: 0 calc((0.5 - var(--p)) * 26px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 6px rgba(20, 20, 26, 0.05),
+    0 24px 48px -8px rgba(20, 20, 26, 0.16);
+}
+.fg-prob__thumb {
+  translate: 0 calc((0.5 - var(--p)) * 64px);
+  rotate: calc((0.5 - var(--p)) * 3deg);
+  box-shadow:
+    0 2px 6px rgba(20, 20, 26, 0.08),
+    0 34px 60px -10px rgba(20, 20, 26, 0.26);
+}
+/* the second note sits a plane higher than the first */
+.fg-prob__note:last-of-type p { translate: 0 calc((0.5 - var(--p)) * 40px); }
+.fg-prob__note:last-of-type .fg-prob__thumb { translate: 0 calc((0.5 - var(--p)) * 90px); }
+@media (prefers-reduced-motion: reduce) {
+  .fg-prob__note p, .fg-prob__thumb { translate: none; rotate: none; }
+}
+
+/* the dots and their lines ride with the render, so they stay on the chip
+   and the XO mark while the render drifts */
+.fg-prob__dot, .fg-prob__lines { translate: 0 calc((var(--p) - 0.5) * 18px); }
+.fg-prob__dot.beat { translate: 0 calc((var(--p) - 0.5) * 18px); }
+
+
+
+/* the markers sit BESIDE what they point at, not on it: a small dot with a
+   thin ring, so the chip and the XO mark stay fully visible */
+.fg-prob__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* the four credentials: one even gap in both directions, and a two-column
+   grid so the rows line up rather than ragging */
+.fg-pills {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  justify-items: stretch;
+  gap: 0.6rem;
+}
+.fg-pills li { justify-self: stretch; }
+.fg-pills li { justify-content: flex-start; padding: 0.62rem 1.1rem 0.62rem 0.95rem; gap: 0.55rem; }
+@media (max-width: 46rem) {
+  .fg-pills { gap: 0.45rem; }
+  .fg-pills li { padding: 0.5rem 0.85rem 0.5rem 0.75rem; }
+}
+
+/* --- the brief: trace → fill → reveal → shine -----------------------------
+     trace  0.04 → 0.40   the outline draws, fading in as it goes
+     fill   0.36 → 0.52   the faces fill with a silver ramp
+     icon   0.50 → 0.76   the finished icon resolves over the filled mark
+     shine  0.78 → 0.92   one quick band of light sweeps across it */
+.fg-brand {
+  --t1: clamp(0, calc((var(--p) - 0.04) / 0.30), 1);
+  --t2: clamp(0, calc((var(--p) - 0.10) / 0.30), 1);
+  --fl: clamp(0, calc((var(--p) - 0.36) / 0.16), 1);
+  --icl: clamp(0, calc((var(--p) - 0.50) / 0.26), 1);
+  --sh: clamp(0, calc((var(--p) - 0.78) / 0.14), 1);
+}
+.fg-brand__line {
+  fill: url(#fgBrandFill);
+  fill-opacity: calc(var(--fl) * 0.92);
+}
+.fg-brand__shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  -webkit-mask: var(--mk) center / contain no-repeat;
+  mask: var(--mk) center / contain no-repeat;
+  background: linear-gradient(115deg,
+    rgba(255, 255, 255, 0) 38%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 62%) no-repeat;
+  background-size: 250% 100%;
+  background-position: calc(100% - var(--sh) * 100%) 0;
+  /* visible only while the band is crossing */
+  opacity: calc(min(var(--sh) * 6, 1) * min((1 - var(--sh)) * 6, 1));
+  mix-blend-mode: screen;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-brand__shine { display: none; }
+}
+
+/* --- the brief: "Secure." shines ------------------------------------------
+   React Bits' ShinyText, as plain CSS: the word is filled with a 120° ramp —
+   base silver, a white band at 50%, base again — clipped to the glyphs, and
+   the ramp slides from 150% to -50% every 2s (speed 2, delay 0, direction
+   left). Only the last word, because it is the one that holds. */
+.fg-words li:last-child {
+  background-image: linear-gradient(120deg,
+    #b5b5b5 0%, #b5b5b5 35%, #ffffff 50%, #b5b5b5 65%, #b5b5b5 100%);
+  background-size: 200% auto;
+  background-position: 150% center;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: fg-shiny 2s linear infinite;
+}
+@keyframes fg-shiny {
+  from { background-position: 150% center; }
+  to   { background-position: -50% center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-words li:last-child { animation: none; background-position: 50% center; }
+}
+
+/* --- what was handed over: the conversation sits UNDER the line ------------
+   The thread no longer rises into the heading. It stays in its own row below
+   the quote, the column packs from the top, and the newest messages land at
+   the bottom of it. */
+.fg-msgs__talk { align-content: start; }
+.fg-msgs__lead { position: relative; z-index: 3; margin-bottom: clamp(0.5rem, 2vh, 1.25rem); }
+.fg-thread,
+.fg-thread { translate: none; }
+@media (max-width: 46rem) { .fg-thread { translate: none; } }
+
+/* --- "Secure." set apart, and a shine you can't miss ------------------------
+   The first three step right back (dark grey) so the fourth is the only word
+   at near-white; the shine is a wide, bright band that crosses in 1.4s and
+   then rests for 1.6s, so each pass reads as an event rather than a shimmer. */
+.fg-words li:not(:last-child) { color: #4b4c52; }
+.fg-words li:last-child {
+  background-image: linear-gradient(110deg,
+    #b4b6bc 0%, #b4b6bc 36%,
+    #ffffff 46%, #ffffff 54%,
+    #b4b6bc 64%, #b4b6bc 100%);
+  background-size: 250% auto;
+  animation: fg-shiny2 3s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.12));
+}
+@keyframes fg-shiny2 {
+  0%   { background-position: 130% center; }
+  47%  { background-position: -30% center; }
+  100% { background-position: -30% center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-words li:last-child { animation: none; background-position: 50% center; }
+}
+
+/* --- the logic chain: one row, and it fits --------------------------------
+   The brutalist single line stays — four small steps and the conclusion
+   jumping in scale at the end of the same row. What changed is that it is
+   sized off the column instead of bleeding past it: the rules shrink first,
+   the steps a little, and the conclusion is capped so the whole line always
+   ends inside the frame. */
+.scn--chain .fg-chain {
+  margin-inline: 0;
+  padding-inline: 0;
+  justify-content: center;
+  max-width: 100%;
+}
+.fg-chain li { font-size: clamp(0.75rem, 1vw, 1rem); }
+.fg-chain li::before { width: clamp(0.75rem, 2.4vw, 3.5rem); margin-inline: clamp(0.4rem, 0.9vw, 0.9rem); }
+.fg-chain li:last-child { font-size: clamp(1rem, 2.1vw, 2rem); }
+
+/* --- direction: the chain, the headline, and one brand / two products ---- */
+.scn--chain .fg-chain li { clip-path: inset(-0.2em -0.2em calc((1 - var(--o)) * 100%) -0.2em); translate: 0 calc((1 - var(--o)) * 0.9em); opacity: 1; }
+.fg-h--words .fg-hw { display: inline-block; overflow: clip; vertical-align: top; padding: 0.02em 0.02em 0.12em; margin: -0.02em -0.02em -0.12em; }
+.fg-h--words .fg-hw > span {
+  --wo: clamp(0, calc((var(--p) - var(--at)) * 9), 1);
+  --we: calc(1 - (1 - var(--wo)) * (1 - var(--wo)) * (1 - var(--wo)));
+  display: inline-block;
+  translate: 0 calc((1 - var(--we)) * 105%);
+}
+.film .scn--chain .fg-h--words { font-size: min(clamp(1.9rem, 3.8vw, 3.6rem), 6.4svh); max-width: 22ch; }
+
+.fg-tri {
+  position: relative;
+  width: 100%;
+  max-width: 64rem;
+  justify-self: center;
+  display: grid;
+  grid-template-columns: 1fr 12rem 1fr;
+  grid-template-rows: min(26svh, 14rem) auto;
+  align-items: center;
+  column-gap: 0;
+  row-gap: clamp(1.25rem, 3.5vh, 2rem);
+  margin-top: clamp(0.5rem, 2.5vh, 1.5rem);
+}
+.fg-tri__wires { position: absolute; left: 0; right: 0; top: 0; width: 100%; height: calc(min(26svh, 14rem) * 1.2); overflow: visible; pointer-events: none; }
+.fg-tri__wires path { fill: none; stroke: rgba(16, 16, 18, 0.13); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.fg-tri__img { margin: 0; height: 100%; display: grid; place-items: center; position: relative; z-index: 1; filter: drop-shadow(0 22px 24px rgba(20, 20, 26, 0.18)); }
+.fg-tri__img img { max-height: 100%; max-width: 72%; width: auto; object-fit: contain; }
+.fg-tri__mid { display: flex; align-items: center; justify-content: center; gap: 0.85rem; position: relative; z-index: 1; }
+.fg-tri__mid i { width: 5px; height: 5px; border-radius: 50%; background: var(--fg-ink); }
+.fg-tri__mid svg { width: 2.4rem; height: auto; }
+.fg-tri__mid path { fill: none; stroke: var(--fg-ink); stroke-width: 3; stroke-linejoin: round; }
+.fg-tri__cap { display: grid; gap: 0.35rem; text-align: center; justify-items: center; }
+.fg-tri__cap b { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase; color: var(--fg-ink); }
+.fg-tri__cap span { font-size: 0.8125rem; line-height: 1.45; color: var(--fg-dim); max-width: 16rem; }
+.fg-tri__cap--m span { max-width: 12rem; }
+.fg-tri__cap--l { grid-column: 1; grid-row: 2; }
+.fg-tri__cap--m { grid-column: 2; grid-row: 2; }
+.fg-tri__cap--r { grid-column: 3; grid-row: 2; }
+.fg-tri__cap--m { margin-top: -1.5rem; }
+
+@media (max-width: 46rem) {
+  .fg-tri { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; row-gap: 1rem; }
+  .fg-tri__wires { display: none; }
+  .fg-tri__mid { grid-column: 1 / -1; grid-row: 1; }
+  .fg-tri__cap--m { grid-column: 1 / -1; grid-row: 2; margin-top: 0; }
+  .fg-tri__img { grid-row: 3; height: 18svh; }
+  .fg-tri__img--l { grid-column: 1; }
+  .fg-tri__img--r { grid-column: 2; }
+  .fg-tri__cap--l { grid-column: 1; grid-row: 4; }
+  .fg-tri__cap--r { grid-column: 2; grid-row: 4; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-h--words .fg-hw > span { translate: none; }
+}
+@media (max-width: 46rem) {
+  .fg-chain li::before { width: 0.75rem; height: 1px; margin: 0 0.5rem 0 0; background: var(--fg-line); scale: var(--o) 1; transform-origin: left; }
+  .fg-chain li:first-child::before { display: none; }
+}
+
+/* --- direction: the road, with the argument written on it -----------------
+     0.02 → 0.32  the road draws itself from the top-left
+     each word    fades up as the road reaches it (--at per word)
+     0.30 → 0.36  the dashed centre line comes in
+     0.33 → 0.42  the headline, inside the loop, word by word
+     0.46         the illustration underneath */
+.fg-roadwrap {
+  position: relative;
+  width: min(100%, 74rem);
+  aspect-ratio: 2000 / 680;
+  justify-self: center;
+  margin-top: -2svh;
+}
+.fg-road {
+  --rd: clamp(0, calc((var(--p) - 0.02) / 0.30), 1);
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.fg-road path { fill: none; stroke-linejoin: round; }
+.fg-road__bed {
+  stroke: #eeeef1;
+  stroke-width: 70;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: calc(1 - var(--rd));
+}
+.fg-road__lane {
+  stroke: #d2d3d7;
+  stroke-width: 2;
+  stroke-dasharray: 16 14;
+  opacity: clamp(0, calc((var(--p) - 0.30) / 0.06), 1);
+}
+.fg-road__t {
+  --to: clamp(0, calc((var(--p) - var(--at)) * 14), 1);
+  font-size: 25px;
+  font-weight: 480;
+  fill: #55565c;
+  dominant-baseline: central;
+  opacity: var(--to);
+}
+.fg-road__t--end { font-size: 36px; font-weight: 580; fill: #101012; letter-spacing: -0.02em; }
+.fg-road__h {
+  position: absolute;
+  left: 56.5%;
+  top: 57%;
+  translate: -50% -50%;
+  margin: 0;
+  width: max-content;
+  max-width: 19ch;
+  text-align: center;
+}
+.film .scn--chain .fg-road__h { font-size: min(clamp(1.4rem, 2.7vw, 2.9rem), 5.4svh); line-height: 1.02; }
+/* the flat chain and the plain headline are the narrow-screen fallback */
+.fg-chain--narrow, .fg-h--narrow { display: none; }
+.scn--chain .scn__in:has(.fg-roadwrap) { gap: clamp(0.25rem, 1.5vh, 1rem); }
+.fg-roadwrap + .fg-chain + .fg-h + .fg-tri,
+.scn--chain .fg-tri { grid-template-rows: min(22svh, 12rem) auto; margin-top: 0; }
+.scn--chain .fg-tri__wires { height: calc(min(22svh, 12rem) * 1.2); }
+@media (max-width: 46rem) {
+  .fg-roadwrap { display: none; }
+  .fg-chain--narrow { display: flex; }
+  .fg-h--narrow { display: block; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-road { --rd: 1; }
+  .fg-road__t { opacity: 1; }
+}
+
+.scn--chain .fg-tri__img--l img { max-width: 58%; }
+
+/* === direction: the road, on the reference grid =============================
+   The box is 2000 × 1183 units, covering the stage. Positions are % of it,
+   type is cqw of it — so the page is the reference at any size. */
+.scn--chain .scn__stage:has(.fg-dir) {
+  background:
+    radial-gradient(40% 45% at 16% 86%, rgba(226, 222, 216, 0.55), rgba(226, 222, 216, 0) 70%),
+    radial-gradient(35% 40% at 88% 58%, rgba(232, 228, 222, 0.45), rgba(232, 228, 222, 0) 70%),
+    radial-gradient(60% 40% at 55% 100%, rgba(236, 233, 228, 0.5), rgba(236, 233, 228, 0) 70%),
+    #ffffff;
+}
+.fg-dir { position: absolute; inset: 0; overflow: clip; pointer-events: none; }
+.fg-dir__box {
+  --rd: clamp(0, calc((var(--p) - 0.06) / 0.32), 1);
+  position: absolute;
+  left: 50%; top: 50%;
+  /* contain, not cover: the whole composition is always on screen */
+  width: min(100%, 169.06svh);
+  aspect-ratio: 2000 / 1183;
+  translate: -50% -50%;
+  container-type: inline-size;
+}
+.fg-dir__narrow { display: none; }
+
+/* top: chain, headline, subline — centred on x = 1020 */
+.fg-dir__top {
+  position: absolute; left: 51%; top: 3.6%; width: 60%;
+  translate: -50% 0;
+  display: grid; justify-items: center; text-align: center;
+  z-index: 3;
+}
+.fg-dir__chain { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; }
+.fg-dir__chain li { display: flex; align-items: center; font-size: 0.95cqw; font-weight: 400; color: #5d5e63; white-space: nowrap; letter-spacing: -0.005em; }
+.fg-dir__chain li + li::before { content: ''; width: 3.4cqw; height: 1px; margin-inline: 1.15cqw; background: rgba(16, 16, 18, 0.2); }
+.film .scn--chain .fg-dir__h {
+  margin: 5.7cqw 0 0;
+  font-size: 4.05cqw;
+  line-height: 0.965;
+  letter-spacing: -0.034em;
+  max-width: none;
+  width: auto;
+  text-align: center;
+}
+.fg-dir__h1 { font-weight: 660; color: #0b0b0c; }
+.fg-dir__h2 { font-weight: 400; color: #1c1c1e; }
+.fg-dir__h .fg-hw { display: inline-block; overflow: clip; vertical-align: top; padding: 0.02em 0.02em 0.14em; margin: -0.02em -0.02em -0.14em; }
+.fg-dir__h .fg-hw > span {
+  --wo: clamp(0, calc((var(--p) - var(--at)) * 10), 1);
+  display: inline-block;
+  translate: 0 calc((1 - var(--wo)) * (1 - var(--wo)) * 105%);
+}
+.fg-dir__p { margin: 1.35cqw 0 0; font-size: 1.1cqw; line-height: 1.45; color: #9a9ba0; letter-spacing: -0.005em; }
+
+/* road */
+.fg-dir__road { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; z-index: 1; }
+.fg-dir__road path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.fg-dir__reveal { stroke: #fff; stroke-width: 150; stroke-linecap: butt; stroke-dasharray: 1 1; stroke-dashoffset: calc(1 - var(--rd)); }
+.fg-dir__shade { stroke: rgba(120, 104, 88, 0.13); stroke-width: 92; transform: translate(0, 14px); }
+.fg-dir__edge { stroke: #f1eeea; stroke-width: 80; }
+.fg-dir__bed { stroke: #fbfaf8; stroke-width: 74; }
+.fg-dir__lit { stroke: #ffffff; stroke-width: 44; transform: translate(0, -7px); opacity: 0.9; }
+.fg-dir__line { stroke: #6f7075; stroke-width: 1.5; opacity: 0.85; }
+.fg-dir__line--dash { stroke-dasharray: 9 9; }
+
+/* the cards' pale plinth, bottom-left */
+.fg-dir__base--l {
+  position: absolute; left: 6.5%; top: 75%; width: 26%; height: 16%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 38%, #fbfaf9 0%, #efece8 62%, rgba(232, 228, 222, 0) 100%);
+  filter: blur(1px);
+  z-index: 1;
+}
+.fg-dir__cards {
+  --po: clamp(0, calc((var(--p) - 0.03) / 0.12), 1);
+  position: absolute; left: 5.2%; top: 58.2%; width: 27.5%;
+  z-index: 2;
+  filter: drop-shadow(0 1.6cqw 1.6cqw rgba(30, 24, 18, 0.30));
+  opacity: var(--po);
+  translate: calc((1 - var(--po)) * -2cqw) 0;
+}
+
+/* marble plinth under the Vault: a disc with a side */
+.fg-dir__plinth {
+  --po: clamp(0, calc((var(--p) - 0.32) / 0.1), 1);
+  position: absolute; left: 79.1%; top: 43%; width: 18.6%; height: 18.2%;
+  border-radius: 50% / 30%;
+  background: linear-gradient(90deg, #d9d5cf 0%, #f2efeb 45%, #e3dfd9 100%);
+  box-shadow: 0 1.6cqw 2.4cqw rgba(40, 32, 24, 0.22);
+  z-index: 2;
+  opacity: var(--po);
+}
+.fg-dir__plinth::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 60%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 38% 35%, #ffffff 0%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(ellipse at 70% 70%, rgba(200, 196, 190, 0.5) 0%, rgba(200, 196, 190, 0) 60%),
+    linear-gradient(160deg, #f7f5f2, #e9e6e1);
+  box-shadow: inset 0 -2px 4px rgba(40, 32, 24, 0.06);
+}
+.fg-dir__vault {
+  --po: clamp(0, calc((var(--p) - 0.34) / 0.1), 1);
+  position: absolute; left: 79.8%; top: 32.4%; width: 16.8%;
+  z-index: 3;
+  filter: drop-shadow(0 1.2cqw 1.2cqw rgba(20, 16, 12, 0.35));
+  opacity: var(--po);
+  translate: 0 calc((1 - var(--po)) * -1.5cqw);
+}
+
+/* stops */
+.fg-dir__stop { --so: clamp(0, calc((var(--p) - var(--at)) * 12), 1); position: absolute; z-index: 4; width: 0; height: 0; }
+.fg-dir__dot {
+  position: absolute; left: 0; top: 0; width: 2.3cqw; height: 2.3cqw; translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #111 0 18%, #f0d3a6 21% 38%, #fff 42%);
+  box-shadow: 0 0.35cqw 0.9cqw rgba(60, 50, 40, 0.14), 0 0 0 1px rgba(16, 16, 18, 0.03);
+  scale: var(--so);
+}
+.fg-dir__stem {
+  position: absolute; left: 0; top: calc(-1 * var(--lift) + 3.9cqw); height: calc(var(--lift) - 3.9cqw - 1.15cqw);
+  width: 1px; background: rgba(16, 16, 18, 0.3);
+  scale: 1 var(--so); transform-origin: bottom;
+}
+.fg-dir__lab {
+  position: absolute; left: 0; top: calc(-1 * var(--lift));
+  width: 16cqw; padding-left: 0.4cqw;
+  border-left: 1px solid rgba(16, 16, 18, 0.3);
+  display: grid; gap: 0.3cqw;
+  opacity: var(--so); translate: 0 calc((1 - var(--so)) * 0.6cqw);
+}
+.fg-dir__lab b { font-size: 1.07cqw; font-weight: 560; color: #0e0e10; letter-spacing: -0.012em; line-height: 1.2; }
+.fg-dir__lab span { font-size: 0.86cqw; line-height: 1.45; color: #5a5b60; }
+
+@media (max-width: 46rem) {
+  .fg-dir__top, .fg-dir__stop { display: none; }
+  .fg-dir__narrow { display: grid; justify-items: center; text-align: center; gap: 1rem; position: relative; z-index: 3; align-self: start; padding-top: 6svh; }
+  .fg-dir__narrow .fg-dir__chain { flex-wrap: wrap; justify-content: center; row-gap: 0.4rem; }
+  .fg-dir__narrow .fg-dir__chain li { font-size: 0.75rem; }
+  .fg-dir__narrow .fg-dir__chain li + li::before { width: 1rem; margin-inline: 0.5rem; }
+  .film .scn--chain .fg-dir__narrow .fg-dir__h { font-size: clamp(1.7rem, 8vw, 2.3rem); margin: 0.5rem 0 0; width: auto; }
+  .fg-dir__narrow .fg-dir__p { font-size: 0.8125rem; margin: 0; }
+  .fg-dir__box { top: auto; bottom: 12svh; translate: -50% 0; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-dir__box { --rd: 1; }
+  .fg-dir__stop, .fg-dir__cards, .fg-dir__plinth, .fg-dir__vault { --so: 1; --po: 1; }
+  .fg-dir__h .fg-hw > span { translate: none; }
+}
+
+/* --- direction: flat and quiet ---------------------------------------------
+   No pedestal, no oval base, no bevelled road. The road is one flat, barely-
+   there band with a hairline centre; the products cast a faint soft shadow
+   and nothing else. */
+.fg-dir__plinth, .fg-dir__base--l { display: none; }
+.fg-dir__shade, .fg-dir__edge, .fg-dir__lit { display: none; }
+.fg-dir__bed { stroke: #f4f3f1; stroke-width: 58; }
+.fg-dir__line { stroke: #b9babe; stroke-width: 1.2; opacity: 1; }
+.scn--chain .scn__stage:has(.fg-dir) { background: #ffffff; }
+.fg-dir__cards { filter: drop-shadow(0 1cqw 1.4cqw rgba(20, 20, 24, 0.12)); }
+.fg-dir__vault { filter: drop-shadow(0 0.8cqw 1.2cqw rgba(20, 20, 24, 0.14)); top: 34%; }
+.fg-dir__dot {
+  width: 1.1cqw; height: 1.1cqw;
+  background: #ffffff;
+  border: 1px solid #b9babe;
+  box-shadow: none;
+}
+.fg-dir__dot::after {
+  content: ''; position: absolute; inset: 30%;
+  border-radius: 50%; background: #1a1a1c;
+}
+.fg-dir__stem, .fg-dir__lab { --line: rgba(16, 16, 18, 0.16); }
+.fg-dir__stem { background: rgba(16, 16, 18, 0.16); top: calc(-1 * var(--lift) + 3.9cqw); height: calc(var(--lift) - 3.9cqw - 0.7cqw); }
+.fg-dir__lab { border-left-color: rgba(16, 16, 18, 0.16); }
+
+/* --- direction: no chain on top; the road reads as a road ----------------- */
+.fg-dir__top .fg-dir__chain, .fg-dir__narrow .fg-dir__chain { display: none; }
+.fg-dir__top { top: 9%; }
+.film .scn--chain .fg-dir__h { margin-top: 0; }
+.fg-dir__edge { display: block; stroke: #dcdcdf; stroke-width: 66; }
+.fg-dir__bed { stroke: #efeff1; stroke-width: 62; }
+/* lane marking: white dashes down the middle, the whole way */
+.fg-dir__line, .fg-dir__line--dash { stroke: #ffffff; stroke-width: 3; stroke-dasharray: 16 14; opacity: 1; stroke-linecap: butt; }
+.fg-dir__dot { border-color: #c4c4c8; }
+
+/* --- direction: an actual road ------------------------------------------------
+   Grey textured asphalt, a white edge line either side, white dashes down the
+   middle, a soft shoulder. It runs off both edges of the screen. */
+.fg-dir { overflow: clip; }
+.fg-dir__road { overflow: visible; }
+.fg-dir__reveal { stroke-width: 170; }
+.fg-dir__shade { display: block; stroke: rgba(40, 40, 44, 0.10); stroke-width: 96; transform: translate(0, 10px); }
+.fg-dir__edge { stroke: #e7e7ea; stroke-width: 86; }          /* soft shoulder */
+.fg-dir__bed { stroke: #f7f7f8; stroke-width: 70; }           /* white edge lines */
+.fg-dir__tar { fill: none; stroke-width: 64; stroke-linecap: round; stroke-linejoin: round; }
+.fg-dir__lit { display: none; }
+.fg-dir__line, .fg-dir__line--dash { stroke: #f4f4f5; stroke-width: 3; stroke-dasharray: 20 18; opacity: 0.95; }
+.fg-dir__dot { background: #ffffff; border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 0.2cqw 0.6cqw rgba(0, 0, 0, 0.25); }
+
+/* --- what was handed over: always fits the screen ---------------------------
+   Eight messages plus the heading are taller than a laptop screen once the
+   browser's own chrome is taken off, and the stage clips — so the last one or
+   two were cut. The talk column scales down with the screen height instead. */
+@media (min-width: 46.01rem) and (max-height: 900px) { .fg-msgs__talk { zoom: 0.9; } }
+@media (min-width: 46.01rem) and (max-height: 820px) { .fg-msgs__talk { zoom: 0.8; } }
+@media (min-width: 46.01rem) and (max-height: 740px) { .fg-msgs__talk { zoom: 0.72; } }
+@media (min-width: 46.01rem) and (max-height: 660px) { .fg-msgs__talk { zoom: 0.64; } }
+/* the Vault sits inside the upper bend, clear of the road */
+.fg-dir__vault { left: 78%; top: 44%; width: 15.5%; }
+/* a negative lift puts the label BELOW its stop (the last stop is on the top edge) */
+.fg-dir__stop:last-of-type .fg-dir__lab { top: 1.6cqw; }
+.fg-dir__stop:last-of-type .fg-dir__stem { top: 0.7cqw; height: 1.1cqw; }
+
+/* ---- Direction: the road as a rendered object -----------------------------
+   One continuous spline, built up in layers like a modelled slab: a wide
+   soft shadow on the page, a tight contact shadow, a sliver of side, a
+   rounded light top edge, a soft seam into the asphalt, a faint sheen
+   down the crown, and lane marks riding the same curve. */
+.fg-dir__road { shape-rendering: geometricPrecision; }
+.fg-dir__road path { stroke-linecap: round; stroke-linejoin: round; }
+.fg-dir__reveal { stroke-width: 260; }
+.fg-dir__shade, .fg-dir__edge, .fg-dir__bed, .fg-dir__lit { display: none; }
+.fg-dir__far   { stroke: rgba(22, 24, 32, 0.13); stroke-width: 104; transform: translate(0, 26px); }
+.fg-dir__near  { stroke: rgba(22, 24, 32, 0.22); stroke-width: 90;  transform: translate(0, 7px); }
+.fg-dir__side  { stroke: #b4b5b9; stroke-width: 88; transform: translate(0, 4.5px); }
+.fg-dir__curb  { stroke: #f3f3f5; stroke-width: 88; }
+.fg-dir__bevel { stroke: #dcdde0; stroke-width: 82; }
+.fg-dir__inner { stroke: #5e5f64; stroke-width: 74; }
+.fg-dir__tar   { stroke-width: 70; }
+.fg-dir__crown { stroke: rgba(255, 255, 255, 0.10); stroke-width: 34; transform: translate(0, -4px); }
+.fg-dir__line  { stroke: #f7f7f8; stroke-width: 3.2; stroke-dasharray: 22 20; opacity: 0.92; stroke-linecap: round; }
+
+/* the products sit in their own clear space, off the road */
+.fg-dir__cards { left: 3.4%; top: 62%; width: 24.5%; }
+.fg-dir__vault { left: 84.6%; top: 43.5%; width: 13%; }
