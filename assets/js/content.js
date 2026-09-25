@@ -1680,10 +1680,10 @@ window.SITE = {
                 right: { src: 'assets/img/x0/problem/dir-vault.webp' },
                 /* x / y: the stop, in the 2000 × 1183 grid; lift: dot to label top */
                 stops: [
-                  { x: 330,  y: 566,  at: 0.14, lift: 7.8,  k: 'Same brand',           t: 'A unified visual language<br>across both products.' },
-                  { x: 860,  y: 830,  at: 0.21, lift: 8.6,  k: 'Different audience',   t: 'Distinct needs.<br>Tailored experiences.' },
-                  { x: 1160, y: 1005, at: 0.28, lift: 10,   k: 'Different product',    t: 'Two form factors.<br>One cohesive identity.' },
-                  { x: 1700, y: 262,  at: 0.36, lift: -3.2, k: 'Different experience', t: 'Seamless, secure<br>and purpose-built.' },
+                  { x: 260, y: 588, at: 0.14, lift: 7.8,  k: 'Same brand',           t: 'A unified visual language<br>across both products.' },
+                  { x: 720, y: 611, at: 0.21, lift: -3.2, k: 'Different audience',   t: 'Distinct needs.<br>Tailored experiences.' },
+                  { x: 1250, y: 882, at: 0.28, lift: 7.8,  k: 'Different product',    t: 'Two form factors.<br>One cohesive identity.' },
+                  { x: 1900, y: 1030, at: 0.36, lift: 7.8,  k: 'Different experience', t: 'Seamless, secure<br>and purpose-built.' },
                 ],
               } },
 
@@ -1698,7 +1698,7 @@ window.SITE = {
                being announced, and the film slows down to announce it. */
             { id: 'x0-dec-1', act: 'III · Decisions', kind: 'ask', dur: 110, dark: true,
               n: 'Decision 01',
-              h: 'Don’t reuse the design system that already existed.' },
+              h: '<span class="fg-key">Don’t reuse</span> the design system that already existed.' },
             /* --- CHAPTER 04 · BUILDING THE SYSTEM ---------------------------------
 
                THE LONGEST CHAPTER IN THE FILM SITS BEHIND THIS CARD: the split,
@@ -1969,7 +1969,7 @@ window.SITE = {
                    of the section, with the words on the same line and a gap
                    smaller than the mark is tall. It is one object, it is the
                    only object, and nothing happens until it has gone. */
-                { at: -0.02, to: 0.88, big: true, n: 'The design system',
+                { at: -0.02, to: 0.88, big: true, k: 'Introducing', n: 'N45 Design System',
                   mark: 'assets/img/x0/system/n45-mark.png' },
 
                 /* and it lands here, after you have watched the thing build
@@ -2166,17 +2166,41 @@ window.SITE = {
                   alt: 'Chip, toggle and stepper in their states' },
               ] },
 
-            /* THE SET PIECE. The old interface comes apart in seven slices,
-               each on its own vector with its own lag, and the new one is
-               already underneath. Built from the two pictures the study
-               already had, and reversible: scrolling back reassembles X1,
-               because none of this is an animation with a direction. */
-            { id: 'x0-apart', kind: 'morph', dur: 180, dark: true,
-              over: 'assets/img/x0/x1.webp',
-              under: 'assets/img/x0/x0.webp',
-              underAlt: 'X0 — lighter, quieter, more air, a guided path through every flow',
-              h: 'Nothing was carried over except the reason to trust it.',
-              cap: 'CySync (X1, desktop) coming apart over X0 (mobile). Scroll back to reassemble it.' },
+            /* THE OLD SYSTEM. After N45 has built itself, the screens it
+               replaced: CySync for the X1, rising out of the same dark onto a
+               tilted wall that drifts once it is full. */
+            { id: 'x0-apart', kind: 'wall', dur: 360, dark: true,
+              k: 'Before N45',
+              h: 'This is what CySync<br>looked like.',
+              end: 'Nothing was carried over | except the reason to *trust* it.',
+              offs: [0.52, 0.458, 0.495, 0.595, 0.557, 0.607, 0.445, 0.57, 0.42, 0.432, 0.583, 0.545, 0.62, 0.532, 0.482, 0.47, 0.507],
+              order: [0.024, 0.121, 0.061, 0.171, 0.098, 0.0, 0.05, 0.146, 0.086, 0.109, 0.036, 0.183, 0.074, 0.159, 0.012, 0.134, 0.195],
+              rows: [
+                { off: '-6vw', src: ['assets/img/x0/cysync/01.webp', 'assets/img/x0/cysync/07.webp', 'assets/img/x0/cysync/04.webp', 'assets/img/x0/cysync/10.webp', 'assets/img/x0/cysync/14.webp'] },
+                { off: '7vw', src: ['assets/img/x0/cysync/08.webp', 'assets/img/x0/cysync/02.webp', 'assets/img/x0/cysync/11.webp', 'assets/img/x0/cysync/13.webp'] },
+                { off: '-2vw', src: ['assets/img/x0/cysync/05.webp', 'assets/img/x0/cysync/06.webp', 'assets/img/x0/cysync/09.webp', 'assets/img/x0/cysync/15.webp'] },
+                { off: '9vw', src: ['assets/img/x0/cysync/12.webp', 'assets/img/x0/cysync/16.webp', 'assets/img/x0/cysync/17.webp', 'assets/img/x0/cysync/03.webp'] },
+              ] },
+
+            /* THE RESULT. The X0 app itself: one phone playing through its key
+               moments while every other screen flows past behind it. */
+            { id: 'x0-app', kind: 'showcase', dur: 300, dark: true,
+              k: 'The result',
+              h: 'X0, built on N45.',
+              p: '250+ screens and counting. One system underneath all of them.',
+              base: 'assets/img/x0/app/',
+              frame: 'assets/img/x0/system/iphone.webp',
+              hero: ['09', '01', '05', '13', '15', '16', '14', '22'],
+              alts: ['Portfolio', 'Onboarding', 'Tap to approve', 'Send', 'Swap token selector', 'Swap', 'Receive', 'Wallet recovered'],
+              cols: [
+                ['02', '10', '19', '26', '07', '24'],
+                ['04', '11', '17', '28', '21', '03'],
+                ['06', '12', '23', '18', '25', '08'],
+                ['20', '27', '02', '10', '17', '11'],
+                ['24', '03', '28', '06', '19', '12'],
+                ['08', '21', '07', '26', '23', '04'],
+              ] },
+
 
             /* THE SECOND DECISION AND ITS EVIDENCE IN ONE SCENE, because a
                title card followed by its own proof is not two scenes. This is

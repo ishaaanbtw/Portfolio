@@ -5215,10 +5215,42 @@
       /* the road's line, from the sketch: in low from the left, over a hump,
          down into a long trough, up and round a tight bend, and out along
          the top to the right edge */
-      const S1 = 'M-400 700 C -266.7 680, -126.5 663.6, 0 640 C 115.7 618.4, 223.4 567.6, 330 566 C 429.6 564.5, 532.9 579.7, 620 622 C 710.3 665.9, 772.4 767.3, 860 830 C 951.6 895.6, 1057 980.9, 1160 1005 C 1254.2 1027, 1376.4 1024.5, 1450 985 C 1515.9 949.6, 1565.8 875.7, 1592 800 C 1623.2 709.9, 1572.9 565.1, 1596 470 C 1615.4 390.2, 1640.7 305.8, 1700 262 C 1767.8 211.9, 1892.5 224.4, 2000 212 C 2123.4 197.7, 2266.7 194.7, 2400 186';
-      const S2 = 'M0 0';
-      const S3 = 'M0 0';
+      /* THE ROAD IS ONE FUNCTION, not a chain of pieces: a half-period
+         cosine from high on the left to low on the right, so its curvature
+         changes continuously and there is nowhere for a kink to hide. It is
+         drawn as filled ribbons rather than strokes, which lets the width
+         follow a perspective: narrow where it is far (top), wide where it is
+         near (bottom). */
+      const RX0 = -300, RX1 = 2300, RY0 = 590, RY1 = 1030, RXC = 1150, RSP = 1500, RK = 5;
+      const ry = (x) => RY0 + (RY1 - RY0) * (0.5 + 0.5 * Math.tanh(RK * (x - RXC) / RSP) / Math.tanh(RK / 2));
+      const hw = (y) => 22 + 30 * Math.min(1, Math.max(0, (y - RY0) / (RY1 - RY0)));
+      const RN = 260, C = [];
+      for (let i = 0; i <= RN; i++) {
+        const x = RX0 + (RX1 - RX0) * i / RN, y = ry(x);
+        const d = 1, dy = ry(x + d) - ry(x - d), L = Math.hypot(2 * d, dy);
+        C.push({ x, y, nx: -dy / L, ny: (2 * d) / L, w: hw(y) });
+      }
+      const f1 = (v) => v.toFixed(1);
+      const ribbon = (k, dy0 = 0) => 'M' + C.map((c) => f1(c.x + c.nx * c.w * k) + ' ' + f1(c.y + c.ny * c.w * k + dy0)).join(' L') +
+        ' L' + C.slice().reverse().map((c) => f1(c.x - c.nx * c.w * k) + ' ' + f1(c.y - c.ny * c.w * k + dy0)).join(' L') + ' Z';
+      /* dashes, scaled with the perspective */
+      let dash = '', acc = 0, on = true;
+      for (let i = 1; i < C.length; i++) {
+        const a0 = C[i - 1], a1 = C[i], seg = Math.hypot(a1.x - a0.x, a1.y - a0.y), sc = a1.w / 30;
+        acc += seg;
+        const lim = (on ? 22 : 20) * sc;
+        if (acc >= lim) {
+          acc = 0; on = !on;
+        }
+        if (on) {
+          const t = 1.6 * sc;
+          dash += `M${f1(a0.x + a0.nx * t)} ${f1(a0.y + a0.ny * t)} L${f1(a1.x + a1.nx * t)} ${f1(a1.y + a1.ny * t)} ` +
+                  `L${f1(a1.x - a1.nx * t)} ${f1(a1.y - a1.ny * t)} L${f1(a0.x - a0.nx * t)} ${f1(a0.y - a0.ny * t)} Z `;
+        }
+      }
+      const S1 = 'M' + C.map((c) => f1(c.x) + ' ' + f1(c.y)).join(' L');
       const ROAD = S1;
+      window.__fgRoad = { ry };
       const head = `<ul class="fg-dir__chain">` + items.slice(0, -1).map((t, i) =>
             `<li${AT(0.02 + i * 0.03)} class="beat">${esc(t)}</li>`).join('') + `</ul>` +
           `<h2 class="fg-h fg-dir__h">` + words(h1, 0.08, 0.14, 'fg-dir__h1', 3) + '<br>' +
@@ -5251,15 +5283,14 @@
             `<g mask="url(#fgDirMask)">` +
               /* built up like a rendered slab: shadow, contact, side, rounded
                  top edge, bevel, asphalt, a soft sheen down the crown, lanes */
-              `<path class="fg-dir__far" d="${ROAD}" filter="url(#fgDirFar)"/>` +
-              `<path class="fg-dir__near" d="${ROAD}" filter="url(#fgDirNear)"/>` +
-              `<path class="fg-dir__side" d="${ROAD}" filter="url(#fgDirSoft)"/>` +
-              `<path class="fg-dir__curb" d="${ROAD}"/>` +
-              `<path class="fg-dir__bevel" d="${ROAD}" filter="url(#fgDirSoft)"/>` +
-              `<path class="fg-dir__inner" d="${ROAD}" filter="url(#fgDirSoft)"/>` +
-              `<path class="fg-dir__tar" d="${ROAD}" stroke="url(#fgDirAsphalt)"/>` +
-              `<path class="fg-dir__crown" d="${ROAD}" filter="url(#fgDirCrown)"/>` +
-              `<path class="fg-dir__line" d="${S1}"/>` +
+              `<path class="fg-rd fg-rd--far" d="${ribbon(1.7, 22)}" filter="url(#fgDirFar)"/>` +
+              `<path class="fg-rd fg-rd--near" d="${ribbon(1.3, 5)}" filter="url(#fgDirNear)"/>` +
+              `<path class="fg-rd fg-rd--kerb" d="${ribbon(1.26)}"/>` +
+              `<path class="fg-rd fg-rd--edge" d="${ribbon(1.13)}"/>` +
+              `<path class="fg-rd fg-rd--gap" d="${ribbon(1.03)}"/>` +
+              `<path class="fg-rd fg-rd--tar" d="${ribbon(1)}" fill="url(#fgDirAsphalt)"/>` +
+              `<path class="fg-rd fg-rd--crown" d="${ribbon(0.45, -2)}" filter="url(#fgDirCrown)"/>` +
+              `<path class="fg-rd fg-rd--dash" d="${dash}"/>` +
             `</g>` +
           `</svg>` +
           `<img class="fg-dir__cards" src="${url(P.left.src)}" alt="" decoding="async" loading="lazy">` +
@@ -5294,6 +5325,78 @@
           `<h2${AT(0.72)} class="fg-h fg-h--wide beat beat--still">${s.h}</h2>` +
         `</div>` +
         (s.cap ? `<p class="fg-cap">${esc(s.cap)}</p>` : '');
+    },
+
+    /* --- the old system, as a wall ---------------------------------------
+       The screens N45 replaced. They rise out of the dark one at a time, in
+       no reading order, onto a plane tipped away from the viewer; once the
+       wall is full its rows drift against each other, slowly, like a
+       contact sheet being looked over. Every tile has its own `--at`, so the
+       wall assembles unevenly rather than row by row. */
+    wall: (s) => {
+      const rows = s.rows || [];
+      let i = 0;
+      const tiles = rows.map((r, ri) =>
+        `<div class="fg-wall__row" style="--r:${ri};--dir:${ri % 2 ? -1 : 1};--off:${r.off || '0vw'}">` +
+          `<div class="fg-wall__track">` +
+          r.src.map((src) => {
+            const at = (s.order && s.order[i] != null) ? s.order[i] : 0.12 + i * 0.02;
+            const off = (s.offs && s.offs[i] != null) ? s.offs[i] : 0.45 + i * 0.01;
+            i++;
+            return `<figure class="fg-wall__t" style="--at:${at};--off:${off}">` +
+              `<img src="${url(src)}" alt="" width="1200" height="776" loading="lazy" decoding="async"></figure>`;
+          }).join('') +
+          `</div></div>`).join('');
+      const out = `<div class="fg-wall" aria-hidden="true"><div class="fg-wall__plane">${tiles}</div></div>` +
+        `<i class="fg-wall__veil" aria-hidden="true"></i>` +
+        `<div class="scn__in fg-wall__head">` +
+          (s.k ? `<p${AT(0.02, 0.3)} class="fg-wall__k beat">${esc(s.k)}</p>` : '') +
+          `<h2${AT(0.05, 0.31)} class="fg-h fg-wall__h beat">${s.h}</h2>` +
+        `</div>` +
+        (s.end ? `<div class="scn__in fg-wall__endw"><p class="fg-h fg-wall__end">` + (() => {
+          /* "quiet words | loud words", *word* marks the warm one */
+          const [qt, ld] = String(s.end).split('|');
+          const all = [...qt.trim().split(/\s+/).map((w) => [w, 'q']), ...ld.trim().split(/\s+/).map((w) => [w, 'l'])];
+          const bb = SPREAD(all.length, 0.70, 0.76);
+          return '<span class="fg-wl fg-wl--1">' + all.map(([w, v], i) => {
+            const t = /^\*.*\*[.,]?$/.test(w);
+            const txt = w.replace(/\*/g, '');
+            return `<span class="fg-we fg-we--${t ? 't' : v}"${t ? ` data-t="${esc(txt)}"` : ''}>${esc(txt)}</span>` +
+              (v === 'q' && all[i + 1] && all[i + 1][1] === 'l' ? '</span><br><span class="fg-wl fg-wl--2">' : '');
+          }).join(' ') + '</span>';
+        })() + `</p></div>` : '');
+      return out;
+    },
+
+    /* --- the result: X0, one phone and a river of screens ------------------
+       The phone is the hero and plays the product through its key moments as
+       you scroll; behind it every other screen flows past in columns moving
+       in opposite directions, so the whole app is present at once without
+       any one screen competing with the phone. */
+    showcase: (s) => {
+      const H = s.hero || [], C = s.cols || [];
+      const hb = SPREAD(H.length, 0.2, 0.86);
+      const col = (list, i) =>
+        `<div class="fg-show__col" style="--i:${i};--dir:${i % 2 ? 1 : -1};--sp:${(0.8 + (i % 3) * 0.22).toFixed(2)}">` +
+          `<div class="fg-show__track">` +
+            [...list, ...list].map((n) => `<img src="${url(s.base + n + '.webp')}" alt="" width="540" height="1170" loading="lazy" decoding="async">`).join('') +
+          `</div></div>`;
+      return `<div class="fg-show" aria-hidden="true">` +
+          `<div class="fg-show__river">${C.map(col).join('')}</div>` +
+          `<i class="fg-show__veil"></i>` +
+        `</div>` +
+        `<div class="fg-show__phone">` +
+          `<div class="fg-show__screen">` +
+            H.map((n, i) => `<img style="--a:${hb[i].toFixed(3)};--b:${(hb[i + 1] || 2).toFixed(3)}" ` +
+              `src="${url(s.base + n + '-l.webp')}" alt="${esc((s.alts || [])[i] || '')}" loading="lazy" decoding="async">`).join('') +
+          `</div>` +
+          `<img class="fg-show__frame" src="${url(s.frame)}" alt="" width="1292" height="2658">` +
+        `</div>` +
+        `<div class="scn__in fg-show__head">` +
+          (s.k ? `<p${AT(0.02)} class="fg-show__k beat">${esc(s.k)}</p>` : '') +
+          `<h2${AT(0.05)} class="fg-h fg-show__h beat">${s.h}</h2>` +
+          (s.p ? `<p${AT(0.1)} class="fg-show__p beat">${s.p}</p>` : '') +
+        `</div>`;
     },
 
     /* --- 12 + 13 · the case against, then the answer ---------------------
@@ -5640,7 +5743,8 @@
                 ? `<span class="room__lockup">` +
                     `<img class="room__mark" src="${url(l.mark)}" alt="N45"` +
                     ` width="192" height="192">` +
-                    (l.n ? `<span class="lab-n">${esc(l.n)}</span>` : '') +
+                    (l.n ? (l.k ? `<span class="room__intro"><span class="lab-n">${esc(l.k)}</span>` +
+                      `<b class="room__title">${esc(l.n)}</b></span>` : `<span class="lab-n">${esc(l.n)}</span>`) : '') +
                   `</span>`
                 : (l.n ? `<span class="lab-n">${esc(l.n)}</span>` : '')) +
               (l.h ? `<h2 class="fg-h">${l.h}</h2>` : '') +
@@ -6069,7 +6173,7 @@
         act: Number(n.dataset.act) || 0,
         vid: $('.fg-vid[data-scrub] video', n),
         /* scenes that dissolve in and out of the page rather than cutting */
-        fade: n.classList.contains('scn--insight'),
+        fade: n.classList.contains('scn--insight') || n.classList.contains('scn--wall') || n.classList.contains('scn--showcase'),
         q: -1,
         o: -1,
         p: -1,

@@ -21545,3 +21545,540 @@ img.fg-prob__hero { object-fit: contain; display: block; filter: drop-shadow(0 3
 /* the products sit in their own clear space, off the road */
 .fg-dir__cards { left: 3.4%; top: 62%; width: 24.5%; }
 .fg-dir__vault { left: 84.6%; top: 43.5%; width: 13%; }
+
+/* ---- the old system, as a wall ------------------------------------------- */
+.scn--wall .scn__stage {
+  /* starts on N45's black and warms to CySync's brown as the wall fills */
+  background: color-mix(in srgb, #17130f calc(clamp(0, (var(--p) - 0.02) * 4, 1) * 100%), #08080a);
+  overflow: clip;
+}
+.fg-wall { position: absolute; inset: 0; overflow: clip; perspective: 2400px; perspective-origin: 50% 20%; z-index: 0; }
+.fg-wall__plane {
+  position: absolute; left: 50%; top: 50%;
+  width: 150vw;
+  display: grid; gap: 2.2vw;
+  translate: -42% -44%;
+  transform: rotateX(26deg) rotateZ(-8deg);
+  transform-style: preserve-3d;
+}
+.fg-wall__row {
+  transform-style: preserve-3d;
+  translate: calc(var(--off) + (var(--p) - 0.5) * var(--dir) * 12vw) 0;
+}
+.fg-wall__track {
+  display: flex; gap: 2.2vw;
+  transform-style: preserve-3d;
+  animation: fgWallDrift 34s ease-in-out infinite alternate;
+  animation-delay: calc(var(--r) * -8.5s);
+}
+@keyframes fgWallDrift { from { transform: translateX(calc(var(--dir) * -1.6vw)); } to { transform: translateX(calc(var(--dir) * 1.6vw)); } }
+.fg-wall__t {
+  --q: clamp(0, calc((var(--p) - var(--at)) * 12), 1);
+  flex: 0 0 25vw; margin: 0;
+  aspect-ratio: 1200 / 776;
+  border-radius: 0.46vw;
+  overflow: hidden;
+  box-shadow: 0 1.8vw 3.2vw rgba(0, 0, 0, calc(0.5 * var(--q)));
+  opacity: var(--q);
+  transform: translate3d(0, calc((1 - var(--q)) * 5vw), calc((1 - var(--q)) * -22vw));
+  filter: brightness(calc(0.45 + var(--q) * 0.55));
+}
+.fg-wall__t img { display: block; width: 100%; height: 100%; }
+.fg-wall__veil {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(52% 58% at 20% 16%, rgba(10, 9, 8, 0.94) 0%, rgba(10, 9, 8, 0.7) 45%, rgba(10, 9, 8, 0) 78%),
+    linear-gradient(to bottom, rgba(10, 9, 8, 0.55), transparent 26%, transparent 78%, rgba(10, 9, 8, 0.75));
+}
+.scn--wall .fg-wall__head { position: relative; z-index: 3; align-self: start; justify-self: start; padding-top: 11svh; max-width: 34rem; }
+.fg-wall__k { margin: 0 0 1rem; font-size: 0.75rem; font-weight: 550; letter-spacing: 0.16em; text-transform: uppercase; color: #c9a86a; }
+.film .scn--wall .fg-wall__h { margin: 0; font-size: clamp(2.2rem, 3.9vw, 3.6rem); line-height: 1.02; letter-spacing: -0.035em; color: #f4f1ec; }
+.fg-wall__p { margin: 1.4rem 0 0; font-size: 1.05rem; line-height: 1.5; color: rgba(244, 241, 236, 0.58); max-width: 24rem; }
+
+@media (max-width: 46rem) {
+  .fg-wall__plane { width: 230vw; gap: 3.5vw; translate: -44% -30%; }
+  .fg-wall__track { gap: 3.5vw; }
+  .fg-wall__t { flex-basis: 46vw; }
+  .scn--wall .fg-wall__head { padding-top: 8svh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-wall__t { --q: 1; }
+  .fg-wall__track { animation: none; }
+}
+.fg-wall__plane { translate: -36% -40%; }
+.fg-wall__veil {
+  background:
+    radial-gradient(46% 62% at 24% 28%, rgba(10, 9, 8, 0.96) 0%, rgba(10, 9, 8, 0.82) 50%, rgba(10, 9, 8, 0) 82%),
+    linear-gradient(to bottom, rgba(10, 9, 8, 0.5), transparent 24%, transparent 80%, rgba(10, 9, 8, 0.7));
+}
+.fg-wall__p { max-width: 21rem; }
+
+/* ---- the wall hands its screens to a sheet of paper ---------------------- */
+.scn--wall { --gone: clamp(0, calc((var(--p) - 0.30) / 0.07), 1); }
+.fg-wall__row { translate: calc(var(--off) + (var(--p) - 0.18) * var(--dir) * 22vw) 0; }
+.fg-wall, .fg-wall__veil {
+  opacity: calc(1 - var(--gone));
+  scale: calc(1 - var(--gone) * 0.08);
+  filter: blur(calc(var(--gone) * 8px));
+}
+.fg-paper { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.fg-paper canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.fg-paper.is-nogl, .fg-paper.is-still { display: none; }
+.scn--wall .fg-wall__endw { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; padding: 0; }
+.film .scn--wall .fg-wall__end {
+  margin: 0; text-align: center;
+  font-size: clamp(2rem, 3.6vw, 3.4rem); line-height: 1.06; letter-spacing: -0.035em; color: #f4f1ec;
+}
+.scn--wall .fg-wall__head { opacity: calc(1 - var(--gone)); translate: 0 calc(var(--gone) * -2vh); }
+
+/* ---- the closing line, after the paper has gone ---------------------------
+   Two voices: the first clause quiet, the second in full ink, and TRUST in
+   the one warm colour CySync and X0 share. Each word lifts out of a blur on
+   its own beat, scrubbed by the scroll. */
+.scn--wall .fg-wall__endw { padding-inline: 6vw; }
+.film .scn--wall .fg-wall__end {
+  font-size: clamp(2.4rem, 5.4vw, 5.6rem); line-height: 1.02; letter-spacing: -0.045em;
+  font-weight: 500; max-width: none; opacity: 1; translate: none;
+}
+.fg-wall__end .fg-we {
+  --w: clamp(0, calc((var(--p) - var(--at)) * 26), 1);
+  display: inline-block;
+  opacity: var(--w);
+  translate: 0 calc((1 - var(--w)) * 0.45em);
+  filter: blur(calc((1 - var(--w)) * 10px));
+}
+.fg-wall__end .fg-we--q { color: rgba(244, 241, 236, 0.38); font-weight: 400; }
+.fg-wall__end .fg-we--t {
+  background: linear-gradient(100deg, #b98a3e 0%, #f3d9a0 45%, #c99a4c 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-style: italic; padding-right: 0.06em;
+}
+@media (prefers-reduced-motion: reduce) { .fg-wall__end .fg-we { --w: 1; } }
+.film .scn--wall .fg-wall__endw { width: 100%; max-width: none; margin: 0; justify-items: center; align-content: center; }
+.film .scn--wall .fg-wall__end { text-align: center; }
+.fg-wall__end .fg-we--t { padding: 0 0.14em 0.08em 0.02em; margin-right: -0.08em; }
+
+/* ---- the old system switches off ------------------------------------------
+   The paper is gone. Once the wall has been seen, each screen goes out the
+   way an old monitor does: the picture squeezes to a bright line, the line
+   pulls in to a point, the point fades. One by one, in no order, until the
+   room is dark and the closing line comes up out of it. All transforms and
+   opacity on the seventeen tiles already there; nothing new is loaded. */
+.scn--wall {
+  --gone: 0;
+  --dim: clamp(0, calc((var(--p) - 0.44) / 0.22), 1);
+}
+.scn--wall .scn__stage {
+  background: color-mix(in srgb, #17130f calc(clamp(0, (var(--p) - 0.02) * 4, 1) * (1 - var(--dim)) * 100%), #08080a);
+}
+.fg-wall, .fg-wall__veil { opacity: 1; scale: 1; filter: none; }
+.fg-wall__t {
+  --q: clamp(0, calc((var(--p) - var(--at)) * 8), 1);
+  --k: clamp(0, calc((var(--p) - var(--off)) / 0.04), 1);
+  --ky: clamp(0, calc(var(--k) * 1.8), 1);
+  --kx: clamp(0, calc(var(--k) * 2 - 0.9), 1);
+  transform:
+    translate3d(0, calc((1 - var(--q)) * 5vw), calc((1 - var(--q)) * -22vw))
+    scale(calc(1 - var(--kx) * 0.985), calc(1 - var(--ky) * 0.988));
+  opacity: calc(var(--q) * (1 - clamp(0, calc(var(--kx) * 1.4 - 0.4), 1)));
+  filter: brightness(calc(0.45 + var(--q) * 0.55 + var(--ky) * 1.6));
+  box-shadow: 0 1.8vw 3.2vw rgba(0, 0, 0, calc(0.5 * var(--q) * (1 - var(--ky))));
+  overflow: visible;
+}
+.fg-wall__t img { border-radius: inherit; }
+/* the phosphor line: a white bar that is only there between the squeeze and
+   the fade, with a little bloom so it reads as light, not as a shape */
+.fg-wall__t::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: #fffaf0;
+  box-shadow: 0 0 1.2vw 0.3vw rgba(255, 244, 222, 0.55);
+  opacity: calc(var(--ky) * (1 - clamp(0, calc(var(--kx) * 1.6 - 0.6), 1)));
+  pointer-events: none;
+}
+.fg-wall__t { position: relative; }
+.scn--wall .fg-wall__head {
+  opacity: calc(1 - clamp(0, calc((var(--p) - 0.54) / 0.08), 1));
+  translate: 0 calc(clamp(0, calc((var(--p) - 0.54) / 0.08), 1) * -2vh);
+}
+.fg-wall__veil { opacity: calc(1 - var(--dim) * 0.6); }
+@media (prefers-reduced-motion: reduce) {
+  .fg-wall__t { --k: 0; }
+}
+.fg-wall__t {
+  --k: clamp(0, calc((var(--p) - var(--off)) / 0.022), 1);
+  filter: brightness(calc(0.45 + var(--q) * 0.55 + var(--ky) * 0.5));
+}
+.fg-wall__t::after {
+  opacity: calc(clamp(0, calc((var(--ky) - 0.5) / 0.4), 1) * (1 - clamp(0, calc(var(--kx) * 1.6 - 0.6), 1)));
+}
+
+/* ==== the old system, v3: arrive early, sink away, then the line =========
+   `--e` is the scene's progress extended back into the screen of travel
+   before it pins (`--in`), so the first screens are already rising while
+   N45 is still leaving — no empty gap between the two. */
+.scn--wall {
+  --e: calc(var(--p) + (var(--in, 1) - 1) * 0.22);
+  --sink: clamp(0, calc((var(--p) - 0.42) / 0.26), 1);
+  --dim: var(--sink);
+}
+.scn--wall .scn__stage {
+  background: color-mix(in srgb, #17130f calc(clamp(0, (var(--e) + 0.12) * 4, 1) * (1 - var(--sink)) * 100%), #08080a);
+}
+.fg-wall__plane {
+  translate: -36% -40%;
+  transform: rotateX(calc(26deg + var(--sink) * 10deg)) rotateZ(-8deg) translateZ(calc(var(--sink) * -26vw));
+  opacity: calc(1 - clamp(0, calc((var(--sink) - 0.55) / 0.45), 1));
+}
+/* each screen arrives on the extended clock and leaves on its own beat,
+   sinking back into the dark: no squash, no flash */
+.fg-wall__t {
+  --q: clamp(0, calc((var(--e) + 0.2 - var(--at) * 1.05) * 7), 1);
+  --k: clamp(0, calc((var(--p) - var(--off) + 0.02) / 0.11), 1);
+  --ky: 0; --kx: 0;
+  transform: translate3d(0, calc((1 - var(--q)) * 5vw + var(--k) * 2vw), calc((1 - var(--q)) * -22vw - var(--k) * 14vw));
+  opacity: calc(var(--q) * (1 - var(--k)));
+  filter: brightness(calc(0.45 + var(--q) * 0.55 - var(--k) * 0.4));
+  box-shadow: 0 1.8vw 3.2vw rgba(0, 0, 0, calc(0.5 * var(--q) * (1 - var(--k))));
+}
+.fg-wall__t::after { display: none; }
+.fg-wall__veil { opacity: calc(1 - var(--sink)); }
+.scn--wall .fg-wall__head {
+  opacity: clamp(0, calc(min((var(--e) + 0.18) * 6, 1 - (var(--p) - 0.44) / 0.1)), 1);
+  translate: 0 calc(clamp(0, calc((var(--p) - 0.44) / 0.1), 1) * -2vh);
+}
+
+/* the line: two lines rising in turn, no blur, then TRUST warms */
+.fg-wall__end .fg-we { --w: 1; opacity: 1; translate: none; filter: none; }
+.fg-wl {
+  display: inline-block;
+  --w: clamp(0, calc((var(--p) - var(--la)) / 0.07), 1);
+  opacity: var(--w);
+  translate: 0 calc((1 - var(--w)) * 0.35em);
+  clip-path: inset(0 0 calc((1 - var(--w)) * 40%) 0);
+}
+.fg-wl--1 { --la: 0.66; }
+.fg-wl--2 { --la: 0.71; }
+.fg-wall__end .fg-we--t {
+  --g: clamp(0, calc((var(--p) - 0.77) / 0.06), 1);
+  background: linear-gradient(100deg, #f4f1ec 0%, #f4f1ec 30%, #d9b172 50%, #f4f1ec 70%, #f4f1ec 100%) no-repeat,
+              linear-gradient(100deg, #c99a4c, #f0d49a 50%, #c99a4c);
+  background-size: 300% 100%, 100% 100%;
+  background-position: calc(100% - var(--g) * 100%) 0, 0 0;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-wl { --w: 1; } .fg-wall__t { --k: 0; --q: 1; }
+}
+.fg-wl { clip-path: none; }
+.fg-wall__end .fg-we--t {
+  background: none; -webkit-background-clip: border-box; background-clip: border-box;
+  color: color-mix(in srgb, #e2bd7c calc(var(--g) * 100%), #f4f1ec);
+}
+.scn--wall { --e: calc(var(--p) + (var(--in, 1) - 1) * 0.4); }
+.fg-wall__t { --q: clamp(0, calc((var(--e) + 0.36 - var(--at) * 1.05) * 6), 1); }
+/* centre the line in the space right of the index rail, not the window */
+.film--indexed .scn--wall .fg-wall__endw {
+  padding-inline: calc(var(--fg-gut) + var(--film-index)) var(--fg-gut);
+}
+/* TRUST arrives upright and in white like every other word; once the whole
+   line has landed it fills with gold and leans into italic */
+.fg-wall__end .fg-we--t {
+  --g: clamp(0, calc((var(--p) - 0.79) / 0.05), 1);
+  display: inline-block;
+  font-style: normal;
+  padding: 0; margin: 0;
+  transform-origin: 50% 85%;
+  transform: skewX(calc(var(--g) * -11deg));
+  color: color-mix(in srgb, #e2bd7c calc(var(--g) * 100%), #f4f1ec);
+  transition: none;
+}
+
+/* the X0 case study is read, not drawn on: no workspace tools on this page */
+body[data-project="cypherock-x0"] .tools { display: none !important; }
+
+/* --- slower shine on "Secure.": a 3.2s sweep, then a long rest ----------- */
+.fg-words li:last-child { animation: fg-shiny2 7s cubic-bezier(0.45, 0, 0.25, 1) infinite; }
+
+/* --- and the same light on TRUST, once it has turned gold and leaned -----
+   A copy of the word sits exactly over it with a pale-gold band clipped to
+   the glyphs; it only exists once the fill has finished (--g). */
+.fg-wall__end .fg-we--t { position: relative; }
+.fg-wall__end .fg-we--t::after {
+  content: attr(data-t);
+  position: absolute; inset: 0;
+  background-image: linear-gradient(110deg,
+    transparent 0%, transparent 38%,
+    rgba(255, 246, 222, 0.95) 48%, rgba(255, 246, 222, 0.95) 52%,
+    transparent 62%, transparent 100%);
+  background-size: 250% auto;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  opacity: clamp(0, calc((var(--g) - 0.9) * 10), 1);
+  animation: fg-shiny2 8s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-wall__end .fg-we--t::after { display: none; }
+}
+.fg-wall__end .fg-we--t::after {
+  background-image: linear-gradient(105deg,
+    transparent 0%, transparent 40%,
+    rgba(255, 244, 214, 0.9) 50%,
+    transparent 60%, transparent 100%);
+  background-size: 300% 100%;
+  animation: fg-trust-shine 7s cubic-bezier(0.4, 0, 0.3, 1) infinite;
+}
+@keyframes fg-trust-shine {
+  0%   { background-position: 100% 0; }
+  50%  { background-position: 0% 0; }
+  100% { background-position: 0% 0; }
+}
+
+/* shine: a slow sweep (~2.9s) and only a short rest (~0.6s) between passes */
+.fg-words li:last-child { animation: fg-shiny3 3.5s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+@keyframes fg-shiny3 {
+  0%   { background-position: 130% center; }
+  83%  { background-position: -30% center; }
+  100% { background-position: -30% center; }
+}
+.fg-wall__end .fg-we--t::after { animation: fg-trust-shine2 3.5s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+@keyframes fg-trust-shine2 {
+  0%   { background-position: 100% 0; }
+  83%  { background-position: 0% 0; }
+  100% { background-position: 0% 0; }
+}
+
+/* ==== one display voice for the three statement scenes ====================
+   The brief ("Secure."), Decision 01 and the trust line were three different
+   sizes, weights and trackings. They now share one: the poster-L size, 560
+   weight, -0.04em, 0.98 leading. The trust line also sits in the same left-
+   aligned 58rem column as the decision instead of floating centred. */
+.film .fg-words li,
+.film .scn--ask .fg-h,
+.film .scn--wall .fg-wall__end {
+  font-size: var(--fg-poster-l);
+  font-weight: 560;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+.film--indexed .scn--wall .fg-wall__endw,
+.film .scn--wall .fg-wall__endw {
+  position: absolute; inset: 0; z-index: 3;
+  display: grid; place-items: center start; justify-content: center;
+  padding: 0 var(--fg-gut);
+}
+.film .scn--wall .fg-wall__end {
+  width: min(58rem, 100%); max-width: 58rem; text-align: left; margin: 0;
+}
+.film--indexed .scn--wall .fg-wall__endw { padding-left: calc(var(--fg-gut) + var(--film-index)); }
+.fg-wall__end br { display: none; }
+.fg-wl { display: inline; opacity: 1; translate: none; }
+.fg-wl .fg-we {
+  display: inline-block;
+  opacity: var(--w);
+  translate: 0 calc((1 - var(--w)) * 0.3em);
+}
+.fg-wall__end .fg-we--q { font-weight: 560; }
+/* and all three start on the same left edge */
+.film .scn--ask .scn__in { margin-inline: 0 auto; justify-self: start; }
+
+/* ---- the three statements: one voice, one smaller size ------------------
+   Back down from poster size to a quieter display size; attention comes
+   from one small effect on the word that matters in each, not from scale. */
+.film .fg-words li,
+.film .scn--ask .fg-h,
+.film .scn--wall .fg-wall__end {
+  font-size: clamp(2.2rem, 4.7vw, 5rem);
+  line-height: 1.02;
+}
+.film .scn--ask .fg-h { max-width: 18ch; }
+.film .scn--wall .fg-wall__end { width: auto; max-width: none; }
+.fg-wall__end br { display: inline; }
+
+/* Decision 01: "Don't reuse" gets a thin gold rule that draws itself under
+   the words once the sentence has landed */
+.fg-key { position: relative; white-space: nowrap; }
+.fg-key::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0.02em;
+  height: 0.06em; border-radius: 1em;
+  background: linear-gradient(90deg, #c99a4c, #f0d49a);
+  transform-origin: left center;
+  transform: scaleX(clamp(0, calc((var(--p) - 0.3) / 0.25), 1));
+  opacity: 0.9;
+}
+@media (prefers-reduced-motion: reduce) { .fg-key::after { transform: none; } }
+/* fix: the words read the LINE's progress (--lw), not their own --w, which an
+   older rule pins to 1 — that was showing the line from the very start */
+.fg-wl { --lw: clamp(0, calc((var(--p) - var(--la)) / 0.07), 1); }
+.fg-wl .fg-we { opacity: var(--lw); translate: 0 calc((1 - var(--lw)) * 0.3em); }
+
+/* ---- Direction road, v3: one long sweep, a real road cross-section -------
+   Built outward-in like a road is painted: soft shadow on the page, a tight
+   contact shadow, a dark kerb, the white edge lines, a dark gap, asphalt,
+   a faint crown of light, and the dashed centre line. No blurred bevel
+   strokes, so the edges stay crisp all the way round the curve. */
+.fg-dir__far   { stroke: rgba(20, 22, 30, 0.16); stroke-width: 104; transform: translate(0, 22px); }
+.fg-dir__near  { stroke: rgba(20, 22, 30, 0.26); stroke-width: 80; transform: translate(0, 5px); }
+.fg-dir__side  { display: none; }
+.fg-dir__curb  { stroke: #55565b; stroke-width: 76; }
+.fg-dir__bevel { stroke: #efeee9; stroke-width: 68; }
+.fg-dir__inner { stroke: #5c5d62; stroke-width: 62; }
+.fg-dir__tar   { stroke-width: 60; }
+.fg-dir__crown { stroke: rgba(255, 255, 255, 0.07); stroke-width: 28; transform: none; }
+.fg-dir__line  { stroke: #f4f3ef; stroke-width: 3; stroke-dasharray: 22 20; opacity: 0.95; stroke-linecap: butt; }
+
+.fg-dir__cards { left: 3.4%; top: 65%; width: 23%; }
+.fg-dir__vault { left: 72%; top: 19.5%; width: 13%; }
+/* the last label hangs to the LEFT of its stem, clear of the right edge */
+.fg-dir__stop:last-of-type .fg-dir__lab {
+  left: auto; right: 0; top: calc(-1 * var(--lift));
+  text-align: right; padding-left: 0; padding-right: 0.4cqw;
+  border-left: 0; border-right: 1px solid rgba(16, 16, 18, 0.16);
+}
+.fg-dir__stop:last-of-type .fg-dir__stem { top: calc(-1 * var(--lift) + 3.9cqw); height: calc(var(--lift) - 3.9cqw - 0.7cqw); }
+/* road v4: deeper, more dramatic S; products moved to the open corners */
+.fg-dir__cards { left: 2%; top: 67.6%; width: 22%; }
+.fg-dir__vault { left: 82%; top: 61%; width: 13%; }
+/* "Different product" hangs BELOW its dot, in the open space under the trough */
+.fg-dir__stop:nth-last-of-type(2) .fg-dir__lab { top: 1.6cqw; }
+.fg-dir__stop:nth-last-of-type(2) .fg-dir__stem { top: 0.7cqw; height: 1.1cqw; }
+.fg-dir__stop:nth-last-of-type(2) .fg-dir__lab { top: 3cqw; }
+.fg-dir__stop:nth-last-of-type(2) .fg-dir__stem { top: 0.7cqw; height: 2.4cqw; }
+
+/* ---- road v5: one cosine S, drawn as perspective ribbons ----------------- */
+.fg-dir__road .fg-rd { stroke: none; }
+.fg-dir__road .fg-rd--tar { fill: url(#fgDirAsphalt); stroke: none; }
+.fg-dir__road .fg-rd--far   { fill: rgba(20, 22, 30, 0.16); }
+.fg-dir__road .fg-rd--near  { fill: rgba(20, 22, 30, 0.24); }
+.fg-dir__road .fg-rd--kerb  { fill: #55565b; }
+.fg-dir__road .fg-rd--edge  { fill: #efeee9; }
+.fg-dir__road .fg-rd--gap   { fill: #5c5d62; }
+.fg-dir__road .fg-rd--crown { fill: rgba(255, 255, 255, 0.07); }
+.fg-dir__road .fg-rd--dash  { fill: #f4f3ef; opacity: 0.95; }
+.fg-dir__cards { left: 3%; top: 60%; width: 22%; }
+.fg-dir__vault { left: 81%; top: 15%; width: 13%; }
+/* reset the per-stop label placements from the last road */
+.fg-dir__stop:last-of-type .fg-dir__lab {
+  left: 0; right: auto; text-align: left; padding-left: 0.4cqw; padding-right: 0;
+  border-right: 0; border-left: 1px solid rgba(16, 16, 18, 0.16); top: calc(-1 * var(--lift));
+}
+.fg-dir__stop:nth-last-of-type(2) .fg-dir__lab { top: calc(-1 * var(--lift)); }
+.fg-dir__stop:nth-last-of-type(2) .fg-dir__stem { top: calc(-1 * var(--lift) + 3.9cqw); height: calc(var(--lift) - 3.9cqw - 0.7cqw); }
+/* "Different audience" hangs below and to the LEFT of its dot */
+.fg-dir__stop:nth-last-of-type(3) .fg-dir__lab {
+  top: 3cqw; left: auto; right: 0; text-align: right; padding-left: 0; padding-right: 0.4cqw;
+  border-left: 0; border-right: 1px solid rgba(16, 16, 18, 0.16);
+}
+.fg-dir__stop:nth-last-of-type(3) .fg-dir__stem { top: 0.7cqw; height: 2.4cqw; }
+.fg-dir__cards { left: 3%; top: 64%; width: 20%; }
+.fg-dir__vault { left: 80%; top: 30%; width: 13%; }
+/* the last stop hangs left of its dot, clear of the right edge */
+.fg-dir__stop:last-of-type .fg-dir__lab {
+  left: auto; right: 0; text-align: right; padding-left: 0; padding-right: 0.4cqw;
+  border-left: 0; border-right: 1px solid rgba(16, 16, 18, 0.16);
+}
+/* products placed in the two open pockets the S leaves: cards under the
+   flat left stretch, the device in the bowl above the right stretch */
+.fg-dir__cards { left: 12%; top: 62%; width: 21%; }
+.fg-dir__vault { left: 71%; top: 50%; width: 13.5%; }
+.fg-dir__cards { left: 7%; top: 64%; width: 21%; }
+.fg-dir__vault { left: 79%; top: 40%; width: 13%; }
+
+/* the N45 title card: a quiet kicker over a heavier name */
+.room__intro { display: grid; gap: 0.55rem; }
+.room__intro .lab-n { font-size: 0.8rem; letter-spacing: 0.22em; opacity: 0.6; }
+.room__title {
+  font-size: clamp(1.8rem, 3vw, 2.9rem); font-weight: 560; line-height: 1;
+  letter-spacing: -0.03em; color: #f4f3ef; text-transform: none;
+}
+.room__title { white-space: nowrap; }
+.room__title { font-size: clamp(1.4rem, 2vw, 1.9rem); letter-spacing: -0.025em; }
+
+/* ==== the result: X0 — one phone and a river of screens ================== */
+.scn--showcase .scn__stage { background: #08080a; overflow: clip; }
+.scn--showcase {
+  --e: calc(var(--p) + (var(--in, 1) - 1) * 0.35);
+  --rise: clamp(0, calc((var(--e) + 0.2) / 0.3), 1);
+}
+.fg-show { position: absolute; inset: 0; overflow: clip; z-index: 0; }
+.fg-show__river {
+  position: absolute; inset: -20% -6%;
+  display: flex; gap: 1.6vw; justify-content: center;
+  transform: rotate(-8deg);
+}
+.fg-show__col {
+  --q: clamp(0, calc((var(--e) + 0.28 - var(--i) * 0.035) * 5), 1);
+  flex: 0 0 13.5vw;
+  opacity: calc(var(--q) * 0.55);
+  translate: 0 calc((1 - var(--q)) * var(--dir) * 12vh);
+}
+.fg-show__track {
+  display: grid; gap: 1.6vw;
+  translate: 0 calc(-25% + (var(--p) - 0.5) * var(--dir) * var(--sp) * 34%);
+}
+.fg-show__track img {
+  display: block; width: 100%; height: auto; aspect-ratio: 1179 / 2556; object-fit: cover; object-position: top;
+  border-radius: 1.9vw;
+  box-shadow: 0 1.2vw 2.4vw rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+}
+/* the river recedes toward the phone: darker and softer in the middle */
+.fg-show__veil {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(34% 58% at 56% 52%, rgba(8,8,10,0.92) 0%, rgba(8,8,10,0.6) 55%, rgba(8,8,10,0) 100%),
+    linear-gradient(90deg, rgba(8,8,10,0.95) 0%, rgba(8,8,10,0.55) 26%, rgba(8,8,10,0) 42%),
+    linear-gradient(180deg, rgba(8,8,10,0.7), transparent 18%, transparent 82%, rgba(8,8,10,0.8));
+}
+
+/* the hero phone */
+.fg-show__phone {
+  position: absolute; z-index: 3;
+  left: 56%; top: 50%;
+  height: min(80svh, 46vw); aspect-ratio: 1292 / 2658;
+  translate: -50% calc(-50% + (1 - var(--rise)) * 14vh);
+  scale: calc(0.92 + var(--rise) * 0.08);
+  opacity: var(--rise);
+  filter: drop-shadow(0 3vh 5vh rgba(0,0,0,0.65));
+}
+.fg-show__frame { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+.fg-show__screen {
+  position: absolute; z-index: 1;
+  top: 1.768%; bottom: 1.768%; left: 4.334%; right: 4.412%;
+  border-radius: 7.4% / 3.4%;
+  overflow: hidden; background: #000;
+}
+.fg-show__screen img {
+  --v: clamp(0, calc(min((var(--p) - var(--a) + 0.035) / 0.035, (var(--b) - var(--p)) / 0.035 + 1)), 1);
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top;
+  opacity: var(--v);
+  scale: calc(1.04 - var(--v) * 0.04);
+}
+.fg-show__screen img:first-child { --v: clamp(0, calc((var(--b) - var(--p)) / 0.035 + 1), 1); }
+.fg-show__screen img:last-child  { --v: clamp(0, calc((var(--p) - var(--a) + 0.035) / 0.035), 1); }
+
+/* the words */
+.scn--showcase .fg-show__head { position: relative; z-index: 4; align-self: center; justify-self: start; max-width: 22rem; }
+.fg-show__k { margin: 0 0 1rem; font-size: 0.75rem; font-weight: 550; letter-spacing: 0.16em; text-transform: uppercase; color: #c9a86a; }
+.film .scn--showcase .fg-show__h { margin: 0; font-size: clamp(2.2rem, 4.2vw, 4.4rem); line-height: 1; letter-spacing: -0.04em; font-weight: 560; color: #f4f3ef; }
+.fg-show__p { margin: 1.2rem 0 0; font-size: 1.02rem; line-height: 1.5; color: rgba(244,243,239,0.55); }
+
+@media (max-width: 46rem) {
+  .fg-show__col { flex-basis: 30vw; }
+  .fg-show__phone { left: 50%; top: 58%; height: min(62svh, 110vw); }
+  .scn--showcase .fg-show__head { align-self: start; padding-top: 8svh; }
+  .fg-show__veil { background: linear-gradient(180deg, rgba(8,8,10,0.95) 0%, rgba(8,8,10,0.5) 30%, rgba(8,8,10,0.4) 70%, rgba(8,8,10,0.9)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-show__col { --q: 1; } .scn--showcase { --rise: 1; }
+}
+/* keep the words clear of the river behind them */
+.fg-show__veil {
+  background:
+    radial-gradient(34% 58% at 56% 52%, rgba(8,8,10,0.92) 0%, rgba(8,8,10,0.6) 55%, rgba(8,8,10,0) 100%),
+    linear-gradient(90deg, rgba(8,8,10,0.98) 0%, rgba(8,8,10,0.9) 30%, rgba(8,8,10,0.4) 44%, rgba(8,8,10,0) 52%),
+    linear-gradient(180deg, rgba(8,8,10,0.7), transparent 18%, transparent 82%, rgba(8,8,10,0.8));
+}
+.fg-show__p { color: rgba(244,243,239,0.62); }
+@media (max-width: 46rem) {
+  .fg-show__veil { background: linear-gradient(180deg, rgba(8,8,10,0.97) 0%, rgba(8,8,10,0.85) 32%, rgba(8,8,10,0.4) 55%, rgba(8,8,10,0.9)); }
+}
