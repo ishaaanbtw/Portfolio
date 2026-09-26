@@ -2213,6 +2213,7 @@ body.pile-hold * { cursor: grabbing; }
 
    `--pv-back` and `--pv-drift` are on `.pvw` and are the only two numbers. */
 .home__work[data-mode='preview'] .wcard:not(.is-open),
+.home__work[data-mode='preview'] .wcard.is-ghost,
 .home__work[data-mode='preview'] .home__more {
   --rc-x: calc(var(--pq, 0) * var(--rcx-to, 0px));
   --rc-y: calc(var(--pq, 0) * var(--rcy-to, 0px));
@@ -2223,8 +2224,22 @@ body.pile-hold * { cursor: grabbing; }
      homepage. Past about eleven they stop being rectangles and become colour,
      and the recession above is what makes that read as distance rather than as
      a page out of focus. */
-  filter: blur(calc(var(--pq, 0) * 13px)) saturate(calc(1 - var(--pq, 0) * 0.22));
-  opacity: calc((0.35 + var(--in, 1) * 0.65) * (1 - var(--pq, 0) * 0.45));
+  will-change: transform, filter, opacity;
+}
+/* THE BLUR IS A TRANSITION, NOT A NUMBER WRITTEN EVERY FRAME. Driven off
+   `--pq` it changed radius on every frame of the spring, and a blur whose
+   radius changes has to be re-rasterised each time: four large cards, sixty
+   times a second, which is where the open and close stuttered. As a CSS
+   transition on a class the compositor animates it on its own thread. */
+.home__work[data-mode='preview'] .wcard:not(.is-open),
+.home__work[data-mode='preview'] .home__more {
+  transition: filter 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.home__work.is-quiet .wcard:not(.is-open),
+.home__work.is-quiet .home__more {
+  filter: blur(13px) saturate(0.78);
+  opacity: 0.55;
+  transition-duration: 240ms;
 }
 
 .home__more {
@@ -2253,8 +2268,8 @@ body.pile-hold * { cursor: grabbing; }
    navigation's ink stepping back. Nothing here blurs — the only blur in this
    arrangement is on the grid's own cards, and it has never reached the
    masthead. */
-.home[data-pvw='1'] .mast__keep { opacity: calc(1 - var(--pq, 0) * 0.54); }
-.home[data-pvw='1'] .mast__foot { opacity: calc(1 - var(--pq, 0) * 0.3); }
+/* the navigation stays exactly as it is while a project is open: it is still
+   the way around the site, so it keeps its full ink */
 
 /* it is still the homepage, so it is still reachable — but not while a folder
    is open over it, or the first press lands on a blurred card */
@@ -2282,6 +2297,19 @@ body.pile-hold * { cursor: grabbing; }
    the left-hand stack starts inside the column's footprint, and painted under
    the paper it would disappear for the first third of its own journey. */
 .wcard.is-open { z-index: 4; }
+/* a project whose row leaves the card out: the card stays in its cell and
+   steps back with the rest of the grid instead of travelling */
+.wcard.is-open.is-ghost {
+  z-index: auto;
+  /* the same class-driven transition as the rest of the floor, so the blur is
+     animated by the compositor and not recomputed on every frame */
+  transition: filter 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.home__work.is-quiet .wcard.is-open.is-ghost {
+  filter: blur(13px) saturate(0.78);
+  opacity: 0.55;
+  transition-duration: 240ms;
+}
 
 /* the caption goes because the column now says the same thing, and it goes by
    sliding under the card rather than by fading */
@@ -2339,7 +2367,7 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 
 .pvw,
 .pvwr {
-  --pv-col: 19rem;
+  --pv-col: 23rem;
   --pv-gap: clamp(0.75rem, 1.4vw, 1.25rem);
   --pv-in: 40px;
   /* HOW MUCH OF THE NEXT ARTEFACT SHOWS BEFORE THE EDGE TAKES IT, and the one
@@ -2423,9 +2451,10 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 .pvw::before {
   content: '';
   position: absolute;
-  inset: 0 0 0 var(--pv-col);
+  /* UNDER THE PANEL AS WELL, so whatever position the panel is in on its
+     way in, there is field behind it and never a gap to the grid */
+  inset: 0;
   background: var(--pv-field);
-  box-shadow: inset 1px 0 0 var(--line-soft);
   opacity: clamp(0, calc(var(--p, 0) * 6), 1);
   pointer-events: none;
 }
@@ -2441,7 +2470,7 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
    back. That is the only affordance the emptiness has. */
 .pvw__stage {
   position: absolute;
-  inset: 0 0 0 calc(var(--pv-col) + var(--pv-gap));
+  inset: 0 0 0 var(--pv-col);
   overflow: clip;
   pointer-events: auto;
 }
@@ -2457,10 +2486,83 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   /* THE CAMERA AND THE ENTRANCE ON ONE TRANSFORM. `--cam` is where the camera
      is; the second term is the forty pixels the whole composition assembles
      through. Two writers, one property, no fight. */
-  translate: calc((var(--cam, 0px) * -1) - (1 - var(--p, 0)) * var(--pv-in)
-    + var(--swap-t, 0px)) 0;
+  translate: calc((var(--cam, 0px) * -1) + var(--swap-t, 0px)) 0;
   will-change: translate;
 }
+
+/* --- the end of the row: soften, then an arrow onward ---------------------
+
+   A PROGRESSIVE BLUR ALONG THE RIGHT EDGE, five layers each softer and each
+   masked to begin a little nearer the edge. It rises with `--near` as the row
+   approaches its end, so the last pictures slip under it. At the end an arrow
+   appears on it; pulling on fills the ring round the arrow, and a full ring
+   opens the case study. */
+.pvw__edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: min(12%, 9rem);
+  z-index: 2;
+  pointer-events: none;
+}
+/* NO OPACITY ON THE WRAPPER: an ancestor with opacity below 1 cuts a
+   backdrop filter off from what is behind it, so the blur never showed. The
+   strength rises through the radius instead. */
+.pvw__edge i {
+  position: absolute;
+  inset: 0;
+  -webkit-backdrop-filter: blur(calc(var(--b) * var(--near, 0)));
+          backdrop-filter: blur(calc(var(--b) * var(--near, 0)));
+  -webkit-mask-image: linear-gradient(to right, transparent var(--s), #000 var(--e));
+          mask-image: linear-gradient(to right, transparent var(--s), #000 var(--e));
+}
+.pvw__edge i:nth-child(1) { --b: 1px;  --s: 0%;  --e: 30%; }
+.pvw__edge i:nth-child(2) { --b: 2px;  --s: 15%; --e: 50%; }
+.pvw__edge i:nth-child(3) { --b: 4px;  --s: 35%; --e: 70%; }
+.pvw__edge i:nth-child(4) { --b: 7px;  --s: 55%; --e: 88%; }
+.pvw__edge i:nth-child(5) { --b: 12px; --s: 70%; --e: 100%; }
+
+.pvw__onward {
+  position: absolute;
+  right: clamp(1rem, 2.5vw, 2rem);
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  /* PART OF THE BLUR, not a button laid on it: frosted, the colour of the
+     blur itself, with a hairline edge and a light chevron */
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+          backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  --show: clamp(0, calc((var(--near, 0) - 0.85) * 6.6), 1);
+  opacity: var(--show);
+  translate: calc(var(--stretch, 0) * -18px) -50%;
+  scale: calc(0.9 + var(--show) * 0.1);
+  pointer-events: none;
+  transition: background 200ms ease;
+}
+.pvw__stage.is-end .pvw__onward { pointer-events: auto; }
+.pvw__onward:hover { background: rgba(255, 255, 255, 0.2); }
+/* the progress is the disc's own edge filling round, drawn with a masked
+   conic gradient so it sits exactly on the circle */
+.pvw__onward::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(rgba(255, 255, 255, 0.95) calc(var(--pull, 0) * 1turn), transparent 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+}
+.pvw__onward-a { display: block; width: 1.125rem; height: 1.125rem; translate: calc(var(--pull, 0) * 3px) 0; }
+.pvw__onward.is-going { background: rgba(255, 255, 255, 0.9); color: #111; }
+.pvw__onward.is-going .pvw__onward-a { translate: 4px 0; transition: translate 300ms cubic-bezier(0.22, 1, 0.36, 1); }
 
 /* --- a cell of the workspace --------------------------------------------
 
@@ -2511,12 +2613,22 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   gap: 0.7rem;
   --pv-ar: var(--ar, 1.4);
   width: calc(var(--pv-h, 44svh) * var(--fh, 1) * var(--pv-ar));
-  height: calc(var(--pv-h, 44svh) + 0.7rem + 2.5rem);
+  height: calc(var(--pv-h, 44svh) * var(--fh, 1) + 0.7rem + 2.5rem);
   pointer-events: auto;
 }
 /* the anchor's aspect is the pressed card's, written by `remeasure` as
    `--slot-ar`, so its cell has to be measured off that one instead */
 .pvw__fig:has(> .pvw__slot) { --pv-ar: var(--slot-ar, 1.34); }
+/* THE REST OF THE PROJECT ARRIVES FROM THE RIGHT, one picture after another,
+   while the pressed card grows into the first slot. Each cell has its own
+   window on the same `--p`, a little later than the one before, eased out, so
+   the row slides in as a sequence and slides back out in reverse on a close. */
+.pvw__fig[style*='--i'] {
+  --e0: clamp(0, calc((var(--p, 0) - var(--i, 1) * 0.06) / 0.6), 1);
+  --e: calc(var(--e0) * (2 - var(--e0)));
+  translate: calc((1 - var(--e)) * 22vw) 0;
+  opacity: var(--e0);
+}
 
 .pvw__plate,
 .pvw__slot {
@@ -2630,6 +2742,14 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
    `data-fam` and `data-kind` are written by `Preview.paint` from the
    dimensions authored in content.js; see `kindOf` there. */
 .pvw__cam[data-fam='mixed'] .pvw__fig[data-kind='phone'] { --fh: 0.78; }
+.pvw__cam[data-fam='phone'] .pvw__fig[data-kind='phone'] { --fh: var(--fh-ph, 1); }
+.pvw__cam[data-fam='phone'] { --pv-row-gap: 0.75rem; }
+/* THE LISTING, PRESENTED LIKE A LISTING: tall panels with generous rounded
+   corners, a clear gutter between them and no caption strip under each one,
+   so the row is centred on the pictures themselves */
+.pvw__cam[data-fam='phone'] .pvw__fig[data-kind='phone'] .pvw__plate { border-radius: 10px; }
+.pvw__cam[data-fam='phone'] .pvw__fig[data-kind='phone'] .pvw__cap { display: none; }
+.pvw__cam[data-fam='phone'] .pvw__fig[data-kind='phone'] { height: auto; gap: 0; }
 .pvw__cam[data-fam='mixed'] .pvw__fig[data-kind='mark']  { --fh: 0.58; }
 /* a mark on its own is still a mark, however uniform the rest of the row */
 .pvw__cam[data-fam='screen'] .pvw__fig[data-kind='mark'],
@@ -2656,7 +2776,7 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   opacity: clamp(0, calc((var(--p, 0) - 0.4) * 4), 1);
 }
 
-.pvw__meter[hidden] { display: none; }
+.pvw__meter, .pvw__meter[hidden] { display: none; }
 .pvw__segs { display: flex; gap: 4px; }
 
 .pvw__seg {
@@ -2713,6 +2833,7 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 }
 
 .pvw[data-cam='live'] ~ .pvwr { z-index: 6; }
+.pvwr.is-closing .pvw__brief { opacity: 0; transition: opacity 60ms linear; }
 
 .pvw__brief {
   position: absolute;
@@ -2720,11 +2841,11 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   /* A LEFT MARGIN OF ITS OWN. Set flush at 0 the column's first character sat
      eighteen pixels from the navigation's last one, so the two columns of type
      read as one column of type. The gutter is what makes it a separate page. */
+  /* the same gutter on both sides */
   padding:
     clamp(1.4rem, 4.2vh, 2.4rem)
-    var(--pv-gap)
-    clamp(1.4rem, 4vh, 2.4rem)
-    clamp(1rem, 2vw, 1.75rem);
+    clamp(1.25rem, 2vw, 1.75rem)
+    clamp(1.4rem, 4vh, 2.4rem);
   pointer-events: auto;
 }
 
@@ -2746,6 +2867,7 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   inset: 0;
   background-color: var(--surface);
   background-image: linear-gradient(var(--pv-paper), var(--pv-paper));
+  box-shadow: inset -1px 0 0 var(--line-soft);
   opacity: clamp(0, calc(var(--p, 0) * 6), 1);
 }
 
@@ -2803,8 +2925,15 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
    arrives as a column. */
 .pvw__body {
   position: relative;
-  translate: calc((1 - var(--p, 0)) * var(--pv-in) * -1 + var(--swap-t, 0px)) 0;
-  opacity: clamp(0, calc(var(--p, 0) * 4), 1);
+  translate: calc(var(--swap-t, 0px)) 0;
+  opacity: clamp(0, calc((var(--p, 0) - 0.15) * 2.5), 1);
+}
+/* THE PANEL SLIDES IN AS ONE SOLID SHEET, paper and words together, from
+   behind the navigation. The field runs underneath it, so no seam can open
+   while it moves; its one hairline travels with it on its right edge. */
+.pvw__brief {
+  --pe: calc(1 - (1 - var(--p, 0)) * (1 - var(--p, 0)) * (1 - var(--p, 0)));
+  translate: calc((1 - var(--pe)) * -40px) 0;
 }
 
 /* --- THE PANEL'S HEADER: OUT ON THE LEFT, ALONG ON THE RIGHT -------------
@@ -2848,8 +2977,8 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
    declaration lands differently in every font. Eleven pixels in a
    twenty-eight-pixel pod. */
 .pvw__back svg {
-  width: 0.6875rem;
-  height: 0.6875rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 /* --- WHO THE WORK WAS FOR ------------------------------------------------
@@ -2909,11 +3038,11 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 
 .pvw__back svg,
 .pvw__step svg { display: block; }
-.pvw__step svg { width: 0.8125rem; height: 0.8125rem; }
+.pvw__step svg { width: 1.125rem; height: 1.125rem; }
 
 .pvw__eyebrow {
   display: block;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.01em;
   color: var(--ink-dim);
   margin: 0 0 0.2rem;
@@ -2921,7 +3050,7 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 
 .pvw__name {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 560;
   line-height: 1.22;
   letter-spacing: -0.014em;
@@ -2932,7 +3061,7 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 
 .pvw__tagline {
   margin: 0.5rem 0 0;
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   line-height: 1.42;
   color: var(--ink-2);
   max-width: 30ch;
@@ -2941,7 +3070,7 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 
 .pvw__summary {
   margin: 0.55rem 0 0;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   line-height: 1.62;
   color: var(--ink-dim);
   max-width: 34ch;
@@ -2971,19 +3100,43 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 .pvw__fact--stack { align-items: start; }
 
 .pvw__k {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   letter-spacing: 0.01em;
   color: var(--ink-dim);
 }
 
 .pvw__v {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: var(--ink);
   text-align: right;
   text-wrap: pretty;
 }
+
+/* a live product: a small green dot with a soft ring pulsing out of it */
+.pvw__live {
+  position: relative;
+  display: inline-block;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  margin-right: 0.5rem;
+  vertical-align: 0.08em;
+}
+.pvw__live::before,
+.pvw__live i {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #22c55e;
+}
+.pvw__live i { animation: pvwLive 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) infinite; }
+@keyframes pvwLive {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .pvw__live i { animation: none; opacity: 0; } }
 
 .pvw__does {
   margin: 0;
@@ -3003,14 +3156,24 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   pointer-events: auto;
   text-decoration: none;
 }
+/* THE WAY IN SPANS THE COLUMN, so it lines up with the ruled facts above it
+   on both edges: label on the left, arrow on the right */
+.pvw__door .pvw__cta {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 0.7rem 0.9rem 0.7rem 1.1rem;
+  font-size: 0.875rem;
+}
 .pvw__arrow {
   display: inline-flex;
   transition: transform 480ms var(--spring);
 }
 .pvw__arrow svg {
   display: block;
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 :root:not(.hover-cold) .pvw__cta:hover .pvw__arrow { transform: translateX(3px); }
 
@@ -3018,7 +3181,7 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: var(--ink-dim);
 }
 .pvw__soon::before { content: ''; width: 4px; height: 4px; background: currentColor; opacity: 0.5; }
@@ -3030,7 +3193,7 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
   align-items: center;
   gap: 0.45rem;
   margin-top: clamp(1rem, 2.6vh, 1.6rem);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   letter-spacing: 0.01em;
   color: var(--ink-dim);
   opacity: clamp(0, calc((var(--p, 0) - 0.5) * 3), 1);

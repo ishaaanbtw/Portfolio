@@ -685,38 +685,47 @@ window.SITE = {
            EVERY FACT IS OUT OF THE STUDY OR THE KNOWLEDGE BASE. Nothing in a
            `brief` is written for the brief. */
         brief: {
-          tagline: 'A hardware wallet the size of a bank card.',
-          summary: 'X0 had to be new enough to justify its own identity and '
-            + 'unmistakably Cypherock at the same time. Seven months from the '
-            + 'first scoping conversation to a beta — the card, the app around '
-            + 'it, and the design system under both.',
+          /* the panel's own heading; the card and the study keep `title` */
+          name: 'Cypherock X0 Cold Wallet App',
+          summary: 'X0 has three parts: the cards, the packaging and the app. '
+            + 'This project is the app, the iOS and Android wallet that makes the '
+            + 'cards usable.',
           facts: [
-            { k: 'Role', v: 'Senior Product Designer — end to end' },
-            { k: 'Timeline', v: 'Seven months · Dec 2025 — present' },
-            { k: 'Team', v: 'Design of one, with firmware, hardware, blockchain and frontend' },
-            { k: 'Platform', v: 'NFC card · iOS · Android · CySync desktop' },
+            { k: 'Role', v: 'Senior Product Designer, end to end' },
+            { k: 'Timeline', v: 'Since Feb 2026' },
+            { k: 'Status', v: 'Live on iOS and Android', live: true },
           ],
           does: [
             'Product strategy',
             'Information architecture',
-            'UX and UI',
+            'UX and UI, 250+ screens',
             'N45 design system',
-            'Industrial and packaging design',
+            'AI-ready design workflow',
             'NFC and BLE interaction flows',
+            'Hardware card and packaging',
           ],
           cta: 'View the complete case study',
           /* THE HERO IS THE CARD AGAINST THE PHONE, because the whole product
              is one object touching another one, and it is the only frame in
              the set that says so without a caption. */
+          /* THE APP STORE SET, in the order it runs on the listing: six
+             portrait panels at one height, flipped through sideways. The
+             pressed card does not join the row (`anchor: false`); it steps back
+             with the rest of the grid and the listing is the whole row. */
+          anchor: false,
           spread: [
-            { at: 'hero', src: 'assets/media/x0/app-walkthrough.webp', w: 1440, h: 918,
-              alt: 'The X0 companion app running on a phone, lit from one side.' },
-            { at: 'a', src: 'assets/img/x0/system/hero.webp', w: 862, h: 1772,
-              alt: 'The X0 Wallet portfolio screen.' },
-            { at: 'b', src: 'assets/img/x0/onboarding/09-tap-idle.webp', w: 393, h: 852,
-              alt: 'Tap to approve — the card held against the back of the phone.' },
-            { at: 'detail', src: 'assets/img/x0/system/n45-mark.png', w: 192, h: 192,
-              alt: 'The N45 design system mark.' },
+            { at: 'a', src: 'assets/img/x0/store/01.webp', w: 440, h: 956,
+              alt: 'Secure and simple, a self-custodial wallet.' },
+            { at: 'a', src: 'assets/img/x0/store/02.webp', w: 440, h: 956,
+              alt: '21,000+ tokens across 15+ networks, in real time.' },
+            { at: 'a', src: 'assets/img/x0/store/03.webp', w: 440, h: 956,
+              alt: 'No seed phrase backup required.' },
+            { at: 'a', src: 'assets/img/x0/store/04.webp', w: 440, h: 956,
+              alt: 'Connect your favourite dApps with WalletConnect.' },
+            { at: 'a', src: 'assets/img/x0/store/05.webp', w: 440, h: 956,
+              alt: 'Swap between multiple wallets.' },
+            { at: 'a', src: 'assets/img/x0/store/06.webp', w: 440, h: 956,
+              alt: 'Stay up to date with push notifications.' },
           ],
         },
         study: {

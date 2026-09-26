@@ -196,6 +196,37 @@
       },
     };
   }
+  /* A TWEEN WITH A SPRING'S INTERFACE, for motion that has to be quick and
+     exactly as long every time. It runs off the wall clock rather than the
+     frame's `dt`, so a dropped frame costs a frame and never slows the whole
+     move down; retargeting mid-flight starts a fresh curve from wherever it is,
+     so an open interrupted by a close turns round without a jump. */
+  function Tween(value, up = 380, down = 320) {
+    const ease = (t) => 1 - Math.pow(1 - t, 4);
+    return {
+      v: value, vel: 0, from: value, to: value, t0: 0, up, down,
+      get target() { return this.to; },
+      set target(x) {
+        if (x === this.to && this.t0) return;
+        this.from = this.v; this.to = x; this.t0 = performance.now();
+      },
+      step() {
+        if (this.v === this.to) return false;
+        const dur = this.to > this.from ? this.up : this.down;
+        const t = Math.min(1, (performance.now() - this.t0) / dur);
+        this.v = this.from + (this.to - this.from) * ease(t);
+        if (t >= 1) { this.v = this.to; return false; }
+        return true;
+      },
+    };
+  }
+  /* the navigation square's glide: a smooth start, a quick middle and a small
+     overshoot that settles back, the way a light object slides to a stop */
+  const GLIDE = (t) => {
+    const c = 1.35;
+    const u = t - 1;
+    return 1 + (c + 1) * u * u * u + c * u * u;
+  };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /* ======================================================== 1. sound ===== */
@@ -2440,11 +2471,38 @@
          mid-flight would leave it arriving at a slot that had moved. */
       if (!this.el || this.el.dataset.cam !== 'live') return;
       if (!this.cs || this.camMax <= 0 || !d) return;
-      this.cs.target = clamp(this.cs.target + d, 0, this.camMax);
-      this.lastPan = performance.now();
-      this.snapped = false;
+      /* ONE TO ONE WITH THE HAND. The wheel and the trackpad move the row by
+         exactly the distance they report, on the frame they report it, the way
+         a native scroller does: no spring trailing behind the gesture and no
+         snap pulling the row back to a stop once the hand lets go. The spring
+         is kept for the arrow keys and buttons, which are jumps. */
+      /* PAST THE END, THE ROW STRETCHES. Input beyond the last picture goes
+         into a pull that resists more the further it goes; far enough, and
+         the case study is offered. Pulling back undoes the stretch first. */
+      const hasMore = !!$('.pvw__onward', this.el) && !this.going;
+      /* the stretch only starts once the row has come to rest at its end, so
+         the momentum of the swipe that got there cannot fire the offer by
+         itself; it takes a second, deliberate pull */
+      const now = performance.now();
+      const atEnd = this.cs.v >= this.camMax - 0.5;
+      if (!atEnd) this.endAt = 0;
+      else if (!this.endAt) this.endAt = now;
+      const settled = this.endAt && now - this.endAt > 350 && now - (this.lastWheel || 0) > 260;
+      this.lastWheel = now;
+      if (hasMore && ((d > 0 && atEnd && (settled || this.pullRaw > 0)) || (d < 0 && this.pullRaw > 0))) {
+        this.pullRaw = Math.max(0, this.pullRaw + d);
+        this.pullAt = performance.now();
+        if (this.pullRaw >= 420) this.goOn();
+        this.paint();
+        wakeLoop && wakeLoop();
+        return;
+      }
+      const v = clamp(this.cs.v + d, 0, this.camMax);
+      this.cs.v = v; this.cs.target = v; this.cs.vel = 0;
+      this.lastPan = 0;
+      this.snapped = true;
       this.el.dataset.panned = '1';
-      wakeLoop && wakeLoop();
+      this.paint();
     },
 
     stepTo(i) {
@@ -2491,7 +2549,9 @@
       const facts = (b.facts || []).map((f) =>
         `<div class="pvw__fact">` +
           `<dt class="pvw__k">${esc(f.k)}</dt>` +
-          `<dd class="pvw__v">${esc(f.v)}</dd>` +
+          `<dd class="pvw__v">` +
+            (f.live ? `<span class="pvw__live" aria-label="Live"><i></i></span>` : '') +
+            `${esc(f.v)}</dd>` +
         `</div>`).join('');
 
       /* the same row as any other fact, with its values stacked — so the block
@@ -2624,22 +2684,25 @@
         : 'mixed';
 
 
-      const cells = [
+      /* `anchor: false` keeps the pressed card out of the row: the row is the
+         project's own pictures only, and the card steps back with the grid */
+      const lead = b.anchor === false ? 0 : 1;
+      const cells = (lead ? [
         `<figure class="pvw__fig" data-at="anchor">` +
           `<i class="pvw__slot" aria-hidden="true"></i>` +
           `<figcaption class="pvw__cap"><i>${num(1)}</i>` +
             `<span>${esc(item.meta || item.title)}</span></figcaption>` +
         `</figure>`,
-      ].concat((b.spread || []).map((sh, i) => {
+      ] : []).concat((b.spread || []).map((sh, i) => {
         const ar = (sh.w && sh.h) ? (sh.w / sh.h).toFixed(4) : '1.4';
         return `<figure class="pvw__fig" data-at="${esc(sh.at || 'a')}"` +
-          ` data-kind="${kinds[i]}" style="--ar:${ar}">` +
+          ` data-kind="${kinds[i]}" style="--ar:${ar};--i:${i + 1}">` +
           `<span class="pvw__plate">` +
             `<img src="${url(sh.src)}" alt="${esc(sh.alt || '')}"` +
               `${sh.w ? ` width="${sh.w}"` : ''}${sh.h ? ` height="${sh.h}"` : ''}` +
               ` loading="lazy" decoding="async">` +
           `</span>` +
-          `<figcaption class="pvw__cap"><i>${num(i + 2)}</i>` +
+          `<figcaption class="pvw__cap"><i>${num(i + 1 + lead)}</i>` +
             `<span>${esc(sh.cap || sh.alt || '')}</span></figcaption>` +
         `</figure>`;
       }));
@@ -2647,9 +2710,21 @@
       const segs = cells.map((c, i) =>
         `<i class="pvw__seg${i ? '' : ' is-on'}"></i>`).join('');
 
+      /* THE END OF THE ROW IS AN INVITATION. Pulling past the last picture
+         stretches the row and fills a ring; pull far enough and a card offers
+         the full case study, opening it after five seconds unless you stay. */
+      /* THE END OF THE ROW GOES SOFT. A progressive blur rises over the right
+         edge as the row nears its end; at the end an arrow appears there, and
+         pulling on fills the ring round it. Full, it opens the study. */
+      const more = st
+        ? `<div class="pvw__edge" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>` +
+          `<a class="pvw__onward" href="${url(projectHref(st.slug))}" aria-label="Open the full case study" tabindex="-1">` +
+            `<svg class="pvw__onward-a" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3.5 11 8l-4.5 4.5"/></svg>` +
+          `</a>`
+        : '';
       this.el.innerHTML =
         `<div class="pvw__stage">` +
-          `<div class="pvw__cam" data-fam="${fam}">${cells.join('')}</div>` +
+          `<div class="pvw__cam" data-fam="${fam}">${cells.join('')}</div>` + more +
           `<div class="pvw__meter" aria-hidden="true">` +
             `<span class="pvw__at">${num(1)}</span>` +
             `<span class="pvw__segs">${segs}</span>` +
@@ -2680,7 +2755,7 @@
               `</div>` +
             `</div>` +
             (item.meta ? `<span class="pvw__eyebrow">${esc(item.meta)}</span>` : '') +
-            `<h2 class="pvw__name">${esc(item.title)}</h2>` +
+            `<h2 class="pvw__name">${esc(b.name || item.title)}</h2>` +
             who +
             (b.tagline ? `<p class="pvw__tagline">${esc(b.tagline)}</p>` : '') +
             (b.summary ? `<p class="pvw__summary">${esc(b.summary)}</p>` : '') +
@@ -2694,9 +2769,12 @@
       /* the row's own shape, stated on the layer: with nothing to run off the
          right edge there is no edge to fade and nothing to left-align against */
       this.el.dataset.figs = String((b.spread || []).length);
+      this.ghost = !lead;
 
       const back = $('.pvw__back', this.rail);
       if (back) back.addEventListener('click', () => { Sound.tap(); this.hide(true); });
+      this.pullRaw = 0;
+      this.goOff();
       $$('.pvw__step', this.rail).forEach((btn) => {
         btn.addEventListener('click', () => this.stepProject(+btn.dataset.dir));
       });
@@ -2847,6 +2925,12 @@
         const slotW = Math.max(sr.width * 0.32, sr.width - peek);
         const h = Math.min(slotW / Math.max(cardAr, 0.2), roomH);
         camEl.style.setProperty('--pv-h', `${h.toFixed(1)}px`);
+        /* A ROW OF PORTRAIT PANELS STANDS AS TALL AS THE ROOM ALLOWS, the way an
+           app-store listing does, instead of being held to the height of the
+           landscape card that opened it. The card keeps its own height and is
+           centred against them. */
+        camEl.style.setProperty('--fh-ph', (camEl.dataset.fam === 'phone'
+          ? Math.min(roomH / Math.max(h, 1), 2.2) : 1).toFixed(4));
       }
 
       /* --- THE WORKSPACE'S EXTENT AND ITS STOPS -------------------------
@@ -2860,23 +2944,33 @@
          more. With one cell there is no travel, no stop and no readout. */
       if (stageEl && camEl) {
         const stageW = stageEl.clientWidth;
+        const gapEnd = parseFloat(getComputedStyle(camEl).columnGap) || 20;
         const cells = $$('.pvw__fig', camEl);
         const last = cells[cells.length - 1];
-        camEl.style.paddingInlineEnd =
-          `${last ? Math.max(0, stageW - last.offsetWidth).toFixed(1) : 0}px`;
+        /* THE ROW STOPS WHEN ITS LAST PICTURE REACHES THE RIGHT EDGE, with one
+           gutter of air after it, rather than scrolling on until that picture
+           is pinned against the left margin with empty stage behind it */
+        camEl.style.paddingInlineEnd = `${last ? gapEnd : 0}px`;
+        /* ONE GUTTER BEFORE THE FIRST PICTURE. The stage now starts at the
+           panel's own edge, so pictures scroll right up to it and are cut by
+           it; at rest the first one sits a gutter away from it. */
+        camEl.style.paddingInlineStart = `${gapEnd}px`;
         this.camMax = Math.max(0, camEl.offsetWidth - stageW);
         this.snaps = cells.map((c) => clamp(c.offsetLeft, 0, this.camMax));
         if (this.cs) this.cs.target = clamp(this.cs.target, 0, this.camMax);
         const hint = $('.pvw__pan', this.rail);
         if (hint) hint.hidden = this.camMax <= 0;
+        /* the end tab stands exactly as tall as the pictures beside it */
+        const plate = $('.pvw__plate', camEl);
+        if (plate) stageEl.style.setProperty('--row-h', `${plate.offsetHeight}px`);
         if (this.meter) this.meter.hidden = this.camMax <= 0;
         /* WITH ONE CELL THERE IS NO TRAVEL, so the cell is centred in the field
            it was given rather than standing against the left margin with the
            rest of the stage empty behind it. Two of the four projects have no
            photographs in the repository yet and this is what they look like. */
-        const slack = stageW - (camEl.offsetWidth - parseFloat(camEl.style.paddingInlineEnd || 0));
-        camEl.style.paddingInlineStart =
-          `${this.camMax <= 0 && slack > 0 ? (slack / 2).toFixed(1) : 0}px`;
+        const slack = stageW - (camEl.offsetWidth - parseFloat(camEl.style.paddingInlineEnd || 0)
+          - parseFloat(camEl.style.paddingInlineStart || 0));
+        if (this.camMax <= 0 && slack > 0) camEl.style.paddingInlineStart = `${(slack / 2).toFixed(1)}px`;
       }
 
       /* --- AND ONLY NOW IS THE SLOT WHERE IT IS GOING TO BE --------------
@@ -2931,7 +3025,7 @@
       const ox = sr2 ? sr2.left + sr2.width / 2 : vr.left + vr.width * 0.68;
       const oy = innerHeight / 2;
       floor.forEach((n) => {
-        if (n === card) return;
+        if (n === card && !this.ghost) return;
         const r = n.getBoundingClientRect();
         if (!r.width) return;
         const dx = -back * (r.left + r.width / 2 - ox) + drift;
@@ -2984,9 +3078,24 @@
       const to = this.seq[i + dir];
       if (i < 0 || !to) return;
 
-      /* the outgoing anchor, back to being an ordinary card in a soft grid */
+      /* THE OUTGOING ANCHOR TRAVELS HOME and the incoming one travels out of
+         its cell, instead of one vanishing from its slot and the other
+         appearing in it. Each card's look is read BEFORE the swap, the swap and
+         the measuring happen at once, and then each card is animated from the
+         look it had to the look it now has — so the measurements are taken on
+         cards that are exactly where they will end up, and nothing is solved
+         against a card caught mid-move. */
+      const look = (c) => {
+        if (!c) return null;
+        const cs = getComputedStyle(c);
+        return { transform: cs.transform, filter: cs.filter, opacity: cs.opacity };
+      };
+      const outCard = this.card;
+      const lookOut = look(outCard);
+      const lookIn = look(to.card);
       if (this.card) {
         this.card.classList.remove('is-open');
+        this.card.classList.remove('is-ghost');
         ['--in', '--pv-x', '--pv-y', '--pv-s', '--pv-cam']
           .forEach((k) => this.card.style.removeProperty(k));
       }
@@ -3010,9 +3119,17 @@
       if (this.cs) { this.cs.v = 0; this.cs.vel = 0; this.cs.target = 0; }
 
       this.card.classList.add('is-open');
+      this.card.classList.toggle('is-ghost', !!this.ghost);
       this.card.style.setProperty('--in', '1');
       this.remeasure();
       this.paint(1);
+      const glide = (c, from) => {
+        if (!c || !from || !c.animate) return;
+        const now = look(c);
+        c.animate([from, now], { duration: 260, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+      };
+      glide(outCard, lookOut);
+      glide(to.card, lookIn);
 
       /* --- AND THE DIRECTION GOES ON LAST, WHICH IS NOT A DETAIL ----------
 
@@ -3042,6 +3159,25 @@
       try { history.replaceState({ pvw: to.item.title }, '', location.href); } catch (e) { /* file:// */ }
       const box = $('.pvw__brief', this.rail);
       if (box) box.focus({ preventScroll: true });
+    },
+
+    /* the offer at the end of the row: a card, a five-second count and the
+       case study at the end of it, unless the visitor chooses to stay */
+    goOn() {
+      const next = $('.pvw__onward', this.el);
+      if (!next || this.going) return;
+      this.going = true;
+      next.classList.add('is-going');
+      Sound.tick();
+      clearTimeout(this.goT);
+      this.goT = setTimeout(() => { if (this.going) location.href = next.href; }, 380);
+    },
+
+    goOff() {
+      clearTimeout(this.goT);
+      this.going = false;
+      const next = this.el && $('.pvw__onward', this.el);
+      if (next) next.classList.remove('is-going');
     },
 
     /* WHICH WAY THERE IS STILL SOMEWHERE TO GO. Bounded rather than wrapping:
@@ -3086,11 +3222,20 @@
       this.el.style.removeProperty('pointer-events');
       this.rail.style.removeProperty('pointer-events');
       this.shown = true;
+      this.rail.classList.remove('is-closing');
       this.view.dataset.mode = 'preview';
       if (this.host) this.host.dataset.pvw = '1';
+      /* the floor and the masthead go quiet on their own clock (see
+         `.is-quiet` in the stylesheet), a frame after the card is lifted so
+         the transition has a starting state to run from */
+      requestAnimationFrame(() => {
+        if (!this.shown) return;
+        this.view.classList.add('is-quiet');
+      });
       /* the entrance channel is pinned so the two writers of this card's scale
          cannot fight; `Showcase.tick` also stands down while a project is open */
       card.classList.add('is-open');
+      card.classList.toggle('is-ghost', !!this.ghost);
       card.style.setProperty('--in', '1');
 
       /* THE DOCUMENT STOPS BEFORE ANYTHING IS MEASURED, so every rectangle the
@@ -3107,8 +3252,8 @@
         this.paint(1);
         this.el.dataset.cam = 'live';
       } else {
-        if (!this.sp) this.sp = Spring(0, 320, 33);
-        this.sp.v = 0; this.sp.vel = 0; this.sp.target = 1;
+        this.sp = Tween(0, 240, 210);
+        this.sp.target = 1;
         wakeLoop && wakeLoop();
       }
 
@@ -3126,6 +3271,8 @@
     hide(pop) {
       if (!this.shown || !this.el) return;
       this.shown = false;
+      this.goOff();
+      this.pullRaw = 0;
       /* a swap still in flight is holding `opacity: 1` on the column under its
          own fill; a close needs that opacity back on the frame it begins */
       clearTimeout(this.swapT);
@@ -3137,6 +3284,11 @@
          so the card is visible crossing it on the way home however far the
          visitor had panned */
       delete this.el.dataset.cam;
+      this.hideAt = performance.now();
+      /* the panel goes first, in one quick fade, so no half-faded sheet is
+         ever left lying across a card on the way home */
+      this.rail.classList.add('is-closing');
+      this.view.classList.remove('is-quiet');
       if (this.cs) { this.cs.target = 0; this.cs.k = 440; this.cs.d = 42; }
       if (pop) { try { history.back(); } catch (e) { /* file:// */ } }
       if (REDUCED || !this.sp) { this.done(); return; }
@@ -3150,6 +3302,7 @@
       if (this.rail) delete this.rail.dataset.swap;
       if (this.card) {
         this.card.classList.remove('is-open');
+        this.card.classList.remove('is-ghost');
         this.card.style.removeProperty('--in');
         this.card.style.removeProperty('--pv-x');
         this.card.style.removeProperty('--pv-y');
@@ -3162,6 +3315,7 @@
       this.unlock();
       if (this.card) this.card.focus({ preventScroll: true });
       this.view.removeAttribute('data-mode');
+      this.view.classList.remove('is-quiet');
       this.view.style.removeProperty('--p');
       if (this.host) {
         this.host.removeAttribute('data-pvw');
@@ -3183,6 +3337,7 @@
       }
       this.el.hidden = true;
       this.rail.hidden = true;
+      this.rail.classList.remove('is-closing');
       this.el.style.removeProperty('--p');
       this.el.style.removeProperty('--cam');
       delete this.el.dataset.cam;
@@ -3237,7 +3392,15 @@
         this.host.style.setProperty('--pq', Math.min(1, p * 2.6).toFixed(4));
       }
       const c = this.cs ? this.cs.v : 0;
-      this.el.style.setProperty('--cam', `${c.toFixed(2)}px`);
+      const pr = this.pullRaw || 0;
+      const stretch = 120 * (1 - Math.exp(-pr / 260));
+      this.el.style.setProperty('--cam', `${(c + stretch).toFixed(2)}px`);
+      this.el.style.setProperty('--pull', Math.min(1, pr / 420).toFixed(3));
+      this.el.style.setProperty('--stretch', (stretch / 120).toFixed(3));
+      /* how close the row is to its end, over the last 420px of travel */
+      const near = this.camMax > 0 ? clamp((c - (this.camMax - 420)) / 420, 0, 1) : 0;
+      this.el.style.setProperty('--near', near.toFixed(3));
+      if (this.stage) this.stage.classList.toggle('is-end', this.camMax > 0 && c >= this.camMax - 1);
       /* --- POSITION LEADS SIZE ------------------------------------------
 
          Both channels ran on `--p` flat, and the consequence was visible on any
@@ -3265,7 +3428,7 @@
            card comes back into its cell from wherever the visitor had panned to.
            Its left limit is the work column's own edge — see `overflow-x: clip`
            in the stylesheet — and the reading column hides it from there in. */
-        this.card.style.setProperty('--pv-cam', `${(-c).toFixed(2)}px`);
+        this.card.style.setProperty('--pv-cam', `${(this.ghost ? 0 : -c).toFixed(2)}px`);
       }
       this.mark(c);
     },
@@ -3324,9 +3487,20 @@
         }
         moving = cm || moving;
       }
+      if (this.pullRaw > 0 && !this.going && performance.now() - (this.pullAt || 0) > 140) {
+        this.pullRaw = this.pullRaw < 1 ? 0 : this.pullRaw * 0.82;
+        moving = true;
+      }
       this.paint();
       if (!moving) {
-        if (this.sp && this.sp.target === 0) { this.done(); return false; }
+        if (this.sp && this.sp.target === 0) {
+          /* the floor's blur un-does itself on its own 300ms clock (see
+             `.is-quiet`); the arrangement is taken down once that has landed,
+             so no card ever loses its transition mid-way and snaps */
+          const left = 220 - (performance.now() - (this.hideAt || 0));
+          if (left > 0) return true;
+          this.done(); return false;
+        }
         /* THE CAMERA IS LIVE FROM THE MOMENT THE OPENING HAS FINISHED, and that
            is also when the reading column goes over the card instead of under
            it — at the one instant the two cannot overlap, the card exactly at
@@ -6513,6 +6687,7 @@
         requestAnimationFrame(run);
       };
       App.onScroll(onScroll);
+      App.onScroll(() => { if (this.scenes.some((x) => x.ready && !x.done)) this.settle(); });
       /* a scene that is holding itself (see `gate`) asks for the next frame */
       this.kick = onScroll;
       addEventListener('resize', () => { this.measure(); onScroll(); }, { passive: true });
@@ -6525,6 +6700,34 @@
       });
 
       this.tick();
+    },
+
+    /* collapse every finished scene that is off the top of the screen, once
+       the scroll has been still for a moment */
+    settle() {
+      clearTimeout(this.settleT);
+      this.settleT = setTimeout(() => {
+        const y = App.y();
+        const vh = innerHeight || 800;
+        let lost = 0;
+        this.scenes.forEach((s) => {
+          if (!s.ready || s.done) return;
+          if (s.top + s.n.offsetHeight > y - vh * 0.25) return;
+          const was = s.n.offsetHeight;
+          s.n.style.setProperty('--dur', '100svh');
+          s.n.style.setProperty('--ndur', '100svh');
+          lost += Math.max(0, was - s.n.offsetHeight);
+          s.done = true;
+        });
+        if (lost > 0) {
+          /* the browser may already have kept the view steady by itself
+             (scroll anchoring); only correct what it has not */
+          void document.body.offsetHeight;
+          const moved = y - App.y();
+          if (Math.abs(lost - moved) > 1) window.scrollTo({ top: y - lost, behavior: 'instant' });
+          this.measure();
+        }
+      }, 220);
     },
 
     measure() {
@@ -6563,11 +6766,7 @@
       let ord = -1;
       let tone = this.tone || 'light';
 
-      /* set when a finished scene gives up its pin this frame: everything
-         below it has moved, so the rest wait for the next frame's reading */
-      let shifted = false;
       this.scenes.forEach((s) => {
-        if (shifted) return;
         /* off screen by more than a screen in either direction — leave it
            alone. Its last written value is already its end state. */
         const rTop = s.top - y;
@@ -6598,19 +6797,21 @@
            up just feels stuck, so the scene shrinks to one screen and the
            page is moved by exactly the height it lost, so nothing on screen
            jumps. */
+        /* A FINISHED SCENE GIVES UP ITS PIN, BUT NEVER MID-SCROLL. Shrinking it
+           and correcting the scroll position while the page is moving is what
+           made the page jump: it cancels a trackpad's momentum, and the
+           browser's own scroll anchoring corrected the same change a second
+           time. So the scene is only marked here; it is shrunk once the
+           scroll has come to rest and the scene is well above the screen,
+           where the correction cannot be seen. */
         if (s.once && !s.done && p >= 1 && y >= s.top + s.len - 1) {
-          s.done = true;
           s.p = 1;
           s.n.style.setProperty('--p', '1');
-          const was = s.n.offsetHeight;
-          s.n.style.setProperty('--dur', '100svh');
-          s.n.style.setProperty('--ndur', '100svh');
-          const lost = was - s.n.offsetHeight;
-          if (lost > 0) {
-            window.scrollTo({ top: y - lost, behavior: 'instant' });
-            this.measure();
-            shifted = true;
-          }
+          s.ready = true;
+          this.settle();
+          /* it is still the scene on screen, so it still says so: without
+             this the index read "no scene" and vanished until the next one */
+          if (rTop <= vh * 0.5) { act = s.act; ord = s.ord; tone = s.dark ? 'dark' : 'light'; }
           return;
         }
         /* ENTRANCE AND EXIT, for a scene with a picture edge-to-edge in it.
@@ -17193,6 +17394,12 @@
        shows has actually changed. */
     tick() {
       if (!this.ctx) return false;
+      /* NOTHING ON THE PAGE, NOTHING TO KEEP UP WITH. Reading the scroll here
+         every frame, straight after other animations have written their
+         styles, forced a full-page layout on every frame of every animation on
+         the site; with no marks drawn there is nothing for the band to follow,
+         and the first stroke recentres it anyway. */
+      if (!this.live && !this.strokes.length && !this.dirty && !this.liveDirty) return false;
       this.recentre(false);
       if (this.dirty) this.paintBase();
       if (this.liveDirty) this.paintLive();
@@ -18319,14 +18526,25 @@
 
          The pair is stated once and shared by both axes: the square is one
          object and a different curve per axis would make it arrive twice. */
-      if (!this.x) { this.x = Spring(p.x, 380, 26); this.y = Spring(p.y, 380, 26); }
-      this.x.target = p.x;
-      this.y.target = p.y;
+      if (!this.x) { this.x = { v: p.x }; this.y = { v: p.y }; }
       if (now || REDUCED) {
-        this.x.v = p.x; this.x.vel = 0;
-        this.y.v = p.y; this.y.vel = 0;
+        this.x.v = p.x; this.y.v = p.y; this.hop = null;
+        this.paint();
+        return;
       }
-      this.paint();
+      if (Math.abs(p.x - this.x.v) < 0.5 && Math.abs(p.y - this.y.v) < 0.5 && !this.hop) return;
+      /* --- IT GLIDES --------------------------------------------------
+
+         The square slides to the new word on a shallow curve that bows out to
+         the right of the words, eases in, and settles with a small overshoot
+         at the end. The curve is a touch wider the further it travels. A new
+         target mid-flight starts a fresh glide from wherever the square is. */
+      const dy = Math.abs(p.y - this.y.v);
+      this.hop = {
+        x0: this.x.v, y0: this.y.v, x1: p.x, y1: p.y,
+        bow: 5 + Math.min(dy, 120) * 0.1, t0: performance.now(),
+        dur: 300 + Math.min(dy, 120) * 0.9,
+      };
       wakeLoop && wakeLoop();
     },
 
@@ -18339,15 +18557,24 @@
         `translate3d(${(this.x.v + sx).toFixed(2)}px, ${this.y.v.toFixed(2)}px, 0)`;
     },
 
-    tick(dt) {
+    tick() {
       if (!this.el || !this.x) return false;
-      const moving = this.x.step(dt) | this.y.step(dt);
+      const now = performance.now();
+      let moving = false;
+      if (this.hop) {
+        const H = this.hop;
+        const t = Math.min(1, (now - H.t0) / H.dur);
+        this.x.v = H.x0 + (H.x1 - H.x0) * GLIDE(t) + H.bow * Math.sin(Math.PI * t);
+        this.y.v = H.y0 + (H.y1 - H.y0) * GLIDE(t);
+        moving = true;
+        if (t >= 1) { this.hop = null; this.x.v = H.x1; this.y.v = H.y1; }
+      }
       const sx = this.row
         ? parseFloat(this.row.style.getPropertyValue('--shove-x')) || 0
         : 0;
       if (!moving && sx === this.shove) return false;
       this.paint();
-      return !!moving;
+      return moving;
     },
   };
 
@@ -23903,10 +24130,18 @@
       return true;
     };
     const paint = () => { mk.style.transform = `translate3d(${x.v.toFixed(2)}px,${y.v.toFixed(2)}px,0)`; };
-    const loop = (ts) => {
-      const dt = Math.min((ts - (last || ts)) / 1000 || 1 / 60, 1 / 30); last = ts;
-      const m = step(x, dt) | step(y, dt); paint();
-      raf = m ? requestAnimationFrame(loop) : 0; if (!m) last = 0;
+    /* the same glide as the landing sidebar's square: a shallow curve out to
+       the right of the words, and a small overshoot that settles */
+    const glide = (t) => { const c = 1.35, u = t - 1; return 1 + (c + 1) * u * u * u + c * u * u; };
+    let G = null;
+    const loop = () => {
+      if (!G) { raf = 0; return; }
+      const t = Math.min(1, (performance.now() - G.t0) / G.dur);
+      x.v = G.x0 + (G.x1 - G.x0) * glide(t) + G.bow * Math.sin(Math.PI * t);
+      y.v = G.y0 + (G.y1 - G.y0) * glide(t);
+      if (t >= 1) { x.v = G.x1; y.v = G.y1; G = null; }
+      paint();
+      raf = G ? requestAnimationFrame(loop) : 0;
     };
     const aim = (now) => {
       const a = hover || list.querySelector('.rail__link.is-active');
@@ -23914,6 +24149,10 @@
       if (!a) return;
       const p = at(a);
       if (!x || now || !shown) { x = S(p.x); y = S(p.y); shown = true; paint(); return; }
+      if (Math.abs(p.x - x.v) < 0.5 && Math.abs(p.y - y.v) < 0.5 && !G) return;
+      const dy = Math.abs(p.y - y.v);
+      G = { x0: x.v, y0: y.v, x1: p.x, y1: p.y, t0: performance.now(),
+        bow: 5 + Math.min(dy, 120) * 0.1, dur: 300 + Math.min(dy, 120) * 0.9 };
       x.t = p.x; y.t = p.y;
       if (!raf) raf = requestAnimationFrame(loop);
     };
