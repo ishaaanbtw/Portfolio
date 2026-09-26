@@ -17248,6 +17248,37 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   height: 100%;
 }
 .fg-sys__col { min-width: 0; position: relative; }
+/* A PROGRESSIVE BLUR over the top and bottom of the wall. Five stacked
+   layers, each blurring a little more and masked to a band a little nearer
+   the edge, so the pieces go soft gradually instead of at a line, and a
+   faint wash of the ground at the very edge finishes it. */
+.fg-sys__blur {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9%;
+  z-index: 2;
+  pointer-events: none;
+}
+.fg-sys__blur--top { top: 0; }
+.fg-sys__blur--bot { bottom: 0; transform: scaleY(-1); }
+.fg-sys__blur i {
+  position: absolute;
+  inset: 0;
+  -webkit-backdrop-filter: blur(var(--b));
+          backdrop-filter: blur(var(--b));
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--s), transparent var(--e));
+          mask-image: linear-gradient(to bottom, #000 var(--s), transparent var(--e));
+}
+.fg-sys__blur i:nth-child(1) { --b: 0.5px; --s: 55%; --e: 100%; }
+.fg-sys__blur i:nth-child(2) { --b: 1px;   --s: 40%; --e: 80%; }
+.fg-sys__blur i:nth-child(3) { --b: 2px;   --s: 25%; --e: 60%; }
+.fg-sys__blur i:nth-child(4) { --b: 3.5px; --s: 10%; --e: 42%; }
+.fg-sys__blur i:nth-child(5) {
+  --b: 6px; --s: 0%; --e: 25%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 100%);
+}
+
 .fg-sys__t:hover { position: relative; z-index: 1; }
 .fg-sys__loop {
   display: flex;
@@ -17301,6 +17332,7 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   .fg-sys__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gy) 0.75rem; height: auto; }
   .fg-sys__col, .fg-sys__loop { display: contents; }
   .fg-sys__t--rep { display: none; }
+  .fg-sys__blur { display: none; }
 }
 @media (max-width: 46rem) {
   .fg-sys__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -22255,22 +22287,22 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
 .fg-show__pulse { width: calc(var(--H) * 0.62); }
 .fg-show__pulse::before {
   content: ''; position: absolute; inset: 15%; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.14), rgba(255,255,255,0) 65%);
+  background: radial-gradient(circle, rgba(255,255,255,0.22), rgba(255,255,255,0) 65%);
   opacity: 0; transition: opacity 1.2s ease;
 }
 .scn--showcase.is-tapping .fg-show__pulse::before { opacity: 1; }
 .fg-show__pulse i {
   background: none;
-  border: 1px solid rgba(255,255,255,0.22);
-  box-shadow: 0 0 24px 2px rgba(255,255,255,0.08), inset 0 0 24px 2px rgba(255,255,255,0.06);
-  filter: blur(0.6px);
+  border: 1.5px solid rgba(255,255,255,0.5);
+  box-shadow: 0 0 28px 3px rgba(255,255,255,0.18), inset 0 0 28px 3px rgba(255,255,255,0.12);
+  filter: blur(0.5px);
 }
 .scn--showcase.is-tapping .fg-show__pulse i { animation: fgPulseSoft 3.6s cubic-bezier(0.16, 0.6, 0.3, 1) infinite; }
 .scn--showcase.is-tapping .fg-show__pulse i:nth-child(2) { animation-delay: 1.8s; }
 .scn--showcase.is-tapping .fg-show__pulse i:nth-child(3) { animation: none; opacity: 0; }
 @keyframes fgPulseSoft {
   0% { opacity: 0; scale: 0.35; }
-  18% { opacity: 0.8; }
+  18% { opacity: 1; }
   100% { opacity: 0; scale: 2; }
 }
 

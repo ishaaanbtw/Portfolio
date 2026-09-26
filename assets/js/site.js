@@ -4729,8 +4729,18 @@
         fit.classList.toggle('is-pan', pan);
       };
       doFit();
-      if ('ResizeObserver' in window) new ResizeObserver(doFit).observe(fit);
-      else addEventListener('resize', doFit);
+      /* REFIT ONLY WHEN THE FRAME CHANGES, not when the readout does. The
+         line under the drawing grows and shrinks as parts are pointed at, and
+         that was changing the fit's height and so the drawing's scale on
+         every hover. The width and the window are what the scale answers to. */
+      let lastW = fit.clientWidth, lastVH = innerHeight;
+      const refit = () => {
+        if (fit.clientWidth === lastW && innerHeight === lastVH) return;
+        lastW = fit.clientWidth; lastVH = innerHeight;
+        doFit();
+      };
+      if ('ResizeObserver' in window) new ResizeObserver(refit).observe(fit);
+      addEventListener('resize', refit, { passive: true });
 
       /* THE GRAPH, read back off the markup so there is one source for it */
       const nodes = {};
@@ -5701,6 +5711,9 @@
             /* dealt round-robin into four columns; each column is shown three
                times so its loop is seamless and never runs short on a tall
                screen */
+            /* the progressive blur at the top and bottom edges */
+            ['top', 'bot'].map((e) => `<div class="fg-sys__blur fg-sys__blur--${e}" aria-hidden="true">` +
+              '<i></i><i></i><i></i><i></i><i></i></div>').join('') +
             `<div class="fg-sys__grid">` +
               [0, 1, 2, 3].map((c) => {
                 const col = all.filter((o, i) => i % 4 === c);
@@ -6471,6 +6484,14 @@
         fade: n.classList.contains('scn--insight') || n.classList.contains('scn--wall') || n.classList.contains('scn--showcase') || n.classList.contains('scn--rivals'),
         /* scenes that build with the scroll on the way down and then hold
            what they have built: their --p only ever increases */
+        /* THE CARD TAP IS NEVER SKIPPED. However fast the reader scrolls,
+           the showcase holds at the moment card 1 meets the phone for long
+           enough for the tap pulse to be seen, and then eases on to wherever
+           the scroll has got to. */
+        gate: n.classList.contains('scn--showcase') ? { at: 0.11, cap: 0.17, ms: 1800 } : null,
+        gT: 0,
+        gDone: false,
+        gCatch: false,
         once: n.classList.contains('scn--contact') || n.classList.contains('scn--ia') || n.classList.contains('scn--kept') || n.classList.contains('scn--chain') || n.classList.contains('scn--stack') || n.classList.contains('scn--msgs') || n.id === 'x0-question' || n.id === 'x0-subtract' || n.id === 'x0-market' || n.id === 'x0-x1',
         q: -1,
         o: -1,
@@ -6492,6 +6513,8 @@
         requestAnimationFrame(run);
       };
       App.onScroll(onScroll);
+      /* a scene that is holding itself (see `gate`) asks for the next frame */
+      this.kick = onScroll;
       addEventListener('resize', () => { this.measure(); onScroll(); }, { passive: true });
 
       /* Images landing changes every scene's position, and a case study of
@@ -6555,6 +6578,21 @@
         /* built by the scroll on the way down, and then kept: scrolling back
            up never takes any of it away again */
         if (s.once && s.p > p) p = s.p;
+        if (s.gate && !this.still) {
+          const g = s.gate;
+          const now = performance.now();
+          if (!s.gT && p > g.at) s.gT = now;
+          if (s.gT && !s.gDone) {
+            if (now - s.gT < g.ms) { if (p > g.cap) p = g.cap; this.kick(); }
+            else { s.gDone = true; s.gCatch = true; }
+          }
+          if (s.gCatch) {
+            if (p > s.p + 0.004) { p = s.p + Math.min(p - s.p, 0.014); this.kick(); }
+            else s.gCatch = false;
+          }
+          /* back above the tap: the next pass down plays it again */
+          if (s.gDone && !s.gCatch && p < g.at - 0.05) { s.gT = 0; s.gDone = false; }
+        }
         /* AND ONCE IT IS FULLY BUILT AND THE READER IS PAST IT, THE PIN GOES.
            Holding a finished scene for its whole length again on the way back
            up just feels stuck, so the scene shrinks to one screen and the
