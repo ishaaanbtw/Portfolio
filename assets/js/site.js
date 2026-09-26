@@ -59,9 +59,9 @@
      the toll the old rule existed to avoid.
 
      THE PAGE THAT LEAVES SAYS SO, rather than the page that lands guessing.
-     Every internal navigation to another DOCUMENT goes through one of three
-     lines in this file — `Shell.transitions`, and `Gate`'s two — and each of
-     them calls this immediately before handing the address to the browser. The
+     Every internal navigation to another DOCUMENT goes through
+     `Shell.transitions`, which calls this immediately before handing the
+     address to the browser. The
      head script on the next page reads the flag and clears it, so it is true
      for exactly one load and cannot go stale: whichever page you land on
      consumes it, including the pages that have no entrance of their own.
@@ -393,44 +393,27 @@
 
   /* ==================================================== 2a. the theme =====
 
-     TWO MODES, ONE SWITCH, AND A CLOCK THAT ONLY SPEAKS ONCE.
+     TWO MODES, ONE SWITCH.
 
      The whole palette — nine colours and three lighting numbers, twice — lives
      in the stylesheet under `:root` and `:root.is-dark`. This module owns one
      boolean and the two questions around it:
 
-       WHICH ONE DO YOU GET IF YOU SAY NOTHING?  The one that suits the hour
-       you arrived at. Six in the morning to six in the evening is light;
-       the rest of the day is dark. It is read ONCE, at load, and never again.
+       WHICH ONE DO YOU GET IF YOU SAY NOTHING?  Dark.
 
        AND WHAT IF YOU SAY SOMETHING?  Then that, for as long as the tab is
        open, across every page of the site.
 
-     THE CLOCK IS NOT WATCHED, DELIBERATELY. A `setInterval` here would mean a
-     visitor reading a case study at 17:59 has the page go dark underneath them
-     a minute later, which is a change nobody asked for and cannot undo without
-     finding the control. The time is an input to the first frame and nothing
-     after it: open the site in the evening and it is dark; keep reading past
-     midnight and it stays exactly as it was.
-
-     AND THE AUTOMATIC CHOICE IS NEVER SAVED. Only a deliberate press is, and
-     only into `sessionStorage` — which is precisely the lifetime asked for: it
+     ONLY A DELIBERATE PRESS IS SAVED, and only into `sessionStorage` — it
      survives every link within the site and dies with the tab, so the next
-     visit asks the clock again rather than replaying a choice made at a
-     different time of day. `localStorage` would make one evening's press the
-     answer for every morning after it. */
+     visit starts dark again. */
   const Theme = {
     KEY: 'site:theme',
-    /* has this session made a choice, as opposed to inheriting the clock's */
+    /* has this session made a choice, as opposed to inheriting the default */
     chosen: false,
-
-    /* 06:00–18:00 is light; everything else is dark. Local time, from the
-       browser — the same rule, in four lines, sits inline in each page's head
-       so the first painted frame is already right. */
-    fromClock() {
-      const h = new Date().getHours();
-      return (h >= 6 && h < 18) ? 'light' : 'dark';
-    },
+    /* what you get if you say nothing — the same rule sits inline in each
+       page's head so the first painted frame is already right */
+    DEFAULT: 'dark',
 
     mode() {
       return document.documentElement.classList.contains('is-dark') ? 'dark' : 'light';
@@ -479,7 +462,7 @@
          rather than second-guessing it — but it is written out in full, so the
          module is correct on its own if that script ever fails to run. */
       /* A CASE STUDY HAS ONE DESIGN. Project pages are dark, always, and
-         neither the clock nor a stored press applies to them — the page's
+         neither the default nor a stored press applies to them — the page's
          own head says so before the first paint and this agrees with it, so
          the module is still correct if that script never runs. `locked` is
          what stops `set()` undoing it; the pod that would have called `set()`
@@ -489,7 +472,7 @@
         this.apply('light');
         return;
       }
-      this.apply(this.chosen ? saved : this.fromClock());
+      this.apply(this.chosen ? saved : this.DEFAULT);
     },
   };
 
@@ -547,22 +530,17 @@
       if (!sheet) return;
       let saved = null;
       try { saved = sessionStorage.getItem(this.KEY); } catch (e) { /* private mode */ }
-      /* ON BY DEFAULT, AND THE DISTINCTION THAT MATTERS IS BETWEEN "OFF" AND
-         "NEVER ASKED". `saved === '1'` treated both the same, so the grid was
-         off until somebody found the pod — which is the wrong way round for a
-         thing that describes how the page is built. A visitor who has turned it
-         off still gets it off: the key holds '0' for them, and only the absence
-         of the key means nobody has expressed a preference yet. */
-      this.on = saved === null ? true : saved === '1';
+      /* OFF BY DEFAULT. Only a stored '1' — a visitor who pressed the pod
+         earlier in this tab — turns it on. */
+      this.on = saved === '1';
       document.documentElement.classList.toggle('is-grid', this.on);
       /* AND THE POD IS TOLD, because it was built before this ran and it does
          not ask. `Shell.hud` creates it with `aria-pressed="false"` and paints
          it immediately from `Grid.on`, which at that moment is still the
          declared placeholder — `Grid.init` is a dozen lines further down the
          boot. That was invisible while the default was off, because "false"
-         happened to be the truth; the moment the grid started on by default it
-         became a control announcing the opposite of the state it was in, to
-         exactly the visitors who cannot see the lines. */
+         happened to be the truth, and it stops being true the moment the grid
+         starts on — so the pod is painted from the real state here. */
       this.paint();
 
       this.el = el('div', { class: 'gridlay', 'aria-hidden': 'true' });
@@ -23459,205 +23437,6 @@
 
   /* ======================================================== boot ======== */
 
-  /* ========================================================================
-     THE GATE — A TEMPORARY LOCK ON THE CASE STUDIES
-
-     WHY IT EXISTS: the studies are being written and the home page is live, so
-     the work should not be readable yet. It is meant to come out again. Every
-     part of it is therefore in one place and removable in three deletions —
-     this module, the `.gate` block in the stylesheet, and the four-line script
-     in the head of each `work/*.html`.
-
-     WHAT IT IS NOT. A password checked in the browser is a sign on a door, not
-     a lock: the page is still served to anyone who asks for the URL, and the
-     check can be read in the source and skipped in the console. It keeps
-     casual visitors out of unfinished work, which is the actual requirement.
-     If the work ever needs to be genuinely private it has to be the server
-     refusing to send it — a Vercel password on the deployment, or the studies
-     behind an auth check — and this is not that.
-
-     THE PASSWORD IS NOT WRITTEN DOWN HERE, and that is worth exactly what it
-     sounds like. Two FNV-1a hashes of it — one of the string, one of the
-     string reversed, from different seeds — are compared instead, so the word
-     is not sitting in the bundle for anyone who opens the file, and a
-     collision would have to satisfy both. Reversing it takes about a minute
-     for anybody who wants to. See the note above.
-
-     TWO WAYS IN AND BOTH ARE COVERED: clicking a study from the work grid,
-     which is caught here in the capture phase before the link can act, and
-     typing or bookmarking the URL, which the head script catches before the
-     first paint so there is no flash of the study underneath. */
-  const Gate = {
-    KEY: 'site:open',
-
-    /* WHICH STUDIES ARE BEHIND IT, BY SLUG. A list rather than a flag on every
-       study, because the list is the thing that changes: a study comes out
-       from behind the gate by being deleted from this line, and when the line
-       is empty the whole module can go. `onefinnet-talent` is finished and is
-       not in it — and it therefore has no head script either, since there is
-       nothing to hide before the first paint. */
-    LOCKED: ['cypherock-x0'],
-
-    covers(slug) { return this.LOCKED.indexOf(slug) !== -1; },
-    /* h(s) of the password, and h of it reversed from the other seed */
-    A: 2776390261,
-    B: 1095359679,
-
-    hash(str, seed) {
-      let h = seed >>> 0;
-      for (let i = 0; i < str.length; i++) {
-        h ^= str.charCodeAt(i);
-        h = Math.imul(h, 0x01000193) >>> 0;
-      }
-      return h >>> 0;
-    },
-
-    ok(v) {
-      const rev = v.split('').reverse().join('');
-      return this.hash(v, 0x811c9dc5) === this.A
-        && this.hash(rev, 0x2166136f) === this.B;
-    },
-
-    isOpen() {
-      try { return localStorage.getItem(this.KEY) === '1'; } catch (e) { return false; }
-    },
-
-    /* the flag is what the head script reads on the next study, so the reader
-       is asked once rather than once per page */
-    unlock() {
-      try { localStorage.setItem(this.KEY, '1'); } catch (e) {}
-      document.documentElement.classList.remove('gate-locked');
-    },
-
-    /* --- the panel ------------------------------------------------------- */
-    build() {
-      const wrap = el('div', {
-        class: 'gate', role: 'dialog', 'aria-modal': 'true',
-        'aria-labelledby': 'gate-title',
-      });
-      wrap.innerHTML =
-        '<div class="gate__box">'
-        + '<button class="gate__x" type="button" aria-label="Close">'
-        + '<svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">'
-        + '<path d="M1 1l10 10M11 1L1 11"/></svg></button>'
-        + '<p class="gate__k">Protected</p>'
-        + '<h2 class="gate__t" id="gate-title">This one is still being written.</h2>'
-        + '<p class="gate__p">The case studies are in progress. Enter the password to read them.</p>'
-        + '<form class="gate__form" novalidate>'
-        + '<input class="gate__in" type="password" name="pw" autocomplete="off"'
-        + ' autocapitalize="off" spellcheck="false" aria-label="Password" placeholder="Password">'
-        + '<button class="gate__go" type="submit">Enter</button>'
-        + '</form>'
-        + '<p class="gate__err" role="alert" hidden>That is not the password.</p>'
-        + '</div>';
-
-      this.el = wrap;
-      this.input = $('.gate__in', wrap);
-      this.err = $('.gate__err', wrap);
-
-      $('.gate__form', wrap).addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.try(this.input.value);
-      });
-      /* typing again clears the refusal; an error that stays up while you fix
-         it is an error you stop reading */
-      this.input.addEventListener('input', () => { this.err.hidden = true; });
-
-      /* THREE WAYS OUT AND THEY ALL DO THE SAME THING. A panel you cannot
-         dismiss is a wall, and this is a sign on a door. The button, the
-         ground around the box, and Escape. */
-      $('.gate__x', wrap).addEventListener('click', () => this.close());
-      wrap.addEventListener('click', (e) => {
-        if (e.target === wrap) this.close();
-      });
-
-      App.mount(wrap);
-      return wrap;
-    },
-
-    open(href) {
-      this.pending = href || null;
-      if (!this.el) this.build();
-      document.documentElement.classList.add('gate-up');
-      requestAnimationFrame(() => this.input && this.input.focus());
-    },
-
-    shut() {
-      document.documentElement.classList.remove('gate-up');
-      this.pending = null;
-    },
-
-    /* CLOSING MEANS TWO DIFFERENT THINGS AND THE DIFFERENCE IS WHAT IS BEHIND
-       THE PANEL. Opened by a click on the work grid, the grid is still there
-       and closing is simply going back to it. Opened by a URL, the study
-       behind the panel is the thing being withheld — so closing has to leave,
-       and it leaves for the work rather than into a blank page.
-
-       THE TEST IS THE REFERRER, NOT `history.length`, AND THAT IS A BUG I PUT
-       IN AND TOOK BACK OUT. A tab's history is 2 entries deep the moment it
-       has loaded anything at all — the blank page it started on counts — so
-       `history.length > 1` sent a reader who opened the URL cold back to
-       `about:blank`. A same-origin referrer is the actual question being
-       asked: it means they came from somewhere on this site, and going back
-       returns them to it at the scroll position they left. Anything else —
-       a bookmark, a link from outside, a cold tab — gets the index. */
-    close() {
-      if (this.pending) { this.shut(); return; }
-      let from = '';
-      try { from = document.referrer ? new URL(document.referrer).origin : ''; } catch (e) {}
-      if (from && from === location.origin) { history.back(); return; }
-      hop();
-      location.href = url('index.html');
-    },
-
-    try(v) {
-      if (!this.ok(String(v || ''))) {
-        this.err.hidden = false;
-        this.input.select();
-        return;
-      }
-      this.unlock();
-      /* From the grid: follow the link that was stopped. On a study: the page
-         is already built underneath — the head script only hid it — so
-         dropping the class is the whole of the reveal. */
-      if (this.pending) { hop(); location.href = this.pending; return; }
-      this.shut();
-    },
-
-    init() {
-      const locked = () => !this.isOpen();
-
-      /* 1 · the link, caught before it can act. Capture phase, because the
-         router and the cards' own handlers are listening too and the point is
-         that none of them run. */
-      document.addEventListener('click', (e) => {
-        if (!locked()) return;
-        const a = e.target && e.target.closest && e.target.closest('a[href]');
-        if (!a || a.target === '_blank') return;
-        let path;
-        try { path = new URL(a.href, location.href).pathname; } catch (err) { return; }
-        const m = path.match(/\/work\/([^/]+)\.html?$/);
-        if (!m || !this.covers(m[1])) return;
-        e.preventDefault();
-        e.stopPropagation();
-        this.open(a.href);
-      }, true);
-
-      /* 2 · the URL, typed or bookmarked. The head script has already hidden
-         the page; this is what offers the way in. */
-      if (document.body.dataset.page === 'project'
-        && this.covers(document.body.dataset.project)
-        && locked()) this.open(null);
-
-      addEventListener('keydown', (e) => {
-        if (e.key !== 'Escape') return;
-        if (!document.documentElement.classList.contains('gate-up')) return;
-        e.preventDefault();
-        this.close();
-      });
-    },
-  };
-
   function boot() {
     /* Before anything reads a path out of it: every relative file name in
        content.js becomes an absolute one, so a case study two directories down
@@ -23699,9 +23478,6 @@
     /* last, so the handle mounts above the furniture it sits beside */
     Peek.init();
     Llm.init();
-    /* TEMPORARY — see the module. Last of the overlays, and the only one that
-       is meant to be deleted. */
-    Gate.init();
     /* after the page has built, because it asks whether this one has a canvas */
     Pinch.init();
     observeReveals();
