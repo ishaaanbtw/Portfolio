@@ -3144,9 +3144,9 @@ window.SITE = {
         col: 'b', ratio: 1.5,
         /* the product film: one continuous camera move around a real 3D
            model of the card (front and back from the source artwork), 15s,
-           seamless loop. Source scene: .tools/x0-card-film/card.html */
-        thumb: 'assets/media/x0/x0-card-film-thumb.mp4',
-        thumbPoster: 'assets/media/x0/x0-card-film-thumb.webp',
+           seamless loop. Source scene: .tools/x0-card-film/card2.html (shot-based reel) */
+        thumb: 'assets/media/x0/x0-card-reel4-thumb.mp4',
+        thumbPoster: 'assets/media/x0/x0-card-reel4-thumb.webp',
         preview: 'fan',
         colours: ['#d9dadd', '#c9cacd', '#b8b9bd', '#a7a8ad'],
         brief: {
@@ -3187,9 +3187,9 @@ window.SITE = {
           title: 'X0 Cards',
           hero: {
             kind: 'film',
-            film: 'assets/media/x0/x0-card-film.webm',
-            film2: 'assets/media/x0/x0-card-film.mp4',
-            poster: 'assets/media/x0/x0-card-film.webp',
+            film: 'assets/media/x0/x0-card-reel4.webm',
+            film2: 'assets/media/x0/x0-card-reel4.mp4',
+            poster: 'assets/media/x0/x0-card-reel4.webp',
             ground: '#060607',
             h: 'X0 Cards',
             meta: [
