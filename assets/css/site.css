@@ -248,6 +248,8 @@
   /* springs — these overshoot slightly and settle, never linear */
   --spring: cubic-bezier(0.34, 1.46, 0.64, 1);
   --spring-soft: cubic-bezier(0.22, 1.18, 0.36, 1);
+  /* a long, gentle ease-out with no overshoot — the project cards' hover */
+  --ease-soft: cubic-bezier(0.25, 0.8, 0.25, 1);
   --spring-snap: cubic-bezier(0.16, 1.32, 0.3, 1);
 
 }
@@ -1786,14 +1788,19 @@ body.pile-hold * { cursor: grabbing; }
   border-radius: 4px;
   overflow: hidden;
   background: var(--pv-bg, #eceae6);
+  /* SOFT, NOT SPRUNG. The lift and the shadow share one long ease-out with
+     no overshoot, so a pointer crossing a card is a slow rise and settle
+     rather than a bounce; the element keeps its own layer so the rise never
+     repaints the artwork inside it. */
   transition:
-    transform 720ms var(--spring-soft),
-    box-shadow 520ms var(--ease);
+    transform 900ms var(--ease-soft),
+    box-shadow 900ms var(--ease-soft);
+  will-change: transform;
   box-shadow: 0 0 0 1px rgba(20, 16, 12, 0.05);
 }
 
 :root:not(.hover-cold) .wcard:hover .wcard__media {
-  transform: translateY(-3px) scale(1.006);
+  transform: translateY(-3px);
   box-shadow:
     0 0 0 1px rgba(20, 16, 12, 0.07),
     0 22px 46px -22px rgba(20, 16, 12, 0.3);
@@ -1810,7 +1817,7 @@ body.pile-hold * { cursor: grabbing; }
 .wcard__title {
   font-weight: 500;
   color: var(--ink);
-  transition: transform 480ms var(--spring);
+  transition: transform 900ms var(--ease-soft);
 }
 :root:not(.hover-cold) .wcard:hover .wcard__title { transform: translateX(3px); }
 
@@ -1845,11 +1852,13 @@ body.pile-hold * { cursor: grabbing; }
   transform: scale(1.02);
   transition:
     opacity 620ms var(--ease),
-    transform 720ms var(--spring-soft);
+    transform 1100ms var(--ease-soft);
+  will-change: transform;
+  backface-visibility: hidden;
   z-index: 2;
 }
 .wcard__thumb--cover.is-on { opacity: 1; transform: none; }
-:root:not(.hover-cold) .wcard:hover .wcard__thumb--cover.is-on { transform: scale(1.035); }
+:root:not(.hover-cold) .wcard:hover .wcard__thumb--cover.is-on { transform: scale(1.03); }
 
 /* sheet: the artwork as a poster on a field, pushing forward on hover.
 
@@ -1880,11 +1889,15 @@ body.pile-hold * { cursor: grabbing; }
   height: auto;
   border-radius: 2px;
   box-shadow: 0 10px 30px -14px rgba(0, 0, 20, 0.5);
-  transition:
-    width 900ms var(--spring-soft),
-    transform 900ms var(--spring-soft);
+  /* SCALE, NOT WIDTH. Growing the width re-laid the poster out on every frame
+     and the image resampled as it went, which read as a shimmer. One scale
+     to the same final size (84% × 1.06 of the panel, from 62%) runs on the
+     compositor and stays sharp. */
+  transition: transform 1000ms var(--ease-soft);
+  will-change: transform;
+  backface-visibility: hidden;
 }
-:root:not(.hover-cold) .wcard:hover .wcard__thumb--sheet { width: 84%; transform: scale(1.06); }
+:root:not(.hover-cold) .wcard:hover .wcard__thumb--sheet { transform: scale(1.436); }
 
 /* every preview fills its panel */
 .pv { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; }
@@ -1927,7 +1940,8 @@ body.pile-hold * { cursor: grabbing; }
   display: grid;
   place-items: center;
   box-shadow: 0 10px 30px -14px rgba(0, 0, 20, 0.5);
-  transition: transform 900ms var(--spring-soft), width 900ms var(--spring-soft);
+  transition: transform 1000ms var(--ease-soft);
+  will-change: transform;
 }
 .pv-search__sheet::before {
   content: '';
@@ -1945,10 +1959,10 @@ body.pile-hold * { cursor: grabbing; }
   font-size: 0.72rem;
   line-height: 1.3;
   letter-spacing: -0.01em;
-  transition: font-size 900ms var(--spring-soft), color 600ms ease;
+  transition: color 600ms ease;
 }
-:root:not(.hover-cold) .wcard:hover .pv-search__sheet { width: 84%; transform: scale(1.06); }
-:root:not(.hover-cold) .wcard:hover .pv-search__label { font-size: 1.28rem; }
+/* the label rides the sheet's scale rather than animating its own font size */
+:root:not(.hover-cold) .wcard:hover .pv-search__sheet { transform: scale(1.436); }
 
 /* --- 2. words: the project name drifting across a tinted field ----------- */
 
@@ -2117,8 +2131,7 @@ body.pile-hold * { cursor: grabbing; }
   :root:not(.hover-cold) .wcard:hover .wcard__thumb--cover.is-on { transform: none; }
   /* the poster still widens on hover — that is the affordance, and it is a
      size change rather than motion — but it arrives without the spring */
-  .wcard__thumb--sheet { transition: width 200ms linear; transform: none; }
-  :root:not(.hover-cold) .wcard:hover .wcard__thumb--sheet { transform: none; }
+  .wcard__thumb--sheet { transition: transform 200ms linear; }
 }
 
 /* ==========================================================================
@@ -2624,7 +2637,9 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
    window on the same `--p`, a little later than the one before, eased out, so
    the row slides in as a sequence and slides back out in reverse on a close. */
 .pvw__fig[style*='--i'] {
-  --e0: clamp(0, calc((var(--p, 0) - var(--i, 1) * 0.06) / 0.6), 1);
+  /* the stagger stops growing after the sixth picture, so every one of them
+     reaches full opacity by the time the opening has finished */
+  --e0: clamp(0, calc((var(--p, 0) - min(var(--i, 1), 6) * 0.06) / 0.6), 1);
   --e: calc(var(--e0) * (2 - var(--e0)));
   translate: calc((1 - var(--e)) * 22vw) 0;
   opacity: var(--e0);
@@ -2751,6 +2766,12 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 .pvw__cam[data-fam='phone'] .pvw__fig[data-kind='phone'] .pvw__cap { display: none; }
 .pvw__cam[data-fam='phone'] .pvw__fig[data-kind='phone'] { height: auto; gap: 0; }
 .pvw__cam[data-fam='mixed'] .pvw__fig[data-kind='mark']  { --fh: 0.58; }
+/* THE SAME LISTING FOR SCREENS. `listing` in content.js gives a row of
+   desktop captures what the phone listing above gets on its own. */
+.pvw__cam[data-listing] { --pv-row-gap: 0.75rem; }
+.pvw__cam[data-listing] .pvw__plate { border-radius: 10px; }
+.pvw__cam[data-listing] .pvw__cap { display: none; }
+.pvw__cam[data-listing] .pvw__fig { height: auto; gap: 0; }
 /* a mark on its own is still a mark, however uniform the rest of the row */
 .pvw__cam[data-fam='screen'] .pvw__fig[data-kind='mark'],
 .pvw__cam[data-fam='phone']  .pvw__fig[data-kind='mark'] { --fh: 0.58; }
@@ -13552,8 +13573,8 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
    for an event that happens by hand. */
 .home__work .wcard__media {
   transition:
-    transform 720ms var(--spring-soft),
-    box-shadow 520ms var(--ease);
+    transform 900ms var(--ease-soft),
+    box-shadow 900ms var(--ease-soft);
 }
 
 /* --- 3. the light on the bricks ------------------------------------------

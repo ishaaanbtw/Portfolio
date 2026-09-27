@@ -613,8 +613,8 @@ window.SITE = {
          `preview` below stays set and is still the fallback: if either file
          goes missing the card drops back to the `search` panel, same as any
          card with still artwork.                                             */
-      { title: 'Designing the Digital Identity of Cypherock X0',
-        meta: 'Product identity, 2026, Singapore', href: '#x0-identity',
+      { title: 'Cypherock X0 Cold Wallet App',
+        meta: 'App design, 2026, Singapore', href: '#x0-identity',
         /* THE DOMINANT ONE. Widest stack, and the tallest proportion in the
            set — it is the newest work and the composition says so. */
         col: 'a', ratio: 1.34,
@@ -685,8 +685,6 @@ window.SITE = {
            EVERY FACT IS OUT OF THE STUDY OR THE KNOWLEDGE BASE. Nothing in a
            `brief` is written for the brief. */
         brief: {
-          /* the panel's own heading; the card and the study keep `title` */
-          name: 'Cypherock X0 Cold Wallet App',
           summary: 'X0 has three parts: the cards, the packaging and the app. '
             + 'This project is the app, the iOS and Android wallet that makes the '
             + 'cards usable.',
@@ -736,11 +734,11 @@ window.SITE = {
              is what it finds. */
           slug: 'cypherock-x0',
           /* The hero's own facts. They were one comma-separated string on the
-             tile — "Product identity, 2026, Singapore" — which is the right
+             tile — "App design, 2026, Singapore" — which is the right
              shape for a caption and the wrong one for a page that sets them in
              a row with labels over them. */
           company: 'Cypherock',
-          category: 'Product identity',
+          category: 'App design',
           year: '2026',
           place: 'Singapore',
           role: 'Senior Product Designer',
@@ -2529,15 +2527,33 @@ window.SITE = {
             'Continuous user and A/B testing',
           ],
           cta: 'View the complete case study',
+          /* TEN SCREENS OF THE PRODUCT, sign up first, presented the way X0's
+             store listing is: one height, rounded panels, a tight gutter and
+             no captions (`listing`), flipped through sideways. The pressed
+             card does not join the row (`anchor: false`). */
+          anchor: false,
+          listing: true,
           spread: [
-            { at: 'hero', src: 'assets/img/onefinnet/screens/candidate-view.webp', w: 1488, h: 1140,
-              alt: 'A candidate evaluation, with the model\u2019s score beside the resume.' },
-            { at: 'a', src: 'assets/img/onefinnet/screens/kanban-board.webp', w: 1488, h: 1140,
+            { at: 'a', src: 'assets/img/onefinnet/brief/01-sign-up.webp', w: 1366, h: 1024,
+              alt: 'Sign up, the first screen a recruiter sees.' },
+            { at: 'a', src: 'assets/img/onefinnet/brief/02-onboarding.webp', w: 1366, h: 1024,
+              alt: 'Onboarding, the steps to get a portal ready.' },
+            { at: 'a', src: 'assets/img/onefinnet/brief/03-pipeline.webp', w: 1366, h: 1024,
               alt: 'The hiring pipeline as a board.' },
-            { at: 'b', src: 'assets/img/onefinnet/screens/ai-screening-criteria.webp', w: 1488, h: 1140,
+            { at: 'a', src: 'assets/img/onefinnet/brief/04-mails.webp', w: 1366, h: 1024,
+              alt: 'Recruiter mail, with an AI summary of each application.' },
+            { at: 'a', src: 'assets/img/onefinnet/brief/05-candidate-summary.webp', w: 1366, h: 1024,
+              alt: 'A candidate\u2019s details beside the resume report.' },
+            { at: 'a', src: 'assets/img/onefinnet/brief/06-screening-criteria.webp', w: 1366, h: 1024,
               alt: 'Setting the screening criteria the assistant works from.' },
-            { at: 'detail', src: 'assets/img/onefinnet/personas.webp', w: 1534, h: 544,
-              alt: 'The three people the product is for, in their own words.' },
+            { at: 'a', src: 'assets/img/onefinnet/brief/07-candidate-evaluation.webp', w: 1366, h: 1024,
+              alt: 'A candidate the model could not screen, and why.' },
+            { at: 'a', src: 'assets/img/onefinnet/brief/08-job-details.webp', w: 1368, h: 1036,
+              alt: 'Creating a job, starting from the basics.' },
+            { at: 'a', src: 'assets/img/onefinnet/brief/09-apply-form.webp', w: 1366, h: 1024,
+              alt: 'A candidate applying, with the resume autofilling the form.' },
+            { at: 'a', src: 'assets/img/onefinnet/brief/10-publish.webp', w: 1366, h: 1024,
+              alt: 'Configuring and publishing a job.' },
           ],
         },
         study: {

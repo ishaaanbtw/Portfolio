@@ -2143,6 +2143,7 @@
     sp: null,        /* the open/close spring */
     cs: null,        /* the camera spring */
     camMax: 0,
+    fits: false,
     snaps: [],
     at: -1,
     lastPan: 0,
@@ -2448,7 +2449,9 @@
          being solved against, and a workspace that panned out from under it
          mid-flight would leave it arriving at a slot that had moved. */
       if (!this.el || this.el.dataset.cam !== 'live') return;
-      if (!this.cs || this.camMax <= 0 || !d) return;
+      /* a row short enough to fit has nowhere to pan, but its end is still
+         an end: the pull past it works the same, from the first frame */
+      if (!this.cs || !d) return;
       /* ONE TO ONE WITH THE HAND. The wheel and the trackpad move the row by
          exactly the distance they report, on the frame they report it, the way
          a native scroller does: no spring trailing behind the gesture and no
@@ -2475,7 +2478,7 @@
         wakeLoop && wakeLoop();
         return;
       }
-      const v = clamp(this.cs.v + d, 0, this.camMax);
+      const v = clamp(this.cs.v + d, 0, Math.max(0, this.camMax));
       this.cs.v = v; this.cs.target = v; this.cs.vel = 0;
       this.lastPan = 0;
       this.snapped = true;
@@ -2702,7 +2705,7 @@
         : '';
       this.el.innerHTML =
         `<div class="pvw__stage">` +
-          `<div class="pvw__cam" data-fam="${fam}">${cells.join('')}</div>` + more +
+          `<div class="pvw__cam" data-fam="${fam}"${b.listing ? ' data-listing' : ''}>${cells.join('')}</div>` + more +
           `<div class="pvw__meter" aria-hidden="true">` +
             `<span class="pvw__at">${num(1)}</span>` +
             `<span class="pvw__segs">${segs}</span>` +
@@ -2934,6 +2937,8 @@
            it; at rest the first one sits a gutter away from it. */
         camEl.style.paddingInlineStart = `${gapEnd}px`;
         this.camMax = Math.max(0, camEl.offsetWidth - stageW);
+        /* measured, and short enough to fit: already at its end */
+        this.fits = this.camMax <= 0;
         this.snaps = cells.map((c) => clamp(c.offsetLeft, 0, this.camMax));
         if (this.cs) this.cs.target = clamp(this.cs.target, 0, this.camMax);
         const hint = $('.pvw__pan', this.rail);
@@ -3089,6 +3094,7 @@
       this.at = -1;
       this.snaps = [];
       this.camMax = 0;
+      this.fits = false;
       this.snapped = true;
       this.lastPan = 0;
       this.touchX = null;
@@ -3182,6 +3188,7 @@
       this.at = -1;
       this.snaps = [];
       this.camMax = 0;
+      this.fits = false;
       this.snapped = true;
       this.lastPan = 0;
       this.touchX = null;
@@ -3334,6 +3341,7 @@
       this.segs = [];
       this.snaps = [];
       this.camMax = 0;
+      this.fits = false;
       this.at = -1;
       /* AND IT LETS GO OF THE CARD. `paint` writes to `this.card` whenever it
          is set, and with both springs gone it would write the arrangement at
@@ -3376,9 +3384,11 @@
       this.el.style.setProperty('--pull', Math.min(1, pr / 420).toFixed(3));
       this.el.style.setProperty('--stretch', (stretch / 120).toFixed(3));
       /* how close the row is to its end, over the last 420px of travel */
-      const near = this.camMax > 0 ? clamp((c - (this.camMax - 420)) / 420, 0, 1) : 0;
+      const near = this.camMax > 0 ? clamp((c - (this.camMax - 420)) / 420, 0, 1)
+        : (this.fits ? 1 : 0);
       this.el.style.setProperty('--near', near.toFixed(3));
-      if (this.stage) this.stage.classList.toggle('is-end', this.camMax > 0 && c >= this.camMax - 1);
+      if (this.stage) this.stage.classList.toggle('is-end',
+        this.camMax > 0 ? c >= this.camMax - 1 : !!this.fits);
       /* --- POSITION LEADS SIZE ------------------------------------------
 
          Both channels ran on `--p` flat, and the consequence was visible on any
