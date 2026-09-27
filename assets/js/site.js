@@ -854,17 +854,24 @@
       const b = document.body;
       const was = b.classList.contains('is-locked');
       if (!!on === was) return;
+      /* LOCKED BY OVERFLOW, NOT BY PINNING THE BODY. Pinning the body at a
+         negative offset took every sticky column out of its stuck position, so
+         the About sidebar jumped up by however far you had scrolled the moment
+         the resume opened. `overflow: hidden` on the root freezes the scroll
+         where it is and moves nothing. */
+      const h = document.documentElement;
       if (on) {
         this._keep = this.y();
-        const bar = window.innerWidth - document.documentElement.clientWidth;
-        b.style.top = `-${this._keep}px`;
+        const bar = window.innerWidth - h.clientWidth;
         if (bar > 0) b.style.paddingRight = `${bar}px`;
+        h.classList.add('is-locked');
         b.classList.add('is-locked');
       } else {
+        h.classList.remove('is-locked');
         b.classList.remove('is-locked');
         b.style.top = '';
         b.style.paddingRight = '';
-        window.scrollTo(0, this._keep || 0);
+        if (Math.abs(this.y() - (this._keep || 0)) > 1) window.scrollTo(0, this._keep || 0);
       }
     },
   };
@@ -7218,6 +7225,10 @@
          the window and must not be a descendant of anything that scrolls,
          transforms or gets replaced. `App.mount` is the same door the three
          pods use. */
+      /* the closing card, matching the film's end frame (see `.endcard`) */
+      if (p.end) main.appendChild(el('section', { class: 'endcard', 'aria-label': 'End of case study' },
+        `<div class="endcard__in"><h2 class="endcard__h">${esc(p.end.h || '')}</h2>` +
+        `<p class="endcard__meta">${esc(p.end.meta || '')}</p></div>`));
       if (item) main.appendChild(this.onward());
       Marquee.bind(main);       // attached first, so measurements are real
       videos(main);
@@ -18007,16 +18018,41 @@
              less the allowance the layout declares for it. Every anchor sits the
              same distance above its heading (zero), so every section comes to rest
              with its heading at exactly the same height. */
-          const top = box.scrollTop
+          const aim = () => box.scrollTop
             + anc.getBoundingClientRect().top
             - box.getBoundingClientRect().top
             - headroom();
-          if (typeof box.scrollTo === 'function') {
-            box.scrollTo({ top, behavior: REDUCED ? 'auto' : 'smooth' });
-          } else {
-            box.scrollTop = top;          // older engines, and jsdom
-          }
-          unpin();
+          /* ONE CLICK, ONE ARRIVAL. The destination is re-measured every frame
+             of the flight and the scroll re-aimed if it has moved (an image or a
+             video decoding above it), and the highlight stays on the clicked row
+             until the page has actually come to rest there. A wheel, touch or key
+             from the reader hands control straight back. */
+          const go = (t) => {
+            if (typeof box.scrollTo === 'function') box.scrollTo({ top: t, behavior: REDUCED ? 'auto' : 'smooth' });
+            else box.scrollTop = t;       // older engines, and jsdom
+          };
+          if (this._fly) this._fly();
+          let want = aim(), still = 0, raf = 0;
+          const t0 = performance.now();
+          const stop = () => {
+            cancelAnimationFrame(raf);
+            ['wheel', 'touchstart', 'keydown'].forEach((ev) => removeEventListener(ev, stop));
+            this._fly = null;
+            unpin();
+          };
+          ['wheel', 'touchstart', 'keydown'].forEach((ev) => addEventListener(ev, stop, { passive: true }));
+          this._fly = stop;
+          go(want);
+          const tick = () => {
+            const t = aim();
+            const max = Math.max(0, document.documentElement.scrollHeight - innerHeight);
+            const dest = Math.min(Math.max(0, t), max);
+            if (Math.abs(t - want) > 2) { want = t; go(t); still = 0; }
+            still = Math.abs(box.scrollTop - dest) < 2 ? still + 1 : 0;
+            if (still > 5 || performance.now() - t0 > 5000) { stop(); return; }
+            raf = requestAnimationFrame(tick);
+          };
+          raf = requestAnimationFrame(tick);
         });
       });
 
@@ -23065,12 +23101,14 @@
          desktop that is 15px of the layout disappearing — the whole page slides
          sideways behind the viewer, which you see at the edges. The padding
          puts back exactly what the scrollbar was taking. */
-      const bar = window.innerWidth - document.documentElement.clientWidth;
-      document.body.style.top = `-${this.keep}px`;
-      if (bar > 0) document.body.style.paddingRight = `${bar}px`;
       App.lock(true);
 
+      /* always open on page one: the viewer is built once and kept, so without
+         this it reopened wherever it was last scrolled to (often page two) */
+      const sc = $('.paper__scroll', this.el);
+      if (sc) sc.scrollTop = 0;
       this.el.hidden = false;
+      if (sc) sc.scrollTop = 0;
       requestAnimationFrame(() => this.el.classList.add('is-up'));
       setTimeout(() => this.x && this.x.focus({ preventScroll: true }), 240);
       Sound.chime();
@@ -23081,9 +23119,6 @@
       this.open_ = false;
       this.el.classList.remove('is-up');
       App.lock(false);
-      document.body.style.top = '';
-      document.body.style.paddingRight = '';
-      App.to(this.keep);
       const back = $('[data-action="resume"]');
       if (back) back.focus({ preventScroll: true });
       setTimeout(() => { if (!this.open_) this.el.hidden = true; }, REDUCED ? 1 : 420);
@@ -23892,7 +23927,7 @@
    and back to the current section when the pointer leaves. ---- */
 (function RailMark() {
   const boot = () => {
-    const rail = document.querySelector('.rail--film');
+    const rail = document.querySelector('.rail--film') || document.querySelector('.proj__body > .rail');
     const list = rail && rail.querySelector('.rail__list');
     if (!list || list.querySelector('.rail__mark')) return !!list;
     rail.classList.add('rail--mast');

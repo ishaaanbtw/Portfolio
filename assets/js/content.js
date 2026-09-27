@@ -2558,6 +2558,12 @@ window.SITE = {
         },
         study: {
           slug: 'onefinnet-talent',
+          /* endcard-onefinnet: the closing card before the footer, the document
+             study's version of X0's 'Glad you made it here.' end frame. */
+          end: {
+            h: 'Glad you made it here.',
+            meta: 'That\u2019s Onefinnet Talent: the recruiter app, the AI candidate reports and the admin panel, designed from the first scoping conversations to the metrics we shipped against.',
+          },
           company: 'Onefinnet',
           category: 'B2B SaaS',
           year: '2024\u201325',

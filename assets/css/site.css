@@ -22987,3 +22987,118 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
   --u: calc(clamp(0, calc((var(--in, 1) - 0.7) / 0.3), 1) * 0.3 + var(--pm, var(--p)));
   --m: clamp(0, calc((var(--pm, var(--p)) - 0.27) / 0.12), 1);
 }
+
+
+/* ==== rail v4: the document study's rail matches the film's ==== */
+/* Onefinnet-style studies (the document layout) used a different rail from the
+   Cypherock film: 56px in, "← BACK" spelled out, warm greys and a static dot.
+   From here on both read as one: same corner, arrow-only back, same neutral
+   inks and the same travelling square (RailMark now boots on this rail too). */
+@media (min-width: 70.0625rem) {
+  .proj__body > .rail.rail--mast {
+    margin-left: calc(var(--mast-pad) + var(--sa-left, 0px));
+    top: calc(var(--mast-pad) + 0.35rem);
+  }
+  .proj__body > .rail.rail--mast .rail__back {
+    letter-spacing: 0;
+    text-transform: none;
+    font-size: 0;
+    line-height: 0;
+    padding: 0.15rem 0.3rem 0.15rem 0;
+    margin-bottom: 0.85rem;
+  }
+  .proj__body > .rail.rail--mast .rail__back::before { font-size: 0.9375rem; line-height: 1.45; margin-right: 0; }
+  .proj__body > .rail.rail--mast .rail__list { position: relative; }
+  .proj__body > .rail.rail--mast .rail__dot { display: none; }
+
+  .proj__body > .rail.rail--mast .rail__back,
+  .proj__body > .rail.rail--mast .rail__link { color: #74757c; }
+  .proj__body > .rail.rail--mast .rail__link.is-active,
+  .proj__body > .rail.rail--mast .rail__link[aria-current='true'] { color: #101012; }
+  :root:not(.hover-cold) .proj__body > .rail.rail--mast .rail__back:hover,
+  :root:not(.hover-cold) .proj__body > .rail.rail--mast .rail__link:hover { color: #55565c; }
+
+  .proj__body > .rail.rail--mast .rail__back[data-ink='light'],
+  .proj__body > .rail.rail--mast .rail__link[data-ink='light'] { color: #8a8b91; }
+  .proj__body > .rail.rail--mast .rail__link[data-ink='light'].is-active,
+  .proj__body > .rail.rail--mast .rail__link[data-ink='light'][aria-current='true'] { color: #ffffff; }
+  :root:not(.hover-cold) .proj__body > .rail.rail--mast .rail__back[data-ink='light']:hover,
+  :root:not(.hover-cold) .proj__body > .rail.rail--mast .rail__link[data-ink='light']:hover { color: #c8c9ce; }
+  .proj__body > .rail.rail--mast .rail__list:has(.rail__link.is-active[data-ink='light']) .rail__mark { background: #ffffff; }
+}
+@media (max-width: 70rem) {
+  .proj__body > .rail .rail__mark { display: none; }
+}
+
+/* ==== rail v5: breathing room above the back arrow, tighter gutter ==== */
+@media (min-width: 70.0625rem) {
+  :root { --proj-rail: 14.5rem; }
+  .proj__body > .rail.rail--mast { margin-top: clamp(2.5rem, 6vh, 3.75rem); }
+}
+
+
+/* ==== endcard v1: the document study closes like the film does ==== */
+/* X0 ends on a dark frame, a big Satoshi headline and one quiet line, then the
+   Index / Next footer. The document study now does the same, on its own navy
+   with the blue glow of its title card instead of a video. */
+.endcard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: clamp(30rem, 68vh, 42rem);
+  margin-top: var(--sp-6, 4rem);
+  background:
+    radial-gradient(60% 90% at 78% 55%, rgba(58, 128, 186, 0.55), rgba(18, 38, 51, 0) 70%),
+    radial-gradient(40% 60% at 90% 20%, rgba(38, 86, 140, 0.35), rgba(18, 38, 51, 0) 70%),
+    #0c1b26;
+  color: #f7f7f8;
+  overflow: hidden;
+}
+.endcard__in {
+  width: min(72rem, calc(100% - var(--gut) * 2));
+  margin-inline: auto;
+  display: grid;
+  gap: 1.4rem;
+}
+.endcard__h {
+  font-family: 'Satoshi', 'Geist', 'Geist Fallback', ui-sans-serif, -apple-system, system-ui, sans-serif;
+  font-size: min(clamp(2.75rem, 9.5vw, 8.5rem), 11.5svh);
+  font-weight: 560;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  max-width: 9ch;
+  margin: 0;
+  text-wrap: balance;
+}
+.endcard__meta {
+  font-family: 'Satoshi', 'Geist', 'Geist Fallback', ui-sans-serif, -apple-system, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  letter-spacing: 0.005em;
+  color: #8a93a0;
+  max-width: 34rem;
+  margin: 0;
+}
+@media (min-width: 70.0625rem) {
+  .endcard__in {
+    width: min(72rem, calc(100% - var(--proj-rail) - var(--gut)));
+    margin-left: var(--proj-rail);
+  }
+}
+
+
+/* ==== lock v2: modals freeze the scroll without moving the page ==== */
+html.is-locked { overflow: hidden; }
+body.is-locked { position: static; left: auto; right: auto; top: auto; overflow: clip visible; }
+
+
+/* ==== frames v2: reserve the artwork's box before the bytes arrive ==== */
+/* `.fframe` is fit-content and the image inside is width:100%, which is a
+   circular size: until a lazy image has decoded, the frame measured 0x0. The
+   study was ~6,000px shorter than itself on arrival and grew as you scrolled,
+   so a rail click aimed at a place that moved away mid-flight. The frame's
+   final width is already known (FRAME writes it as --fw), so it is stated. */
+.blk-frame[style*='--fw'] > .fframe { width: min(100%, var(--fw)); }
+/* the height-capped images carry an inline `width:auto` for the same reason;
+   inside a frame of known width, 100% of it IS the capped size */
+.blk-frame[style*='--fw'] > .fframe .shotimg { width: 100% !important; }
