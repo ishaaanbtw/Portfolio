@@ -6485,6 +6485,125 @@
     },
   };
 
+  /* --- X0 CARDS: four scenes the hardware chapter needed -----------------
+     The app study never had to show a desk of physical tests, an unboxing, a
+     print drawing or two products side by side, so these are new. They use
+     the same beats, the same reserved frames (`FSHOT`) and the same tokens as
+     every other scene, so they read as the same film. */
+  Object.assign(SCENE, {
+    /* objects left on a desk: scattered, slightly turned, drifting at their
+       own depth as the scene scrolls */
+    desk: (s) => {
+      const I = s.items || [];
+      const b = SPREAD(I.length, 0.05, 0.42);
+      return `<div class="fg-desk${s.macro ? ' fg-desk--macro' : ''}">` + I.map((it, i) =>
+          `<div class="fg-desk__i beat" style="--at:${b[i].toFixed(3)};left:${+it.x}%;top:${+it.y}%;` +
+            `width:${+it.w}%;--r:${+it.r || 0}deg;--d:${+it.d || 1};z-index:${+it.z || 1}">` +
+            FSHOT(Object.assign({ treat: s.macro ? 'macro' : 'lift' }, it)) +
+          `</div>`).join('') +
+        `</div>` +
+        `<div class="scn__in scn__in--head fg-desk__copy">` +
+          (s.kicker ? `<span${AT(0)} class="fg-kick beat beat--lead">${esc(s.kicker)}</span>` : '') +
+          (s.h ? `<h2${AT(0.01)} class="fg-h beat beat--lead">${s.h}</h2>` : '') +
+          (s.p ? `<p${AT(0.08)} class="fg-p beat">${s.p}</p>` : '') +
+        `</div>`;
+    },
+
+    /* a sequence, one moment per screen: each frame takes over from the last
+       and its line swaps with it, with a counter so the reader knows how far
+       through the box they are */
+    reel: (s) => {
+      const S = s.steps || [];
+      const a0 = 0.04, a1 = 0.97, w = (a1 - a0) / Math.max(1, S.length);
+      const pad = (n) => String(n).padStart(2, '0');
+      const win = (i) => `--at:${(a0 + i * w).toFixed(3)};--to:${(i === S.length - 1 ? 2 : a0 + (i + 1) * w).toFixed(3)}`;
+      const lead = (i) => (i === 0 ? ' beat--lead' : '');
+      return `<div class="fg-reel">` + S.map((x, i) =>
+          `<div class="fg-reel__f beat beat--win${lead(i)}" style="${win(i)}">` +
+            FSHOT(Object.assign({ ratio: 1.778 }, x)) +
+          `</div>`).join('') +
+        `</div>` +
+        `<div class="scn__in scn__in--foot fg-reel__copy">` +
+          (s.kicker ? `<span${AT(0)} class="fg-kick beat beat--lead">${esc(s.kicker)}</span>` : '') +
+          `<div class="fg-reel__lines">` + S.map((x, i) =>
+            `<p class="fg-reel__t beat beat--win${lead(i)}" style="${win(i)}">` +
+              `<i>${pad(i + 1)} / ${pad(S.length)}</i>${esc(x.t)}</p>`).join('') +
+          `</div>` +
+        `</div>`;
+    },
+
+    /* the print file as an engineering drawing: the card at ID-1, with trim,
+       bleed and safe area, and the specification beside it. Values that are
+       not confirmed are written [TBD] in the data and set quieter here. */
+    spec: (s) => {
+      const R = s.rows || [];
+      const b = SPREAD(R.length, 0.26, 0.62);
+      const ln = (d, at, cls) => `<path class="fg-spec__ln${cls ? ' ' + cls : ''}" d="${d}" pathLength="1" style="--at:${at}"/>`;
+      const W = 53.98, H = 85.6, r = 3.18;
+      const card = `M${r} 0H${W - r}A${r} ${r} 0 0 1 ${W} ${r}V${H - r}A${r} ${r} 0 0 1 ${W - r} ${H}H${r}A${r} ${r} 0 0 1 0 ${H - r}V${r}A${r} ${r} 0 0 1 ${r} 0Z`;
+      const box = (x, y, w, h) => `M${x} ${y}H${x + w}V${y + h}H${x}Z`;
+      const svg = `<svg viewBox="-26 -16 106 122" aria-hidden="true">` +
+          ln(box(-2, -2, W + 4, H + 4), 0.02, 'fg-spec__ln--bleed') +
+          ln(card, 0.06, 'fg-spec__ln--trim') +
+          ln(box(4, 4, W - 8, H - 8), 0.12, 'fg-spec__ln--safe') +
+          ln(box(21, 9, 11.4, 9.8), 0.18) +
+          ln('M40 10.5a4 4 0 0 1 0 6M42.6 9a6.5 6.5 0 0 1 0 9M45.2 7.5a9 9 0 0 1 0 12', 0.2) +
+          ln(`M0 ${H + 8}H${W}M0 ${H + 5}V${H + 11}M${W} ${H + 5}V${H + 11}`, 0.24, 'fg-spec__ln--dim') +
+          ln(`M-8 0V${H}M-11 0H-5M-11 ${H}H-5`, 0.26, 'fg-spec__ln--dim') +
+          `<text class="fg-spec__lab" x="${W / 2}" y="${H + 15}" text-anchor="middle">53.98 mm</text>` +
+          `<text class="fg-spec__lab" x="-12" y="${H / 2}" text-anchor="middle" transform="rotate(-90 -12 ${H / 2})">85.60 mm</text>` +
+          `<text class="fg-spec__lab fg-spec__lab--s" x="${W + 5}" y="-4">Bleed</text>` +
+          `<text class="fg-spec__lab fg-spec__lab--s" x="${W + 5}" y="6">Trim</text>` +
+          `<text class="fg-spec__lab fg-spec__lab--s" x="${W + 5}" y="16">Safe area</text>` +
+          `<text class="fg-spec__lab fg-spec__lab--s" x="${W + 5}" y="30">Chip</text>` +
+          `<text class="fg-spec__lab fg-spec__lab--s" x="${W + 5}" y="40">NFC</text>` +
+        `</svg>`;
+      return `<div class="scn__in fg-spec">` +
+          `<div class="fg-spec__draw">${svg}</div>` +
+          `<div class="fg-spec__copy">` +
+            (s.kicker ? `<span${AT(0)} class="fg-kick beat beat--lead">${esc(s.kicker)}</span>` : '') +
+            (s.h ? `<h2${AT(0.02)} class="fg-h beat beat--lead">${s.h}</h2>` : '') +
+            `<dl class="fg-spec__rows">` + R.map((x, i) =>
+              `<div${AT(b[i])} class="fg-spec__r beat"><dt>${esc(x.k)}</dt>` +
+                `<dd>${esc(x.v).replace(/\[TBD\]/g, '<em class="fg-tbd">TBD</em>')}</dd></div>`).join('') +
+            `</dl>` +
+          `</div>` +
+        `</div>`;
+    },
+
+    /* questions pinned up before anything was drawn: sticky notes, each at
+       its own angle, arriving one at a time; `keep` marks the one that led */
+    notes: (s) => {
+      const I = (s.items || []).map((t) => (typeof t === 'string' ? { t } : t));
+      const b = SPREAD(I.length, 0.1, 0.56);
+      const tilt = [-2.4, 1.6, -1.2, 2.2, -1.8, 1.1];
+      return `<div class="scn__in fg-notes">` +
+          (s.kicker ? `<span${AT(0)} class="fg-kick beat beat--lead">${esc(s.kicker)}</span>` : '') +
+          (s.h ? `<h2${AT(0.02)} class="fg-h beat beat--lead">${s.h}</h2>` : '') +
+          `<ul class="fg-notes__wall">` + I.map((x, i) =>
+            `<li class="fg-note beat${x.keep ? ' fg-note--keep' : ''}" style="--at:${b[i].toFixed(3)};--r:${tilt[i % tilt.length]}deg">` +
+              `<span>${esc(x.t)}</span></li>`).join('') + `</ul>` +
+          (s.p ? `<p${AT(0.7)} class="fg-p beat">${s.p}</p>` : '') +
+        `</div>`;
+    },
+
+    /* two products, compared by what they feel like rather than what they do */
+    vs: (s) => {
+      const side = (o, i) => o ? `<figure class="fg-vs__side beat" style="--at:${(0.08 + i * 0.2).toFixed(3)}">` +
+          `<div class="fg-vs__art">${FSHOT(o.shot)}</div>` +
+          `<figcaption><b>${esc(o.name)}</b><ul>` +
+            (o.words || []).map((t) => `<li>${esc(t)}</li>`).join('') +
+          `</ul></figcaption></figure>` : '';
+      return `<div class="scn__in fg-vs">` +
+          (s.kicker ? `<span${AT(0)} class="fg-kick beat beat--lead">${esc(s.kicker)}</span>` : '') +
+          (s.h ? `<h2${AT(0.02)} class="fg-h beat beat--lead">${s.h}</h2>` : '') +
+          `<div class="fg-vs__row">${side(s.a, 0)}` +
+            `<i${AT(0.22)} class="fg-vs__to beat" aria-hidden="true"></i>${side(s.b, 1)}</div>` +
+          (s.p ? `<p${AT(0.5)} class="fg-p beat">${s.p}</p>` : '') +
+        `</div>`;
+    },
+  });
+
   /* ----------------------------------------------------------------------
      THE ENGINE
      ---------------------------------------------------------------------- */
@@ -7841,12 +7960,16 @@
     onward() {
       const list = this.all;
       const i = list.indexOf(this.item);
-      const prev = list[(i - 1 + list.length) % list.length];
+      /* a study may name its neighbours (the X0 chapters run in story order);
+         otherwise they are the pieces either side of it in the grid */
+      const bySlug = (slug) => slug && list.find((x) => x.study.slug === slug);
+      const st = this.item.study || {};
+      const prev = bySlug(st.prev) || list[(i - 1 + list.length) % list.length];
       /* With two studies the piece before and the piece after are the SAME
          piece, and offering it twice under two different words is worse than
          offering it once. `next` wins, because forward is the direction a
          reader who has finished is already going. */
-      const next = list[(i + 1) % list.length];
+      const next = bySlug(st.next) || list[(i + 1) % list.length];
       const nav = el('nav', { class: 'onward', 'aria-label': 'More work' });
 
       const door = (kind, it) => {
@@ -8885,7 +9008,7 @@
        This is a decision about mounting, not a feature flag inside the module.
        Nothing below this line knows about it, and `S.rack.scope` still governs
        how the dock behaves on the pages that do have one. */
-    HOMES: ['play', 'notfound', 'project'],
+    HOMES: ['play', 'project'],
 
     init() {
       if (this.HOMES.indexOf(Shell.page) < 0) return;
@@ -20736,9 +20859,13 @@
        handful is: mostly short bars, a couple of two-deep pieces. */
     BAG: ['small', 'small', 'p13', 'p13', 'p14', 'p14', 'conn', 'sq2', 'br24'],
 
-    init(host) {
+    init(host, opts) {
       if (!host || this.host) return;
       this.host = host;
+      /* `opts` lets another page host a bigger pile (the 404 floor): how dense,
+         how many at most, and how quickly they arrive. The landing column
+         passes nothing and behaves exactly as before. */
+      this.opts = opts || {};
       host.classList.add('pile');
       this.ready();
     },
@@ -20783,7 +20910,8 @@
       /* the stud is clamped for legibility — under about sixteen pixels the
          stud, the inner shadow and the radius are a pixel each and the piece
          reads as a coloured rectangle rather than as a brick */
-      this.U = Math.max(16, Math.min(28, Math.round(r.width / 10)));
+      const o = this.opts || {};
+      this.U = o.unit ? o.unit(r) : Math.max(16, Math.min(28, Math.round(r.width / 10)));
     },
 
     /* a resize changes the floor and the walls under a settled pile. Rather
@@ -20836,7 +20964,8 @@
          Set so the pile settles two or three courses deep and leaves the upper
          two thirds of the region empty, which is what the brief asks for and
          what keeps the navigation the thing you look at. */
-      const n = Math.max(3, Math.min(11, Math.round(area * 0.05)));
+      const o = this.opts || {};
+      const n = Math.max(o.min || 3, Math.min(o.max || 11, Math.round(area * (o.density || 0.05))));
       this.queue = [];
       for (let i = 0; i < n; i += 1) this.queue.push(i);
       /* --- AND EACH ONE ENTERS OVER A DIFFERENT PART OF THE FLOOR -------
@@ -20881,15 +21010,20 @@
       this.laneW = this.W / nl;
       const next = () => {
         if (!this.host || !this.queue.length) return;
+        /* a hosted pile (opts.cap) stops dealing once it has built up near its
+           ceiling, so nothing ever comes to rest half outside the band */
+        if (this.opts && this.opts.cap && this.bodies.some((b) => !b.loose && b !== this.held
+          && b.asleep && b.y < this.U * this.opts.cap)) { this.queue = []; return; }
         this.queue.pop();
         this.drop();
         /* WIDENED WITH THE GRAVITY. A gentler fall takes about twice as long,
            so the old spacing had three pieces in the air at once and the
            sequence the brief asks for — one enters, lands, shifts what it hit,
            and only then the next — collapsed back into a shower. */
-        this._t = setTimeout(next, 360 + Math.random() * 300);
+        const gap = (this.opts && this.opts.gap) || [360, 300];
+        this._t = setTimeout(next, gap[0] + Math.random() * gap[1]);
       };
-      this._t = setTimeout(next, 220);
+      this._t = setTimeout(next, (this.opts && this.opts.delay) || 220);
     },
 
     /* --- ONE BRICK, FROM ABOVE ------------------------------------------
@@ -20939,10 +21073,27 @@
         va: (Math.random() - 0.5) * 26,
         sleep: 0, asleep: false,
       };
+      /* POPCORN (opts.pop): instead of dropping in from above, the brick is
+         fired up from under the floor, passes through the pile as a ghost,
+         and only becomes solid on the way down once it is clear — so it lands
+         on top rather than shoving the pile apart from underneath. */
+      if (this.opts && this.opts.pop) this.launch(b);
       node.__b = b;
       this.bodies.push(b);
       this.paint(b);
       this.run();
+    },
+
+    launch(b) {
+      const lo = this.opts.pop[0], hi = this.opts.pop[1];
+      const apex = this.H * (lo + Math.random() * (hi - lo));
+      b.y = this.H + 2;
+      b.vy = -Math.sqrt(2 * this.G * (apex + b.h));
+      b.vx = (Math.random() - 0.5) * 140;
+      b.a = (Math.random() - 0.5) * 24;
+      b.va = (Math.random() - 0.5) * 220;
+      b.pop = true;
+      b.tries = (b.tries || 0) + 1;
     },
 
     /* --- THE BRICK IS DRAWN BY `Bricks.art`, NOT BY THIS MODULE ---------
@@ -20990,8 +21141,35 @@
     },
 
     step(dt) {
-      const bs = this.bodies;
       let busy = false;
+      /* ghosts (popcorn bricks on their way up) are flown here, outside the
+         solver, and handed to it once they are falling and clear of the pile */
+      let bs = this.bodies;
+      if (bs.some((b) => b.pop)) {
+        const solid = bs.filter((b) => !b.pop);
+        bs.forEach((b) => {
+          if (!b.pop) return;
+          b.vy += this.G * dt;
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+          b.a += b.va * dt;
+          b.va *= Math.pow(0.2, dt);
+          if (b.x < 0) { b.x = 0; b.vx = Math.abs(b.vx) * 0.4; }
+          if (b.x + b.w > this.W) { b.x = this.W - b.w; b.vx = -Math.abs(b.vx) * 0.4; }
+          const clear = b.vy > 0 && b.y + b.h < this.H - 0.5 && !solid.some((o) =>
+            o.x < b.x + b.w && b.x < o.x + o.w && o.y < b.y + b.h && b.y < o.y + o.h);
+          if (clear) { b.pop = false; b.asleep = false; b.sleep = 0; solid.push(b); return; }
+          /* fell back under the floor without clearing the pile: fire again,
+             harder, and after a few tries let it go */
+          if (b.vy > 0 && b.y > this.H + 4) {
+            if (b.tries < 4) { this.opts.pop = [Math.min(0.95, this.opts.pop[0] + 0.05), this.opts.pop[1]]; this.launch(b); }
+            else { b.node.remove(); this.bodies = this.bodies.filter((o) => o !== b); }
+          }
+          this.paint(b);
+          busy = true;
+        });
+        bs = solid;
+      }
 
       for (let i = 0; i < bs.length; i += 1) {
         const b = bs[i];
@@ -22674,41 +22852,32 @@
        to tell you the page is missing. It is still a wall — see `data-wall` —
        so bricks seat against it exactly as they seat against the headline. */
     notfound() {
+      /* --- THE 404, REBUILT: A PAGE, NOT A ROOM ------------------------------
+         It used to be a canvas: sixty-odd bricks scattered over a dot grid, a
+         pale sign in the middle, a game panel and a presets shelf. Busy, and
+         in dark mode the numeral was pale grey on a pale card. Now it is the
+         plain answer — what happened and the ways out — and the bricks are
+         the landing column's pile (`Pile`), laid along the bottom edge. */
       const c = S.notFound;
       const host = $('#hero');
       if (!c || !host) return;
 
-      host.classList.add('canvas', 'canvas--room');
-      host.appendChild(el('div', { class: 'canvas__dots', 'aria-hidden': 'true' }));
-
-      /* `.canvas__intro` is not a style choice — it is the name the brick
-         engine looks for when it works out which part of the canvas is
-         spoken for. Calling it anything else would leave the room with no
-         protected region at all. */
-      const intro = el('div', { class: 'canvas__intro nf' });
-      const card = el('div', { class: 'nf__in', 'data-wall': '' });
-
-      /* THE NUMERAL IS THE HEADLINE, and it is an `h1` because it is the
-         page's actual heading — the thing that says what happened. The
-         sentence under it is a caption on that, not a title of its own. */
-      const big = el('h1', { class: 'nf__big rv' }, esc(c.code));
-      card.appendChild(big);
-      const line = el('p', { class: 'nf__line rv' }, esc(c.headline));
-      line.style.setProperty('--rv-delay', '120ms');
-      card.appendChild(line);
+      host.classList.add('nf2');
+      const inner = el('div', { class: 'nf2__in' });
+      inner.appendChild(el('p', { class: 'nf2__k rv' }, esc(c.eyebrow || 'Error 404')));
+      const h = el('h1', { class: 'nf2__h rv' }, esc(c.headline));
+      h.style.setProperty('--rv-delay', '80ms');
+      inner.appendChild(h);
       if (c.body) {
-        const body = el('p', { class: 'nf__body rv' }, esc(c.body));
-        body.style.setProperty('--rv-delay', '190ms');
-        card.appendChild(body);
+        const b = el('p', { class: 'nf2__b rv' }, esc(c.body));
+        b.style.setProperty('--rv-delay', '140ms');
+        inner.appendChild(b);
       }
-
-      const links = el('div', { class: 'nf__links rv' });
-      links.style.setProperty('--rv-delay', '320ms');
+      const links = el('div', { class: 'nf2__links rv' });
+      links.style.setProperty('--rv-delay', '220ms');
       (c.links || []).forEach((l) => {
-        /* THE RESUME OPENS IN THE PAGE, the same way it does from the hero and
-           from the menu: `kind: 'resume'` is the flag the document-level
-           [data-action] delegate already watches for, so this is the third
-           caller of one viewer rather than a third link to a PDF. */
+        /* the resume opens in the page, through the same [data-action] door
+           as the hero and the menu */
         const isRes = l.kind === 'resume';
         const a = el('a', {
           class: `btn${l.primary ? '' : ' btn--ghost'}`,
@@ -22717,35 +22886,30 @@
         if (isRes) a.dataset.action = 'resume';
         links.appendChild(a);
       });
-      card.appendChild(links);
+      inner.appendChild(links);
+      host.appendChild(inner);
 
+      /* THE FLOOR. The same bricks, painter and physics as the landing
+         column, in a band across the bottom of the window. Denser than the
+         column and quicker to arrive, because here the pile is the picture. */
       if (c.aside) {
-        const a = el('p', { class: 'nf__aside rv' }, esc(c.aside));
-        a.style.setProperty('--rv-delay', '1500ms');
-        card.appendChild(a);
+        const a = el('p', { class: 'nf2__aside rv' }, esc(c.aside));
+        a.style.setProperty('--rv-delay', '900ms');
+        inner.appendChild(a);
       }
-
-      intro.appendChild(card);
-      host.appendChild(intro);
-
-      /* HOW MANY. A phone has roughly a quarter of the floor and the same
-         frame budget, so it gets a room with fewer things in it rather than
-         the same room scaled down. */
+      const floor = el('div', { class: 'nf2__floor', 'aria-hidden': 'true' });
+      host.appendChild(floor);
       const narrow = innerWidth <= 768;
-      const n = narrow ? (c.mobilePieces || 26) : (c.pieces || 64);
-      Bricks.defs = Bricks.scatter(n);
-
-      Bricks.init(host);
-      Canvas.setSurface(host);
-      Canvas.placement();
-      Bricks.drip(c.drip);
-
-      /* AND THE ROOM GETS TWO CONTROLS. The presets are the toolbar's own
-         shelf, moved onto the wall because in here they are the thing to do
-         rather than a tool to reach for; the other is a door to the game. Both
-         are hung on the canvas after the bricks exist, so nothing they do can
-         run before there is anything to do it to. */
-      Game.mount(host, c);
+      requestAnimationFrame(() => Pile.init(floor, {
+        density: narrow ? 0.11 : 0.1,
+        cap: 3,
+        min: 8,
+        max: narrow ? 56 : 170,
+        gap: [8, 10],
+        delay: 150,
+        pop: [0.45, 0.85],
+        unit: (r) => Math.max(15, Math.min(20, Math.round(Math.min(r.width / 48, r.height / 12)))),
+      }));
     },
 
     /* --- WORK: AN ARCHIVE ON THE SAME CANVAS -----------------------------

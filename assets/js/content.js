@@ -179,7 +179,7 @@ window.SITE = {
     /* two lines, present tense */
     now: [
       'Currently designing at Cypherock.',
-      'Based in Gurugram, studying at UPES.',
+      'Based in Gurugram.',
     ],
     fine: '© Ishaan Gupta {year}',
   },
@@ -256,17 +256,15 @@ window.SITE = {
        round: the numeral is the whole statement, one quiet line explains it,
        and the three ways out are directly under it. */
     code: '404',
-    headline: 'Looks like you’ve wandered off.',
-    /* the long explanation is gone. "The link is either old or slightly
-       mistyped" is a sentence about the site's internals; nobody who has just
-       hit a dead end needs the taxonomy of how. */
+    eyebrow: 'Error 404',
+    headline: 'This page doesn\u2019t exist.',
+    body: 'The link may be old or mistyped. Everything else is still here.',
     links: [
-      { label: 'Work', href: 'index.html', primary: true },
+      { label: 'Back to work', href: 'index.html', primary: true },
       { label: 'About', href: 'about.html' },
       { label: 'Resume', kind: 'resume' },
     ],
-    /* the quiet invitation. One line, no tutorial. */
-    aside: 'Since you are here — build something.',
+    aside: 'The bricks are real. Pick one up.',
     pieces: 64,
     mobilePieces: 26,
     drip: { every: [5200, 9000], count: [1, 2], max: 120 },
@@ -733,6 +731,8 @@ window.SITE = {
              work/<slug>.html carries nothing but this name; everything below
              is what it finds. */
           slug: 'cypherock-x0',
+          /* the hardware chapter follows this one directly */
+          next: 'x0-cards',
           /* The hero's own facts. They were one comma-separated string on the
              tile — "App design, 2026, Singapore" — which is the right
              shape for a caption and the wrong one for a page that sets them in
@@ -3127,42 +3127,230 @@ window.SITE = {
              at one size, which is honest about what exists. */
         },
       },
-      { title: 'Magic Extractor', meta: 'Design, 2025, Bengaluru', href: '#',
-        /* short and wide, under the tall one, so the right-hand stack ends on a
-           different line again */
+      /* ------------------------------------------------------------- X0 Cards
+         THE SECOND CHAPTER OF X0, not a new project. The X0 study ends on
+         "I also designed the X0 hardware cards, the packaging and everything
+         that goes inside the box" — this is that sentence, opened up. It is
+         built from the same film engine, the same type and the same pacing,
+         with less text and a hero asset on almost every screen.
+
+         WHAT IS STILL WAITING. Most frames here are reserved shots (a `shot`
+         with a `label` and an `of`, no `src`): packaging renders, macro
+         photography, exploration boards and print files that are not in the
+         repository yet. Add `src` to the same object and the frame becomes
+         the picture. Every production number that is not confirmed is
+         written as [TBD] so nothing unverified ships as fact. */
+      { title: 'X0 Cards', meta: 'Hardware & packaging, 2026, Singapore',
         col: 'b', ratio: 1.5,
-        preview: 'ring', line: 'Extracting', stat: '672/897 files parsed' ,
-        /* --- THE CHAPTER COVER ------------------------------------------
-
-           WHAT THIS IS FOR. Pressing a card used to leave the site: one click
-           and you were in a forty-six screen case study with no idea whether
-           you wanted to be. This is the screen in between — enough of the
-           project to decide by, on the page you are already on, with the study
-           one deliberate press further.
-
-           IT IS NOT A SUMMARY OF THE STUDY. A summary would be the study
-           again, shorter, and nobody reads the same argument twice. This is
-           the jacket copy: what the thing is, what was mine, and four pictures
-           that say whether it is any good. `spread` is composed rather than
-           listed — a hero, two supports at different crops and one detail —
-           and the three positions are named rather than numbered so the
-           composition is legible here and not only in the stylesheet.
-
-           EVERY FACT IS OUT OF THE STUDY OR THE KNOWLEDGE BASE. Nothing in a
-           `brief` is written for the brief. */
+        /* the product film: one continuous camera move around a real 3D
+           model of the card (front and back from the source artwork), 15s,
+           seamless loop. Source scene: .tools/x0-card-film/card.html */
+        thumb: 'assets/media/x0/x0-card-film-thumb.mp4',
+        thumbPoster: 'assets/media/x0/x0-card-film-thumb.webp',
+        preview: 'fan',
+        colours: ['#d9dadd', '#c9cacd', '#b8b9bd', '#a7a8ad'],
         brief: {
-          tagline: 'Pulling the signal out of nine hundred files.',
-          summary: 'An extraction tool for people who are handed a folder and '
-            + 'asked what is in it. Most of the design is what the interface '
-            + 'does while it does not yet know the answer.',
+          tagline: 'The digital product, made physical.',
+          summary: 'The second chapter of X0: the cards, the box, the insert and '
+            + 'the instruction cards, designed so everything someone touches '
+            + 'before opening the app speaks the same language as the app.',
           facts: [
-            { k: 'Role', v: 'Design' },
-            { k: 'Timeline', v: '2025 · Bengaluru' },
-            { k: 'Team', v: 'With engineering' },
-            { k: 'Platform', v: 'Desktop' },
+            { k: 'Role', v: 'Product Designer' },
+            { k: 'Timeline', v: '2026 · Singapore' },
+            { k: 'Follows', v: 'X0 app · N45' },
+            { k: 'Platform', v: 'Cards · Packaging · Print' },
           ],
-          does: ['Interaction design', 'Progress and state', 'UI'],
-          note: 'Write-up in progress',
+          does: ['Card design', 'Packaging', 'Print production'],
+          cta: 'View the complete case study',
+          anchor: false,
+          spread: [
+            { at: 'a', src: 'assets/img/x0/cards/c1.webp', w: 600, h: 955, alt: 'X0 card 1' },
+            { at: 'a', src: 'assets/img/x0/cards/c2.webp', w: 600, h: 955, alt: 'X0 card 2' },
+            { at: 'a', src: 'assets/img/x0/cards/c3.webp', w: 600, h: 955, alt: 'X0 card 3' },
+            { at: 'a', src: 'assets/img/x0/cards/c4.webp', w: 600, h: 955, alt: 'X0 card 4' },
+          ],
+        },
+        study: {
+          slug: 'x0-cards',
+          /* the chapter before and after, stated rather than derived, so the
+             X0 app study leads straight here and this leads on */
+          prev: 'cypherock-x0',
+          next: 'onefinnet-talent',
+          company: 'Cypherock',
+          category: 'Hardware & packaging',
+          year: '2026',
+          place: 'Singapore',
+          role: 'Product Designer',
+          lede: 'After defining the digital identity of X0, the next challenge was '
+            + 'making the same product language exist in people’s hands.',
+          eyebrow: 'Cypherock · Product Design',
+          title: 'X0 Cards',
+          hero: {
+            kind: 'film',
+            film: 'assets/media/x0/x0-card-film.webm',
+            film2: 'assets/media/x0/x0-card-film.mp4',
+            poster: 'assets/media/x0/x0-card-film.webp',
+            ground: '#060607',
+            h: 'X0 Cards',
+            meta: [
+              { k: 'Chapter two', v: 'X0 beyond the screen' },
+              { k: 'Role', v: 'Product Designer' },
+              { k: 'Focus', v: 'Cards · Packaging · Print' },
+            ],
+            cue: 'Scroll',
+            prog: false,
+          },
+          reading: true,
+          back: { label: 'BACK', href: 'index.html' },
+          mode: 'film',
+          scenes: [
+            /* 01 · the record, and the one sentence the chapter answers */
+            { id: 'xc-record', nav: 'Overview', kind: 'record', dur: 150, rest: true,
+              kicker: 'Chapter two of X0',
+              h: 'When the interface ended, the product experience had only just begun.',
+              lede: 'After defining the digital identity of X0, the next challenge was '
+                + 'making the same product language exist in people’s hands.',
+              rows: [
+                { k: 'Product', v: 'X0 cards and packaging' },
+                { k: 'Scope', v: 'Cards · Box · Insert · Instruction cards · Print files' },
+                { k: 'Role', v: 'Product Designer' },
+                { k: 'Follows', v: 'The X0 app and the N45 design system' },
+                { k: 'Timeline', v: '[TBD]' },
+              ] },
+
+            { id: 'xc-words', kind: 'words', dur: 170, dark: true,
+              kicker: 'Everything touched before the app had to feel',
+              items: ['Accessible.', 'Minimal.', 'Premium.', 'Approachable.', 'Consistent.'],
+              p: 'The challenge wasn’t packaging. It was trust before the first interaction.' },
+
+            /* 02 · the questions on the wall, before any artwork */
+            { id: 'xc-questions', nav: 'The Challenge', kind: 'notes', dur: 180,
+              kicker: 'Before any artwork, the questions',
+              h: 'Why packaging mattered.',
+              items: [
+                'How premium should a $40 product feel?',
+                'How do we avoid looking cheap?',
+                'How do we stay distinct from X1?',
+                'How do we keep manufacturing simple?',
+                { t: 'How do we communicate security before setup?', keep: true },
+              ] },
+
+            /* 03 · one ecosystem, two products — perception, not features */
+            { id: 'xc-family', nav: 'X1 and X0', kind: 'vs', dur: 170,
+              kicker: 'One ecosystem. Two products.',
+              h: 'Compare perception, not features.',
+              a: { name: 'X1', words: ['Premium', 'Professional', 'Desktop-first'],
+                shot: { src: 'assets/img/x0/kit/x1-stack.webp', alt: 'X1 cards, black with a gold mark' } },
+              b: { name: 'X0', words: ['Minimal', 'Mobile-first', 'Everyday users'],
+                shot: { src: 'assets/img/x0/cards/c1.webp', alt: 'An X0 card, silver' } },
+              p: 'Same family, different promise. The physical language had to say which one you were holding.' },
+
+            /* 04 · the desk: exploration, scattered on purpose */
+            { id: 'xc-desk', nav: 'Exploration', kind: 'desk', dur: 230,
+              kicker: 'Building the physical language',
+              h: 'Nothing started as a render.',
+              p: 'Card directions, material tests, print samples and packaging ideas, left out on the desk the way they were made.',
+              items: [
+                { label: 'Card explorations', of: 'Early card layouts side by side', kind: 'figma', ratio: 1.4, x: 54, y: 5, w: 21, r: 2, d: 0.8 },
+                { src: 'assets/img/x0/cards/c2.webp', ratio: 0.628, x: 79, y: 3, w: 9, r: 7, d: 1.4, z: 3, alt: 'X0 card direction' },
+                { label: 'Foil explorations', of: 'Silver foil tests on card stock', kind: 'photo', ratio: 1, x: 84, y: 26, w: 13, r: -4, d: 1.2 },
+                { label: 'Material tests', of: 'Card materials under one light', kind: 'photo', ratio: 1.2, x: 58, y: 34, w: 17, r: -3, d: 1.6, z: 2 },
+                { src: 'assets/img/x0/cards/c3.webp', ratio: 0.628, x: 44, y: 60, w: 8, r: -9, d: 0.9, z: 3, alt: 'X0 card direction' },
+                { label: 'Logo sizing', of: 'The mark at three sizes on the card', kind: 'figma', ratio: 1.6, x: 2, y: 66, w: 17, r: -4, d: 1.3 },
+                { label: 'Chip colours', of: 'Chip finish options', kind: 'render', ratio: 1, x: 21, y: 70, w: 11, r: 6, d: 0.7 },
+                { label: 'Printing samples', of: 'Proofs from the printer', kind: 'photo', ratio: 1.5, x: 30, y: 60, w: 13, r: 3, d: 1.1 },
+                { label: 'Texture studies', of: 'Surface finish, close', kind: 'photo', ratio: 1.2, x: 56, y: 68, w: 14, r: -6, d: 1.5 },
+                { label: 'Packaging directions', of: 'Box concepts, early', kind: 'render', ratio: 1.4, x: 75, y: 62, w: 19, r: 2, d: 1 },
+              ] },
+
+            /* 05 · the constraints, and why each one mattered */
+            { id: 'xc-industrial', nav: 'Industrial Decisions', kind: 'board', dur: 210,
+              k: 'Industrial decisions',
+              h: 'Constraints, not visuals.',
+              cards: [
+                { size: 'lead', k: 'Thickness', t: 'Plastic card thickness',
+                  b: 'It decides whether the card lives in a wallet or a drawer. Final: [TBD].' },
+                { k: 'Corners', t: 'Rounded corners',
+                  b: 'ID-1 corners keep it familiar in the hand and in a card slot. Radius: [TBD].' },
+                { k: 'NFC', t: 'NFC placement',
+                  b: 'The antenna decides where the phone has to touch, so the artwork has to point there. Position: [TBD].' },
+                { k: 'Print', t: 'Alignment and tolerances',
+                  b: 'Edge-to-edge artwork shows every fraction of a millimetre of drift. Tolerance: [TBD].' },
+                { k: 'Finish', t: 'Spot UV, silver foil, embossing',
+                  b: 'Each one adds cost and a step at the printer, so each one had to earn its place. Used: [TBD].' },
+                { k: 'Box', t: 'Durability, shipping and shelf',
+                  b: 'The box travels before it is opened, and on a shelf it is the only thing that speaks. Board and tests: [TBD].' },
+              ] },
+
+            /* 06 · the unboxing, one moment per screen */
+            { id: 'xc-unbox', nav: 'Unboxing', kind: 'reel', dur: 460, dark: true,
+              kicker: 'The packaging experience',
+              steps: [
+                { t: 'The closed box.', label: 'Closed box', of: 'The box on a dark surface, lid on, one key light', kind: 'render' },
+                { t: 'The foil logo catches the light.', label: 'Foil logo', of: 'Light sweeping across the silver foil mark', kind: 'render' },
+                { t: 'The lid lifts.', label: 'Lid lifting', of: 'The lid halfway up, shadow falling inside', kind: 'render' },
+                { t: 'The interior appears.', label: 'Interior', of: 'Looking into the open box', kind: 'render' },
+                { t: 'The cards become visible.', label: 'Cards in the box', of: 'The four cards seated in the insert', kind: 'render' },
+                { t: 'The instruction card.', label: 'Instruction card', of: 'The instruction card lifted out', kind: 'render' },
+                { t: 'The tray.', label: 'Tray', of: 'The insert tray on its own', kind: 'render' },
+                { t: 'Four cards, in hand.', label: 'Final reveal', of: 'All four cards fanned out beside the box', kind: 'render' },
+              ] },
+
+            /* 07 · the card, given the whole frame */
+            { id: 'xc-card', nav: 'The Card', kind: 'object', dur: 180, dark: true,
+              word: 'X0', art: 'assets/img/x0/cards/c1.webp', alt: 'The X0 card, silver, vertical',
+              kicker: 'The card',
+              h: 'Vertical. Silver. Quiet.',
+              facts: [
+                'Why minimal — [TBD]',
+                'Why vertical — [TBD]',
+                'Why silver — [TBD]',
+                'Why the chip stayed untouched — [TBD]',
+                'Why the branding was reduced — [TBD]',
+                'Why the typography changed — [TBD]',
+              ] },
+
+            /* 08 · details, with almost no words */
+            { id: 'xc-details', nav: 'Details', kind: 'desk', dur: 200, dark: true, macro: true,
+              kicker: 'Details',
+              h: 'Let the photographs talk.',
+              items: [
+                { label: 'Foil', of: 'Macro: foil edge under raking light', kind: 'photo', treat: 'macro', ratio: 1.2, x: 52, y: 4, w: 24, r: 0, d: 1.3 },
+                { label: 'Texture', of: 'Macro: card surface texture', kind: 'photo', treat: 'macro', ratio: 1, x: 79, y: 8, w: 17, r: 0, d: 0.8 },
+                { label: 'Edges', of: 'Macro: the card edge and core', kind: 'photo', treat: 'macro', ratio: 1.6, x: 3, y: 60, w: 24, r: 0, d: 1.1 },
+                { label: 'Corner radius', of: 'Macro: one corner, very close', kind: 'photo', treat: 'macro', ratio: 1, x: 30, y: 56, w: 16, r: 0, d: 1.5 },
+                { label: 'Paper', of: 'Macro: box paper and print', kind: 'photo', treat: 'macro', ratio: 1.3, x: 50, y: 50, w: 20, r: 0, d: 0.9 },
+                { label: 'Insert', of: 'Macro: the insert where a card sits', kind: 'photo', treat: 'macro', ratio: 1.1, x: 74, y: 52, w: 20, r: 0, d: 1.2 },
+              ] },
+
+            /* 09 · manufacturing, set as an engineering drawing */
+            { id: 'xc-spec', nav: 'Manufacturing', kind: 'spec', dur: 210,
+              kicker: 'Manufacturing',
+              h: 'The print file is part of the design.',
+              rows: [
+                { k: 'Format', v: 'ID-1 · 85.60 × 53.98 mm' },
+                { k: 'Thickness', v: '[TBD]' },
+                { k: 'Material', v: '[TBD]' },
+                { k: 'Colour', v: 'CMYK · [TBD]' },
+                { k: 'Spot UV', v: '[TBD]' },
+                { k: 'Silver foil', v: '[TBD]' },
+                { k: 'Embossing', v: '[TBD]' },
+                { k: 'Bleed', v: '[TBD]' },
+                { k: 'Safe area', v: '[TBD]' },
+                { k: 'Tolerance', v: '[TBD]' },
+              ] },
+
+            /* 10 · the outcome, and the same end card as the app study */
+            { id: 'xc-outcome', nav: 'Outcome', kind: 'ask', dur: 150, mid: true,
+              kicker: 'Outcome',
+              h: 'A product family, not an accessory.',
+              p: 'Every touchpoint, from the box to the card to the app, shares one visual language.' },
+
+            { id: 'xc-end', kind: 'object', dur: 120, dark: true, rest: true,
+              shot: { label: 'The whole family', of: 'Box, four cards and the phone running the X0 app, together', kind: 'render', ratio: 1.778 },
+              h: 'Glad you made it here.',
+              meta: 'That’s X0 beyond the screen: the cards, the box, the insert and the instruction cards, designed as one system with the app.' },
+          ],
         },
       },
     ],
