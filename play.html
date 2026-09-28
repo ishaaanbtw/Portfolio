@@ -12,7 +12,7 @@
      are not preloaded on purpose: one word on the home page is italic and only
      case studies set code, so both can arrive late without anything moving. -->
 <link rel="preload" href="assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/site.css?v=wip3">
+<link rel="stylesheet" href="assets/css/site.css?v=wip40">
 <!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT.
      What this is: site.js section 5c2c, site.css sections 44 and 44b. Why it
      cannot live in site.js: the sheet is the page's own paper and the document
@@ -143,7 +143,10 @@
 (function () {
   var t = null;
   try { t = sessionStorage.getItem('site:theme'); } catch (e) { /* private mode */ }
-  if (t !== 'light') document.documentElement.classList.add('is-dark');
+  var phone = false;
+  try { phone = matchMedia('(max-width: 48rem), (hover: none) and (pointer: coarse)').matches; } catch (e) {}
+  if (phone) document.documentElement.classList.add('is-phone');
+  if (phone || t !== 'light') document.documentElement.classList.add('is-dark');
 })();
 </script>
 </head>
@@ -156,7 +159,7 @@
     </main>
   </div>
 
-  <script src="assets/js/content.js?v=wip3"></script>
-  <script src="assets/js/site.js?v=wip3"></script>
+  <script src="assets/js/content.js?v=wip40"></script>
+  <script src="assets/js/site.js?v=wip40"></script>
 </body>
 </html>

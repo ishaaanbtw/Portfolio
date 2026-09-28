@@ -12,7 +12,7 @@
      are not preloaded on purpose: one word on the home page is italic and only
      case studies set code, so both can arrive late without anything moving. -->
 <link rel="preload" href="assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/site.css?v=wip3">
+<link rel="stylesheet" href="assets/css/site.css?v=wip40">
 <!-- The X0 card's thumbnail is a video, and until its poster is painted the
      card shows the CSS preview underneath it — a flash of blue on every cold
      load. The poster is fetched here rather than when site.js reaches the
@@ -149,7 +149,10 @@
 (function () {
   var t = null;
   try { t = sessionStorage.getItem('site:theme'); } catch (e) { /* private mode */ }
-  if (t !== 'light') document.documentElement.classList.add('is-dark');
+  var phone = false;
+  try { phone = matchMedia('(max-width: 48rem), (hover: none) and (pointer: coarse)').matches; } catch (e) {}
+  if (phone) document.documentElement.classList.add('is-phone');
+  if (phone || t !== 'light') document.documentElement.classList.add('is-dark');
 })();
 </script>
 </head>
@@ -171,7 +174,7 @@
   </div>
 
 
-  <script src="assets/js/content.js?v=wip3"></script>
-  <script src="assets/js/site.js?v=wip3"></script>
+  <script src="assets/js/content.js?v=wip40"></script>
+  <script src="assets/js/site.js?v=wip40"></script>
 </body>
 </html>

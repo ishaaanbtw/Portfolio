@@ -13062,12 +13062,12 @@ body[data-page='project'].phero-up .llm:not(.is-up) .llm__chip { animation: none
     #1631b4 84%,
     #1c46ea 90%,
     #2a5cff 96%,
-    rgba(74, 123, 255, 0.94) 102%,
-    rgba(123, 165, 255, 0.74) 108%,
-    rgba(174, 203, 255, 0.46) 114%,
-    rgba(216, 230, 255, 0.22) 120%,
-    rgba(238, 243, 255, 0.07) 126%,
-    rgba(255, 255, 255, 0) 132%;
+    #5583ff 102%,
+    #9dbcff 108%,
+    #dae7ff 114%,
+    #f6faff 120%,
+    #fefeff 126%,
+    #ffffff 132%;
 
   /* fine, monochrome, and the same tile everywhere the field is painted */
   --bf-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.05' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -13085,6 +13085,8 @@ body[data-page='project'].phero-up .llm:not(.is-up) .llm__chip { animation: none
   position: relative;
   z-index: 0;
   height: 14svh;
+  /* overlap the hero by a pixel so a fractional svh never leaves a hairline */
+  margin-top: -1px;
   overflow: clip;
   isolation: isolate;
   pointer-events: none;
@@ -17520,6 +17522,37 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 }
 @media (max-width: 46rem) {
   .fg-sys__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* THE PHONE'S VERSION: two rows of the same plates, moving opposite ways.
+   Hidden on the wide layout, where the four-column wall does this job. */
+.fg-sys__rows { display: none; }
+@media (max-width: 60rem) {
+  .fg-sys__grid { display: none; }
+  .fg-sys__rows {
+    display: grid;
+    gap: 1.25rem;
+    margin-inline: calc(var(--gut, 1.25rem) * -1);
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+            mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  }
+  .fg-sys__row { overflow: hidden; }
+  .fg-sys__track {
+    display: flex;
+    gap: 0.75rem;
+    width: max-content;
+    padding-right: 0.75rem;
+    animation: sysLeft 60s linear infinite;
+  }
+  .fg-sys__row:nth-child(2) .fg-sys__track { animation-name: sysRight; animation-duration: 66s; }
+  .fg-sys__rows .fg-sys__t { width: 10.5rem; flex: none; }
+  .fg-sys__rows .fg-sys__t--rep { display: grid; }
+}
+@keyframes sysLeft  { from { translate: 0 0; } to { translate: -50% 0; } }
+@keyframes sysRight { from { translate: -50% 0; } to { translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .fg-sys__track { animation: none; }
 }
 
 /* --- 07b · the questions, as the conversation they actually were ---------
@@ -23500,4 +23533,730 @@ body[data-page='notfound'] #main { min-height: 100svh; }
 }
 @media (prefers-reduced-motion: reduce) {
   .wip-cursor__label i, .wcard__wip i { animation: none; }
+}
+
+
+/* ==========================================================================
+   PHONE: MENU BUTTON, AND THE LANDING ORDER
+   `is-phone` is set on <html> by the head script and by site.js (same test:
+   narrow, or touch-only). The rail's two lists live in `.pmenu`; the page
+   opens on the brick pile, then the statement and buttons, then the work.
+   ========================================================================== */
+.pmenu, .pmenu__btn { display: none; }
+
+:root.is-phone .pmenu__btn {
+  position: fixed;
+  top: calc(var(--sa-top, 0px) + 0.75rem);
+  right: calc(var(--sa-right, 0px) + 0.75rem);
+  z-index: 2147482000;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: #1c1c1f;
+  color: #e9e7e3;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+:root.is-phone .pmenu__btn span {
+  display: block;
+  width: 1.25rem;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
+}
+:root.is-pmenu .pmenu__btn span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+:root.is-pmenu .pmenu__btn span:nth-child(2) { opacity: 0; }
+:root.is-pmenu .pmenu__btn span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+:root.is-phone .pmenu {
+  position: fixed;
+  inset: 0;
+  z-index: 2147481000;
+  display: block;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--paper, #111113);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 240ms ease, visibility 0s linear 240ms;
+}
+:root.is-pmenu .pmenu {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 240ms ease, visibility 0s;
+}
+:root.is-pmenu, :root.is-pmenu body { overflow: hidden; }
+
+.pmenu__inner {
+  padding: calc(var(--sa-top, 0px) + 1.5rem) var(--gut, 1.25rem) 2rem;
+  font-size: 1.125rem;
+  transform: translateY(-8px);
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+:root.is-pmenu .pmenu__inner { transform: none; }
+.pmenu .mast__set { position: relative; margin: 0; }
+.pmenu .mast__set + .mast__set { margin-top: 1.75rem; }
+.pmenu .mast__label { margin-bottom: 0.35rem; }
+.pmenu .mast__row { padding: 0.2rem 0; }
+@media (prefers-reduced-motion: reduce) {
+  .pmenu__inner, .pmenu__btn span { transition: none; }
+}
+
+/* the landing: pile first and tall, so the page opens on the bricks with the
+   statement under them and the first project just showing */
+:root.is-phone .home { padding-top: calc(var(--sa-top, 0px) + 4.5rem); }
+:root.is-phone .mast__air {
+  order: 1;
+  height: max(12rem, calc(100svh - 22rem));
+  margin: 0 0 1.5rem;
+}
+:root.is-phone .mast__say { order: 2; }
+:root.is-phone .mast__cta { order: 3; }
+:root.is-phone .home__views,
+:root.is-phone .home__work,
+:root.is-phone .about { order: 4; }
+:root.is-phone .mast__foot { order: 6; margin-top: 2.5rem; }
+
+/* PHONE: the case study's chapter readout ("06 / 09 DESIGN SYSTEM") and the
+   index it opens are removed. The film scrolls on its own; the browser's back
+   gesture is the way out. */
+/* (phone navigation: see PHONE · CASE STUDY NAVIGATION at the end) */
+
+/* THE FIELD'S PALE TAIL IS OPAQUE (the old translucent stops pre-mixed onto
+   the study's white). The hero paints its copy over black and the bridge
+   over white, so a translucent tail came out darker in one than the other,
+   and on a phone, where the ellipse is narrow, that difference was a visible
+   box edge at the hero's foot. Opaque stops look identical on either ground. */
+
+/* PHONE · THE BRIEF IN FOUR WORDS: the mark small in the top-left corner,
+   the words set low in the frame instead of in the middle of it. */
+@media (max-width: 46rem) {
+  #x0-brief .fg-brand {
+    top: calc(var(--sa-top, 0px) + 5.5rem);
+    bottom: auto;
+    left: var(--fg-gut);
+    right: auto;
+    translate: none;
+    width: 4.5rem;
+  }
+  #x0-brief .scn__stage { align-content: end; align-items: end; }
+  #x0-brief .scn__in { padding-bottom: calc(var(--sa-bottom, 0px) + 5.5rem); }
+}
+
+/* PHONE · "WHAT WAS HANDED OVER". Pinned to one screen, the figure plus eight
+   bubbles did not fit: the last ones were cut off and the first frame was an
+   empty ghost bubble. On a phone the scene scrolls like a page instead, every
+   message is present, and the scatter comes back at a phone's scale (the
+   desktop indents at 60%) so the thread still reads as thoughts, not a log. */
+@media (max-width: 46rem) {
+  .scn--msgs { height: auto !important; }
+  .scn--msgs .scn__stage { position: relative; height: auto; min-height: 0; padding-block: 3.5rem 4rem; }
+  .scn--msgs .beat { --o: 1; opacity: 1; translate: 0; }
+  .scn--msgs .fg-quote.beat--lead { display: none; }
+  .scn--msgs .fg-msg {
+    --q: 1;
+    margin-inline-start: calc(var(--ox, 0%) * 0.6);
+    max-width: min(var(--bw, 84%), calc(100% - var(--ox, 0%) * 0.6));
+  }
+  .scn--msgs .fg-thread { translate: none; }
+  .scn--msgs .fg-msgs__head { max-width: 12rem; }
+}
+
+/* PHONE · THE ROAD. Same composition as desktop, with the four stops kept:
+   numbered dots on the road, and their notes as a legend under the headline. */
+.fg-dir__legend { display: none; }
+@media (max-width: 46rem) {
+  .fg-dir__stop { display: block; }
+  .fg-dir__stem, .fg-dir__lab { display: none; }
+  .fg-dir__dot {
+    width: 1.25rem; height: 1.25rem;
+    border: 1px solid #c4c4c8; background: #fff;
+    display: grid; place-items: center;
+    box-shadow: 0 2px 6px rgba(20, 20, 24, 0.12);
+  }
+  .fg-dir__dot::after {
+    content: attr(data-n); position: static; inset: auto;
+    width: auto; height: auto; border-radius: 0; background: none;
+    font: 600 0.625rem/1 var(--sans); color: #111113;
+  }
+  .fg-dir__legend {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem 1rem;
+    list-style: none; margin: 1.5rem 0 0; padding: 0;
+    width: 100%; text-align: left;
+  }
+  .fg-dir__legend li {
+    display: grid; grid-template-columns: 1.25rem 1fr; column-gap: 0.55rem; row-gap: 0.2rem;
+    align-items: start;
+  }
+  .fg-dir__legend i {
+    grid-row: span 2;
+    width: 1.25rem; height: 1.25rem; border-radius: 50%;
+    border: 1px solid #c4c4c8; display: grid; place-items: center;
+    font: 600 0.625rem/1 var(--sans); font-style: normal; color: #111113;
+  }
+  .fg-dir__legend b { font-size: 0.875rem; font-weight: 560; color: #0e0e10; line-height: 1.25; }
+  .fg-dir__legend span { font-size: 0.75rem; line-height: 1.4; color: #5a5b60; }
+  .fg-dir__box { bottom: 8svh; }
+}
+
+/* PHONE · INFORMATION ARCHITECTURE, AS A FLOW RATHER THAN A LIST.
+   The wide diagram cannot be read at 390px, so it is redrawn vertically in
+   the diagram's own language: the same key, the same white node cards and
+   node shapes (hub, question, state, option-only, irreversible), a spine down
+   each flow with an arrow into every screen, numbered sections joined by a
+   drawn arrow, and each card saying where it leads. */
+.fg-ia__go { display: none; }
+@media (max-width: 46rem) {
+  .scn--ia .scn__stage { background: #f3f3f4; }
+  .fg-ia__head { display: grid; gap: 0.9rem; justify-items: start; }
+  .fg-ia__key {
+    display: flex; border-radius: 12px;
+    padding: 0.6rem 0.8rem; gap: 0.45rem 1rem;
+    font-size: 0.6875rem;
+  }
+  .fg-ia__list { gap: 0; margin-top: 1.75rem; }
+  .fg-ia__list > li { position: relative; padding-bottom: 2.75rem; }
+  /* the arrow from one section down into the next */
+  .fg-ia__list > li:not(:last-child)::after {
+    content: '';
+    position: absolute; left: 0.45rem; bottom: 0.5rem;
+    width: 0; height: 1.6rem;
+    border-left: 1px dashed rgba(16, 16, 18, 0.35);
+  }
+  .fg-ia__list > li:not(:last-child)::before {
+    content: '';
+    position: absolute; left: calc(0.45rem - 3.5px); bottom: 0.35rem;
+    width: 6px; height: 6px;
+    border-right: 1px solid rgba(16, 16, 18, 0.5);
+    border-bottom: 1px solid rgba(16, 16, 18, 0.5);
+    transform: rotate(45deg);
+  }
+  .fg-ia__lh { color: var(--fg-dim); letter-spacing: 0.08em; }
+  .fg-ia__lh b { font-weight: 500; color: var(--fg-quiet); margin-right: 0.35rem; }
+
+  /* the spine, and an arrow into each screen */
+  .fg-ia__list ul {
+    position: relative;
+    margin: 0.75rem 0 0 0.45rem;
+    padding: 0 0 0 1.35rem;
+    border-left: 0;
+    gap: 0.55rem;
+  }
+  .fg-ia__li { position: relative; }
+  .fg-ia__li::before {
+    content: '';
+    position: absolute; left: -1.35rem; top: -0.55rem; bottom: 50%;
+    border-left: 1px solid rgba(16, 16, 18, 0.28);
+    border-bottom: 1px solid rgba(16, 16, 18, 0.28);
+    border-bottom-left-radius: 6px;
+    width: 1.05rem;
+  }
+  .fg-ia__li:first-child::before { top: 0; }
+  .fg-ia__li:not(:last-child)::after {
+    content: '';
+    position: absolute; left: -1.35rem; top: 50%; bottom: -0.55rem;
+    border-left: 1px solid rgba(16, 16, 18, 0.28);
+  }
+  .fg-ia__li details { position: relative; }
+  .fg-ia__li details::before {
+    content: '';
+    position: absolute; left: -7px; top: calc(1.35rem - 3px);
+    width: 5px; height: 5px;
+    border-top: 1px solid rgba(16, 16, 18, 0.45);
+    border-right: 1px solid rgba(16, 16, 18, 0.45);
+    transform: rotate(45deg);
+  }
+
+  /* the node cards, as the diagram draws them */
+  .fg-ia__list summary {
+    padding: 0.6rem 0.8rem;
+    background: #fff;
+    border-color: rgba(16, 16, 18, 0.09);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(16, 16, 18, 0.04);
+    gap: 3px;
+  }
+  .fg-ia__list .fg-ia__t { font-size: 0.875rem; }
+  .fg-ia__list .fg-ia__m { font-size: 0.6875rem; }
+  .fg-ia__go {
+    display: flex; align-items: center; gap: 0.4rem;
+    margin-top: 0.3rem; padding-top: 0.35rem;
+    border-top: 1px solid rgba(16, 16, 18, 0.06);
+    font-size: 0.6875rem; line-height: 1.35; color: var(--fg-dim);
+  }
+  .fg-ia__go svg { width: 1rem; height: 0.4rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.25; }
+
+  .fg-ia__li--hub summary {
+    border-color: rgba(16, 16, 18, 0.26);
+    box-shadow: 0 1px 2px rgba(16, 16, 18, 0.05), 0 8px 22px -14px rgba(16, 16, 18, 0.3);
+  }
+  .fg-ia__li--hub .fg-ia__t { font-weight: 600; }
+  .fg-ia__li--decide summary { border-radius: 999px; width: fit-content; padding-inline: 1rem; }
+  .fg-ia__li--decide .fg-ia__t { font-weight: 400; color: var(--fg-dim); }
+  .fg-ia__li--state summary,
+  .fg-ia__li--option summary { background: transparent; border-style: dashed; border-color: rgba(16, 16, 18, 0.18); box-shadow: none; }
+  .fg-ia__li--state .fg-ia__t,
+  .fg-ia__li--option .fg-ia__t { font-weight: 400; color: var(--fg-dim); }
+  .fg-ia__li--danger summary { position: relative; overflow: hidden; padding-left: 1.1rem; }
+  .fg-ia__li--danger summary::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; opacity: 0.55;
+    background: repeating-linear-gradient(-45deg, var(--fg-ink) 0 1px, transparent 1px 3.5px);
+  }
+  .fg-ia__steps { margin: 0.45rem 0.8rem 0.2rem; font-size: 0.75rem; }
+}
+
+/* PHONE · THE COMPETITORS. Pinned to one screen the three lenses did not fit
+   and the third was cut; the logo wall also flew away and left no strip. On a
+   phone the scene scrolls like a page and reads like the desktop: the logos as
+   a strip above the headline, then the three lenses in full, each with its
+   rule, its bullets and its closing line. */
+@media (max-width: 46rem) {
+  .scn--rivals { height: auto !important; }
+  .scn--rivals .scn__stage { position: relative; height: auto; min-height: 0; padding-block: 3.5rem 4rem; place-items: start; }
+  .scn--rivals .beat { --o: 1; opacity: 1; translate: 0; }
+  .scn--rivals .fg-riv__wall { display: none; }
+  .scn--rivals .fg-riv__logos--strip {
+    display: flex; visibility: visible;
+    flex-wrap: wrap; gap: 0.9rem 1.4rem;
+    margin-bottom: 1.75rem;
+  }
+  .scn--rivals .fg-riv__logos--strip img { height: calc(0.95rem * var(--s)); opacity: 0.55; }
+  .scn--rivals .fg-riv__logos--strip .fg-riv__more { font-size: 0.75rem; }
+  .scn--rivals .fg-riv__h { font-size: clamp(1.9rem, 8.4vw, 2.4rem); line-height: 1.05; }
+  .scn--rivals .fg-riv__layers { gap: 2.25rem; }
+  .scn--rivals .fg-riv__layer li:nth-child(3) { display: block; }
+  .scn--rivals .fg-riv__lh { padding-bottom: 0.7rem; border-bottom: 1px solid var(--fg-line); }
+  .scn--rivals .fg-riv__role { min-height: 0; }
+}
+
+/* PHONE · SHIPPED: the Designed / Shipped / Available / Evolving line is
+   removed, and the listings row is a swipeable strip that also drifts on its
+   own (ShipScroll in site.js). */
+@media (max-width: 46rem) {
+  .fg-ship__steps { display: none; }
+  .fg-ship__row {
+    overflow-x: auto;
+    scroll-snap-type: none;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    margin-inline: calc(var(--fg-gut) * -1);
+    padding-inline: var(--fg-gut);
+  }
+  .fg-ship__row::-webkit-scrollbar { display: none; }
+}
+
+/* PHONE · "A DESIGN SYSTEM AI CAN ACTUALLY USE". One column: the picture on
+   top, changing with the scroll as on desktop, then the 67%, the heading and
+   the four steps. Only each step's title is shown; the current one is lit. */
+@media (max-width: 46rem) {
+  .fg-steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    padding-top: calc(var(--sa-top, 0px) + 1.5rem);
+    align-content: start;
+  }
+  .fg-steps__stage {
+    order: -1;
+    width: 100%;
+    max-height: none;
+    margin-top: 0;
+    align-self: start;
+  }
+  .fg-steps__n { font-size: clamp(3.5rem, 18vw, 4.75rem); }
+  .fg-steps .fg-kick.fg-steps__sub { margin-top: 0.5rem; font-size: 0.625rem; }
+  .fg-steps .fg-steps__h { font-size: clamp(1.4rem, 6.4vw, 1.75rem); margin: 0.9rem 0 1.1rem; }
+  .fg-steps__i { padding: 0.7rem 0; }
+  .fg-steps__i span { display: none; }
+  .fg-steps__i b { font-size: 0.9375rem; }
+}
+
+/* PHONE · THE RETROSPECTIVE BOARD. The v2 rule forced three columns at every
+   width, so on a phone the cards were 110px wide and the stat overflowed. One
+   column here, every card full width, and the scene scrolls like a page so
+   the last card is never cut. */
+@media (max-width: 46rem) {
+  .scn--board { height: auto !important; }
+  .scn--board .scn__stage { position: relative; height: auto; min-height: 0; padding-block: 3.5rem 4rem; place-items: start; }
+  .scn--board .beat, .scn--board .fg-board__c { --o: 1; opacity: 1; }
+  .fg-board__grid { grid-template-columns: minmax(0, 1fr); gap: 0.85rem; width: 100%; }
+  .fg-board__c, .fg-board__c--lead { grid-column: auto; transform: none; }
+  .fg-board__c--stat { gap: 0.6rem; }
+  .fg-board__n { white-space: normal; font-size: 1.75rem; }
+  .fg-board__c--lead .fg-board__t { font-size: 1.45rem; }
+}
+
+/* PHONE · "Five things at once" is not shown on mobile. */
+@media (max-width: 46rem) { #x0-five { display: none !important; } }
+:root.is-phone #x0-five { display: none !important; }
+
+/* PHONE · COMPETITORS, ANIMATED (RivalsPhone in site.js). The desktop's own
+   wall animation, placed on the first screen of the section and run on a
+   clock; the logos land in the strip and stay there, as on desktop. */
+@media (max-width: 46rem) {
+  .scn--rivals.m-anim .fg-riv__wall {
+    display: grid;
+    top: 50svh;
+    opacity: 1;
+  }
+  .scn--rivals.m-anim .fg-riv__logos--big {
+    gap: 1.4rem 1.75rem;
+  }
+  .scn--rivals.m-anim .fg-riv__logos--big img { height: calc(1.9rem * var(--s)); }
+  .scn--rivals.m-anim .fg-riv__logos--big > li {
+    transform-origin: 0 0;
+    transform: translate(calc(var(--me) * var(--dx, 0px)), calc(var(--me) * var(--dy, 0px)))
+      scale(calc(1 - var(--me) * (1 - var(--k, 1))));
+  }
+  /* the strip is only the landing spot, exactly as on desktop */
+  .scn--rivals.m-anim .fg-riv__logos--strip { visibility: hidden; }
+  /* the body waits for the logos, then reveals as it scrolls into view */
+  .scn--rivals.m-anim .fg-riv__body .beat {
+    opacity: 0;
+    translate: 0 1rem;
+    transition: opacity 600ms ease, translate 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .scn--rivals.m-anim .fg-riv__body .beat.m-seen { opacity: 1; translate: 0 0; }
+  .scn--rivals.m-anim .fg-key::after {
+    transform: scaleX(0);
+    transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1) 350ms;
+  }
+  .scn--rivals.m-anim .fg-riv__h.m-seen .fg-key::after { transform: scaleX(1); }
+}
+@media (max-width: 46rem) and (prefers-reduced-motion: reduce) {
+  .scn--rivals.m-anim .fg-riv__body .beat { opacity: 1; translate: 0; transition: none; }
+}
+
+/* PHONE · INFORMATION ARCHITECTURE, THE REAL DIAGRAM. The vertical outline
+   read as a different design and ran for screens. The phone now shows the
+   desktop drawing itself — same nodes, wires, key and tap-to-trace — at a
+   fixed readable scale in a frame you swipe sideways (it drifts on its own
+   to show it moves). Tap any screen to light its paths and read it below. */
+@media (max-width: 46rem) {
+  .scn--ia .fg-ia__list { display: none !important; }
+  .scn--ia .fg-ia__fit {
+    display: grid !important;
+    place-items: center start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin-inline: calc(var(--fg-gut) * -1);
+    padding: 0.5rem var(--fg-gut) 0.75rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .scn--ia .fg-ia__fit::-webkit-scrollbar { display: none; }
+  .scn--ia .fg-ia__read { display: block !important; margin-top: 0.25rem; font-size: 0.8125rem; line-height: 1.5; min-height: 3em; }
+  .scn--ia .fg-ia__key { display: flex !important; }
+  .scn--ia .fg-ia__e { --o: 1; }
+  .scn--ia .fg-ia__n.beat, .scn--ia .fg-ia__g.beat { --o: 1; opacity: 1; translate: 0; }
+}
+
+/* PHONE · THE ACTUAL QUESTION, ALONE. The brief ("in four words") is not
+   shown on phones; the question gets a screen of its own with room around it,
+   and plays its desktop entrance on a clock (PhonePlay in site.js). */
+@media (max-width: 46rem) {
+  #x0-brief { display: none !important; }
+  #x0-question { height: auto !important; }
+  #x0-question .scn__stage {
+    position: relative;
+    height: auto;
+    min-height: 88svh;
+    place-items: center start;
+    align-content: center;
+    padding-block: 7rem;
+  }
+}
+
+/* PHONE · REVEAL ON VIEW (PhoneReveal in site.js): the desktop entrances,
+   played as each piece scrolls in. */
+@media (max-width: 46rem) {
+  .m-rev .m-piece {
+    transition:
+      opacity 600ms ease,
+      translate 700ms cubic-bezier(0.22, 1, 0.36, 1),
+      scale 700ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .m-rev .m-piece:not(.m-seen) { opacity: 0 !important; translate: 0 1rem !important; }
+
+  /* contact sheet: frames settle in, each at its own weight */
+  .m-rev .fg-cs__c.m-piece:not(.m-seen) { translate: 0 0.6rem !important; scale: 0.94; }
+  .m-rev .fg-cs__c.m-seen { opacity: var(--op, 1); scale: 1; }
+
+  /* messages pop from their tail, with a small overshoot, as on desktop */
+  .m-rev .fg-msg.m-piece { transform-origin: 0% 100%; transition-timing-function: ease, cubic-bezier(0.34, 1.56, 0.64, 1), cubic-bezier(0.34, 1.56, 0.64, 1), ease; }
+  .m-rev .fg-msg.m-piece:not(.m-seen) { scale: 0.86; translate: 0 1.15rem !important; }
+  .m-rev .fg-msg.m-seen { scale: 1; }
+
+  /* the board's notes drop in and settle with their tilt */
+  .m-rev .fg-board__c.m-piece:not(.m-seen) { transform: translateY(-1.4rem) scale(1.04) !important; translate: 0 0 !important; }
+  .m-rev .fg-board__c.m-seen { opacity: 1; transform: rotate(calc(var(--r, 0deg) * 0.5)) !important; }
+}
+
+/* PHONE · COMPETITORS, INTRO SCREEN. The line "Every wallet claims to be the
+   safest…" and the big logos keep a screen of their own at the top of the
+   section, as the phone layout had it, playing the desktop's word-by-word
+   and one-by-one entrance; the strip then leads the page below. */
+@media (max-width: 46rem) {
+  /* a compact intro, not a screen of its own: just enough room for the line
+     and the logos above the strip, so the section never feels long */
+  .scn--rivals.m-anim .scn__stage { padding-top: 19rem; }
+  .scn--rivals.m-anim .fg-riv__wall { top: 9.5rem; gap: 1.25rem; }
+  .scn--rivals.m-anim .fg-riv__lead { font-size: 0.9375rem; }
+  /* the strip is the landing spot again; the big logos fly into it */
+  .scn--rivals.m-anim .fg-riv__logos--strip { visibility: hidden; }
+}
+@media (max-width: 46rem) {
+  /* the landing spot sits exactly where the strip is laid out */
+  .scn--rivals.m-anim .fg-riv__logos--strip .beat { translate: 0 0 !important; }
+}
+@media (max-width: 46rem) {
+  /* CySync: each need rises in on its own, and the two rows of plates slide
+     in from opposite sides, the way they run */
+  .m-rev .fg-kept__needs li.m-piece:not(.m-seen) { translate: 0 0.9rem !important; }
+  .m-rev .fg-sys__row.m-piece:not(.m-seen) { translate: 3rem 0 !important; }
+  .m-rev .fg-sys__row.m-piece:nth-child(2):not(.m-seen) { translate: -3rem 0 !important; }
+  .m-rev .fg-sys__row.m-piece { transition-duration: 700ms, 1100ms, 700ms, 800ms; }
+}
+@media (max-width: 46rem) {
+  /* slower, so the entrance reads as one, like the desktop's scrubbed reveal */
+  .m-rev .m-piece {
+    transition:
+      opacity 900ms ease,
+      translate 1000ms cubic-bezier(0.22, 1, 0.36, 1),
+      scale 1000ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 1100ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .m-rev .m-piece:not(.m-seen) { translate: 0 1.5rem !important; }
+  .m-rev .fg-sys__row.m-piece { transition-duration: 900ms, 1300ms, 900ms, 900ms; }
+}
+
+/* THE RECORD'S RULE ARRIVES WITH ITS FIRST ROW. The list's top hairline was
+   drawn from the first frame while the rows under it were still invisible,
+   so on a phone a lone grey line floated over the white before the facts
+   came in. It now belongs to the first row and fades in with it. */
+.fg-rec__list { border-block-start: 0; }
+.fg-rec__r:first-child { border-block-start: 1px solid var(--fg-line); }
+
+/* PHONE · "THE PHONE WAS ALREADY IN THEIR HAND": more air between the
+   headline, the picture and the two comparison cards, and the frame starts
+   a little higher so the extra room fits the screen. */
+@media (max-width: 46rem) {
+  #x0-subtract .scn__stage { padding-top: calc(var(--sa-top, 0px) + 2.75rem); align-content: center; }
+  #x0-subtract .fg-prob { row-gap: 2.25rem; }
+  #x0-subtract .fg-prob__cmp { gap: 0.9rem; }
+}
+
+/* PHONE · THE ROAD'S LEGEND ARRIVES WITH THE ROAD. Each note appears on the
+   same beat as its numbered stop on the road, so nothing is sitting there
+   before the road has drawn itself. */
+@media (max-width: 46rem) {
+  .fg-dir__legend li {
+    --so: clamp(0, calc((var(--p) - var(--at)) * 12), 1);
+    opacity: var(--so);
+    translate: 0 calc((1 - var(--so)) * 0.6rem);
+  }
+}
+@media (max-width: 46rem) and (prefers-reduced-motion: reduce) {
+  .fg-dir__legend li { --so: 1; }
+}
+
+/* PHONE · INFORMATION ARCHITECTURE BUILDS ITSELF, as on desktop: the key, the
+   column labels and the screens arrive flow by flow and every wire draws
+   itself, on the same timeline, played once as the diagram comes into view
+   (PhonePlay). The frame starts at the first column; it no longer drifts. */
+@media (max-width: 46rem) {
+  .scn--ia.m-play-scn .beat,
+  .scn--ia.m-play-scn .fg-ia__n.beat,
+  .scn--ia.m-play-scn .fg-ia__g.beat {
+    --o: clamp(0, calc((var(--p) - var(--at)) * var(--fg-rise)), 1);
+    opacity: var(--o);
+    translate: 0 calc((1 - var(--o)) * 0.6rem);
+  }
+  .scn--ia.m-play-scn .fg-ia__e { --o: clamp(0, calc((var(--p) - var(--at)) * var(--fg-rise)), 1); }
+}
+
+
+/* ==========================================================================
+   PHONE · CASE STUDY NAVIGATION
+   IshaanLLM comes off the case study on a phone and its corner goes to the
+   study's own contents: a pill that always says which part you are in; tap it
+   and the whole list opens above it, tap a part and the page goes there. The
+   way back is a bare arrow, fixed top-left on every screen (`.pback`, made in
+   site.js), in the ink of whatever scene is under it.
+   ========================================================================== */
+.pback { display: none; }
+@media (max-width: 63.9375rem) {
+  :root.is-phone body[data-page='project'] .llm { display: none !important; }
+  :root.is-phone .fhero__back,
+  :root.is-phone .rail--film .rail__back { display: none !important; }
+
+  :root.is-phone .pback {
+    position: fixed;
+    z-index: 60;
+    top: calc(var(--sa-top, 0px) + 0.85rem);
+    left: calc(var(--sa-left, 0px) + 0.85rem);
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    color: #111113;
+    background: rgba(255, 255, 255, 0.72);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 0 1px rgba(16, 16, 18, 0.08);
+    transition: color 300ms ease, background-color 300ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  :root.is-phone .pback[data-tone='dark'] {
+    color: #f2f2f4;
+    background: rgba(20, 20, 24, 0.55);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  :root.is-phone .pback svg { width: 1.1rem; height: 1.1rem; }
+
+  :root.is-phone .rail--film {
+    display: block !important;
+    left: auto;
+    top: auto;
+    right: calc(var(--sa-right, 0px) + 0.85rem);
+    bottom: calc(var(--sa-bottom, 0px) + 0.85rem);
+    width: auto;
+    max-width: calc(100vw - 1.7rem);
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  :root.is-phone .rail--film .rail__now {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.7rem 0.95rem 0.7rem 1rem;
+    border-radius: 999px;
+    font-size: 0.625rem;
+    background: rgba(255, 255, 255, 0.86);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 0 0 1px rgba(16, 16, 18, 0.08), 0 8px 24px -10px rgba(16, 16, 18, 0.35);
+  }
+  :root.is-phone .rail--film .rail__now::after {
+    content: '';
+    width: 6px; height: 6px;
+    margin-left: 0.15rem;
+    border-right: 1.5px solid currentColor;
+    border-top: 1.5px solid currentColor;
+    transform: translateY(1px) rotate(-45deg);
+    transition: transform 280ms ease;
+    color: #6e6f76;
+  }
+  :root.is-phone .rail--film[data-open='1'] .rail__now::after { transform: translateY(-2px) rotate(135deg); }
+  :root.is-phone .rail--film[data-tone='dark'] .rail__now {
+    background: rgba(20, 20, 24, 0.7);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 24px -10px rgba(0, 0, 0, 0.6);
+  }
+  :root.is-phone .rail--film[data-tone='dark'] .rail__now::after { color: #a7a8ae; }
+  :root.is-phone .rail--film .rail__list {
+    order: -1;
+    min-width: 13rem;
+    margin-block-end: 0.6rem;
+  }
+}
+
+/* PHONE · 67% — air between the picture and the number, the block centred in
+   the screen instead of hugging the top, and the first picture arriving with
+   the scroll (it rises and sharpens in) rather than sitting there loaded. */
+@media (max-width: 46rem) {
+  #x0-ai .fg-steps {
+    gap: 2.5rem;
+    padding-top: 0;
+    align-content: center;
+    min-height: 100%;
+  }
+  #x0-ai .scn__stage { align-content: center; }
+  #x0-ai .fg-steps__f:nth-child(1) {
+    --w: clamp(0, calc((var(--p) + 0.02) * 9), 1);
+    opacity: var(--w);
+    translate: 0 calc((1 - var(--w)) * 1.5rem);
+    scale: calc(0.96 + var(--w) * 0.04);
+    filter: blur(calc((1 - var(--w)) * 8px));
+  }
+}
+
+/* PHONE · PLAY: the desk is the whole screen. The landing furniture (the
+   brick pile, the statement, the buttons, the closing lines) comes off this
+   page on a phone, and the desk runs edge to edge, top to bottom; the menu
+   button still floats over its top-right corner. */
+:root.is-phone body[data-page='play'] .home { padding: 0 !important; row-gap: 0; }
+:root.is-phone body[data-page='play'] .home .mast__air,
+:root.is-phone body[data-page='play'] .home .mast__say,
+:root.is-phone body[data-page='play'] .home .mast__cta,
+:root.is-phone body[data-page='play'] .home .mast__foot { display: none !important; }
+:root.is-phone body[data-page='play'] .home .home__views,
+:root.is-phone body[data-page='play'] .home .home__work--desk { margin: 0; padding: 0; }
+:root.is-phone body[data-page='play'] .home .play__floor {
+  min-height: 100svh;
+  height: 100svh;
+  border-radius: 0;
+  border: 0;
+  margin: 0;
+}
+:root.is-phone body[data-page='play'] .home .play__head { padding-top: calc(var(--sa-top, 0px) + 1.25rem); padding-right: 4.5rem; }
+
+
+/* PHONE MENU AS A SHEET. It drops from the top and covers only as much as the
+   lists need (about half the screen); the page stays visible underneath,
+   dimmed, so you can still see where you are. Tap the dimmed part to close. */
+:root.is-phone .pmenu {
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  overflow: hidden;
+}
+:root.is-phone .pmenu__inner {
+  background: var(--paper, #111113);
+  border-bottom-left-radius: 1.25rem;
+  border-bottom-right-radius: 1.25rem;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 24px 48px -20px rgba(0, 0, 0, 0.6);
+  max-height: 62svh;
+  overflow-y: auto;
+  padding-bottom: 1.75rem;
+  transform: translateY(-100%);
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+:root.is-pmenu .pmenu__inner { transform: none; }
+:root.is-phone body[data-page='play'] .play__head { max-width: calc(100vw - 6rem); }
+
+/* ==========================================================================
+   PHONE · PREVIEW (the carousel a work tile opens)
+   Kept on phones and fixed: the details sit in the top half and scroll on
+   their own with the "View the complete case study" button always pinned at
+   their foot; the screens run below as a swipeable strip at full height; the
+   field under everything is opaque (the page was showing through the seam);
+   the dark column that marked the strip's edge is gone; and the site menu
+   button steps aside while the preview is open.
+   ========================================================================== */
+@media (max-width: 62rem) {
+  :root.is-phone.is-pvw .pmenu__btn { opacity: 0; pointer-events: none; }
+  :root.is-phone .pvw::before { background: #141416; opacity: 1; inset: 0; }
+  :root.is-phone .pvwr { height: 50svh; }
+  :root.is-phone .pvw::before { inset: 0; }
+  :root.is-phone .pvw__stage { inset: 50svh 0 0 0; }
+  :root.is-phone .pvw__edge { display: none; }
+  :root.is-phone .pvw__brief { padding-bottom: 0; }
+  :root.is-phone .pvw__door {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: 1.25rem;
+    padding: 0.9rem 0 1rem;
+    background: linear-gradient(to bottom, rgba(20, 20, 22, 0), var(--surface) 30%);
+  }
+  :root.is-phone .pvw__door .pvw__cta { width: 100%; justify-content: center; }
 }

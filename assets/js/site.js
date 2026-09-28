@@ -25,6 +25,60 @@
      into it until the tab is closed (sessionStorage, so nothing lingers on a
      borrowed laptop). Fewer clicks behave like a normal click on a WIP tile.
      This is a curtain, not a lock: the site is static and the code is public. */
+  const NARROW_PREVIEW = matchMedia('(max-width: 62rem)');
+  /* the preview is kept on phones, restyled as a sheet (see PHONE · PREVIEW) */
+  const PHONE_PREVIEW = true;
+  /* A PHONE GETS ONE LOOK. No theme or grid pods (they sat on top of the
+     footer and had nowhere clean to go), dark always, grid always off, and a
+     choice stored from a desktop tab does not follow it. Same test as the
+     inline script in each page's head. */
+  const PHONE = matchMedia('(max-width: 48rem), (hover: none) and (pointer: coarse)').matches;
+  if (PHONE) document.documentElement.classList.add('is-phone');
+
+  /* ------------------------------------------------------------ PHONE MENU
+     On a phone the rail's two lists (Site, Links) leave the page and live
+     behind a menu button in the top-right corner. The lists are MOVED, not
+     copied, so every handler on them (the section switch, IshaanLLM, the
+     travelling square) comes along untouched. The panel and the button hang
+     off <body>, outside the transformed `.sheet`, so `position: fixed` means
+     the window. */
+  const PhoneMenu = {
+    open: false,
+    init(mast) {
+      if (!PHONE || !mast || this.btn) return;
+      const sets = mast.querySelectorAll('.mast__set');
+      if (!sets.length) return;
+      this.panel = el('div', { class: 'pmenu', id: 'pmenu', 'aria-hidden': 'true' });
+      const inner = el('div', { class: 'pmenu__inner' });
+      sets.forEach((n) => inner.appendChild(n));
+      this.panel.appendChild(inner);
+      this.btn = el('button', {
+        class: 'pmenu__btn', type: 'button',
+        'aria-label': 'Open menu', 'aria-expanded': 'false', 'aria-controls': 'pmenu',
+      }, '<span></span><span></span><span></span>');
+      this.btn.addEventListener('click', () => this.toggle());
+      /* a tap on the dimmed page below the sheet closes it */
+      this.panel.addEventListener('click', (e) => { if (e.target === this.panel) this.toggle(false); });
+      /* any row pressed inside the menu has done its job: close behind it */
+      inner.addEventListener('click', (e) => {
+        if (e.target.closest('a, button')) this.toggle(false);
+      });
+      addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.open) this.toggle(false); });
+      document.body.append(this.panel, this.btn);
+    },
+    toggle(force) {
+      const on = typeof force === 'boolean' ? force : !this.open;
+      if (on === this.open) return;
+      this.open = on;
+      const root = document.documentElement;
+      root.classList.toggle('is-pmenu', on);
+      this.panel.setAttribute('aria-hidden', String(!on));
+      this.btn.setAttribute('aria-expanded', String(on));
+      this.btn.setAttribute('aria-label', on ? 'Close menu' : 'Open menu');
+      /* the square measures its row, which had no box while the panel was shut */
+      if (on) requestAnimationFrame(() => { if (typeof Mark !== 'undefined') Mark.to(null, true); });
+    },
+  };
   const OWNER_FLAG = 'ig-owner';
   const OWNER = (() => {
     try { return sessionStorage.getItem(OWNER_FLAG) === '1'; } catch (e) { return false; }
@@ -483,6 +537,7 @@
         this.apply('light');
         return;
       }
+      if (PHONE) { this.locked = true; this.apply('dark'); return; }
       this.apply(this.chosen ? saved : this.DEFAULT);
     },
   };
@@ -543,7 +598,7 @@
       try { saved = sessionStorage.getItem(this.KEY); } catch (e) { /* private mode */ }
       /* OFF BY DEFAULT. Only a stored '1' — a visitor who pressed the pod
          earlier in this tab — turns it on. */
-      this.on = saved === '1';
+      this.on = saved === '1' && !PHONE;
       document.documentElement.classList.toggle('is-grid', this.on);
       /* AND THE POD IS TOLD, because it was built before this ran and it does
          not ask. `Shell.hud` creates it with `aria-pressed="false"` and paints
@@ -1048,6 +1103,7 @@
        (see section 3), so the handle had nothing to open and the bar was a
        name on a strip. Both removed, along with their styles. */
     controls() {
+      if (PHONE) return;
       /* --- THE TWO POD BUTTONS -------------------------------------------
 
          Bottom right, in `.free`, on every page — which is the point of them
@@ -2069,6 +2125,12 @@
           card.addEventListener('click', (e) => {
             if (e.defaultPrevented || e.button !== 0) return;
             if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            /* NOT ON A PHONE. The preview is a desktop composition: a reading
+               column beside a gallery. Squeezed into a portrait window it
+               became a 38%-tall scrolling strip that hid its own button over
+               a gallery too short for its pictures. On a narrow screen the
+               tile is simply the link it always was. */
+            if (NARROW_PREVIEW.matches && !PHONE_PREVIEW) return;
             e.preventDefault();
             Sound.tap();
             Preview.show(item, card);
@@ -4876,12 +4938,16 @@
           `<li><span class="fg-ia__lh"><b>${esc(g.n)}</b>${esc(g.t)}</span><ul>` +
             d.nodes.filter((n) => n.g === g.id).map((n) => {
               const to = (out[n.id] || []).map((id) => N[id].t);
-              return `<li><details><summary>` +
+              /* the node's kind rides on the row so the phone draws the
+                 same hub / state / option / decision / irreversible shapes
+                 the diagram does; "leads to" sits on the card itself, since
+                 there are no wires to carry it */
+              return `<li class="fg-ia__li${n.kind ? ` fg-ia__li--${n.kind}` : ''}"><details><summary>` +
                   `<span class="fg-ia__t"><span>${esc(n.t)}</span>${marks(n)}</span>` +
                   (n.m ? `<span class="fg-ia__m">${esc([].concat(n.m).join(' · '))}</span>` : '') +
+                  (to.length ? `<span class="fg-ia__go"><svg viewBox="0 0 22 8" aria-hidden="true"><path d="M1 4h19M16.5 1.2 20 4l-3.5 2.8"/></svg>${esc(to.join(' · '))}</span>` : '') +
                 `</summary>` +
                 `<p class="fg-ia__steps">${esc(this.read(n))}</p>` +
-                (to.length ? `<p class="fg-ia__to">Leads to ${esc(to.join(', '))}</p>` : '') +
               `</details></li>`;
             }).join('') +
           `</ul></li>`).join('') + `</ol>`;
@@ -4901,7 +4967,7 @@
             `</div>` +
           `</div>` +
           `<p class="fg-ia__read beat" style="--at:0.1" aria-live="polite">` +
-            `<span class="fg-ia__hint">Point at any part to trace where it leads.</span></p>` +
+            `<span class="fg-ia__hint">${PHONE ? 'Swipe to explore. Tap any screen to trace where it leads.' : 'Point at any part to trace where it leads.'}</span></p>` +
           list +
         `</div>`;
     },
@@ -4931,10 +4997,14 @@
       const doFit = () => {
         const w = fit.clientWidth;
         const h = fit.clientHeight;
-        if (!w || !h) return;
+        if (!w || (!h && !PHONE)) return;
         let k = Math.min(w / W, h / H, MAX);
-        const pan = k < MIN;
+        let pan = k < MIN;
         if (pan) k = Math.min(MIN, h / H);
+        /* ON A PHONE the diagram itself is kept, as on desktop, at a fixed
+           readable scale in a frame you swipe across; the frame is sized to
+           the drawing's height rather than the other way round. */
+        if (PHONE) { k = 0.64; pan = true; }
         size.style.setProperty('--k', k.toFixed(4));
         fit.classList.toggle('is-pan', pan);
       };
@@ -5736,10 +5806,19 @@
           (s.p ? `<p${AT(0.2)} class="fg-dir__p beat">${s.p}</p>` : '');
       const stops = (P.stops || []).map((st, i) =>
         `<div class="fg-dir__stop" style="left:${(st.x / 20).toFixed(3)}%;top:${(st.y / 11.83).toFixed(3)}%;--at:${st.at};--lift:${st.lift}cqw">` +
-          `<i class="fg-dir__stem"></i><i class="fg-dir__dot"></i>` +
+          `<i class="fg-dir__stem"></i><i class="fg-dir__dot" data-n="${i + 1}"></i>` +
           `<div class="fg-dir__lab"><b>${esc(st.k)}</b><span>${st.t}</span></div>` +
         `</div>`).join('');
-      return `<div class="scn__in fg-dir__narrow">${head}</div>` +
+      /* THE PHONE'S LEGEND. The desktop labels hang off the road in a
+         landscape frame; on a portrait screen the frame is too small to carry
+         them, so the dots are numbered and the same four notes are set as a
+         legend under the headline. Hidden on the wide layout. */
+      const legend = (P.stops || []).length
+        ? `<ol class="fg-dir__legend">` + P.stops.map((st, i) =>
+            `<li style="--at:${st.at}"><i>${i + 1}</i><b>${esc(st.k)}</b><span>${st.t.replace(/<br\s*\/?>/g, ' ')}</span></li>`).join('') +
+          `</ol>`
+        : '';
+      return `<div class="scn__in fg-dir__narrow">${head}${legend}</div>` +
         `<div class="fg-dir"><div class="fg-dir__box">` +
           `<div class="fg-dir__top">${head}</div>` +
           `<i class="fg-dir__base fg-dir__base--l"></i>` +
@@ -5932,6 +6011,17 @@
                     col.map((o) => tile(o)).join('') + col.map((o) => tile(o, true)).join('') + col.map((o) => tile(o, true)).join('') +
                   `</div>` +
                 `</div>`;
+              }).join('') +
+            `</div>` +
+            /* ON A PHONE: two rows instead of the wall, drifting in opposite
+               directions. Each row is its set twice, so moving by half lands
+               exactly where it started. Shown only below 60rem. */
+            `<div class="fg-sys__rows">` +
+              [0, 1].map((r) => {
+                const row = all.filter((o, i) => i % 2 === r);
+                return `<div class="fg-sys__row"><div class="fg-sys__track">` +
+                  row.map((o) => tile(o)).join('') + row.map((o) => tile(o, true)).join('') +
+                `</div></div>`;
               }).join('') +
             `</div>` +
           `</div>` +
@@ -7143,6 +7233,19 @@
       }, { passive: true });
       addEventListener('keydown', (e) => { if (e.key === 'Escape') this.close(); });
 
+      /* THE WAY BACK, ON A PHONE: one bare arrow, fixed top-left on every
+         screen of the study, in the ink of the scene under it (it follows the
+         rail's own `data-tone`). */
+      if (PHONE && !document.querySelector('.pback')) {
+        const back = el('a', {
+          class: 'pback', href: url(p.back?.href || 'index.html'), 'aria-label': 'Back',
+        }, '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13 8H3.5M7.5 3.5 3 8l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+        back.dataset.tone = rail.dataset.tone;
+        document.body.appendChild(back);
+        new MutationObserver(() => { back.dataset.tone = rail.dataset.tone; })
+          .observe(rail, { attributes: true, attributeFilter: ['data-tone'] });
+      }
+
       this.rail = rail;
       this.navs = navs;
       this.nowN = $('.rail__now-n', now);
@@ -7167,6 +7270,32 @@
        below happen nine, two and two times in the length of the page. */
     set(ord, tone) {
       if (!this.rail) return;
+      /* ON A PHONE THE FILM'S RUNNING ORDER IS NOT THE PAGE. Several scenes
+         scroll like a page there instead of pinning, so where you are is read
+         off the page itself: the last section whose top has passed the upper
+         part of the screen, and the ink of whichever scene is under its
+         middle. */
+      if (PHONE) {
+        const vh = innerHeight;
+        const hero = document.querySelector('.fhero');
+        const onP = hero && hero.getBoundingClientRect().bottom > vh * 0.5 ? '0' : '1';
+        if (onP !== this.on) { this.on = onP; this.rail.dataset.on = onP; }
+        let t = 'light';
+        if (onP === '0') t = 'dark';
+        else {
+          const mid = document.elementsFromPoint(innerWidth / 2, vh * 0.5).find((n) => n.classList && n.classList.contains('scn'));
+          if (mid && mid.classList.contains('scn--dark')) t = 'dark';
+        }
+        if (t !== this.tone) { this.tone = t; this.rail.dataset.tone = t; }
+        if (this.pin >= 0) return;
+        let k = 0;
+        this.navs.forEach((n, j) => {
+          const e = document.getElementById(n.id);
+          if (e && e.offsetParent !== null && e.getBoundingClientRect().top <= vh * 0.45) k = j;
+        });
+        this.paint(k);
+        return;
+      }
 
       /* THE HERO IS NOT PART OF THE STUDY AND THE INDEX SAYS SO. `ord` is -1
          while the film's own first screen is the thing on screen, and the
@@ -12235,8 +12364,11 @@
        screen", and the pieces at the door have to give the same one as the
        page behind them. */
     unit(w) {
-      return Math.round(w <= 768 ? clamp(w / 430 * 19, 13, 20)
-        : clamp(w / 1440 * 23, 16, 25));
+      /* the play desk on a phone is the whole screen and the bricks are the
+         thing you handle, so they are set a size up there (about 1.3x) */
+      const k = (PHONE && document.body && document.body.dataset.page === 'play') ? 1.3 : 1;
+      return Math.round((w <= 768 ? clamp(w / 430 * 19, 13, 20)
+        : clamp(w / 1440 * 23, 16, 25)) * k);
     },
 
     /* ONE PLACE A BRICK IS BORN. init() calls it for the scattered eight-
@@ -17048,6 +17180,204 @@
            before the mask had finished — which on a slow frame is the last band
            of paper disappearing rather than clearing. */
       }, forced ? 40 : this.T.exit + 90 + 60);
+    },
+  };
+
+
+  /* ============================================ 5c2a000. reveal on view ===
+     PHONE ONLY. Scenes that scroll like a page on a phone (rather than pin
+     and scrub) keep their desktop entrances: every piece that fades, rises,
+     pops or drops in on desktop does the same here as it scrolls into view,
+     in reading order, a beat apart. */
+  const PhoneReveal = {
+    SCENES: '.scn--contact, .scn--msgs, .scn--board, .scn--kept',
+    PIECES: '.beat, .fg-msg, .fg-board__c, .fg-kept__nk, .fg-kept__needs li, .fg-sys__row',
+    /* containers whose parts reveal one by one instead of all at once */
+    WHOLE: '.fg-kept__needs, .fg-sys',
+    init() {
+      if (!PHONE || REDUCED) return;
+      const io = new IntersectionObserver((es) => {
+        es.filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top
+            || a.boundingClientRect.left - b.boundingClientRect.left)
+          .forEach((e, i) => {
+            io.unobserve(e.target);
+            setTimeout(() => e.target.classList.add('m-seen'), i * 150);
+          });
+      }, { rootMargin: '0px 0px -18% 0px', threshold: 0.01 });
+      document.querySelectorAll(this.SCENES).forEach((scn) => {
+        scn.classList.add('m-rev');
+        scn.querySelectorAll(this.PIECES).forEach((n) => {
+          /* the design-system rows move on their own; leave them be */
+          if (n.closest('.fg-sys__rows') && !n.classList.contains('fg-sys__row')) return;
+          if (n.matches(this.WHOLE)) return;
+          n.classList.add('m-piece');
+          io.observe(n);
+        });
+      });
+    },
+  };
+
+
+  /* ============================================== 5c2a00. play on view ===
+     PHONE ONLY. A few scenes that pin and scrub on desktop are merged or
+     unpinned on a phone, so their scroll timeline no longer maps to anything.
+     These play the same timeline on a clock instead: `--p` (and `--pm`) are
+     written on the scene's stage — which the section's own inline `--p`
+     cannot override for its children — and run 0 → 1 once the stage comes
+     into view. */
+  const PhonePlay = {
+    SCENES: { 'x0-question': 1700, 'x0-ia': 4800 },
+    init() {
+      if (!PHONE) return;
+      Object.keys(this.SCENES).forEach((id) => {
+        const scn = document.getElementById(id);
+        const stage = scn && scn.querySelector('.scn__stage');
+        if (!stage) return;
+        scn.classList.add('m-play-scn');
+        const set = (v) => { stage.style.setProperty('--p', v.toFixed(4)); stage.style.setProperty('--pm', v.toFixed(4)); };
+        set(REDUCED ? 1 : 0);
+        if (REDUCED) return;
+        const io = new IntersectionObserver((es) => {
+          if (!es.some((e) => e.isIntersecting)) return;
+          io.disconnect();
+          RivalsPhone.tween(0, 1, this.SCENES[id], set, null, id === 'x0-ia');
+        }, { threshold: 0.25 });
+        io.observe(stage);
+      });
+    },
+  };
+
+
+  /* ============================================ 5c2a0. rivals on a phone ===
+     On a phone the competitor scene scrolls like a page instead of pinning,
+     which took away the scroll-scrubbed timeline its desktop animation runs
+     on. This plays the SAME animation on a clock instead, by driving the very
+     variables the desktop CSS reads: `--u` brings the line in word by word
+     out of a blur and the logos in one by one, then `--me` sends the line up
+     and away while each logo flies into its slot in the strip (`--dx/--dy/
+     --k`, measured here for the phone layout). After that the headline,
+     its gold underline and each lens reveal as they scroll into view. */
+  const RivalsPhone = {
+    init() {
+      if (!PHONE) return;
+      document.querySelectorAll('.scn--rivals').forEach((scn) => this.bind(scn));
+    },
+    tween(from, to, ms, fn, done, linear) {
+      const t0 = performance.now();
+      const ease = linear ? (x) => x : (x) => 1 - Math.pow(1 - x, 3);
+      const f = (t) => {
+        const k = Math.min(1, (t - t0) / ms);
+        fn(from + (to - from) * ease(k));
+        if (k < 1) requestAnimationFrame(f); else if (done) done();
+      };
+      requestAnimationFrame(f);
+    },
+    bind(scn) {
+      const wall = scn.querySelector('.fg-riv__wall');
+      const body = scn.querySelector('.fg-riv__body');
+      if (!wall || !body) return;
+      scn.classList.add('m-anim');
+      const set = (k, v) => wall.style.setProperty(k, v.toFixed(4));
+      set('--u', 0); set('--m', 0);
+
+      const beats = [...body.querySelectorAll('.beat')].filter((b) => !b.closest('.fg-riv__logos--strip'));
+      let landed = false;
+      const io = new IntersectionObserver((es) => {
+        if (!landed) return;
+        const hits = es.filter((e) => e.isIntersecting).map((e) => e.target);
+        hits.forEach((b, i) => {
+          io.unobserve(b);
+          setTimeout(() => b.classList.add('m-seen'), i * 90);
+        });
+      }, { rootMargin: '0px 0px -12% 0px', threshold: 0.01 });
+
+      const measure = () => {
+        const big = [...wall.querySelectorAll('.fg-riv__logos--big > li')];
+        const small = [...body.querySelectorAll('.fg-riv__logos--strip > li')];
+        big.forEach((li, i) => {
+          const to = small[i];
+          if (!to) return;
+          li.style.transform = 'none';
+          const a = li.getBoundingClientRect(), b = to.getBoundingClientRect();
+          li.style.transform = '';
+          li.style.setProperty('--dx', `${(b.left - a.left).toFixed(1)}px`);
+          li.style.setProperty('--dy', `${(b.top - a.top).toFixed(1)}px`);
+          li.style.setProperty('--k', (a.height ? b.height / a.height : 1).toFixed(4));
+        });
+      };
+
+      /* THE INTRO HAS ITS OWN SCREEN, AND THE LOGOS THEN TRAVEL. The line
+         and the logos play in the first screen of the section on a clock;
+         after that the scroll takes over exactly as on desktop: as you move
+         on, the line lifts away and every logo flies down into its place in
+         the strip above the headline, scrubbed by the scroll. */
+      landed = true;
+      beats.forEach((b) => io.observe(b));
+      let measured = false, introDone = false;
+      const play = () => {
+        scn.classList.add('m-play');
+        this.tween(0, 0.56, 2000, (v) => set('--u', v), () => { introDone = true; measure(); measured = true; fly(); });
+      };
+      const fly = () => {
+        const r = scn.getBoundingClientRect();
+        const m = Math.max(0, Math.min(1, (innerHeight * 0.28 - r.top) / (innerHeight * 0.42)));
+        if (m > 0 && !measured) { set('--u', 0.6); introDone = true; measure(); measured = true; }
+        if (introDone || m > 0) set('--m', m);
+      };
+      let started = false;
+      const check = () => {
+        fly();
+        if (started) return;
+        const r = wall.getBoundingClientRect();
+        const mid = r.top + r.height / 2;
+        if (r.bottom < 0) { started = true; set('--u', 0.6); return; }
+        if (mid < innerHeight * 0.8) { started = true; play(); }
+      };
+      addEventListener('resize', () => { if (measured) { const k = wall.style.getPropertyValue('--m'); set('--m', 0); measure(); set('--m', +k || 0); } }, { passive: true });
+      addEventListener('scroll', check, { passive: true });
+      check();
+    },
+  };
+
+
+  /* ============================================== 5c2a. listings drift ===
+     PHONE ONLY. The row of store listings ("it's out in the world") is wider
+     than a phone, so it drifts sideways on its own, back and forth, and stays
+     a normal swipeable strip: a touch takes over at once and the drift picks
+     up again a few seconds after the finger lifts. Nothing runs while the row
+     is off screen or when reduced motion is asked for. */
+  const ShipScroll = {
+    init() {
+      if (!PHONE || REDUCED) return;
+      document.querySelectorAll('.fg-ship__row').forEach((row) => this.bind(row));
+    },
+    bind(row) {
+      let dir = 1, hold = 0, raf = 0, seen = false, pos = row.scrollLeft;
+      const SPEED = 0.45;            // px per frame at 60fps
+      const pause = (ms) => { hold = performance.now() + ms; };
+      const step = (t) => {
+        raf = 0;
+        if (!seen) return;
+        const max = row.scrollWidth - row.clientWidth;
+        if (max > 2 && t >= hold) {
+          pos += dir * SPEED;
+          if (pos >= max) { pos = max; dir = -1; pause(1400); }
+          else if (pos <= 0) { pos = 0; dir = 1; pause(1400); }
+          row.scrollLeft = pos;
+        } else {
+          pos = row.scrollLeft;
+        }
+        raf = requestAnimationFrame(step);
+      };
+      const go = () => { if (!raf && seen) raf = requestAnimationFrame(step); };
+      ['touchstart', 'pointerdown', 'wheel'].forEach((ev) =>
+        row.addEventListener(ev, () => pause(4000), { passive: true }));
+      row.addEventListener('scroll', () => { if (performance.now() < hold) pos = row.scrollLeft; }, { passive: true });
+      new IntersectionObserver((es) => {
+        seen = es.some((e) => e.isIntersecting);
+        if (seen) go();
+      }).observe(row);
     },
   };
 
@@ -22374,6 +22704,7 @@
       const wrap = el('div', { class: 'home' });
       const mast = Rail.build();
       if (mast) wrap.appendChild(mast);
+      PhoneMenu.init(mast);
       /* THE VIEW STACK IS A REAL ELEMENT, not the views being swapped in and
          out of the grid directly. `.home` is a two-track grid and the second
          track is the content column; making that track one permanent box means
@@ -23227,6 +23558,10 @@
 
     project() {
       Project.init(document.body.dataset.project || '');
+      ShipScroll.init();
+      RivalsPhone.init();
+      PhonePlay.init();
+      PhoneReveal.init();
       /* the page itself is the project surface, so notes and stickers can land
          anywhere on the case study */
       const sheet = $('.sheet');
