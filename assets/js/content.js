@@ -3142,6 +3142,14 @@ window.SITE = {
          written as [TBD] so nothing unverified ships as fact. */
       { title: 'X0 Cards', meta: 'Hardware & packaging, 2026, Singapore',
         col: 'b', ratio: 1.5,
+        /* STILL BEING MADE. `wip` turns the tile into a note rather than a
+           door: the pointer becomes an "In progress" tag, and a click writes
+           to me instead of opening the study. Delete this line to ship it. */
+        wip: {
+          label: 'In progress',
+          note: 'Contact me for details',
+          href: 'mailto:ishaangupta.888@gmail.com?subject=' + encodeURIComponent('X0 Cards: case study'),
+        },
         /* the product film: one continuous camera move around a real 3D
            model of the card (front and back from the source artwork), 15s,
            seamless loop. Source scene: .tools/x0-card-film/card2.html (shot-based reel) */

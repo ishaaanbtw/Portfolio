@@ -23398,3 +23398,106 @@ body[data-page='notfound'] #main { min-height: 100svh; }
   .fg-reel__copy, #xc-card .scn__in--foot, #xc-end .scn__in--foot { padding-bottom: 3.25rem; }
   .fg-reel__f { width: 100%; }
 }
+
+
+/* --- work in progress ------------------------------------------------------
+   A tile whose study is not ready. On a pointer device the cursor itself
+   becomes the label (see `WipCursor` in site.js); the resting tag on the
+   tile is the same message for touch, where nothing hovers. */
+@media (hover: hover) and (pointer: fine) {
+  .wcard--wip, .wcard--wip * { cursor: none; }
+  .wcard__wip { display: none; }
+}
+
+.wcard__wip {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font: 500 0.75rem/1 var(--sans);
+  letter-spacing: 0.01em;
+  color: #f4f2ee;
+  background: rgba(14, 14, 16, 0.72);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.wip-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  will-change: transform;
+}
+.wip-cursor__label,
+.wip-cursor__note {
+  position: absolute;
+  left: 0;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.6);
+  transition:
+    opacity 220ms ease,
+    transform 420ms var(--ease-soft, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.wip-cursor__label {
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.95rem;
+  border-radius: 999px;
+  font: 500 0.875rem/1 var(--sans);
+  letter-spacing: 0.005em;
+  color: #111113;
+  background: #f4f2ee;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 12px 30px -10px rgba(0, 0, 0, 0.45);
+}
+.wip-cursor__label b { font-weight: 500; }
+.wip-cursor__note {
+  top: 2.2rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  font: 400 0.75rem/1 var(--sans);
+  color: #f4f2ee;
+  background: rgba(14, 14, 16, 0.78);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition-delay: 0ms, 0ms;
+}
+.wip-cursor.is-on .wip-cursor__label,
+.wip-cursor.is-on .wip-cursor__note {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.wip-cursor.is-on .wip-cursor__note { transition-delay: 90ms, 90ms; }
+
+/* the pulsing dot: amber, the colour the site already uses for "live" */
+.wip-cursor__label i,
+.wcard__wip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e0a13a;
+  box-shadow: 0 0 0 0 rgba(224, 161, 58, 0.55);
+  animation: wip-pulse 1.8s ease-out infinite;
+}
+@keyframes wip-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(224, 161, 58, 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(224, 161, 58, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(224, 161, 58, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wip-cursor__label i, .wcard__wip i { animation: none; }
+}

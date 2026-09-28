@@ -19,6 +19,17 @@
   const S = window.SITE;
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ------------------------------------------------------------ OWNER VIEW
+     The way through a work-in-progress study for me: click its tile five
+     times in quick succession. That opens the study and lets this tab back
+     into it until the tab is closed (sessionStorage, so nothing lingers on a
+     borrowed laptop). Fewer clicks behave like a normal click on a WIP tile.
+     This is a curtain, not a lock: the site is static and the code is public. */
+  const OWNER_FLAG = 'ig-owner';
+  const OWNER = (() => {
+    try { return sessionStorage.getItem(OWNER_FLAG) === '1'; } catch (e) { return false; }
+  })();
+
   /* ------------------------------------------------------- WHERE THE SITE IS
      Case studies live at `/work/<slug>.html`, one directory deeper than
      everything else. That on its own is enough to break every relative path in
@@ -1991,10 +2002,14 @@
 
          So the href is real and nothing intercepts it. */
       data.items.forEach((item) => {
+        const wip = !!item.wip;
         const card = el('a', {
-          class: 'wcard',
-          href: item.study ? projectHref(item.study.slug) : (item.href || '#'),
-          'aria-label': `${item.title} — ${item.meta || ''}`,
+          class: wip ? 'wcard wcard--wip' : 'wcard',
+          href: wip ? item.wip.href
+            : item.study ? projectHref(item.study.slug) : (item.href || '#'),
+          'aria-label': wip
+            ? `${item.title}: ${item.wip.label}. ${item.wip.note}.`
+            : `${item.title} — ${item.meta || ''}`,
         });
         const media = el('div', { class: 'wcard__media' },
           (PREVIEW[item.preview] || PREVIEW.bloom)(item));
@@ -2004,6 +2019,32 @@
            project and not one of a set of sizes — 1.62 is what that photograph
            wants, and a `--wide`/`--tall` enum would have to guess. */
         if (item.ratio) media.style.setProperty('--ratio', item.ratio);
+        if (item.wip) {
+          /* the resting tag, for screens with no pointer to carry one */
+          media.appendChild(el('span', { class: 'wcard__wip', 'aria-hidden': 'true' },
+            `<i></i>${esc(item.wip.label)}`));
+          WipCursor.bind(card, item.wip);
+          /* THE KNOCK. Every click is held for a beat so the fifth can still
+             win; a click that is not followed by another within the beat is
+             an ordinary one and goes where the tile points (the email). */
+          let knocks = 0, timer = 0;
+          card.addEventListener('click', (e) => {
+            if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            clearTimeout(timer);
+            if (++knocks >= 5) {
+              knocks = 0;
+              try { sessionStorage.setItem(OWNER_FLAG, '1'); } catch (err) {}
+              location.href = projectHref(item.study.slug);
+              return;
+            }
+            timer = setTimeout(() => {
+              const first = knocks === 1;
+              knocks = 0;
+              if (first) location.href = item.wip.href;
+            }, 450);
+          });
+        }
         card.appendChild(media);
         card.appendChild(el('div', { class: 'wcard__meta' },
           `<span class="wcard__title">${esc(item.title)}</span>` +
@@ -2022,7 +2063,7 @@
            A card with no `brief` is left entirely alone and navigates as it
            always did, so this feature is per project and switched on by the
            project having something to say. */
-        if (item.brief) {
+        if (item.brief && !wip) {
           /* the sequence the two step buttons walk; see `Preview.seq` */
           Preview.register(item, card);
           card.addEventListener('click', (e) => {
@@ -7974,6 +8015,7 @@
 
       const door = (kind, it) => {
         if (!it || it === this.item || (kind === 'prev' && it === next)) return '';
+        if (it.wip && !OWNER) return '';
         return `<a class="onward__go onward__go--${kind}" href="${projectHref(it.study.slug)}">`
           + `<span class="onward__k">${kind === 'prev' ? 'Previous' : 'Next'}</span>`
           + `<span class="onward__t">${esc(it.title)}</span>`
@@ -17006,6 +17048,60 @@
            before the mask had finished — which on a slow frame is the last band
            of paper disappearing rather than clearing. */
       }, forced ? 40 : this.T.exit + 90 + 60);
+    },
+  };
+
+
+  /* ================================================ 5c2b. wip cursor === */
+
+  /* A project that is still being made. Over its tile the pointer is swapped
+     for a pill that says so and says what to do instead; it trails the real
+     pointer by a spring so it reads as carried rather than pasted. One element
+     for the whole page, retargeted per card. Mouse and pen only: a finger has
+     no hover, and gets the resting tag drawn on the tile instead. */
+  const WipCursor = {
+    el: null, x: 0, y: 0, tx: 0, ty: 0, raf: 0, on: false,
+    ensure() {
+      if (this.el) return;
+      this.el = el('div', { class: 'wip-cursor', 'aria-hidden': 'true' },
+        '<span class="wip-cursor__label"><i></i><b></b></span>' +
+        '<span class="wip-cursor__note"></span>');
+      document.body.appendChild(this.el);
+    },
+    bind(card, wip) {
+      const move = (e) => {
+        this.tx = e.clientX; this.ty = e.clientY;
+        if (!this.raf) this.raf = requestAnimationFrame(() => this.tick());
+      };
+      card.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'touch') return;
+        this.ensure();
+        this.el.querySelector('b').textContent = wip.label;
+        this.el.querySelector('.wip-cursor__note').textContent = wip.note;
+        this.x = this.tx = e.clientX; this.y = this.ty = e.clientY;
+        this.place();
+        this.on = true;
+        this.el.classList.add('is-on');
+      });
+      card.addEventListener('pointermove', move);
+      card.addEventListener('pointerleave', () => {
+        this.on = false;
+        if (this.el) this.el.classList.remove('is-on');
+      });
+    },
+    place() {
+      this.el.style.transform =
+        `translate3d(${this.x.toFixed(1)}px, ${this.y.toFixed(1)}px, 0)`;
+    },
+    tick() {
+      this.raf = 0;
+      const k = REDUCED ? 1 : 0.28;
+      this.x += (this.tx - this.x) * k;
+      this.y += (this.ty - this.y) * k;
+      this.place();
+      if (Math.abs(this.tx - this.x) + Math.abs(this.ty - this.y) > 0.3) {
+        this.raf = requestAnimationFrame(() => this.tick());
+      }
     },
   };
 
