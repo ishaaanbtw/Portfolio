@@ -1292,8 +1292,7 @@
              so there is nothing to keep still for.
 
              A `Range` over the row's contents is what gives the words' own
-             rectangle rather than the block's, and it is the same measurement
-             `Shove` already takes to find out where a nav label actually is. Its
+             rectangle rather than the block's. Its
              vertical centre is used too, so the arrow points at the text's
              midline instead of the row's. The box is the fallback for a row
              whose contents measure to nothing. */
@@ -1561,33 +1560,6 @@
         const b = hit(e, '[data-action]');
         if (!b) return;
         const act = b.dataset.action;
-
-        if (act === 'copy-email') {
-          e.preventDefault();
-          /* `copyEmail` if content.js names one, otherwise the address the page
-             is written from — so the button keeps working in a copy of this
-             site that has not been told about the distinction */
-          const mail = S.person.copyEmail || S.person.email;
-          try {
-            await navigator.clipboard.writeText(mail);
-          } catch {
-            const ta = el('textarea', { style: 'position:fixed;opacity:0' });
-            ta.value = mail;
-            document.body.appendChild(ta);   /* transient, stays off the shell */
-            ta.select();
-            document.execCommand('copy');
-            ta.remove();
-          }
-          const lbl = $('.btn__label', b);
-          b.classList.add('is-done');
-          setTimeout(() => { if (lbl) lbl.textContent = 'Copied'; }, 170);
-          setTimeout(() => {
-            b.classList.remove('is-done');
-            if (lbl) lbl.textContent = S.hero.primary.label;
-          }, 1900);
-          Sound.chime();
-          Shell.say(mail);
-        }
 
         if (act === 'resume') {
           /* It opens HERE. Following the link would hand the file to the
@@ -2874,6 +2846,17 @@
         btn.addEventListener('click', () => this.stepProject(+btn.dataset.dir));
       });
       this.ends();
+      /* ON A PHONE, THE DETAILS' HEIGHT IS WATCHED, not read once: the brief
+         settles after the open (type, the facts list, the pinned button), and
+         whenever it changes size the workspace is measured again so the strip
+         below starts where the details end. */
+      if (this.fitRO) this.fitRO.disconnect();
+      const fitBody = $('.pvw__body', this.rail);
+      if (fitBody && window.ResizeObserver
+        && document.documentElement.classList.contains('is-phone')) {
+        this.fitRO = new ResizeObserver(() => { if (this.card) this.remeasure(); });
+        this.fitRO.observe(fitBody);
+      }
     },
 
     /* --- MEASURING THE WORKSPACE ------------------------------------------
@@ -2893,6 +2876,24 @@
     remeasure() {
       const card = this.card;
       if (!card || !this.el) return;
+      /* ON A PHONE THE DETAILS TAKE THE HEIGHT THEY NEED. The column used to be
+         a fixed half of the screen, so a long brief was cut off under the
+         pinned button. Its real height is written to `--pv-bh` before anything
+         below reads the stage, so the strip underneath is laid out in whatever
+         is left. The stylesheet caps it, so the screens always keep a band. */
+      if (document.documentElement.classList.contains('is-phone')) {
+        const box = $('.pvw__brief', this.rail);
+        if (box) {
+          /* its natural height: freed from its `inset: 0` for one read, so it
+             is as tall as what is in it, then put straight back */
+          box.style.bottom = 'auto';
+          box.style.height = 'auto';
+          const h = Math.max(box.offsetHeight, box.scrollHeight);
+          box.style.removeProperty('bottom');
+          box.style.removeProperty('height');
+          if (h > 0) document.documentElement.style.setProperty('--pv-bh', `${Math.ceil(h)}px`);
+        }
+      }
       const was = this.el.style.getPropertyValue('--p');
       const camWas = this.el.style.getPropertyValue('--cam');
       this.view.style.setProperty('--p', '1');
@@ -5500,8 +5501,18 @@
       const b = SPREAD((s.items || []).length, 0.1, 0.66);
       return `<div class="scn__in">` +
         (s.kicker ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
-        `<ul class="fg-words">` + (s.items || []).map((t, i) =>
-          `<li${AT(b[i])} class="beat">${esc(t)}</li>`).join('') + `</ul>` +
+        (s.h
+          /* a question in place of the list: set word by word, as \`ask\` does */
+          ? (() => {
+              const w = String(s.h).split(' ');
+              const q = SPREAD(w.length, 0.08, 0.62);
+              return `<h2 class="fg-h fg-h--l fg-h--wide fg-h--ask">` + w.map((t, i) =>
+                `<span class="fg-qw" style="--at:${q[i].toFixed(3)}` +
+                `${t.indexOf('<mark') >= 0 ? `;--hat:${(q[i] + 0.035).toFixed(3)}` : ''}">${t}</span>`).join(' ') +
+              `</h2>`;
+            })()
+          : `<ul class="fg-words">` + (s.items || []).map((t, i) =>
+              `<li${AT(b[i])} class="beat">${esc(t)}</li>`).join('') + `</ul>`) +
         (s.p ? `<p${AT(0.8)} class="fg-p beat">${s.p}</p>` : '') +
       `</div>` +
       /* THE MARK, DRAWN AS THE WORDS ARRIVE. The outline of the Cypherock mark
@@ -5701,10 +5712,16 @@
 
           /* --- what it looked like in there ---------------------------- */
           `<div class="fg-msgs__head" aria-hidden="true">` +
-            (s.art
-              ? `<img class="fg-msgs__fig" src="${url(s.art)}" alt=""` +
-                ` loading="lazy" decoding="async">`
-              : '') +
+            ((s.parts || []).length
+              /* the figure, assembled piece by piece (see \`parts\` in content) */
+              ? `<div class="fg-msgs__fig fg-tpw">` + s.parts.map((q, i) =>
+                  `<img class="fg-tp" src="${url(`assets/img/x0/think/parts/${q.k}.webp`)}" alt=""` +
+                  ` style="left:${q.x}%;top:${q.y}%;width:${q.w}%;--at:${q.at};--i:${i}" decoding="async">`).join('') +
+                `</div>`
+              : s.art
+                ? `<img class="fg-msgs__fig" src="${url(s.art)}" alt=""` +
+                  ` loading="lazy" decoding="async">`
+                : '') +
             (s.bits || []).map((f) =>
               `<i class="fg-frag" style="--x:${f.x};--y:${f.y};--w:${f.w}` +
                 `;--at:${f.at == null ? 0.2 : f.at};--rot:${f.rot || '0deg'}` +
@@ -8675,8 +8692,7 @@
          measured in the wrong unit they let it go 6.5% too far, or stopped it
          6.5% short, depending on which edge you pushed against. */
       const s = host.offsetWidth ? h.width / host.offsetWidth : Space.k();
-      /* the one edge that is not the host's — see `Bricks.trayReach` */
-      const xMax = Bricks.isTray(host) ? Bricks.trayReach(h) : h.right;
+      const xMax = h.right;
       /* AND THE TOP IS NOT THE BOX'S EITHER, ON THE TRAY.
 
          THIS IS WHAT MADE THE NAVIGATION UNDRAGGABLE. The tray's fence is hard
@@ -11681,46 +11697,10 @@
        as a fraction of the canvas. */
     /* THE HIGHEST A PIECE MAY COME TO REST AT THIS x, as a fraction of the
        canvas. Smaller is higher up the page. */
-    /* --- HOW FAR RIGHT A HELD PIECE MAY GO --------------------------------
-
-       AND IT IS NOT THE BOX'S EDGE, WHICH IS WHERE THE "INVISIBLE GAP" CAME
-       FROM. `Drag.keep` fences a held piece fully inside its host, and on this
-       page the host stops at the sidebar's right edge — about eighteen pixels
-       short of the first card. So a brick pushed at the work stopped in empty
-       paper with a gap you could see, and the card started moving anyway
-       because `Push` reached across the gap for it. Two wrongs that looked
-       almost right: the card responded, but never to contact.
-
-       The reach is the nearest card's own left edge instead — its UNDISPLACED
-       one, `r.left - c.x`, so a card that has already been shoved does not let
-       the brick follow it and ratchet — plus the twelve pixels that card is
-       allowed to travel. Which means: at zero push the brick's right edge is
-       exactly on the card's left edge, and every pixel past that is a pixel
-       the card moves, so the two stay in contact all the way to the stop. The
-       visual contact point and the physical one are the same point because
-       there is only one number now.
-
-       Only cards beside the box are considered. There is nothing to touch
-       above or below it, and letting the brick out of the column to reach one
-       is how a brick ends up parked on the work. */
     /* the one question three places ask, asked once */
     isTray(host) {
       const n = host || this.host;
       return !!(n && n.classList && n.classList.contains('canvas--tray'));
-    },
-
-    trayReach(h) {
-      const cards = Push.cards;
-      if (!cards || !cards.length) return h.right;
-      let best = Infinity;
-      cards.forEach((c) => {
-        const r = c.node.getBoundingClientRect();
-        if (!r.width) return;
-        if (r.bottom <= h.top || r.top >= h.bottom) return;
-        const L = r.left - c.x;
-        if (L >= h.right && L < best) best = L;
-      });
-      return isFinite(best) ? best + Push.MAX : h.right;
     },
 
     /* --- HOW MUCH OPEN AIR THERE IS ABOVE THE BOX --------------------------
@@ -12284,7 +12264,6 @@
          had it rather than where it was picked up from. */
       if (this.held) this.endHold(this.held);
       this.heldSet = null;
-      this.flying = null;
       /* and a fall in flight is finished rather than abandoned — `rushed` is
          the entrance's own word for it, and it makes the loop run its settle
          guarantees on this frame instead of the frame it would have stopped on */
@@ -13365,28 +13344,7 @@
           Drag.apply(b2.r.it);
         });
         if (!only) delete document.body.dataset.arriving;
-        /* the words stop being pushed the moment nothing is falling past them */
-        this.flying = null;
       };
-
-      /* --- WHAT IS IN THE AIR, FOR THE NAVIGATION TO NOTICE ----------------
-
-         `Shove` needs to know which pieces are MOVING, and a falling piece is
-         not in anybody's hand — so the fall publishes its own bodies for the
-         length of the loop, the way the gesture publishes `heldSet`. One array,
-         set here and cleared in `finish`, so there is no lifetime to manage and
-         nothing to leak: a piece that lands stops shoving because the array it
-         was in no longer exists.
-
-         ONLY A LATE ARRIVAL, NEVER THE LOAD'S OWN DUMP. `only` is what tells
-         the two apart — `rain()` is the sixteen-piece dump, `rain(fresh)` is
-         the one or two `drip` throws in later. Sixteen pieces crossing seven
-         links inside half a second would put every word in the column in
-         motion at once on every cold load, which is the "navigation flying
-         around" the brief rules out; one piece drifting past "Github" a minute
-         into a visit is the whole effect asked for. A drag is the other source
-         and it is always live — see `move`. */
-      if (only) { this.flying = moving.filter((b2) => !b2.fixed).map((b2) => b2.r); Shove.wake(); }
 
       if (!only) document.body.dataset.arriving = 'dump';
       moving.forEach((b2) => this.moveTo(b2.r, b2.x, -900));
@@ -14312,16 +14270,6 @@
            after that, so whatever it moved has to be written out again */
         g.set.forEach((r) => Drag.apply(r.it));
       }
-      /* AND THE WORK IS TOLD THERE IS A BRICK ABOUT. `Push` reads the held set
-         itself and springs home on its own once the hand is empty, so this is
-         one call with no state to keep in step — see the module. */
-      Push.wake();
-      /* AND SO IS THE NAVIGATION. Same shape, same reason: `Shove` reads the
-         held set itself and springs the words home once the hand is empty, so
-         this is one call and there is no second piece of state to keep in
-         step. Two reactions to the same object, in the same physical language
-         — the cards give way in a body, the words step sideways. */
-      Shove.wake();
       return out;
     },
 
@@ -16962,7 +16910,23 @@
         if (r.width < 32 || r.height < 24) return;
         out.push({ kind, tag, x: r.left, y: r.top, w: r.width, h: r.height });
       };
-      push($('.mast__say'), 'frame', 'masthead');
+      /* ON A PHONE THE MASTHEAD FRAME TAKES THE BUTTONS TOO. The statement
+         and its two pills sit alone in the first screen there, so the frame
+         is drawn round the pair as one block — the union of the two live
+         rects — rather than round a single line of type. */
+      const say = $('.mast__say');
+      const cta = $('.mast__cta');
+      if (document.documentElement.classList.contains('is-phone') && say && cta) {
+        const a = say.getBoundingClientRect();
+        const c = cta.getBoundingClientRect();
+        const L = Math.min(a.left, c.left), T = Math.min(a.top, c.top);
+        const R = Math.max(a.right, c.right), B = Math.max(a.bottom, c.bottom);
+        if (R - L >= 32 && B - T >= 24) {
+          out.push({ kind: 'frame', tag: 'masthead', x: L, y: T, w: R - L, h: B - T });
+        }
+      } else {
+        push(say, 'frame', 'masthead');
+      }
       $$('.home__work .wcard').forEach((card, i) =>
         push($('.wcard__media', card), 'plate', `frame / 0${i + 1}`));
       return out;
@@ -17195,7 +17159,7 @@
      in reading order, a beat apart. */
   const PhoneReveal = {
     SCENES: '.scn--contact, .scn--msgs, .scn--board, .scn--kept',
-    PIECES: '.beat, .fg-msg, .fg-board__c, .fg-kept__nk, .fg-kept__needs li, .fg-sys__row',
+    PIECES: '.beat, .fg-msg, .fg-board__c, .fg-kept__nk, .fg-kept__needs li, .fg-sys__row, .fg-tp',
     /* containers whose parts reveal one by one instead of all at once */
     WHOLE: '.fg-kept__needs, .fg-sys',
     init() {
@@ -17231,7 +17195,7 @@
      cannot override for its children — and run 0 → 1 once the stage comes
      into view. */
   const PhonePlay = {
-    SCENES: { 'x0-question': 3400, 'x0-ia': 4800 },
+    SCENES: { 'x0-brief': 3400, 'x0-ia': 4800 },
     init() {
       if (!PHONE) return;
       Object.keys(this.SCENES).forEach((id) => {
@@ -18875,8 +18839,16 @@
       keep.appendChild(say);
 
       const cta = el('div', { class: 'mast__cta', 'data-wall': '' });
-      cta.appendChild(el('button', { class: 'btn btn--sm', 'data-action': 'copy-email' },
-        `<span class="btn__label">${esc(S.hero.primary.label)}</span>`));
+      /* THE HOUSE PILL, AS A LINK. Same `.btn .btn--sm` as before and as the
+         Resume pill beside it, so the type, size, radius, lift on hover and
+         press dip are all unchanged; only what it does is new. A real `href`
+         with `target="_blank"` means middle-click, long-press and no-JS all
+         reach the booking page too. */
+      const book = S.hero.primary || {};
+      cta.appendChild(el('a', {
+        class: 'btn btn--sm', href: book.href, 'data-action': book.action,
+        target: '_blank', rel: 'noopener',
+      }, `<span class="btn__label">${esc(book.label)}</span>`));
       cta.appendChild(el('a', {
         class: 'btn btn--sm btn--ghost', href: S.person.resumeUrl, 'data-action': 'resume',
       }, `<span class="btn__label">＋ ${esc(S.hero.secondary.label)}</span>`));
@@ -18945,11 +18917,10 @@
       keep.appendChild(list('Links', c.links || []));
       mast.appendChild(keep);
 
-      /* THE PILE'S BOX. Empty, invisible, no border and no background — the
-         slack between the last navigation link and the closing lines, which is
-         the region the bricks live in and the walls they cannot pass. It takes
-         the column's spare height (`flex: 1`), so the region follows the layout
-         at every width instead of being a number kept in step with one. */
+      /* THE COLUMN'S SLACK. Empty, invisible, no border and no background —
+         the space between the last navigation link and the closing lines. It
+         takes the column's spare height (`flex: 1`), which is what pushes the
+         closing block to the bottom at every width. */
       const air = el('div', { class: 'mast__air', 'aria-hidden': 'true' });
       mast.appendChild(air);
 
@@ -18961,7 +18932,6 @@
       mast.appendChild(foot);
 
       this.el = mast;
-      this.trayEl = air;
       return mast;
     },
 
@@ -19012,19 +18982,14 @@
      x and y, because the rows are different lengths and the square sits at the
      end of the word rather than in a column of its own.
 
-     IT IS MEASURED OFF THE LAYOUT AND SHOVED ON TOP OF IT. `offsetLeft` and a
-     Range over the row's text give the untransformed position, so a brick
-     pushing "Work" sideways cannot drag the target around; the row's live
-     `--shove-x` is then added back each frame, so the square goes with the
-     word it is marking. Reading it is a string off an inline style — `Shove`
-     writes it there and nowhere else — so this costs no layout.
+     IT IS MEASURED OFF THE LAYOUT. `offsetLeft` and a Range over the row's
+     text give the untransformed position.
      ---------------------------------------------------------------------- */
   const Mark = {
     el: null,
     x: null,
     y: null,
     row: null,
-    shove: 0,
 
     mount() {
       this.el = el('i', { class: 'mast__mark', 'aria-hidden': 'true' });
@@ -19129,12 +19094,8 @@
     },
 
     paint() {
-      const sx = this.row
-        ? parseFloat(this.row.style.getPropertyValue('--shove-x')) || 0
-        : 0;
-      this.shove = sx;
       this.el.style.transform =
-        `translate3d(${(this.x.v + sx).toFixed(2)}px, ${this.y.v.toFixed(2)}px, 0)`;
+        `translate3d(${this.x.v.toFixed(2)}px, ${this.y.v.toFixed(2)}px, 0)`;
     },
 
     tick() {
@@ -19149,491 +19110,9 @@
         moving = true;
         if (t >= 1) { this.hop = null; this.x.v = H.x1; this.y.v = H.y1; }
       }
-      const sx = this.row
-        ? parseFloat(this.row.style.getPropertyValue('--shove-x')) || 0
-        : 0;
-      if (!moving && sx === this.shove) return false;
+      if (!moving) return false;
       this.paint();
       return moving;
-    },
-  };
-
-  /* ==================================================== 5e. the tray =====
-
-     A SMALL WORKSHOP FLOOR IN THE CORNER OF THE PAGE.
-
-     WHAT THIS IS: `Bricks`, in a 330px box. The same rigid-body dump that
-     fills the 404 room and used to fill the hero — gravity, spin, restitution,
-     friction, pairwise contact — with eight or nine pieces instead of sixty
-     four. They are thrown in from above, they tumble, they push each other
-     around on the way down, they pile up on the floor of the box, and where
-     they stop is wherever that leaves them. Different every load. Then they
-     hold still until a hand moves one, and a piece goes exactly where you put
-     it, at whatever angle you leave it at.
-
-     WHAT IT WAS, AND WHY THAT WENT. An isometric object on a stud lattice:
-     pieces snapped to whole cells, stacked in layers, and turned in quarter
-     tricks. It was precise and it was the wrong toy — you could not put a
-     brick down at an angle, you could not knock one into another, and nothing
-     about it moved the way the thing it is a picture of moves. The engine that
-     does move that way was already in this file.
-
-     SO THIS MODULE IS THIRTY LINES. It does not simulate anything. It marks
-     the box as a brick surface, tells `Bricks` how many pieces to roll, and
-     holds the throw until the entrance has left the screen. Everything the
-     bricks then do is `Bricks`, unchanged, which is the point: one physics
-     engine, one visual language, one set of behaviours to keep correct.
-
-     THREE THINGS THE BOX NEEDS THAT THE FULL-SIZE CANVAS DID NOT, all of them
-     in `Bricks` rather than here, each marked `canvas--tray` at its site:
-       zone()        the whole box is the floor, with no column to protect and
-                     no 72px of toolbar to keep clear
-       init()        no "wait until the host is 72% of the window" — this host
-                     is 250px on purpose and would wait forever
-       Drag.keep()   a hard edge instead of the soft one, because the box has
-                     paper around it rather than a window edge, and a brick
-                     half outside it is sliced rather than hanging off. */
-
-  /* --- THE WORK GETS OUT OF THE WAY ---------------------------------------
-
-     Everything above this makes the brick yield: it is fenced out of the type,
-     out of the buttons, out of the closing lines, and off the edge of the
-     column. That is the right rule for anything made of words — a sentence
-     cannot step aside — but it is only half of what a physical thing does. A
-     brick pressed against the project grid should not simply stop dead against
-     an invisible line; the grid should notice.
-
-     SO THE CARDS ARE THE ONE THING HERE THAT MOVES INSTEAD OF THE BRICK. The
-     brick keeps its ground and the card slides away from it, springs back when
-     the brick leaves, and carries a fraction of the shove to whatever it is
-     touching. That ordering — the LEGO occupies the space and the content
-     accommodates it, rather than the LEGO being drawn on top — is the whole
-     distinction being asked for.
-
-     HOW FAR IT CAN GO IS NOT A TASTE DECISION, IT IS A MEASUREMENT. The
-     playground's right edge stands 12-16px from the nearest card, and the grid
-     itself leaves only 16-17px between its right edge and the window at every
-     width from 1024 to 1512. A card cannot travel further than that without
-     either leaving the viewport or dragging a horizontal scrollbar onto a page
-     whose brief forbids one. So the cap is small by arithmetic, and the effect
-     is a flinch rather than a shove: the nearest card gives about a stud, its
-     neighbour a fraction of that, and both are home again a few hundred
-     milliseconds after the brick backs off. Restrained is also what was asked
-     for — "subtle and constrained", "cap max displacement", "no layout
-     instability" — so the geometry and the brief agree here.
-
-     NOTHING IS RECALCULATED WHEN NOTHING IS HAPPENING. The layout is measured
-     once per gesture, not per frame; the loop is its own self-terminating rAF
-     in the manner of `Bricks.rain`, started by a drag and stopped by itself the
-     moment every card is home and the hand is empty. At rest this module costs
-     nothing at all, which is the difference between physics and jitter. */
-  const Push = {
-    /* A BRICK AND A CARD ARE ON ONE LEVEL NOW: the card gives way by the
-       full depth the brick has pushed into it, so the two stay edge to edge
-       instead of the brick sliding over (or under) a card that moved 12px.
-       The sheet clips horizontally, so a card may be shoved past the window
-       edge the way a real one would be. */
-    MAX: 260,         // px a card may be displaced
-    /* REACH IS ZERO, AND THAT IS THE FIX RATHER THAN A TUNING.
-
-       It was 34: the card began moving while the brick was still 34px away,
-       because the fence stopped the brick about 18px short of the card and
-       something had to close the distance. The card moved and the brick never
-       arrived — the gap was visible and the response was to proximity, not to
-       touch.
-
-       The fence reaches the card's own edge now (see `Bricks.trayReach`), so
-       the honest number is nothing: `want` is the depth the brick has pushed
-       PAST the card's resting edge, the card moves exactly that far, and the
-       two surfaces stay in contact for the whole of the shove. */
-    /* --- AND IT IS BACK TO ZERO, BECAUSE THE REASON IT LEFT IS GONE -----
-
-       THIS WENT TO NINETY WHEN THE PILE WAS FENCED. A held brick was clamped
-       inside the navigation's own region, which stops about seventy pixels
-       short of the first card, so contact was impossible by construction and a
-       reach of zero meant the cards could never respond at all. Ninety was
-       that gap plus a little — a card answering a brick that was still short
-       of it, which is a card flinching at something across the room.
-
-       The fence is gone. The hand goes where the pointer goes, so the brick
-       can be brought right up against the card, and the honest number is the
-       one the note above this argued for in the first place: `want` is the
-       depth the brick has pushed PAST the card's resting edge, the card moves
-       exactly that far, and the two surfaces stay in contact for the whole of
-       the shove. */
-    REACH: 0,
-    DECAY: 0.4,       // what a touching neighbour inherits
-    K: 0.2,           // spring stiffness
-    D: 0.7,           // damping
-    EPS: 0.05,        // below this a card is home
-
-    cards: [],
-    live: false,
-
-    arm(host) {
-      this.host = host || null;
-      this.cards = $$('.home__work .wcard').map((node) => ({ node, x: 0, v: 0, want: 0 }));
-      this.live = false;
-      this.geo = null;
-    },
-
-    /* THE LAYOUT'S GEOMETRY, NOT THE PAINTED ONE. Each card's rect with its own
-       current displacement taken back out, so a card that has already moved is
-       not measured from where it moved to — which is what turns a spring into a
-       ratchet that walks the grid off the page. Read once per gesture. */
-    measure() {
-      const vw = innerWidth;
-      this.geo = this.cards.map((c) => {
-        const r = c.node.getBoundingClientRect();
-        return {
-          L: r.left - c.x, T: r.top, R: r.right - c.x, B: r.bottom,
-          cap: this.MAX,
-        };
-      });
-    },
-
-    wake() {
-      if (!this.cards.length || REDUCED) return;
-      if (!this.geo) this.measure();
-      if (this.live) return;
-      this.live = true;
-      const step = () => {
-        this.live = this.tick();
-        if (this.live) requestAnimationFrame(step);
-        else this.geo = null;
-      };
-      requestAnimationFrame(step);
-    },
-
-    /* WHAT THE BRICK IN THE HAND IS ASKING OF EACH CARD. Zero when the hand is
-       empty, which is what makes the release a spring home rather than a second
-       gesture: the target simply stops being requested. */
-    aim() {
-      this.cards.forEach((c) => { c.want = 0; });
-      const set = Bricks.heldSet;
-      if (!set || !set.length || !this.geo) return;
-
-      let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
-      set.forEach((r) => {
-        const q = r.it.node.getBoundingClientRect();
-        if (!q.width && !q.height) return;
-        L = Math.min(L, q.left); T = Math.min(T, q.top);
-        R = Math.max(R, q.right); B = Math.max(B, q.bottom);
-      });
-      if (!isFinite(L)) return;
-
-      /* THE NEAREST CARD FIRST. Only cards the brick is actually beside — the
-         ones whose vertical band it overlaps — feel anything, which is both the
-         physical answer and the reason the rest of the page stays still. */
-      this.cards.forEach((c, i) => {
-        const g = this.geo[i];
-        if (!g || !g.cap) return;
-        if (B <= g.T || T >= g.B) return;
-        const want = (R + this.REACH) - g.L;
-        if (want <= 0) return;
-        c.want = Math.min(want, g.cap);
-      });
-
-      /* AND WHAT IT PASSES ON. One level deep and decayed, so a shove spreads
-         to what is touching and stops there — a cascade that can start another
-         cascade is how a grid ends up oscillating on its own. */
-      const seed = this.cards.map((c) => c.want);
-      this.cards.forEach((c, i) => {
-        const g = this.geo[i];
-        if (!g || !g.cap) return;
-        let take = 0;
-        this.cards.forEach((o, j) => {
-          if (i === j || !seed[j]) return;
-          const q = this.geo[j];
-          if (!q) return;
-          const near = q.R + 24 > g.L && g.L > q.L;   // the card to its left
-          const stack = Math.abs(q.L - g.L) < 2       // the same column
-            && Math.min(q.B, g.B) + 48 > Math.max(q.T, g.T);
-          /* the card beside it is shoved the same distance, so the row moves
-             as one and a pushed card never slides over its neighbour; a card
-             above or below in the same column only feels a little of it */
-          if (near) take = Math.max(take, seed[j]);
-          else if (stack) take = Math.max(take, seed[j] * this.DECAY);
-        });
-        if (take > c.want) c.want = Math.min(take, g.cap);
-      });
-    },
-
-    tick() {
-      this.aim();
-      let busy = false;
-      this.cards.forEach((c) => {
-        const d = c.want - c.x;
-        c.v = (c.v + d * this.K) * this.D;
-        c.x += c.v;
-        if (Math.abs(c.x - c.want) < this.EPS && Math.abs(c.v) < this.EPS) {
-          c.x = c.want; c.v = 0;
-        } else busy = true;
-        if (c.x) {
-          c.node.style.setProperty('--push-x', `${c.x.toFixed(2)}px`);
-        } else {
-          c.node.style.removeProperty('--push-x');
-        }
-      });
-      /* Keep going while anything is still travelling OR while a brick is
-         still in the hand, because a hand that has not moved this frame can
-         still move next frame. Nothing else keeps this alive. */
-      return busy || !!(Bricks.heldSet && Bricks.heldSet.length);
-    },
-  };
-
-  /* --- AND THE NAVIGATION STEPS ASIDE ------------------------------------
-
-     THE SECOND HALF OF THE SAME SENTENCE `Push` STARTED. A brick pressed
-     against the project grid makes the grid give way; a brick pressed against
-     a link should make the link give way too, and for the same reason — the
-     LEGO is the physical object on this page and everything else is a normal
-     web page that notices it. What differs is what "give way" means for a
-     word: a card is a slab and moves as one, a line of type has a baseline it
-     must not leave, so the whole reaction is HORIZONTAL. No vertical, no
-     rotation, no scale, no layout — the word slides out of the way and comes
-     back, and nothing around it moves at all.
-
-     SEVEN INDEPENDENT SPRINGS, ONE PER LINK. Each row carries its own
-     position, velocity and target, so "Work" reacting says nothing about
-     "About": the set of words in motion is exactly the set of words a brick is
-     near. That is also what keeps this stable with several pieces around — a
-     row takes the LARGEST push asked of it rather than the sum, so five bricks
-     in the column cannot add up to five times the displacement.
-
-     WHY THE TEXT IS MEASURED AND NOT THE ROW. `.mast__row` is a flex anchor
-     that spans the whole column, so its rect is 250px wide and the word inside
-     it is 34. Testing against the anchor would have every link reacting to a
-     brick anywhere on its line, including a brick out at the far edge with
-     nothing but empty column between them — the interaction would be to the
-     ROW, and what the eye is watching is the WORD. A range over the anchor's
-     contents is the word's own box, so the zone is small, local, and different
-     for "Play" and for "Linkedin".
-
-     THE ZONE IS PROXIMITY, NOT OVERLAP. `ZONE` pixels of invisible margin
-     around that box, so the word starts moving as the brick arrives rather
-     than once it is already buried — which is the difference between a thing
-     getting out of the way and a thing being uncovered. It is deliberately
-     smaller than the gap between two rows: at 12px, with a 22.5px pitch, a
-     brick centred on one link cannot be inside its neighbour's zone as well.
-
-     AND THE DIRECTION IS THE BRICK'S, NOT A CONSTANT. The push is away from
-     the brick: a piece arriving from the left drives the word right, one
-     arriving from the right drives it left, and which side it is on is decided
-     by the brick's centre against the word's. A piece sitting exactly over the
-     middle gets the smaller of the two answers, because the depth it has
-     pushed past the near edge is what it is displaced by — dead centre is the
-     shallowest push there is, which is the correct physical answer and needed
-     no special case.
-
-     NOTHING RUNS WHEN NOTHING IS HAPPENING, which is the whole of the
-     performance story and is `Push`'s own structure: the geometry is measured
-     once per gesture and thrown away at the end of it, the loop is a single
-     self-terminating rAF started by a drag or a late arrival, and it stops
-     itself the frame after the last word is home and the last piece has
-     landed. One listener, none of its own — it is woken by the two things that
-     already know a piece is moving. At rest this module is an array of zeroes.
-
-     CLICKING IS UNAFFECTED, and that is a property of the mechanism rather
-     than a thing to be careful about: the displacement is a transform on the
-     anchor, so the anchor moves WITH its own hit area and a press lands on the
-     link wherever the spring has it. Nothing here binds a pointer event,
-     nothing calls preventDefault, and no element is inserted over the type. */
-  const Shove = {
-    MAX: 14,          // px a word may be displaced — a stud and a bit
-    /* --- AND THIS IS BACK TO TWELVE FOR THE SAME REASON AS `Push.REACH`
-
-       IT WAS RAISED TO 26 WHILE THE PILE WAS FENCED. Confined to a band below
-       the whole navigation, a held brick could only ever approach a word from
-       underneath, at the very top of its region — and the vertical falloff is
-       measured centre to centre, so whether the word moved depended on whether
-       you happened to be holding a one-cell piece or a two-cell one. 26 made
-       it fire either way.
-
-       With the fence gone a brick can be carried directly over any word in the
-       column, so the margin can go back to what it was for: the last few
-       pixels before contact, so the word begins moving as the brick arrives
-       rather than after it has landed on top. */
-    ZONE: 12,         // the invisible margin that starts the reaction
-    K: 0.26,          // stiffness: quicker than the cards, these are lighter
-    D: 0.62,          // damping: enough overshoot to read as elastic, once
-    EPS: 0.04,        // below this a word is home
-
-    rows: [],
-    live: false,
-    geo: null,
-
-    arm(host) {
-      this.host = host || null;
-      /* THE ROWS ARE SIBLINGS OF THE PLAYGROUND, NOT CHILDREN OF IT — the same
-         shape `zone` and `wallHosts` both have to deal with, and the same
-         answer: look in the column, not in the box. */
-      const col = host && host.parentElement;
-      this.rows = (col ? $$('.mast__row', col) : []).map((node) => ({ node, x: 0, v: 0, want: 0 }));
-      this.live = false;
-      this.geo = null;
-    },
-
-    /* THE WORD'S BOX, WITH ITS OWN DISPLACEMENT TAKEN BACK OUT. Measured from
-       where the word LIVES rather than from where it currently is, for exactly
-       the reason `Push.measure` gives: a spring measured from its own output is
-       a ratchet, and a ratchet walks the navigation off the side of the page.
-
-       A Range rather than the element, because the element is the row. The
-       fallback is the row's own rect — a browser that will not build the range
-       gets a coarser zone, not a broken one. */
-    measure() {
-      this.geo = this.rows.map((c) => {
-        let r = null;
-        try {
-          const rg = document.createRange();
-          rg.selectNodeContents(c.node);
-          r = rg.getBoundingClientRect();
-        } catch (e) { r = null; }
-        if (!r || !r.width) r = c.node.getBoundingClientRect();
-        return {
-          L: r.left - c.x, R: r.right - c.x, T: r.top, B: r.bottom,
-          cx: (r.left + r.right) / 2 - c.x,
-        };
-      });
-    },
-
-    wake() {
-      if (!this.rows.length || REDUCED) return;
-      if (!this.geo) this.measure();
-      if (this.live) return;
-      this.live = true;
-      const step = () => {
-        this.live = this.tick();
-        if (this.live) requestAnimationFrame(step);
-        else this.geo = null;
-      };
-      requestAnimationFrame(step);
-    },
-
-    /* EVERY PIECE THAT IS MOVING, FROM THE TWO PLACES THAT KNOW. The hand
-       publishes `heldSet` and the fall publishes `flying`; a piece at rest is
-       in neither, which is what makes a settled pile beside the navigation
-       cost nothing and hold nothing in place. */
-    movers(out) {
-      const list = out || [];
-      list.length = 0;
-      const take = (set) => {
-        if (!set) return;
-        for (let i = 0; i < set.length; i += 1) {
-          const r = set[i];
-          if (r && r.it && r.it.node) list.push(r.it.node);
-        }
-      };
-      take(Bricks.heldSet);
-      take(Bricks.flying);
-      return list;
-    },
-
-    /* WHAT THE PIECES IN MOTION ARE ASKING OF EACH WORD. Zero when nothing is
-       moving, which is what makes the release a spring home rather than a
-       second gesture — the target simply stops being requested. */
-    aim() {
-      const rows = this.rows;
-      for (let i = 0; i < rows.length; i += 1) rows[i].want = 0;
-      if (!this.geo) return;
-      const nodes = this.movers(this._nodes || (this._nodes = []));
-      if (!nodes.length) return;
-
-      const boxes = this._boxes || (this._boxes = []);
-      boxes.length = 0;
-      for (let i = 0; i < nodes.length; i += 1) {
-        const q = nodes[i].getBoundingClientRect();
-        if (q.width || q.height) boxes.push(q);
-      }
-      if (!boxes.length) return;
-
-      const Z = this.ZONE;
-      for (let i = 0; i < rows.length; i += 1) {
-        const g = this.geo[i];
-        if (!g) continue;
-        const hh = Math.max(1, (g.B - g.T) / 2);
-        const wcy = (g.T + g.B) / 2;
-        let best = 0;
-        for (let j = 0; j < boxes.length; j += 1) {
-          const q = boxes[j];
-          /* the zone, on both axes. Outside it a word feels nothing at all —
-             not a fraction, not a falloff, nothing. */
-          if (q.bottom <= g.T - Z || q.top >= g.B + Z) continue;
-          if (q.right <= g.L - Z || q.left >= g.R + Z) continue;
-
-          /* --- HOW HARD, VERTICALLY -----------------------------------------
-
-             THIS IS WHAT KEEPS THE COLUMN FROM MOVING AS A BLOCK. A 2x3 is 66px
-             tall and the rows are on a 22.5px pitch, so a brick held over
-             "Email" genuinely overlaps four links — and gating on overlap alone
-             gave all four the same full displacement, which is the navigation
-             flying around rather than a word getting out of the way.
-
-             So the vertical relationship is a WEIGHT rather than a test:
-             measured centre to centre, full inside the word's own half-height
-             and falling to nothing `ZONE` past it. The row the brick is
-             actually on takes the whole push, the one above and below take
-             about half of it, and the rest of the column does not move. Which
-             is also what a soft object being leaned on looks like — the
-             deflection is largest where the contact is. */
-          const bcy = (q.top + q.bottom) / 2;
-          const wy = 1 - clamp((Math.abs(bcy - wcy) - hh) / (Z + hh * 2), 0, 1);
-          if (wy <= 0.02) continue;
-
-          /* --- WHICH WAY, AND HOW FAR ---------------------------------------
-
-             THE MINIMUM TRANSLATION, which is the same question the brick's own
-             fence asks of a wall and the same answer: of the two ways the word
-             could get clear of this piece, take the shorter one. A brick
-             arriving from the left is nearest the word's left edge, so right is
-             the cheap way out and the word goes right; from the right, left.
-             Sitting squarely over the middle the two are nearly equal and it
-             takes whichever is fractionally shorter — no special case, and no
-             constant direction anywhere in this function.
-
-             The distance is the escape itself, so it is proportional by
-             construction: a piece that has just entered the zone asks for a
-             pixel or two, one that is halfway across the word asks for the cap.
-             It only saturates when the brick is genuinely on top of it. */
-          const dR = (q.right + Z) - g.L;
-          const dL = g.R - (q.left - Z);
-          const right = dR <= dL;
-          const depth = right ? dR : dL;
-          if (depth <= 0) continue;
-          const want = Math.min(depth, this.MAX) * wy * (right ? 1 : -1);
-          /* THE LARGEST, NOT THE SUM. Several pieces around one word is a
-             crowd, not a stack of forces, and adding them is how 14px becomes
-             70. */
-          if (Math.abs(want) > Math.abs(best)) best = want;
-        }
-        rows[i].want = best;
-      }
-    },
-
-    tick() {
-      this.aim();
-      let busy = false;
-      const rows = this.rows;
-      for (let i = 0; i < rows.length; i += 1) {
-        const c = rows[i];
-        const d = c.want - c.x;
-        c.v = (c.v + d * this.K) * this.D;
-        c.x += c.v;
-        if (Math.abs(c.x - c.want) < this.EPS && Math.abs(c.v) < this.EPS) {
-          c.x = c.want; c.v = 0;
-        } else busy = true;
-        /* A row that has never been near a brick has no `--shove-x` at all —
-           the property is removed rather than set to zero — so the default
-           rendering of the navigation is exactly what it was. */
-        if (c.x) c.node.style.setProperty('--shove-x', `${c.x.toFixed(2)}px`);
-        else c.node.style.removeProperty('--shove-x');
-      }
-      /* Alive while anything is still travelling OR while a piece is still
-         moving, because a hand that has not moved this frame can still move
-         next frame. Nothing else keeps this running. */
-      return busy || !!(Bricks.heldSet && Bricks.heldSet.length)
-        || !!(Bricks.flying && Bricks.flying.length);
     },
   };
 
@@ -20274,11 +19753,7 @@
        at. It borrows `.mast__row` outright so it is the same 14px, the same
        ink and the same hover as Work, About and Play, and it carries no
        `data-at`, so `Rail.mark` never treats it as a section and the router
-       never sees it as a destination.
-
-       It also gets pushed around by the bricks, because `Shove` collects
-       `.mast__row` and this is one. That was not planned and it is right: it
-       is a row in the column like any other. */
+       never sees it as a destination. */
     trigger() {
       const b = el('button', {
         class: 'mast__row mast__row--llm', type: 'button',
@@ -22433,7 +21908,6 @@
         document.body.classList.add('pile-hold');
         host.appendChild(b.node);
         try { host.setPointerCapture(e.pointerId); } catch (err) { /* older */ }
-        this.publish();
         this.run();
       });
       host.addEventListener('pointermove', (e) => {
@@ -22482,30 +21956,7 @@
         /* A BRICK MAY NUDGE THE WORK, NOT INVADE IT. Past a short reach into
            the first project card the hand lets go on its own and the piece is
            thrown back to the pile. */
-        const card = document.querySelector('.home__work .wcard');
-        /* only where the work sits BESIDE the pile (desktop); on a phone it is below */
-        if (card && card.offsetParent !== null && card.getBoundingClientRect().left >= r.right - 24) {
-          const lim = card.getBoundingClientRect().left - (parseFloat(card.style.getPropertyValue('--push-x')) || 0)
-            - r.left + 90;
-          if (b.tx + b.w > lim) {
-            b.tx = lim - b.w;
-            b.vx = -380; b.vy = -160;
-            end();
-            return;
-          }
-        }
         this.run();
-        /* --- AND THE PAGE IS WOKEN ON EVERY MOVE, NOT JUST ON THE GRAB ----
-
-           `Shove` and `Push` each run their own spring loop and each loop
-           cancels itself the moment nothing is travelling. Woken only when the
-           brick was picked up, they solved one frame, found the word and the
-           card already at rest, and stopped — so carrying a brick across the
-           column afterwards moved nothing at all. They have to be told that
-           the thing they are tracking has moved, every time it moves, which is
-           what the old engine did from its own `move`. */
-        Shove.wake();
-        Push.wake();
       });
       const end = () => {
         const b = this.held;
@@ -22546,10 +21997,7 @@
         b.looseAt = b.loose ? performance.now() : 0;
         /* everything it was resting against is now unsupported */
         this.bodies.forEach((o) => { o.asleep = false; o.sleep = 0; });
-        this.publish();
         this.run();
-        Shove.wake();
-        Push.wake();
       };
       /* --- AND THE RELEASE IS HEARD WHEREVER IT HAPPENS -----------------
 
@@ -22578,23 +22026,6 @@
       addEventListener('blur', end);
     },
 
-    /* --- WHAT THE REST OF THE PAGE IS TOLD ------------------------------
-
-       `Shove` (the navigation word that slides out of a brick's way) and
-       `Push` (the project card that springs away from one) both ask
-       `Bricks.heldSet` what is in the hand and read `it.node` off each entry.
-       Publishing here is the whole of the integration: both interactions
-       survive the engine underneath them being replaced, and neither module
-       learns anything about it.
-
-       `Bricks` IS NOT RUNNING ON THIS PAGE, so this field is nobody else's
-       while the landing page is live, and it is emptied on release and on
-       teardown so a trip to the play desk finds it as the desk expects. */
-    publish() {
-      Bricks.heldSet = this.held ? [{ it: { node: this.held.node } }] : null;
-      if (this.held) { Shove.wake(); Push.wake(); }
-    },
-
     teardown() {
       if (!this.host) return;
       clearTimeout(this._t);
@@ -22608,7 +22039,6 @@
       }
       if (this.raf) cancelAnimationFrame(this.raf);
       this.raf = 0;
-      Bricks.heldSet = null;
       document.body.classList.remove('pile-hold');
       this._out = false;
       this.bodies.forEach((b) => b.node.remove());
@@ -23196,21 +22626,10 @@
           `<a href="${url(more.href)}">${esc(more.label)} <span aria-hidden="true">→</span></a>`));
       }
 
-      /* --- AND THE PILE LAST ---------------------------------------------
-
-         One frame, so the column has been laid out and its box is the box the
-         bricks will actually live in — the region is the navigation's slack,
-         so it has no height until everything above it does. `Pile.init` is
-         idempotent: every later visit to this section reaches it again through
-         `Stage`'s view swap and it returns on its first line, which is what
-         keeps the pile exactly as the visitor left it. */
-      if (Rail.trayEl) {
-        requestAnimationFrame(() => {
-          Pile.init(Rail.trayEl);
-          Push.arm(Rail.trayEl);
-          Shove.arm(Rail.trayEl);
-        });
-      }
+      /* NO BRICKS ON THE LANDING PAGE. The sidebar's pile, the cards that
+         gave way to it and the navigation words that stepped aside from it
+         were removed together; `.mast__air` stays as the column's spacer. The
+         LEGO lives on the play desk, and the 404 keeps its own floor. */
 
       /* AND NO FOOTER. `index.html` no longer has the `#foot` element, so
          `Shell.foot()` finds nothing and returns — the closing lines are the
@@ -24322,14 +23741,6 @@
           hostW: h ? Math.round(h.width) : 0, hostH: h ? Math.round(h.height) : 0 };
       }).filter(Boolean);
     };
-    window.__push = () => ({
-      n: Push.cards.length, live: Push.live, geo: !!Push.geo, reduced: REDUCED,
-      want: Push.cards.map((c) => +c.want.toFixed(1)),
-      x: Push.cards.map((c) => +c.x.toFixed(1)),
-      cap: Push.geo ? Push.geo.map((g) => +g.cap.toFixed(1)) : null,
-      gL: Push.geo ? Push.geo.map((g) => Math.round(g.L)) : null,
-      held: !!(Bricks.heldSet && Bricks.heldSet.length),
-    });
     /* WHAT THE LIVE FENCE IS LEAVING BEHIND, in the only units that matter:
        how far the piece in the hand is inside a wall right now. The drag-time
        guarantee is that this is zero, and a guarantee nothing can read is a

@@ -942,23 +942,10 @@ h1, h2, h3, p { margin: 0; font-weight: inherit; }
   pointer-events: auto;
 }
 
-/* --- THE PILE'S REGION -------------------------------------------------
-
-   NO BORDER, NO BOX, NO CARD, NO BACKGROUND. The region is the column's own
-   slack — the space between the last navigation link and the closing lines —
-   and it is styled by nothing at all. What a reader sees is paper with bricks
-   lying on it; the walls the bricks cannot pass are numbers in script, and the
-   floor is the bottom of this box.
-
-   `flex: 1 1 auto` IS THE WHOLE BOUNDARY. The region takes whatever height the
-   column has left, so it follows the layout at every width rather than being a
-   figure kept in step with one — and because it ends where `.mast__foot`
-   begins, a brick can no more reach the closing lines than it can reach the
-   navigation above it.
-
-   `pointer-events: none` on the box and `auto` on each brick, so the empty
-   column is not a sheet of glass over the page: a press between two bricks
-   goes through to whatever is under it. */
+/* THE COLUMN'S SLACK. Empty and unstyled: it takes whatever height the column
+   has left, which is what pushes the closing lines to the bottom. It used to
+   hold the landing page's brick pile; the bricks are gone and it is only a
+   spacer now, so where the column has no slack to give it is not shown. */
 .mast__air {
   position: relative;
   flex: 1 1 auto;
@@ -1077,16 +1064,9 @@ body.pile-hold * { cursor: grabbing; }
   .pbrk { transition: none; }
 }
 
-/* THE PILE IS A BAND HERE. In one column the sidebar's children are grid items
-   in the page's own flow, so the container has no slack to take — the region
-   has to be given a height of its own, and that height is the playground. */
+/* in one column there is no slack to fill, so the spacer is not drawn */
 @media (max-width: 62rem) {
-  .mast__air {
-    order: 5;
-    grid-column: 1 / -1;
-    height: clamp(8rem, 26vw, 11rem);
-    margin: 0 0 clamp(1.25rem, 3vh, 2rem);
-  }
+  .mast__air { display: none; }
 }
 
 .mast__say { margin: 0 0 0.75rem; }
@@ -1217,33 +1197,13 @@ body.pile-hold * { cursor: grabbing; }
 @property --hov-x { syntax: '<length>'; inherits: false; initial-value: 0px; }
 @property --press-s { syntax: '<number>'; inherits: false; initial-value: 1; }
 
-/* `--shove-x` IS THE WORD GETTING OUT OF A BRICK'S WAY — see `Shove`.
+/* --- TWO THINGS WANT THIS ROW'S TRANSFORM --------------------------------
 
-   A transform and not `margin`, `left` or `padding`, which is the whole of why
-   this cannot disturb the layout: the row is displaced on the compositor and
-   the column it sits in never re-flows, so "Work" sliding sideways moves
-   nothing else in the sidebar and nothing at all on the page. It carries its
-   own hit area with it, so the link is still exactly where it looks like it
-   is and a press lands on it wherever the spring has it.
-
-   Horizontal only, by construction rather than by restraint — there is no
-   second channel here to write a Y into. The row keeps its baseline, its
-   leading and its 22.5px pitch no matter what a brick does to it.
-
-   A row that has never been near a brick has no `--shove-x` at all: `Shove`
-   removes the property rather than setting it to zero, so the default is
-   `translate3d(0, 0, 0)` and the navigation renders exactly as it did.
-
-   --- AND THREE THINGS NOW WANT THIS ROW'S TRANSFORM -----------------------
-
-   `--shove-x` is the brick, `--hov-x` is the pointer, `--press-s` is the
-   finger, and all three are terms in ONE declaration because a property can
-   only have one writer. It mattered immediately: `.pressable.is-press` sets
-   `transform: scale(0.975)` on every `<a>` on the site and outranks the bare
-   `.mast__row` selector, so pressing a row that a brick had pushed sideways
-   discarded the push and snapped the word back to the column edge for the
-   length of the press. Folded together, a press scales a row that is already
-   displaced without arguing about where it is.
+   `--hov-x` is the pointer and `--press-s` is the finger, and both are terms
+   in ONE declaration because a property can only have one writer:
+   `.pressable.is-press` sets `transform: scale(0.975)` on every `<a>` on the
+   site and outranks the bare `.mast__row` selector. Folded together, a press
+   scales a row that is already nudged without arguing about where it is.
 
    THE COMPRESSION IS ANCHORED AT THE LEFT EDGE. A row is a flex box the width
    of the column, so scaling it about its centre moves the word right — which
@@ -1253,7 +1213,7 @@ body.pile-hold * { cursor: grabbing; }
 .mast__row,
 .rail__link {
   transform:
-    translate3d(calc(var(--shove-x, 0px) + var(--hov-x, 0px)), 0, 0)
+    translate3d(var(--hov-x, 0px), 0, 0)
     scale(var(--press-s, 1));
   transform-origin: 0 50%;
 }
@@ -1262,7 +1222,7 @@ body.pile-hold * { cursor: grabbing; }
 .mast__row.pressable.is-press,
 .rail__link.pressable.is-press {
   transform:
-    translate3d(calc(var(--shove-x, 0px) + var(--hov-x, 0px)), 0, 0)
+    translate3d(var(--hov-x, 0px), 0, 0)
     scale(var(--press-s, 1));
   --press-s: 0.972;
   transition: color var(--nav-ink, 180ms) var(--ease),
@@ -1298,8 +1258,7 @@ body.pile-hold * { cursor: grabbing; }
   /* IT IS PLACED IN THE LIST, NOT IN A ROW, which is the whole of why it can
      travel — see `Mark` in site.js. `top: 0; left: 0` and a transform, rather
      than `top`/`left` values that change: the square moves on the compositor
-     and the column it sits in never reflows, which is the same reason
-     `--shove-x` is a transform two rules up. */
+     and the column it sits in never reflows. */
   position: absolute;
   top: 0;
   left: 0;
@@ -1765,19 +1724,9 @@ body.pile-hold * { cursor: grabbing; }
      of the travel and a third of the scale: enough that a card entering from
      below is not simply switched on, not enough to be a movement you watch. */
   opacity: calc(0.35 + var(--in, 1) * 0.65);
-  /* `--push-x` IS A SECOND, INDEPENDENT CHANNEL ON THE SAME TRANSFORM.
-
-     The entrance owns the vertical and the scale; the brick fence owns the
-     horizontal. Composing them into one `translate3d` rather than giving the
-     card a wrapper keeps both on the compositor and means neither can clobber
-     the other: `Push` writes only `--push-x` and never touches `--in`, and the
-     scroll entrance writes only `--in`. A card that has never been near a
-     brick has no `--push-x` at all — the property is removed, not set to zero —
-     so the default rendering is exactly what it was. */
-  /* THE TRANSFORM ITSELF IS DECLARED IN SECTION 8b, where the folder's third
-     channel is composed into it. It cannot be stated twice — whichever came
-     last would win — so the two channels this rule is about are documented
-     here and written there. */
+  /* THE TRANSFORM ITSELF IS DECLARED IN SECTION 8b, alongside the
+     project preview's channels. It cannot be stated twice — whichever came
+     last would win. */
   transform-origin: 50% 70%;
   will-change: transform, opacity;
 }
@@ -1796,14 +1745,13 @@ body.pile-hold * { cursor: grabbing; }
     transform 900ms var(--ease-soft),
     box-shadow 900ms var(--ease-soft);
   will-change: transform;
-  box-shadow: 0 0 0 1px rgba(20, 16, 12, 0.05);
+  /* NO OUTLINE. The artwork's own edge is the card's edge. */
+  box-shadow: none;
 }
 
 :root:not(.hover-cold) .wcard:hover .wcard__media {
   transform: translateY(-3px);
-  box-shadow:
-    0 0 0 1px rgba(20, 16, 12, 0.07),
-    0 22px 46px -22px rgba(20, 16, 12, 0.3);
+  box-shadow: 0 22px 46px -22px rgba(20, 16, 12, 0.3);
 }
 
 .wcard__meta {
@@ -1844,9 +1792,13 @@ body.pile-hold * { cursor: grabbing; }
 /* cover: the artwork fills the panel, cropped to it */
 .wcard__thumb--cover {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  /* A PIXEL OF BLEED ON EVERY SIDE. Flush with the plate, the clip's
+     anti-aliased edge let the plate's pale ground show through as a thin
+     light line round dark artwork; overhanging by 1px puts artwork there
+     instead. */
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
   object-fit: cover;
   opacity: 0;
   transform: scale(1.02);
@@ -1872,7 +1824,7 @@ body.pile-hold * { cursor: grabbing; }
    only what shows if that read ever fails. */
 .wcard__poster {
   position: absolute;
-  inset: 0;
+  inset: -1px;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -1882,6 +1834,11 @@ body.pile-hold * { cursor: grabbing; }
   z-index: 2;
 }
 .wcard__poster.is-on { opacity: 1; }
+/* AND ONCE ARTWORK COVERS THE PLATE, THE PLATE HAS NO GROUND OF ITS OWN, so
+   nothing pale is left anywhere to fringe the rounded corners. */
+.wcard__media.is-covered,
+.wcard__media:has(> .wcard__thumb--cover.is-on),
+.wcard__media:has(> .wcard__poster.is-on) { background: transparent; }
 
 .wcard__thumb--sheet {
   position: relative;
@@ -2293,14 +2250,13 @@ body.pile-hold * { cursor: grabbing; }
 /* --- the project that was pressed -----------------------------------------
 
    NOT MOVING SO MUCH AS GROWING. `--pv-*` is the extra that takes it from its
-   cell in the stack to the first slot of the strip, and it is a THIRD channel
-   on a transform that already carries two which must not interfere: the scroll
-   entrance owns `--in`, the brick fence owns `--push-x`. A card that has never
-   been pressed has none of the three and renders exactly as it always did. */
+   cell in the stack to the first slot of the strip, and it is a second channel
+   on a transform the scroll entrance already owns through `--in`. A card that
+   has never been pressed renders exactly as it always did. */
 .wcard {
   transform:
     translate3d(
-      calc(var(--push-x, 0px) + var(--pv-x, 0px) + var(--pv-cam, 0px) + var(--rc-x, 0px)),
+      calc(var(--pv-x, 0px) + var(--pv-cam, 0px) + var(--rc-x, 0px)),
       calc((1 - var(--in, 1)) * 9px + var(--pv-y, 0px) + var(--rc-y, 0px)),
       0)
     scale(calc((0.978 + var(--in, 1) * 0.022) * var(--pv-s, 1) * var(--rc-s, 1)));
@@ -13728,16 +13684,11 @@ a.ab__aw-n { text-decoration: underline; text-underline-offset: 0.2em; text-deco
 .is-dark .tip { background: #26262a; color: #f2f1ee; }
 
 
-/* 7. THE CARDS KEEP THEIR ARTWORK AND GAIN AN EDGE. A bright preview on a dark
-      page is a bright rectangle, and dimming it was ruled out — the imagery is
-      the work. What it gets instead is a hairline, so the join between the art
-      and the dark card is not a hard white step. */
-.is-dark .wcard__media { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07); }
-
+/* 7. THE CARDS KEEP THEIR ARTWORK, WITH NO HAIRLINE ROUND IT. The 1px white
+      ring read as an outline drawn on the work, so it is gone; only the hover
+      shadow is dark-tuned. */
 :root.is-dark:not(.hover-cold) .wcard:hover .wcard__media {
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.11),
-    0 18px 40px -18px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.7);
 }
 
 /* 8. LIGHT ON THE BRICKS, FROM ONE SIDE. This is the difference between a
@@ -23540,32 +23491,37 @@ body[data-page='notfound'] #main { min-height: 100svh; }
    PHONE: MENU BUTTON, AND THE LANDING ORDER
    `is-phone` is set on <html> by the head script and by site.js (same test:
    narrow, or touch-only). The rail's two lists live in `.pmenu`; the page
-   opens on the brick pile, then the statement and buttons, then the work.
+   opens on the statement and buttons, then the work.
    ========================================================================== */
 .pmenu, .pmenu__btn { display: none; }
 
 :root.is-phone .pmenu__btn {
   position: fixed;
-  top: calc(var(--sa-top, 0px) + 0.75rem);
-  right: calc(var(--sa-right, 0px) + 0.75rem);
+  /* JUST THE THREE LINES. No tile behind them; the 44px box is still the
+     tap target, it simply is not painted. */
+  top: calc(var(--sa-top, 0px) + 1.25rem);
+  /* THE LINES SIT ON THE PAGE'S OWN GUTTER. The glyph is 17px inside a 44px
+     box, so the box is pulled out by the 13.5px of air on its right and the
+     lines end exactly where the statement's left margin begins. */
+  right: calc(var(--sa-right, 0px) + var(--gut, 1.25rem) - 13.5px);
   z-index: 2147482000;
   display: grid;
   place-content: center;
-  gap: 4px;
+  gap: 4.5px;
   width: 2.75rem;
   height: 2.75rem;
   padding: 0;
   border: 0;
   border-radius: 6px;
-  background: #1c1c1f;
+  background: transparent;
   color: #e9e7e3;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 :root.is-phone .pmenu__btn span {
   display: block;
-  width: 1.25rem;
-  height: 2px;
+  width: 1.0625rem;
+  height: 1.5px;
   border-radius: 1px;
   background: currentColor;
   transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
@@ -23608,15 +23564,23 @@ body[data-page='notfound'] #main { min-height: 100svh; }
   .pmenu__inner, .pmenu__btn span { transition: none; }
 }
 
-/* the landing: pile first and tall, so the page opens on the bricks with the
-   statement under them and the first project just showing */
+/* the landing: the statement first, then the buttons, then the work */
 :root.is-phone .home { padding-top: calc(var(--sa-top, 0px) + 4.5rem); }
-:root.is-phone .mast__air {
+:root.is-phone .mast__air { display: none; }
+/* THE LANDING OPENS ON AIR. On the phone's home section the column's empty
+   slack comes back as a quiet band above the statement, so the page opens
+   with the type set a little over a third of the way down and the first
+   project directly beneath the buttons. Empty on purpose — nothing is drawn
+   in it. Other sections and desktop are untouched. */
+:root.is-phone body[data-page='home'] .mast__air {
+  display: block;
   order: 1;
-  height: max(12rem, calc(100svh - 22rem));
+  height: max(8rem, calc(38svh - 6rem));
   margin: 0 0 1.5rem;
 }
 :root.is-phone .mast__say { order: 2; }
+/* the statement at the desktop sidebar's size on the phone's home section */
+:root.is-phone body[data-page='home'] .mast__say .canvas__headline { font-size: 1.375rem; }
 :root.is-phone .mast__cta { order: 3; }
 :root.is-phone .home__views,
 :root.is-phone .home__work,
@@ -23961,7 +23925,6 @@ body[data-page='notfound'] #main { min-height: 100svh; }
    shown on phones; the question gets a screen of its own with room around it,
    and plays its desktop entrance on a clock (PhonePlay in site.js). */
 @media (max-width: 46rem) {
-  #x0-brief { display: none !important; }
   #x0-question { height: auto !important; }
   #x0-question .scn__stage {
     position: relative;
@@ -24194,7 +24157,6 @@ body[data-page='notfound'] #main { min-height: 100svh; }
    page on a phone, and the desk runs edge to edge, top to bottom; the menu
    button still floats over its top-right corner. */
 :root.is-phone body[data-page='play'] .home { padding: 0 !important; row-gap: 0; }
-:root.is-phone body[data-page='play'] .home .mast__air,
 :root.is-phone body[data-page='play'] .home .mast__say,
 :root.is-phone body[data-page='play'] .home .mast__cta,
 :root.is-phone body[data-page='play'] .home .mast__foot { display: none !important; }
@@ -24245,18 +24207,23 @@ body[data-page='notfound'] #main { min-height: 100svh; }
 @media (max-width: 62rem) {
   :root.is-phone.is-pvw .pmenu__btn { opacity: 0; pointer-events: none; }
   :root.is-phone .pvw::before { background: #141416; opacity: 1; inset: 0; }
-  :root.is-phone .pvwr { height: 50svh; }
+  /* the details are as tall as their content (measured into `--pv-bh` by
+     `Preview.remeasure`), up to 78% of the screen; the strip takes the rest */
+  :root.is-phone .pvwr { height: min(var(--pv-bh, 50svh), 78svh); }
   :root.is-phone .pvw::before { inset: 0; }
-  :root.is-phone .pvw__stage { inset: 50svh 0 0 0; }
+  :root.is-phone .pvw__stage { inset: min(var(--pv-bh, 50svh), 78svh) 0 0 0; }
+  /* AND NOTHING OF THE PAGE PAINTS OVER THE PREVIEW. The closing block is lifted
+     (z-index 5) for the desktop column; on a phone it is in the same stacking
+     context as the preview and was showing through the field. */
+  :root.is-phone.is-pvw .mast__foot { z-index: 0; }
   :root.is-phone .pvw__edge { display: none; }
   :root.is-phone .pvw__brief { padding-bottom: 0; }
+  /* IN THE FLOW, NOT PINNED OVER IT. Pinned, the button and its fade sat on
+     top of the last rows of the brief; now the brief is sized to its content
+     and the button simply comes after the last row. */
   :root.is-phone .pvw__door {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
     margin-top: 1.25rem;
-    padding: 0.9rem 0 1rem;
-    background: linear-gradient(to bottom, rgba(20, 20, 22, 0), var(--surface) 30%);
+    padding: 0.25rem 0 0.25rem;
   }
   :root.is-phone .pvw__door .pvw__cta { width: 100%; justify-content: center; }
 }
@@ -24294,12 +24261,82 @@ body[data-page='notfound'] #main { min-height: 100svh; }
    nothing there; it is not shown on project pages at all. */
 body[data-page='project'] .gridtog { display: none !important; }
 
-/* THE BRICK IN YOUR HAND IS IN FRONT OF THE WORK. Carried onto a card it used
-   to slip behind it, so it looked like it vanished. While a brick is out of
-   its band (held, or falling home) the whole column is lifted above the work,
-   so the brick stays on top, keeps its place against the card, and the card
-   is pushed aside by it (Push) instead of covering it. */
-.home:has(.pile.is-out) .mast,
-body.pile-hold .mast { z-index: 30; }
-/* on a phone the column is `display: contents`, so the band itself is lifted */
-.mast__air.pile.is-out { z-index: 30; }
+
+
+/* THE QUESTION ON THE BLACK FRAME. White type on the near-black ground, the
+   mark smaller on the right (its draw-in is unchanged), and the headline
+   given the left of the frame. */
+#x0-brief .fg-h--ask { color: #f4f4f6; max-width: 20ch; }
+#x0-brief .fg-brand { width: clamp(5.5rem, 8vw, 7.5rem); }
+@media (max-width: 46rem) {
+  #x0-brief { height: auto !important; }
+  #x0-brief .scn__stage { position: relative; height: auto; min-height: 88svh;
+    align-content: center; align-items: center; place-items: center start; padding-block: 7rem 6rem; }
+  #x0-brief .scn__in { padding-bottom: 0; }
+  #x0-brief .fg-brand { top: calc(var(--sa-top, 0px) + 5rem); left: var(--fg-gut); width: 4rem; }
+}
+@media (min-width: 46.01rem) {
+  /* air between the question and the mark */
+  #x0-brief .fg-brand { right: calc(var(--fg-gut) + 1vw); }
+  #x0-brief .fg-h--ask { max-width: min(20ch, 58vw); }
+}
+
+/* ONE STRAIGHT LINE PER STOP. Each label used to be drawn with two pieces of
+   line: the stem from the dot, and the label's own border. They met with a
+   1px sideways offset (and overlapped where they joined), which is the kink.
+   Now the label has no border; a single 1px stem runs unbroken from the top
+   of the label to the edge of the dot, on the same pixel column as the dot. */
+.fg-dir .fg-dir__lab,
+.fg-dir .fg-dir__stop:last-of-type .fg-dir__lab,
+.fg-dir .fg-dir__stop:nth-last-of-type(3) .fg-dir__lab { border: 0; }
+.fg-dir .fg-dir__stop .fg-dir__stem {
+  left: -0.5px;
+  width: 1px;
+  top: calc(-1 * var(--lift));
+  height: calc(var(--lift) - 0.55cqw);
+  background: rgba(16, 16, 18, 0.2);
+}
+/* "Different audience" hangs below its dot: the line runs from the dot's
+   lower edge down the label's right side to its foot */
+.fg-dir .fg-dir__stop:nth-last-of-type(3) .fg-dir__stem { display: none; }
+.fg-dir .fg-dir__stop:nth-last-of-type(3) .fg-dir__lab::before {
+  content: '';
+  position: absolute;
+  right: -0.5px;
+  width: 1px;
+  top: -2.45cqw;
+  bottom: 0;
+  background: rgba(16, 16, 18, 0.2);
+}
+
+
+/* THE THINKING FIGURE, BUILT IN PIECES. Same picture, cut into its parts and
+   laid back on the same spots; each one pops in on its own beat — grows from
+   small with a little overshoot and a slight turn — so the head arrives first
+   and the thoughts gather around it. Desktop scrubs it with the scroll; on a
+   phone it plays as it comes into view (PhoneReveal). */
+.fg-tpw { position: relative; aspect-ratio: 964 / 1000; }
+.fg-tp {
+  --q: clamp(0, calc((var(--p) - var(--at, 0)) * 9), 1);
+  --pop: calc(var(--q) + sin(var(--q) * 3.14159) * 0.12);
+  position: absolute;
+  height: auto;
+  display: block;
+  opacity: clamp(0, calc(var(--q) * 2.5), 1);
+  scale: calc(0.55 + var(--pop) * 0.45);
+  rotate: calc((1 - var(--q)) * -8deg);
+  transform-origin: 50% 70%;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) { .fg-tp { --q: 1; } }
+@media (max-width: 46rem) {
+  .m-rev .fg-tp.m-piece {
+    --q: 1;
+    transition: opacity 400ms ease, scale 650ms cubic-bezier(0.34, 1.6, 0.64, 1), rotate 650ms cubic-bezier(0.34, 1.6, 0.64, 1) !important;
+    transition-delay: calc(var(--i) * 140ms) !important;
+  }
+  .m-rev .fg-tp.m-piece:not(.m-seen) { opacity: 0 !important; scale: 0.5; rotate: -10deg; translate: 0 0 !important; }
+  .m-rev .fg-tp.m-seen { opacity: 1 !important; scale: 1; rotate: 0deg; }
+}
+/* the pieces carry their own entrance; the wrapper itself is simply there */
+.fg-msgs__fig.fg-tpw { opacity: 1 !important; filter: none !important; scale: 1 !important; translate: none !important; }

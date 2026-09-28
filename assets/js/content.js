@@ -231,7 +231,11 @@ window.SITE = {
 
   /* ------------------------------------------------------- hero call to action */
   hero: {
-    primary: { label: 'Copy email', action: 'copy-email' },
+    /* THE PRIMARY BUTTON BOOKS A CALL. It is a plain link to the public
+       Cal.com page for the 15-minute event, opened in a new tab — Cal.com is
+       the scheduling system and nothing here imitates it. The email address
+       is still one press away in the Links list. */
+    primary: { label: 'Book a call', action: 'book-call', href: 'https://cal.com/ishaanbtw/15min' },
     secondary: { label: 'Resume', action: 'resume' },
   },
 
@@ -1540,11 +1544,14 @@ window.SITE = {
             /* THE TITLE CARD, and the one the reader will screenshot. The
                fourth word holds because it is the one nobody expects to
                survive the other three. */
-            { id: 'x0-brief', kind: 'words', dur: 200, dark: true,
+            /* THE ACTUAL QUESTION, ON THE BLACK FRAME WITH THE MARK. The brief's
+               four words gave way to the question they were really asking; the
+               mark still draws itself in on the right, smaller. */
+            { id: 'x0-brief', nav: 'Research', act: 'II · Question', kind: 'words', dur: 220, dark: true,
               mark: 'assets/img/x0/problem/mark-icon.webp',
-              kicker: 'The brief, in four words',
-              items: ['Affordable.', 'Mobile-first.', 'Simple.', 'Secure.'],
-              p: 'The first three were the brief. The fourth was non-negotiable.' },
+              kicker: 'The actual question',
+              h: 'How do you launch a new product without '
+                + '<mark>cannibalising</mark> the flagship it sits next to?' },
             /* --- CHAPTER 02 · UNDERSTANDING THE BRIEF ---------------------------------
 
                THE BRIEF AND NOT THE USER, WHICH IS WHAT ACTUALLY HAPPENED.
@@ -1564,19 +1571,7 @@ window.SITE = {
                away — which is why it arrived all at once and then left the
                reader staring at white. At 210 the sentence is read across
                real scroll and then sat with. */
-            { id: 'x0-question', nav: 'Research', act: 'II · Question', kind: 'ask', dur: 210,
-              kicker: 'The actual question',
-              /* THREE LINES, NOT SIX. Set at the old poster size this ran
-                 down the whole frame and stopped being a sentence you read in
-                 one go — it became a wall you scanned. Smaller and wider, it
-                 is three lines and one breath. The one word the sentence
-                 turns on is marked, and it is the only warm colour in the
-                 film: a highlighter stroke swiped under the glyphs, uneven at
-                 both ends, drawn across as you arrive. */
-              tight: true,
-              h: 'How do you launch a new product without '
-                + '<mark>cannibalising</mark> the flagship it sits next to?',
-              },
+            /* (x0-question now lives inside x0-brief, on the black frame) */
 
             /* THE BRIEF AS IT ARRIVED, and then eight questions that nobody
                had answered. The accumulation is the point — nothing leaves,
@@ -1607,13 +1602,19 @@ window.SITE = {
                  layered on top of it — see the renderer's note */
               art: 'assets/img/x0/think/thinking.webp',
               /* line-art out of the work itself, never pictograms */
-              bits: [
-                { k: 'grid',  x: '10%', y: '18%', w: 'min(4.4vw, 2.9rem)', at: 0.10, rot: '-6deg', dep: '-14px', o: 0.16 },
-                { k: 'wire',  x: '89%', y: '26%', w: 'min(5.2vw, 3.4rem)', at: 0.18, rot: '5deg',  dep: '10px',  o: 0.24 },
-                { k: 'chip',  x: '14%', y: '74%', w: 'min(4.8vw, 3.1rem)', at: 0.26, rot: '-3deg', dep: '12px',  o: 0.26 },
-                { k: 'dim',   x: '80%', y: '86%', w: 'min(5.6vw, 3.6rem)', at: 0.34, rot: '2deg',  dep: '-8px',  o: 0.2 },
-                { k: 'stack', x: '5%',  y: '52%', w: 'min(4.2vw, 2.7rem)', at: 0.42, rot: '4deg',  dep: '-16px', o: 0.22 },
-                { k: 'mark',  x: '95%', y: '60%', w: 'min(3.2vw, 2rem)',   at: 0.50, rot: '-2deg', dep: '6px',   o: 0.18 },
+              /* THE FIGURE IN PIECES, so it can be built rather than shown:
+                 each part is cut from thinking.webp at its own spot (x/y/w are
+                 % of that picture) and pops in on its own beat. The grey
+                 line drawings that used to float behind it are gone. */
+              parts: [
+                { k: 'head',   x: 27.905, y: 16.8, w: 43.465, at: 0.02 },
+                { k: 'laptop', x: 21.369, y: 65.0, w: 52.801, at: 0.07 },
+                { k: 'dots',   x: 13.071, y: 11.7, w: 26.556, at: 0.12 },
+                { k: 'eyes',   x: 5.394,  y: 35.8, w: 21.784, at: 0.17 },
+                { k: 'bulb',   x: 59.544, y: 4.0,  w: 32.365, at: 0.22 },
+                { k: 'ask',    x: 56.328, y: 58.4, w: 15.768, at: 0.27 },
+                { k: 'face',   x: 71.784, y: 33.4, w: 27.697, at: 0.32 },
+                { k: 'chart',  x: 75.207, y: 66.2, w: 21.162, at: 0.37 },
               ],
               /* THE STAGGER IS THE WHOLE THING, and the first pass lost it.
                  Eight bubbles sharing a left edge is a chat log: a neat blue
@@ -3070,51 +3071,6 @@ window.SITE = {
               ] },
           ],
         } },
-      { title: 'Today, around the world', meta: 'Design, 2024, Everywhere', href: '#',
-        /* the tall one. A fan of passports wants the height. */
-        col: 'a', ratio: 1.06,
-        preview: 'fan' ,
-        /* --- THE CHAPTER COVER ------------------------------------------
-
-           WHAT THIS IS FOR. Pressing a card used to leave the site: one click
-           and you were in a forty-six screen case study with no idea whether
-           you wanted to be. This is the screen in between — enough of the
-           project to decide by, on the page you are already on, with the study
-           one deliberate press further.
-
-           IT IS NOT A SUMMARY OF THE STUDY. A summary would be the study
-           again, shorter, and nobody reads the same argument twice. This is
-           the jacket copy: what the thing is, what was mine, and four pictures
-           that say whether it is any good. `spread` is composed rather than
-           listed — a hero, two supports at different crops and one detail —
-           and the three positions are named rather than numbered so the
-           composition is legible here and not only in the stylesheet.
-
-           EVERY FACT IS OUT OF THE STUDY OR THE KNOWLEDGE BASE. Nothing in a
-           `brief` is written for the brief. */
-        brief: {
-          tagline: 'One document, ninety-six ways.',
-          summary: 'A self-directed study in how the same identity document is '
-            + 'designed differently in every country that issues one — and what '
-            + 'that says about designing anything for everywhere.',
-          facts: [
-            { k: 'Role', v: 'Self-directed' },
-            { k: 'Timeline', v: '2024' },
-            { k: 'Team', v: 'Solo' },
-            { k: 'Platform', v: 'Print and screen' },
-          ],
-          does: ['Research', 'Art direction', 'Typography'],
-          /* NO `cta`, BECAUSE THERE IS NOWHERE TO SEND ANYBODY YET. The study
-             is not written and a button to a page that does not exist is the
-             one thing worse than no button. `note` takes its place and says so
-             plainly — see `.pvw__soon`. */
-          note: 'Write-up in progress',
-          /* AND NO `spread` EITHER. There are no photographs of this in the
-             repository, and four crops of the card's own generated artwork is
-             padding with extra steps. The preview falls back to that artwork
-             at one size, which is honest about what exists. */
-        },
-      },
       /* ------------------------------------------------------------- X0 Cards
          THE SECOND CHAPTER OF X0, not a new project. The X0 study ends on
          "I also designed the X0 hardware cards, the packaging and everything
