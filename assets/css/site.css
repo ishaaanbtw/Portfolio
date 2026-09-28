@@ -24293,3 +24293,13 @@ body[data-page='notfound'] #main { min-height: 100svh; }
    full-bleed compositions with no layout grid behind them, so the toggle did
    nothing there; it is not shown on project pages at all. */
 body[data-page='project'] .gridtog { display: none !important; }
+
+/* THE BRICK IN YOUR HAND IS IN FRONT OF THE WORK. Carried onto a card it used
+   to slip behind it, so it looked like it vanished. While a brick is out of
+   its band (held, or falling home) the whole column is lifted above the work,
+   so the brick stays on top, keeps its place against the card, and the card
+   is pushed aside by it (Push) instead of covering it. */
+.home:has(.pile.is-out) .mast,
+body.pile-hold .mast { z-index: 30; }
+/* on a phone the column is `display: contents`, so the band itself is lifted */
+.mast__air.pile.is-out { z-index: 30; }

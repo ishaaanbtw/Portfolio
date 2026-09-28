@@ -3130,6 +3130,8 @@ window.SITE = {
          written as [TBD] so nothing unverified ships as fact. */
       { title: 'X0 Cards', meta: 'Hardware & packaging, 2026, Singapore',
         col: 'b', ratio: 1.5,
+        /* first in its column: above Onefinnet Talent */
+        lead: true,
         /* STILL BEING MADE. `wip` turns the tile into a note rather than a
            door: the pointer becomes an "In progress" tag, and a click writes
            to me instead of opening the study. Delete this line to ship it. */

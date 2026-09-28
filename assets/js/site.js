@@ -2057,7 +2057,11 @@
          the one the page was already using, which is the stutter.
 
          So the href is real and nothing intercepts it. */
-      data.items.forEach((item) => {
+      /* a project marked `lead` goes to the top of its column; cards are
+         appended column by column, so moving it to the front of the list
+         changes only its own column */
+      const items = [...data.items.filter((i) => i.lead), ...data.items.filter((i) => !i.lead)];
+      items.forEach((item) => {
         const wip = !!item.wip;
         const card = el('a', {
           class: wip ? 'wcard wcard--wip' : 'wcard',
@@ -19224,7 +19228,12 @@
      moment every card is home and the hand is empty. At rest this module costs
      nothing at all, which is the difference between physics and jitter. */
   const Push = {
-    MAX: 12,          // px a card may be displaced, before the viewport cap
+    /* A BRICK AND A CARD ARE ON ONE LEVEL NOW: the card gives way by the
+       full depth the brick has pushed into it, so the two stay edge to edge
+       instead of the brick sliding over (or under) a card that moved 12px.
+       The sheet clips horizontally, so a card may be shoved past the window
+       edge the way a real one would be. */
+    MAX: 260,         // px a card may be displaced
     /* REACH IS ZERO, AND THAT IS THE FIX RATHER THAN A TUNING.
 
        It was 34: the card began moving while the brick was still 34px away,
@@ -19278,7 +19287,7 @@
         const r = c.node.getBoundingClientRect();
         return {
           L: r.left - c.x, T: r.top, R: r.right - c.x, B: r.bottom,
-          cap: Math.max(0, Math.min(this.MAX, vw - 6 - (r.right - c.x))),
+          cap: this.MAX,
         };
       });
     },
@@ -19340,7 +19349,11 @@
           const near = q.R + 24 > g.L && g.L > q.L;   // the card to its left
           const stack = Math.abs(q.L - g.L) < 2       // the same column
             && Math.min(q.B, g.B) + 48 > Math.max(q.T, g.T);
-          if (near || stack) take = Math.max(take, seed[j] * this.DECAY);
+          /* the card beside it is shoved the same distance, so the row moves
+             as one and a pushed card never slides over its neighbour; a card
+             above or below in the same column only feels a little of it */
+          if (near) take = Math.max(take, seed[j]);
+          else if (stack) take = Math.max(take, seed[j] * this.DECAY);
         });
         if (take > c.want) c.want = Math.min(take, g.cap);
       });
@@ -21658,6 +21671,12 @@
              released from that pull the instant it is inside one */
           const hx = Math.max(0, Math.min(b.x, this.W - b.w));
           b.vx += (hx - b.x) * this.HOME * dt;
+          /* LET GO BELOW THE FLOOR, IT RISES BACK. Gravity alone only ever
+             pulled such a piece further down, so a brick dropped over the
+             closing lines stayed there, on top of the text. Below the band it
+             is lifted back to the floor instead, and then falls in as usual. */
+          const floor = this.H - b.h;
+          if (b.y > floor + 0.5) b.vy = Math.max(-520, (floor - b.y) * 7);
           if (b.vx > this.VMAX) b.vx = this.VMAX;
           else if (b.vx < -this.VMAX) b.vx = -this.VMAX;
           /* --- AND IT MUST BE ABLE TO ARRIVE -------------------------------
@@ -21677,7 +21696,8 @@
              odd the arrangement, a piece is done being outside a few seconds
              after you let go of it. */
           const near = b.x >= -1.5 && b.x + b.w <= this.W + 1.5 && b.y + b.h <= this.H + 1.5;
-          if (near || (b.looseAt && performance.now() - b.looseAt > 2600)) {
+          /* the deadline never drops a piece that is still outside the band */
+          if (near || (b.looseAt && performance.now() - b.looseAt > 2600 && b.y + b.h <= this.H + 1.5)) {
             b.loose = false;
             b.looseAt = 0;
           }
@@ -22459,6 +22479,21 @@
            is a separate question, answered on release. */
         b.tx = e.clientX - r.left - b.grab.x;
         b.ty = e.clientY - r.top - b.grab.y;
+        /* A BRICK MAY NUDGE THE WORK, NOT INVADE IT. Past a short reach into
+           the first project card the hand lets go on its own and the piece is
+           thrown back to the pile. */
+        const card = document.querySelector('.home__work .wcard');
+        /* only where the work sits BESIDE the pile (desktop); on a phone it is below */
+        if (card && card.offsetParent !== null && card.getBoundingClientRect().left >= r.right - 24) {
+          const lim = card.getBoundingClientRect().left - (parseFloat(card.style.getPropertyValue('--push-x')) || 0)
+            - r.left + 90;
+          if (b.tx + b.w > lim) {
+            b.tx = lim - b.w;
+            b.vx = -380; b.vy = -160;
+            end();
+            return;
+          }
+        }
         this.run();
         /* --- AND THE PAGE IS WOKEN ON EVERY MOVE, NOT JUST ON THE GRAB ----
 
