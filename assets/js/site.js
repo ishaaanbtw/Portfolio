@@ -8671,7 +8671,7 @@
 
        Every other surface is untouched: the test is the tray's own class. */
     keep(host, w, h) {
-      if (host && host.classList && host.classList.contains('canvas--tray')) {
+      if (host && host.classList && (host.classList.contains('canvas--tray') || Bricks.isMat(host))) {
         return { kx: w, ky: h };
       }
       const k = Math.min(this.KEEP, w * 0.9, h * 0.9);
@@ -11698,6 +11698,17 @@
     /* THE HIGHEST A PIECE MAY COME TO REST AT THIS x, as a fraction of the
        canvas. Smaller is higher up the page. */
     /* the one question three places ask, asked once */
+    /* THE PHONE'S PLAY DESK IS A MAT WITH A HARD EDGE. The desk there is the
+       cutting mat itself, inset from the screen, and nothing may be put down
+       outside it: a piece carried past the edge is held at it, and a piece
+       that ends up over it on release is brought back in, the way the tray
+       does. Desktop keeps its soft window edge. */
+    isMat(host) {
+      const n = host || this.host;
+      return !!(n && n.classList && n.classList.contains('play__floor')
+        && document.documentElement.classList.contains('is-phone'));
+    },
+
     isTray(host) {
       const n = host || this.host;
       return !!(n && n.classList && n.classList.contains('canvas--tray'));
@@ -14866,7 +14877,8 @@
 
     fenceIn(set) {
       const host = this.host;
-      if (!host || !host.classList || !host.classList.contains('canvas--tray')) return false;
+      if (!host || !host.classList
+        || !(host.classList.contains('canvas--tray') || this.isMat(host))) return false;
       if (!set || !set.length) return false;
       const h = host.getBoundingClientRect();
       if (!h.width) return false;
@@ -20786,6 +20798,8 @@
          how many at most, and how quickly they arrive. The landing column
          passes nothing and behaves exactly as before. */
       this.opts = opts || {};
+      this._lastH = null;
+      this._tries = 0;
       host.classList.add('pile');
       this.ready();
     },
@@ -20840,6 +20854,9 @@
        and the physically honest answer to the box changing shape. */
     reflow() {
       if (!this.host) return;
+      /* a host that is hidden (the footer while another section is showing)
+         measures as nothing; it is left alone until it has a size again */
+      if (!this.host.getBoundingClientRect().width) return;
       const oldU = this.U;
       this.measure();
       const k = this.U / oldU;
@@ -20870,6 +20887,7 @@
        Capped at both ends so a very tall column is not a wall and a very short
        one is not empty. */
     fill() {
+      if (this.opts && this.opts.wall) { this.wall(); return; }
       const area = (this.W * this.H) / (this.U * this.U);
       /* --- AND THE COUNT CAME DOWN WHEN THE OVERLAP WENT AWAY -----------
 
@@ -20946,6 +20964,162 @@
       this._t = setTimeout(next, (this.opts && this.opts.delay) || 220);
     },
 
+    /* --- A SET WALL, NOT A SHOWER (opts.wall) ----------------------------
+
+       The home footer does not deal its bricks in: they are already lying
+       there when you arrive, laid in courses on the floor the way a handful
+       of bars ends up after someone has tidied them — the bottom two courses
+       full, each course above it sparser, and nothing placed without a brick
+       under it. Straight bars only, square to the floor, touching their
+       neighbours. They are asleep until a hand picks one up; from then on it
+       is the same physics as everywhere else. */
+    wall() {
+      if (this.opts && this.opts.layout) { this.laid(); return; }
+      const U = this.U;
+      const cols = (this.opts && this.opts.cols) || this.COLS;
+      const LEN = { conn: 1, small: 2, p14: 4, long: 5 };
+      const KIND = { 1: 'conn', 2: 'small', 4: 'p14', 5: 'long' };
+      const rnd = (a) => a[(Math.random() * a.length) | 0];
+      const n = Math.floor(this.W / U);
+      const x0 = (this.W - n * U) / 2;
+
+      /* HOW A TIDIED HANDFUL ACTUALLY LOOKS. Two full courses at the bottom;
+         above them each course has real holes in it — runs of two to five
+         studs with nothing there — so the skyline is ragged and the courses
+         read as laid by hand rather than printed. Seams never line up with
+         the seam directly below (running bond), a brick needs most of its
+         length on something, and the top courses use the longer bars,
+         because a lone single stud on top of a pile looks like a mistake. */
+      const plan = [
+        { fill: 1, lens: [2, 4, 4, 5, 5, 1] },
+        { fill: 1, lens: [2, 4, 4, 5, 5, 1] },
+        { fill: 0.62, lens: [2, 4, 4, 5] },
+        { fill: 0.38, lens: [2, 4, 4, 5] },
+        { fill: 0.16, lens: [2, 4, 5] },
+      ];
+      let below = new Array(n).fill(true);   // the floor supports everything
+      let seams = new Set();                 // the floor has no seams
+      plan.forEach((row, r) => {
+        const here = new Array(n).fill(false);
+        const cut = new Set();
+        let c = 0;
+        let lastCol = null;
+        /* the course alternates runs of bricks with holes, each a few studs */
+        let placing = row.fill >= 1 || Math.random() < row.fill;
+        const run = () => 1 + ((Math.random() * 2) | 0);
+        const hole = () => 3 + ((Math.random() * 5) | 0);
+        let budget = placing ? run() : hole();
+        while (c < n) {
+          if (!placing) {
+            c += 1;
+            budget -= 1;
+            if (budget <= 0) { placing = true; budget = run(); }
+            continue;
+          }
+          /* a length that fits, is supported, and does not end on a seam
+             of the course below — tried a few times, then the shortest fit */
+          let len = 0;
+          for (let t = 0; t < 8; t += 1) {
+            const L = rnd(row.lens);
+            if (L > n - c) continue;
+            const end = c + L;
+            if (end < n && seams.has(end)) continue;
+            const sup = below.slice(c, end).filter(Boolean).length;
+            if (sup < Math.ceil(L * 0.6)) continue;
+            len = L;
+            break;
+          }
+          if (!len) {
+            if (row.fill >= 1) {
+              /* a full course must close: take whatever fits */
+              len = [5, 4, 2, 1].find((L) => L <= n - c && !(c + L < n && seams.has(c + L)))
+                || [5, 4, 2, 1].find((L) => L <= n - c);
+            } else {
+              c += 1;
+              continue;
+            }
+          }
+          let col = rnd(cols);
+          if (col === lastCol && cols.length > 1) col = cols[(cols.indexOf(col) + 1) % cols.length];
+          lastCol = col;
+          const kind = KIND[len];
+          const w = len * U;
+          const h = U;
+          const node = el('div', { class: 'pbrk', 'aria-hidden': 'true' });
+          node.style.width = `${w}px`;
+          node.style.height = `${h}px`;
+          node.innerHTML = this.art(kind, col, U);
+          this.host.appendChild(node);
+          const b = {
+            node, kind, cw: len, ch: 1, col, w, h,
+            x: x0 + c * U, y: this.H - (r + 1) * h,
+            vx: 0, vy: 0, a: 0, va: 0, sleep: this.NAP, asleep: true,
+          };
+          node.__b = b;
+          this.bodies.push(b);
+          this.paint(b);
+          for (let k = c; k < c + len; k += 1) here[k] = true;
+          c += len;
+          cut.add(c);
+          if (row.fill < 1) {
+            budget -= 1;
+            if (budget <= 0) {
+              placing = false;
+              budget = hole();
+              lastCol = null;
+            }
+          }
+        }
+        below = here;
+        seams = cut;
+      });
+    },
+
+    /* --- A DRAWN WALL (opts.layout) --------------------------------------
+
+       The footer's arrangement is not generated, it is drawn: `layout` is the
+       reference transcribed course by course, bottom first, as
+       [first stud, length, colour]. It is laid from the left edge; where the
+       box is narrower than the drawing, a brick that crosses the right edge
+       is shortened to what fits (the shorter bar, not a sliced one), and
+       where it is wider the drawing repeats. Every length from one to five
+       studs is a real piece — `conn`, `small`, `p13`, `p14`, `long`. */
+    laid() {
+      const U = this.U;
+      const cols = (this.opts && this.opts.cols) || this.COLS;
+      const rows = this.opts.layout;
+      const span = this.opts.span || 26;
+      const KIND = { 1: 'conn', 2: 'small', 3: 'p13', 4: 'p14', 5: 'long' };
+      const n = Math.floor(this.W / U + 1e-6);
+      rows.forEach((row, r) => {
+        for (let rep = 0; rep * span < n; rep += 1) {
+          row.forEach(([at, len0, ci]) => {
+            const c = rep * span + at;
+            if (c >= n) return;
+            const len = Math.min(len0, n - c);
+            if (len < 1) return;
+            const kind = KIND[len];
+            const col = cols[ci % cols.length];
+            const w = len * U;
+            const h = U;
+            const node = el('div', { class: 'pbrk', 'aria-hidden': 'true' });
+            node.style.width = `${w}px`;
+            node.style.height = `${h}px`;
+            node.innerHTML = this.art(kind, col, U);
+            this.host.appendChild(node);
+            const b = {
+              node, kind, cw: len, ch: 1, col, w, h,
+              x: c * U, y: this.H - (r + 1) * h,
+              vx: 0, vy: 0, a: 0, va: 0, sleep: this.NAP, asleep: true,
+            };
+            node.__b = b;
+            this.bodies.push(b);
+            this.paint(b);
+          });
+        }
+      });
+    },
+
     /* --- ONE BRICK, FROM ABOVE ------------------------------------------
        Randomised horizontally, in rotation and in sideways drift, but all
        three constrained: the x is kept a brick's width clear of both walls so
@@ -20953,11 +21127,13 @@
        a piece cannot be thrown across the column. It enters ABOVE the region —
        the layer's own clip is what hides it until it is inside. */
     drop() {
-      const kind = this.BAG[(Math.random() * this.BAG.length) | 0];
+      const bag = (this.opts && this.opts.bag) || this.BAG;
+      const cols = (this.opts && this.opts.cols) || this.COLS;
+      const kind = bag[(Math.random() * bag.length) | 0];
       const cells = PIECE[kind].cells;
       const cw = Math.max(...cells.map((c) => c[0])) + 1;
       const ch = Math.max(...cells.map((c) => c[1])) + 1;
-      const col = this.COLS[(Math.random() * this.COLS.length) | 0];
+      const col = cols[(Math.random() * cols.length) | 0];
       const w = cw * this.U;
       const h = ch * this.U;
       const lane = this.lanes && this.lanes.length ? this.lanes.pop() : null;
@@ -22626,10 +22802,61 @@
           `<a href="${url(more.href)}">${esc(more.label)} <span aria-hidden="true">→</span></a>`));
       }
 
-      /* NO BRICKS ON THE LANDING PAGE. The sidebar's pile, the cards that
-         gave way to it and the navigation words that stepped aside from it
-         were removed together; `.mast__air` stays as the column's spacer. The
-         LEGO lives on the play desk, and the 404 keeps its own floor. */
+      /* NO BRICKS IN THE SIDEBAR. The column pile, the cards that gave way to
+         it and the navigation words that stepped aside from it are gone for
+         good; `.mast__air` stays as the column's spacer. */
+
+      /* --- THE BRICK FOOTER ----------------------------------------------
+
+         The home page ends on a floor of bricks: a band the width of the work
+         column (the whole screen on a phone) laid with bricks — straight bars
+         only, 1, 2, 4 and 5 studs long, in the three colours of the
+         reference — which can be picked up and dropped. `Pile` is the same
+         engine the 404 floor uses; it is dealt only once the band is on
+         screen, so nobody's first paint pays for bricks they have not reached.
+
+         IT LIVES AT THE FOOT OF THE SIDEBAR, under the closing lines: on
+         desktop it runs the width of the column, edge to edge, at the bottom
+         of the window; on a phone the column dissolves into the page, so the
+         same element simply comes after the © line and runs the width of the
+         screen. Hidden on every other section by the stylesheet. */
+      const shell = Rail.el || work.closest('.home');
+      if (shell && !$('.lfoot', shell)) {
+        const foot = el('section', { class: 'lfoot', 'aria-hidden': 'true' });
+        const floor = el('div', { class: 'lfoot__floor', 'aria-hidden': 'true' });
+        foot.appendChild(floor);
+        shell.appendChild(foot);
+
+        const opts = () => ({
+          wall: true,
+          cols: ['#1f74e0', '#f6c417', '#e0392b'],
+          /* THE ARRANGEMENT, EXACTLY AS DRAWN. Bottom course first; each brick
+             is [first stud, studs, colour] with 0 blue, 1 yellow, 2 red. */
+          span: 26,
+          layout: [
+            [[0, 3, 2], [3, 3, 1], [6, 4, 0], [10, 2, 2], [12, 5, 1], [17, 3, 0], [20, 4, 2], [24, 2, 1]],
+            [[0, 4, 2], [4, 5, 1], [9, 1, 0], [10, 3, 2], [13, 4, 0], [17, 2, 1], [19, 5, 2], [24, 2, 1]],
+            [[0, 1, 1], [7, 4, 0], [11, 2, 2], [13, 3, 1], [20, 2, 1], [22, 4, 0]],
+            [[0, 4, 0], [9, 5, 1], [16, 5, 2], [23, 3, 2]],
+            [[0, 2, 0], [12, 1, 2], [13, 3, 0], [23, 2, 1]],
+          ],
+          /* small studs, as in the reference: about 15px on a phone */
+          /* THE SAME COMPOSITION AT EVERY WIDTH: the box is always exactly
+             24 studs across, so the drawing is never cropped differently on
+             a laptop and a phone — the studs scale instead */
+          unit: (r) => r.width / 24,
+        });
+        const deal = () => requestAnimationFrame(() => Pile.init(floor, opts()));
+        if ('IntersectionObserver' in window) {
+          const io = new IntersectionObserver((es) => {
+            if (!es.some((e2) => e2.isIntersecting)) return;
+            io.disconnect();
+            deal();
+          }, { rootMargin: '0px 0px 120px 0px' });
+          io.observe(floor);
+        } else deal();
+
+      }
 
       /* AND NO FOOTER. `index.html` no longer has the `#foot` element, so
          `Shell.foot()` finds nothing and returns — the closing lines are the

@@ -8248,6 +8248,10 @@ body.past-hero .sel { opacity: 0; }
 
   /* and the buttons get it outright, since they have room */
   .btn { min-height: 44px; }
+  /* EXCEPT THE TWO PILLS UNDER THE STATEMENT, which keep the desktop's shape.
+     Stretched to 44px they read as a different, rounder button from the one on
+     desktop; at their own height they are the same house pill everywhere. */
+  .mast__cta .btn { min-height: 0; }
 }
 
 /* ==========================================================================
@@ -23585,7 +23589,9 @@ body[data-page='notfound'] #main { min-height: 100svh; }
 :root.is-phone .home__views,
 :root.is-phone .home__work,
 :root.is-phone .about { order: 4; }
-:root.is-phone .mast__foot { order: 6; margin-top: 2.5rem; }
+:root.is-phone .mast__foot { order: 6; margin-top: 4.5rem; }
+/* the page ends one gutter below the © line, not two */
+:root.is-phone body[data-page='home'] .home { padding-bottom: calc(var(--sa-bottom, 0px) + var(--gut, 1.25rem)); }
 
 /* PHONE: the case study's chapter readout ("06 / 09 DESIGN SYSTEM") and the
    index it opens are removed. The film scrolls on its own; the browser's back
@@ -24163,12 +24169,22 @@ body[data-page='notfound'] #main { min-height: 100svh; }
 :root.is-phone body[data-page='play'] .home .home__views,
 :root.is-phone body[data-page='play'] .home .home__work--desk { margin: 0; padding: 0; }
 :root.is-phone body[data-page='play'] .home .play__floor {
-  min-height: 100svh;
-  height: 100svh;
-  border-radius: 0;
+  /* THE DESK IS THE MAT. The floor itself is the printed field, inset from
+     the screen under the heading, so the brick engine's own box is the mat
+     and nothing can be played outside it. */
+  --mat-top: calc(var(--sa-top, 0px) + 6.5rem);
+  --mat-bot: calc(var(--sa-bottom, 0px) + var(--gut, 1.25rem));
+  min-height: 0;
+  height: calc(100svh - var(--mat-top) - var(--mat-bot));
+  margin: var(--mat-top) var(--gut, 1.25rem) var(--mat-bot);
   border: 0;
-  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
 }
+:root.is-phone body[data-page='play'] { background-image: none; }
+/* the mat's top margin must not collapse through the desk and carry the
+   heading down with it */
+:root.is-phone body[data-page='play'] .home .home__work--desk { display: flow-root; }
 :root.is-phone body[data-page='play'] .home .play__head { padding-top: calc(var(--sa-top, 0px) + 1.25rem); padding-right: 4.5rem; }
 
 
@@ -24340,3 +24356,196 @@ body[data-page='project'] .gridtog { display: none !important; }
 }
 /* the pieces carry their own entrance; the wrapper itself is simply there */
 .fg-msgs__fig.fg-tpw { opacity: 1 !important; filter: none !important; scale: 1 !important; translate: none !important; }
+
+
+/* ==========================================================================
+   THE BRICK FOOTER (home only)
+   A floor of straight bricks run by `Pile`. The work column's width on desktop, the full screen on a phone,
+   where it comes after the closing lines.
+   ========================================================================== */
+.lfoot {
+  /* the column's full width, edge to edge, down to the window's bottom edge:
+     the column's own padding is given back on three sides */
+  flex: none;
+  margin: 0.9rem calc(-1 * var(--mast-pad)) calc(-1 * (var(--mast-pad) + var(--sa-bottom, 0px)));
+  min-width: 0;
+}
+body:not([data-page='home']) .lfoot { display: none; }
+.lfoot__floor {
+  position: relative;
+  /* 24 studs across and six courses tall (five of bricks, one of air), so the
+     box is always 4:1 and the composition is identical at every width */
+  aspect-ratio: 4 / 1;
+}
+/* THE PODS SIT ON THE BYLINE'S LINE, so on the home section, where the floor
+   now lies under the byline, they are lifted by the floor's height with it */
+@media (min-width: 60.0625rem) {
+  body[data-page='home']:has(.lfoot) .gridtog,
+  body[data-page='home']:has(.lfoot) .tmode {
+    bottom: calc(var(--mast-w) / 4 + 0.9rem - 0.423rem);
+  }
+}
+:root.is-phone .lfoot {
+  order: 7;
+  grid-column: 1 / -1;
+  /* edge to edge: out past the gutters and down past the page's bottom
+     padding, so the floor is the screen's own bottom edge */
+  margin: 3.5rem calc(-1 * var(--gut, 1.25rem))
+    calc(-1 * (var(--sa-bottom, 0px) + var(--gut, 1.25rem)));
+}
+
+
+/* ==========================================================================
+   PHONE · PLAY AS A CUTTING MAT
+   The desk is a self-healing cutting mat rather than a grid laid behind the
+   bricks: a near-black board, a printed field inset from its edges with a
+   hairline border, major squares every 48px over a fine 12px sub-grid, both
+   measured from the bottom-left corner the way a mat is printed, and the 45°
+   guide running up out of that corner. The site's layout-grid overlay is
+   switched off here, because the mat is the grid.
+   ========================================================================== */
+:root.is-phone body[data-page='play'] .gridlay,
+:root.is-phone body[data-page='play'] .canvas__dots { display: none; }
+/* the board is the landing page's own black */
+:root.is-phone body[data-page='play'] .home .play__floor {
+  background-color: var(--surface, #0f0f11);
+  background-image: none !important;
+}
+:root.is-phone body[data-page='play'] .home .play__floor::before,
+:root.is-phone body[data-page='play'] .home .play__floor::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+:root.is-phone body[data-page='play'] .home .play__floor::before {
+  inset: 0;
+  /* the printed field: a 5% grey film, its lines in white at 10% */
+  background-color: rgba(236, 236, 232, 0.02);
+  box-shadow: inset 0 0 0 1px rgba(236, 236, 232, 0.07);
+  /* a mat has rounded corners */
+  border-radius: 14px;
+  background-image:
+    linear-gradient(to right, rgba(236, 236, 232, 0.02) 1px, transparent 1px),
+    linear-gradient(to top, rgba(236, 236, 232, 0.02) 1px, transparent 1px),
+    linear-gradient(to right, rgba(236, 236, 232, 0.012) 1px, transparent 1px),
+    linear-gradient(to top, rgba(236, 236, 232, 0.012) 1px, transparent 1px);
+  background-size: 48px 48px, 48px 48px, 12px 12px, 12px 12px;
+  background-position: left bottom;
+}
+/* the 45° guide: a square anchored to the field's bottom-left corner, its
+   diagonal drawn as a single hairline and clipped by the field's own box */
+:root.is-phone body[data-page='play'] .home .play__floor::after {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 100%;
+  background: linear-gradient(to top left,
+    transparent calc(50% - 0.6px),
+    rgba(236, 236, 232, 0.07) 50%,
+    transparent calc(50% + 0.6px));
+}
+
+/* THE LINE ON THE MENU'S LINE. Left on the page gutter, and set so the lead's
+   first line sits on the same centre as the menu's three bars. */
+:root.is-phone body[data-page='play'] .home .play__head {
+  top: 0;
+  left: var(--gut, 1.25rem);
+  padding-top: calc(var(--sa-top, 0px) + 1.25rem + 11.5px);
+}
+
+/* THE BUTTON IS ONE OF THE SITE'S PODS. Not a purple disc: the same light film
+   with a hairline that the grid and theme pods are made of, at a thumb's size.
+   Open, it fills in the way the grid pod does when it is on. */
+:root.is-phone .fab,
+:root.is-phone .tools.is-dock .fab,
+:root.is-phone .tools.is-live .fab,
+:root.is-phone .tools.is-dock.is-live .fab {
+  background: rgba(240, 240, 238, 0.09);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  backdrop-filter: blur(10px) saturate(1.15);
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 240, 238, 0.14),
+    0 6px 18px -10px rgba(0, 0, 0, 0.7);
+  color: var(--text-1, #f1f1ef);
+}
+:root.is-phone .tools.is-dock .fab,
+:root.is-phone .tools.is-dock.is-live .fab {
+  background: rgba(240, 240, 238, 0.24);
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 240, 238, 0.34),
+    0 6px 18px -10px rgba(0, 0, 0, 0.7);
+}
+:root.is-phone:not(.hover-cold) .fab:hover { background: rgba(240, 240, 238, 0.16); transform: none; }
+
+
+/* ==========================================================================
+   THE TWO PODS, QUIETER AND ALIKE
+   The grid and theme pods had two different looks: the grid pod filled in
+   solid when it was on, the theme pod never did, so one looked pressed and
+   the other did not while both were on — and the filled one pulled the eye
+   away from the type. Now they are one object: a faint film with a hairline,
+   no drop shadow, the glyph in the quiet grey. The state is carried by the
+   glyph alone — the grid's bars, the theme's half-disc — and a hover lifts
+   the ink, never the chip.
+   ========================================================================== */
+.tmode,
+.gridtog,
+.gridtog[aria-pressed='true'],
+.is-dark .tmode,
+.is-dark .gridtog,
+.is-dark .gridtog[aria-pressed='true'] {
+  background: rgba(20, 16, 12, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(20, 16, 12, 0.09);
+  color: var(--text-3);
+}
+.is-dark .tmode,
+.is-dark .gridtog,
+.is-dark .gridtog[aria-pressed='true'] {
+  background: rgba(240, 240, 238, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(240, 240, 238, 0.1);
+}
+.gridtog svg,
+.gridtog[aria-pressed='true'] svg { opacity: 1; }
+.tmode, .gridtog { transition: color 200ms var(--ease), transform 220ms var(--ease); }
+.tmode:hover,
+.gridtog:hover { color: var(--text-1); transform: none; }
+
+/* the hint sits inside the mat, with 1rem of air to its left and below it */
+:root.is-phone body[data-page='play'] .canvas__hint {
+  left: 1rem;
+  bottom: 1rem;
+}
+
+/* THE TOOLS BUTTON, INSIDE THE MAT AND WORTH PRESSING. It sat on the mat's
+   corner, touching its edge; it now stands a rem inside the field on both
+   sides, on the same line as the hint. And it is the house's primary object —
+   the light fill and dark glyph of the "Book a call" pill — because it is the
+   one control on this page, not a piece of chrome. Open, it steps back to the
+   quiet film so the panel above it is what you look at. */
+:root.is-phone body[data-page='play'] .tools {
+  right: calc(var(--sa-right, 0px) + var(--gut, 1.25rem) + 1rem);
+  bottom: calc(var(--sa-bottom, 0px) + var(--gut, 1.25rem) + 1rem);
+}
+:root.is-phone body[data-page='play'] .canvas__hint {
+  right: calc(1rem + 48px + 0.75rem);
+  /* centred on the button's line: the hint's two lines are about 40px */
+  bottom: calc(1rem + 4px);
+}
+:root.is-phone body[data-page='play'] .fab,
+:root.is-phone body[data-page='play'] .tools.is-live .fab {
+  background: var(--text-1, #f1f1ef);
+  color: var(--surface, #0f0f11);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 10px 24px -10px rgba(0, 0, 0, 0.8);
+}
+:root.is-phone body[data-page='play'] .tools.is-dock .fab,
+:root.is-phone body[data-page='play'] .tools.is-dock.is-live .fab {
+  background: rgba(240, 240, 238, 0.12);
+  color: var(--text-1, #f1f1ef);
+  box-shadow: inset 0 0 0 1px rgba(240, 240, 238, 0.2);
+}
