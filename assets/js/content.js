@@ -1576,7 +1576,7 @@ window.SITE = {
               tight: true,
               h: 'How do you launch a new product without '
                 + '<mark>cannibalising</mark> the flagship it sits next to?',
-              p: 'Not “how do you design an app?”', pat: 0.72 },
+              },
 
             /* THE BRIEF AS IT ARRIVED, and then eight questions that nobody
                had answered. The accumulation is the point — nothing leaves,
@@ -1648,19 +1648,7 @@ window.SITE = {
                   react: { e: '⚙️', c: 'br', d: 0.06 } },
               ] },
 
-            /* FIVE REQUIREMENTS, TWO OF WHICH CANNOT BOTH BE TRUE. The
-               contradiction is drawn as a hairline between the two lines
-               rather than explained underneath them. */
-            { id: 'x0-five', kind: 'stack', dur: 160,
-              kicker: 'Five things at once',
-              items: [
-                { t: 'Approachable.' },
-                { t: 'Modern.' },
-                { t: 'For everyone.' },
-                { t: 'Different from X1.', fight: true, tie: true },
-                { t: 'Unmistakably Cypherock.', fight: true },
-              ],
-              p: 'It had to look better than the flagship without embarrassing it.' },
+            /* (x0-five, "Five things at once", was removed from the study) */
             /* --- CHAPTER 03 · FINDING THE DIRECTION ---------------------------------
 
                THE TURN. Everything before this chapter is the problem; everything

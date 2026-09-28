@@ -24260,3 +24260,36 @@ body[data-page='notfound'] #main { min-height: 100svh; }
   }
   :root.is-phone .pvw__door .pvw__cta { width: 100%; justify-content: center; }
 }
+
+/* A FINGER CAN PICK A BRICK UP. Without this the browser claimed the touch
+   for scrolling the page before the pile ever saw it, so on a phone the
+   bricks could not be dragged. Only the bricks opt out; the page around
+   them still scrolls normally. */
+.pbrk { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* PHONE · the actual question: the "Not 'how do you design an app?'" line is dropped */
+@media (max-width: 46rem) { #x0-question .fg-p { display: none; } }
+
+/* THE STEPS' PICTURES ARE NOT ALL ONE SHAPE (1.67, 1.67, 1.49, 1.53), and the
+   frames were stacked so each one only faded IN — every earlier picture stayed
+   underneath, so a squarer screenshot sat on top of a wider dark one and the
+   wider one's edges read as the image being stretched. Each frame now also
+   fades OUT, just after the next one has fully arrived, so there is never a
+   white gap and never a picture showing behind another. */
+.fg-steps__f {
+  --wout: clamp(0, calc((var(--to) + 0.1 - var(--p)) * 14), 1);
+  opacity: min(var(--w), var(--wout));
+}
+.fg-steps__f:nth-child(1) { opacity: var(--wout); }
+@media (max-width: 46rem) {
+  #x0-ai .fg-steps__f:nth-child(1) { opacity: min(var(--w), var(--wout)); }
+}
+
+/* THE X1 VAULT SITS WITH ITS NOTE. It floated in the upper right, far from
+   anything; it now rests just above "Different experience", the stop it
+   belongs to, in the same corner of the composition. */
+.fg-dir__vault { top: 53%; left: 81%; width: 14%; }
+
+/* THE GRID POD HAS NOTHING TO DRAW ON A CASE STUDY. The film's scenes are
+   full-bleed compositions with no layout grid behind them, so the toggle did
+   nothing there; it is not shown on project pages at all. */
+body[data-page='project'] .gridtog { display: none !important; }

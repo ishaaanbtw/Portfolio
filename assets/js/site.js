@@ -17227,7 +17227,7 @@
      cannot override for its children — and run 0 → 1 once the stage comes
      into view. */
   const PhonePlay = {
-    SCENES: { 'x0-question': 1700, 'x0-ia': 4800 },
+    SCENES: { 'x0-question': 3400, 'x0-ia': 4800 },
     init() {
       if (!PHONE) return;
       Object.keys(this.SCENES).forEach((id) => {
@@ -17241,9 +17241,12 @@
         const io = new IntersectionObserver((es) => {
           if (!es.some((e) => e.isIntersecting)) return;
           io.disconnect();
-          RivalsPhone.tween(0, 1, this.SCENES[id], set, null, id === 'x0-ia');
-        }, { threshold: 0.25 });
-        io.observe(stage);
+          RivalsPhone.tween(0, 1, this.SCENES[id], set, null, true);
+        }, { threshold: 0.6 });
+        /* WATCH THE WORDS, NOT THE FRAME. The frame is taller than the text
+           and centred around it, so a quarter of the frame on screen meant
+           the animation had already run by the time the words scrolled in. */
+        io.observe(scn.querySelector('.scn__in') || stage);
       });
     },
   };
@@ -21271,7 +21274,10 @@
        which page you were on. Three of `TONE` is the same restraint without
        the second palette: red, blue and yellow, which is what a handful of
        this toy looks like anyway. */
-    COLS: [TONE[0], TONE[1], TONE[2]],
+    /* THE PLAY DESK'S BRICKS, ALL OF THEM. The landing pile now uses the same
+       eight colours as the desk (and the long bar), so it is visibly the same
+       set of Lego on every page. */
+    COLS: TONE.slice(),
 
     /* --- AND THE SHAPES ARE THE SITE'S PIECES ---------------------------
 
@@ -21283,7 +21289,7 @@
        a T would collide as the rectangle that contains it and leave a visible
        gap no one could push a brick into. The bag is weighted the way a real
        handful is: mostly short bars, a couple of two-deep pieces. */
-    BAG: ['small', 'small', 'p13', 'p13', 'p14', 'p14', 'conn', 'sq2', 'br24'],
+    BAG: ['small', 'small', 'p13', 'p13', 'p14', 'p14', 'conn', 'sq2', 'br24', 'long'],
 
     init(host, opts) {
       if (!host || this.host) return;
