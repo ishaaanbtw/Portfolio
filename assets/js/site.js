@@ -9789,6 +9789,167 @@
     return h1;
   };
 
+  /* --- DECODE: "a product designer who engineers." -> "with 2.5 years of
+     experience." ------------------------------------------------------------
+
+     DESKTOP ONLY, ON HOVER. Pointing at "product designer" scrambles the rest
+     of the sentence through glitch characters in the LEGO colours and settles
+     it, left to right, into the years of experience; leaving the statement
+     scrambles it back. Word for word: each of the six word spans after
+     "Ishaan," is decoded into its counterpart, so the entrance animation, the
+     line break and the italic span are all the page's own. The statement is
+     held at a fixed height so nothing below it can move mid-scramble. A phone
+     never sees this (no hover); reduced motion gets a plain swap. */
+  const Decode = {
+    FROM: ['a', 'product', 'designer', 'who', 'engineers', '.'],
+    TO: ['with', '2.5', 'years', 'of', 'experience', '.'],
+    GLYPH: '!<>-_/[]{}=+*^?#$%&0123456789abcdefxyz',
+    COLS: ['#1f74e0', '#f6c417', '#e0392b'],
+    mount(say) {
+      if (!say || this.el) return;
+      if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+      if (document.documentElement.classList.contains('is-phone')) return;
+      const words = $$('.rw', say);
+      const at = words.findIndex((w) => w.textContent.trim() === 'a');
+      const spans = words.slice(at, at + this.FROM.length);
+      if (at < 0 || spans.length !== this.FROM.length
+        || spans.some((w, k) => w.textContent.trim() !== this.FROM[k])) return;
+      /* each span keeps its own surrounding spaces in both states */
+      const pad = spans.map((w) => {
+        const t = w.textContent;
+        return [t.match(/^\s*/)[0], t.match(/\s*$/)[0]];
+      });
+      this.spans = spans;
+      this.A = spans.map((w) => w.textContent);
+      this.B = this.TO.map((t, k) => pad[k][0] + t + pad[k][1]);
+      this.shown = this.A;
+      const h1 = spans[0].closest('h1') || say;
+      this.h1 = h1;
+      /* ENTER ON "product designer", LEAVE ON THE WHOLE STATEMENT: the words
+         change width as they decode and move under the pointer, and leaving
+         on them would flip the text straight back */
+      [spans[1], spans[2]].forEach((w) => {
+        w.classList.add('xp');
+        w.addEventListener('mouseenter', () => { this.found = true; this.run(this.B); });
+      });
+      this.tease();
+      h1.addEventListener('mouseleave', () => this.run(this.A));
+      this.el = h1;
+      /* A FIXED HEIGHT, the taller of the two settled sentences, so a frame of
+         wide glyphs can never push the buttons down */
+      this.fit = () => {
+        h1.style.height = '';
+        const keep = this.shown;
+        this.set(this.A);
+        const hA = h1.offsetHeight;
+        this.set(this.B);
+        const hB = h1.offsetHeight;
+        this.set(keep);
+        h1.style.height = `${Math.max(hA, hB)}px`;
+        h1.style.overflow = 'visible';
+      };
+      requestAnimationFrame(this.fit);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(this.fit);
+      addEventListener('resize', () => { if (!this.raf) this.fit(); }, { passive: true });
+    },
+    /* --- THE NUDGE ------------------------------------------------------
+       Nobody hovers a sentence they have no reason to think is alive. So every
+       eight seconds or so, one or two letters of "product designer" flicker
+       into LEGO-coloured glitch characters for a fraction of a second and
+       settle back: a hint of what is under them. The first comes once the
+       entrance has played; the moment the visitor hovers the phrase it stops
+       for good. It never runs while the sentence is decoding, while the tab is
+       hidden, or for anyone who asked for less motion. */
+    tease() {
+      if (REDUCED) return;
+      const next = (ms) => { this._tz = setTimeout(blip, ms); };
+      const blip = () => {
+        if (this.found) return;
+        if (document.hidden || this.raf || this.target === this.B) { next(2500); return; }
+        const [p, d] = [this.spans[1], this.spans[2]];
+        const orig = [p.textContent, d.textContent];
+        const pick = [];
+        const n = 1 + (Math.random() < 0.6 ? 1 : 0);
+        while (pick.length < n) {
+          const w = (Math.random() * 2) | 0;
+          const c = (Math.random() * orig[w].trim().length) | 0;
+          if (!pick.some((q) => q[0] === w && q[1] === c)) pick.push([w, c]);
+        }
+        const rnd = (a) => a[(Math.random() * a.length) | 0];
+        let steps = 0;
+        const draw = () => {
+          [p, d].forEach((el2, w) => {
+            el2.innerHTML = orig[w].split('').map((ch, c) => (pick.some((q) => q[0] === w && q[1] === c)
+              ? `<span class="xp__c" style="color:${rnd(this.COLS)}">${esc(rnd(this.GLYPH))}</span>`
+              : esc(ch))).join('');
+          });
+        };
+        const tick = () => {
+          if (this.found || this.raf) { p.textContent = orig[0]; d.textContent = orig[1]; return; }
+          if (steps++ < 5) { draw(); setTimeout(tick, 60); return; }
+          p.textContent = orig[0];
+          d.textContent = orig[1];
+          next(7000 + Math.random() * 3000);
+        };
+        tick();
+      };
+      next(3200);
+    },
+
+    set(list) {
+      h1Cls(this.h1, list === this.B);
+      this.spans.forEach((w, k) => { w.textContent = list[k]; });
+    },
+    run(to) {
+      if (to === this.target) return;
+      this.target = to;
+      cancelAnimationFrame(this.raf);
+      if (REDUCED) { this.shown = to; this.set(to); return; }
+      const from = this.shown;
+      /* the new sentence is upright; "engineers" goes back to italic only once
+         the old one has fully returned */
+      if (to === this.B) h1Cls(this.h1, true);
+      const t0 = performance.now();
+      let off = 0;
+      const plan = this.spans.map((w, k) => {
+        const n = Math.max(from[k].length, to[k].length);
+        const p = Array.from({ length: n }, (_, c) => ({
+          start: (off + c) * 9 + Math.random() * 40,
+          end: 160 + (off + c) * 16 + Math.random() * 80,
+        }));
+        off += n;
+        return p;
+      });
+      const rnd = (a) => a[(Math.random() * a.length) | 0];
+      const frame = (now) => {
+        const t = now - t0;
+        let done = true;
+        this.spans.forEach((w, k) => {
+          const f = from[k], g = to[k];
+          let html = '';
+          plan[k].forEach((P, c) => {
+            const want = g[c] || '';
+            if (t >= P.end) { html += esc(want); return; }
+            done = false;
+            if (t < P.start) { html += esc(f[c] || ''); return; }
+            if (/\s/.test(want) || (!want && Math.random() < 0.5)) { html += esc(want); return; }
+            html += `<span class="xp__c" style="color:${rnd(this.COLS)}">${esc(rnd(this.GLYPH))}</span>`;
+          });
+          w.innerHTML = html;
+        });
+        if (done) {
+          this.shown = to;
+          this.raf = 0;
+          this.set(to);
+          return;
+        }
+        this.raf = requestAnimationFrame(frame);
+      };
+      this.raf = requestAnimationFrame(frame);
+    },
+  };
+  function h1Cls(h1, on) { if (h1) h1.classList.toggle('xp-b', !!on); }
+
   /* ==========================================================================
      PEEL — the stickers around the headline
      ==========================================================================
@@ -18848,6 +19009,7 @@
          canvas's, so the line arrives the way every other line on the site
          does — there is one entrance, not a second one for this page. */
       say.appendChild(headline(c.say, (S.canvas && S.canvas.reveal) || {}));
+      Decode.mount(say);
       keep.appendChild(say);
 
       const cta = el('div', { class: 'mast__cta', 'data-wall': '' });

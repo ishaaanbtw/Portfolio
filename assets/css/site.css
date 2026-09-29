@@ -24566,3 +24566,8 @@ body:not([data-page='home']) .lfoot { display: none; }
   margin: 0 !important;
   text-align: right;
 }
+
+/* the decoding phrase in the statement (desktop hover) */
+.xp { cursor: default; outline: none; }
+.xp__c { font-style: normal; }
+.xp-b .hdl-em { font-style: normal; }
