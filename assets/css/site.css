@@ -24370,7 +24370,8 @@ body[data-page='project'] .gridtog { display: none !important; }
   margin: 0.9rem calc(-1 * var(--mast-pad)) calc(-1 * (var(--mast-pad) + var(--sa-bottom, 0px)));
   min-width: 0;
 }
-body:not([data-page='home']) .lfoot { display: none; }
+/* on every section of the shell; a phone's Play desk is full-screen, so not there */
+:root.is-phone body[data-page='play'] .lfoot { display: none; }
 .lfoot__floor {
   position: relative;
   /* 24 studs across and six courses tall (five of bricks, one of air), so the
@@ -24380,8 +24381,8 @@ body:not([data-page='home']) .lfoot { display: none; }
 /* THE PODS SIT ON THE BYLINE'S LINE, so on the home section, where the floor
    now lies under the byline, they are lifted by the floor's height with it */
 @media (min-width: 60.0625rem) {
-  body[data-page='home']:has(.lfoot) .gridtog,
-  body[data-page='home']:has(.lfoot) .tmode {
+  body:has(.mast .lfoot) .gridtog,
+  body:has(.mast .lfoot) .tmode {
     bottom: calc(var(--mast-w) / 4 + 0.9rem - 0.423rem);
   }
 }
@@ -24571,3 +24572,135 @@ body:not([data-page='home']) .lfoot { display: none; }
 .xp { cursor: default; outline: none; }
 .xp__c { font-style: normal; }
 .xp-b .hdl-em { font-style: normal; }
+
+
+/* ==========================================================================
+   LEGO IN THE NAVIGATION
+   The travelling marker is a 1x1 brick seen from above, in the section's
+   colour; its spring and hop are unchanged. Under the Links list, a small
+   side-on stack records the sections visited this session.
+   ========================================================================== */
+.mast__mark,
+.is-dark .mast__mark {
+  display: flex;
+  width: auto;
+  height: 9px;
+  background: none;
+  box-shadow: none;
+}
+/* one 1x1 per switch, joined edge to edge into a single bar */
+.mast__stud {
+  position: relative;
+  display: block;
+  width: 9px;
+  height: 9px;
+  background: var(--b, #1f74e0);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+}
+.mast__stud:first-child { border-radius: 1.5px 0 0 1.5px; }
+.mast__stud:last-child { border-radius: 0 1.5px 1.5px 0; }
+.mast__stud:only-child { border-radius: 1.5px; }
+.mast__stud + .mast__stud { box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28),
+    inset 1px 0 0 rgba(0, 0, 0, 0.22); }
+.mast__stud::after {
+  content: '';
+  position: absolute;
+  left: 2px; top: 2px;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--b, #1f74e0);
+  box-shadow:
+    inset 0 0.75px 0 rgba(255, 255, 255, 0.45),
+    0 0.75px 1px rgba(0, 0, 0, 0.4);
+}
+/* the new piece arrives just after the hop lands: dropped on, then clicked in */
+.mast__stud.is-new { animation: stud-snap 380ms cubic-bezier(0.34, 1.7, 0.64, 1) 240ms both; }
+@keyframes stud-snap {
+  from { transform: translate(3px, -7px) scale(0.85); opacity: 0; }
+  55% { opacity: 1; }
+  to { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .mast__stud.is-new { animation: none; } }
+/* the half left behind on a split: it stays on the old row and fades */
+.mast__ghost { animation: stud-leave 420ms ease-out both; }
+.mast__ghost.is-fast { animation-duration: 200ms; }
+.mast__ghost .mast__stud { border-radius: 1.5px; }
+@keyframes stud-leave {
+  to { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .mast__ghost { display: none; } }
+
+/* the closing line's swapping word keeps a steady width so the line does not shiver */
+.flip { display: inline-block; min-width: 4ch; }
+
+/* ==========================================================================
+   THE WORK, ROW BY ROW
+   Six tracks; every row sets its own height as a share of the grid's width
+   (`--rh`, from content.js) and every cell its own span, so the rows never
+   repeat a rhythm. The pictures fill their cells at the row's height; the
+   captions sit under them. Empty frames hold unfilled cells: the card's
+   radius, a 2% film, a hairline, nothing to press. On a phone the rows fold
+   into one list of the real projects, each back at its own proportion.
+   ========================================================================== */
+.home__work .showcase__grid--rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2.375rem;
+  width: 100%;
+}
+/* the heights are shares of the work column's width, so it is the container */
+.home__work:has(.showcase__grid--rows) { container-type: inline-size; }
+.home__work .showcase:has(.showcase__grid--rows) { width: 100%; }
+.srow { width: 100%; }
+/* A SOLVED ROW: every cell grows in proportion to its own aspect ratio
+   (`--w`), so the pictures in a row come out the same height and none is
+   cropped. A COMPOSED ROW (`srow--cols`) takes its columns from content.js
+   and lets a stack on the right run down to the height of the left. */
+.srow {
+  display: flex;
+  gap: 0.9375rem;
+  align-items: flex-start;
+  width: 100%;
+}
+.srow > * { flex: var(--w, 1) 1 0; min-width: 0; }
+.srow--cols { display: grid; align-items: stretch; }
+.sstack { display: flex; flex-direction: column; gap: 2.375rem; min-width: 0; }
+.sstack > .wcard { flex: none; }
+.sstack > .wph { flex: 1 1 auto; aspect-ratio: auto; min-height: 5rem; }
+.wph {
+  aspect-ratio: var(--ratio, 1.2);
+  border-radius: 4px;
+  background: rgba(20, 16, 12, 0.03);
+  box-shadow: inset 0 0 0 1px rgba(20, 16, 12, 0.06);
+  pointer-events: none;
+  user-select: none;
+}
+.is-dark .wph {
+  background: rgba(240, 240, 238, 0.025);
+  box-shadow: inset 0 0 0 1px rgba(240, 240, 238, 0.05);
+}
+@media (max-width: 40rem) {
+  .srow, .srow--cols, .sstack { display: flex; flex-direction: column; align-items: stretch; gap: 1.5rem; }
+  .srow > *, .sstack > * { width: 100%; flex: none; }
+  .home__work .srow .wcard .wcard__media { height: auto; aspect-ratio: var(--ratio, 1.45); }
+  .wph { display: none; }
+  .srow:not(:has(.wcard)) { display: none; }
+  .home__work .showcase__grid--rows { gap: 1.5rem; }
+}
+:root.is-phone .wph { display: none; }
+
+
+/* phones fold the stacks into one list of real projects: no empty frames */
+@media (max-width: 40rem) { .home__work .showcase__col .wph { display: none; } }
+:root.is-phone .home__work .showcase__col .wph { display: none; }
+
+/* the case-study index: the landing's travelling brick replaces the row dot */
+.rail__list.has-mk { position: relative; }
+.rail__list.has-mk .rail__dot { display: none; }
+.rail__mk { z-index: 1; }
+.rail[data-on='0'] .rail__mk { opacity: 0; }
+.rail__list.has-mk .rail__mark { display: none; }

@@ -178,8 +178,7 @@ window.SITE = {
     ],
     /* two lines, present tense */
     now: [
-      'Currently designing at Cypherock.',
-      'Based in Gurugram.',
+      'made w/ hate',
     ],
     fine: '© Ishaan Gupta {year}',
   },
@@ -604,6 +603,14 @@ window.SITE = {
      To point a card at a file outside that folder, give it `thumb:` with an
      explicit path; the convention is then skipped for that card.            */
   showcase: {
+    /* EMPTY FRAMES, UNTIL THERE IS MORE WORK. Quiet rectangles appended
+       under each stack's projects so the two stacks read as a wall of work.
+       Not links, not focusable, no hover; each is [stack, proportion]. Delete
+       a line when a real project takes its place. */
+    placeholders: [
+      ['a', 1.1], ['a', 1.6],
+      ['b', 0.9], ['b', 1.4],
+    ],
     items: [
       /* --------------------------------------------------- X0 digital identity
          The only moving thumbnail on the grid: assets/media/x0/companion-thumb.mp4,

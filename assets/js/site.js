@@ -2033,6 +2033,7 @@
          appended column by column, so moving it to the front of the list
          changes only its own column */
       const items = [...data.items.filter((i) => i.lead), ...data.items.filter((i) => !i.lead)];
+      const byTitle = {};
       items.forEach((item) => {
         const wip = !!item.wip;
         const card = el('a', {
@@ -2057,8 +2058,8 @@
             `<i></i>${esc(item.wip.label)}`));
           WipCursor.bind(card, item.wip);
           /* THE KNOCK. Every click is held for a beat so the fifth can still
-             win; a click that is not followed by another within the beat is
-             an ordinary one and goes where the tile points (the email). */
+             win; a click that is not followed by another within the beat does
+             nothing at all. */
           let knocks = 0, timer = 0;
           card.addEventListener('click', (e) => {
             if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -2070,11 +2071,9 @@
               location.href = projectHref(item.study.slug);
               return;
             }
-            timer = setTimeout(() => {
-              const first = knocks === 1;
-              knocks = 0;
-              if (first) location.href = item.wip.href;
-            }, 450);
+            /* a single click goes nowhere: the tile is in progress, and the
+               cursor note already says so. Only the fifth knock opens it. */
+            timer = setTimeout(() => { knocks = 0; }, 450);
           });
         }
         card.appendChild(media);
@@ -2112,9 +2111,52 @@
             Preview.show(item, card);
           });
         }
-        cols[item.col === 'b' ? 1 : 0].appendChild(card);
+        if (data.layout) byTitle[item.title] = card;
+        else cols[item.col === 'b' ? 1 : 0].appendChild(card);
         this.cards.push({ el: card, sp: null, last: -1 });
       });
+
+      /* ROWS, WHEN content.js DRAWS THEM: an irregular composition, row by
+         row, in place of the stacks — see `showcase.layout` */
+      /* the empty frames that fill the stacks out (see content.js) */
+      if (!data.layout) {
+        (data.placeholders || []).forEach(([c, ratio]) => {
+          const ph = el('div', { class: 'wph', 'aria-hidden': 'true' });
+          ph.style.setProperty('--ratio', ratio);
+          cols[c === 'b' ? 1 : 0].appendChild(ph);
+        });
+      }
+      if (data.layout) {
+        grid.innerHTML = '';
+        grid.classList.add('showcase__grid--rows');
+        const make = ([title, ratio]) => {
+          if (title) {
+            const node = byTitle[title];
+            if (!node) return null;
+            const it = data.items.find((x) => x.title === title) || {};
+            node.style.setProperty('--w', it.ratio || 1.45);
+            return node;
+          }
+          const ph = el('div', { class: 'wph', 'aria-hidden': 'true' });
+          if (ratio) { ph.style.setProperty('--ratio', ratio); ph.style.setProperty('--w', ratio); }
+          return ph;
+        };
+        data.layout.forEach((row) => {
+          const r = el('div', { class: `srow${row.cols ? ' srow--cols' : ''}` });
+          if (row.cols) r.style.gridTemplateColumns = row.cols;
+          row.cells.forEach((cell) => {
+            if (cell && cell.stack) {
+              const st = el('div', { class: 'sstack' });
+              cell.stack.forEach((c) => { const n = make(c); if (n) st.appendChild(n); });
+              r.appendChild(st);
+              return;
+            }
+            const n = make(cell);
+            if (n) r.appendChild(n);
+          });
+          grid.appendChild(r);
+        });
+      }
 
       section.appendChild(grid);
       mount.appendChild(section);
@@ -9787,6 +9829,206 @@
       if (host !== h1) h1.appendChild(host);
     }
     return h1;
+  };
+
+  /* THE BRICK FLOOR AT THE FOOT OF THE SIDEBAR. Part of the shell, not of
+     one section: it is built once, whichever section the tab opened on, and
+     stays put while Work, About and Play swap beside it. */
+  const LegoFloor = {
+    mount() {
+      const shell = Rail.el;
+    if (shell && !$('.lfoot', shell)) {
+      const foot = el('section', { class: 'lfoot', 'aria-hidden': 'true' });
+      const floor = el('div', { class: 'lfoot__floor', 'aria-hidden': 'true' });
+      foot.appendChild(floor);
+      shell.appendChild(foot);
+
+      const opts = () => ({
+      wall: true,
+      cols: ['#1f74e0', '#f6c417', '#e0392b'],
+      /* THE ARRANGEMENT, EXACTLY AS DRAWN. Bottom course first; each brick
+         is [first stud, studs, colour] with 0 blue, 1 yellow, 2 red. */
+      span: 26,
+      layout: [
+        [[0, 3, 2], [3, 3, 1], [6, 4, 0], [10, 2, 2], [12, 5, 1], [17, 3, 0], [20, 4, 2], [24, 2, 1]],
+        [[0, 4, 2], [4, 5, 1], [9, 1, 0], [10, 3, 2], [13, 4, 0], [17, 2, 1], [19, 5, 2], [24, 2, 1]],
+        [[0, 1, 1], [7, 4, 0], [11, 2, 2], [13, 3, 1], [20, 2, 1], [22, 4, 0]],
+        [[0, 4, 0], [9, 5, 1], [16, 5, 2], [23, 3, 2]],
+        [[0, 2, 0], [12, 1, 2], [13, 3, 0], [23, 2, 1]],
+      ],
+      /* small studs, as in the reference: about 15px on a phone */
+      /* THE SAME COMPOSITION AT EVERY WIDTH: the box is always exactly
+         24 studs across, so the drawing is never cropped differently on
+         a laptop and a phone — the studs scale instead */
+      unit: (r) => r.width / 24,
+      });
+      const deal = () => requestAnimationFrame(() => Pile.init(floor, opts()));
+      if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((es) => {
+        if (!es.some((e2) => e2.isIntersecting)) return;
+        io.disconnect();
+        deal();
+      }, { rootMargin: '0px 0px 120px 0px' });
+      io.observe(floor);
+      } else deal();
+
+    }
+    },
+  };
+
+  /* --- "made w/ hate" <-> "made w/ love" ------------------------------
+     The closing line argues with itself: every few seconds the last word
+     scrambles through LEGO-coloured glitch characters (the same decode as the
+     statement) and settles into the other one. Automatic, so a phone sees it
+     too; paused while the tab is hidden; a plain swap for reduced motion. */
+  const Flip = {
+    WORDS: ['hate', 'love'],
+    GLYPH: '!<>-_/[]{}=+*^?#$%&0123456789',
+    COLS: ['#1f74e0', '#f6c417', '#e0392b'],
+    mount(foot) {
+      if (!foot || this.el) return;
+      const line = [...foot.querySelectorAll('p')].find((n) => /\bhate\b/.test(n.textContent));
+      if (!line) return;
+      line.innerHTML = esc(line.textContent).replace(/\bhate\b/, '<span class="flip">hate</span>');
+      this.el = $('.flip', line);
+      this.i = 0;
+      this.loop();
+    },
+    loop() {
+      clearTimeout(this.t);
+      this.t = setTimeout(() => {
+        if (document.hidden) { this.loop(); return; }
+        this.i = (this.i + 1) % this.WORDS.length;
+        this.run(this.WORDS[this.i], () => this.loop());
+      }, 3200);
+    },
+    run(to, done) {
+      const from = this.el.textContent;
+      if (REDUCED) { this.el.textContent = to; done(); return; }
+      const n = Math.max(from.length, to.length);
+      const plan = Array.from({ length: n }, (_, k) => ({
+        start: k * 30 + Math.random() * 40,
+        end: 260 + k * 70 + Math.random() * 60,
+      }));
+      const rnd = (a) => a[(Math.random() * a.length) | 0];
+      const t0 = performance.now();
+      const frame = (now) => {
+        const t = now - t0;
+        let busy = false;
+        let html = '';
+        plan.forEach((P, k) => {
+          if (t >= P.end) { html += esc(to[k] || ''); return; }
+          busy = true;
+          if (t < P.start) { html += esc(from[k] || ''); return; }
+          html += `<span class="xp__c" style="color:${rnd(this.COLS)}">${esc(rnd(this.GLYPH))}</span>`;
+        });
+        this.el.innerHTML = html;
+        if (busy) requestAnimationFrame(frame);
+        else { this.el.textContent = to; done(); }
+      };
+      requestAnimationFrame(frame);
+    },
+  };
+
+  /* --- THE CASE STUDY'S INDEX WEARS THE SAME BRICK -------------------
+     The contents rail on a project page marks the section you are reading
+     with the landing navigation's own marker: a 1x1 brick that hops between
+     rows on the same arc, then — on landing — a 1x1 in the new section's
+     colour clicks onto it and, after a beat, the old half lets go. It
+     replaces the rail's per-row dot. Section colours cycle through the three
+     LEGO colours down the list. */
+  const RailMark = {
+    TONES: ['#1f74e0', '#f6c417', '#e0392b'],
+    init() {
+      $$('.rail__list').forEach((list) => this.attach(list));
+    },
+    attach(list) {
+      if (list.__mk) return;
+      const links = $$('.rail__link', list);
+      if (!links.length) return;
+      list.classList.add('has-mk');
+      const mk = el('i', { class: 'mast__mark rail__mk', 'aria-hidden': 'true' });
+      list.appendChild(mk);
+      const st = { list, links, mk, x: 0, y: 0, at: -1, raf: 0, dt: 0 };
+      list.__mk = st;
+      const tone = (i) => this.TONES[i % this.TONES.length];
+      const cell = (i, fresh) => {
+        const c = el('b', { class: `mast__stud${fresh ? ' is-new' : ''}` });
+        c.style.setProperty('--b', tone(i));
+        c.dataset.i = String(i);
+        return c;
+      };
+      const pos = (a) => {
+        let w = 0;
+        try { const r = document.createRange(); r.selectNodeContents(a.firstChild || a); w = r.getBoundingClientRect().width; }
+        catch (e) { w = a.offsetWidth; }
+        return { x: a.offsetLeft + w + 7, y: a.offsetTop + (a.offsetHeight - 9) / 2 };
+      };
+      const paint = () => { mk.style.transform = `translate3d(${st.x.toFixed(2)}px, ${st.y.toFixed(2)}px, 0)`; };
+      const detach = (fast) => {
+        clearTimeout(st.dt);
+        if (mk.children.length < 2) return;
+        const old = mk.children[0];
+        const keep = mk.children[mk.children.length - 1];
+        const ghost = el('i', { class: `mast__mark rail__mk mast__ghost${fast ? ' is-fast' : ''}`, 'aria-hidden': 'true' });
+        ghost.style.transform = mk.style.transform;
+        const g = old.cloneNode(true); g.classList.remove('is-new'); ghost.appendChild(g);
+        list.insertBefore(ghost, mk);
+        setTimeout(() => ghost.remove(), 460);
+        old.remove();
+        if (!fast && !REDUCED) {
+          keep.classList.remove('is-new');
+          keep.style.transition = 'none';
+          keep.style.transform = 'translateX(9px)';
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            keep.style.transition = 'transform 360ms cubic-bezier(0.22, 1, 0.36, 1)';
+            keep.style.transform = '';
+          }));
+        }
+      };
+      const go = (i, now) => {
+        const a = links[i];
+        if (!a || !a.offsetParent) return;
+        const p = pos(a);
+        if (st.at < 0 || now || REDUCED) {
+          st.x = p.x; st.y = p.y; paint();
+          if (st.at < 0 || !mk.children.length) { mk.innerHTML = ''; mk.appendChild(cell(i, false)); }
+          st.at = i;
+          return;
+        }
+        if (i === st.at) { st.x = p.x; st.y = p.y; paint(); return; }
+        /* the hop: the landing navigation's arc, measured the same way */
+        const x0 = st.x, y0 = st.y;
+        const dy = Math.abs(p.y - y0);
+        const bow = 5 + Math.min(dy, 120) * 0.1;
+        const dur = 300 + Math.min(dy, 120) * 0.9;
+        const t0 = performance.now();
+        cancelAnimationFrame(st.raf);
+        const step = (t) => {
+          const k = Math.min(1, (t - t0) / dur);
+          st.x = x0 + (p.x - x0) * GLIDE(k) + bow * Math.sin(Math.PI * k);
+          st.y = y0 + (p.y - y0) * GLIDE(k);
+          paint();
+          if (k < 1) st.raf = requestAnimationFrame(step);
+        };
+        st.raf = requestAnimationFrame(step);
+        /* and the snap: one new stud on landing, the old one lets go later */
+        if (mk.children.length > 1) detach(true);
+        mk.appendChild(cell(i, true));
+        clearTimeout(st.dt);
+        st.dt = setTimeout(() => detach(false), 1700);
+        st.at = i;
+      };
+      const current = () => links.findIndex((a) => a.classList.contains('is-active'));
+      new MutationObserver(() => {
+        const i = current();
+        if (i >= 0 && i !== st.at) go(i);
+      }).observe(list, { attributes: true, attributeFilter: ['class'], subtree: true });
+      const place = () => { const i = current(); if (i >= 0) { st.at = st.at < 0 ? -1 : st.at; go(i, true); } };
+      requestAnimationFrame(place);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(place).catch(() => {});
+      addEventListener('resize', place, { passive: true });
+    },
   };
 
   /* --- DECODE: "a product designer who engineers." -> "with 2.5 years of
@@ -19104,6 +19346,7 @@
       foot.appendChild(el('p', { class: 'mast__fine' },
         esc(String(c.fine || '').replace('{year}', new Date().getFullYear()))));
       mast.appendChild(foot);
+      Flip.mount(foot);
 
       this.el = mast;
       return mast;
@@ -19159,14 +19402,72 @@
      IT IS MEASURED OFF THE LAYOUT. `offsetLeft` and a Range over the row's
      text give the untransformed position.
      ---------------------------------------------------------------------- */
+  /* one LEGO colour per section: the marker and the visit pile share them */
+  const SECTION_TONE = { home: '#1f74e0', work: '#1f74e0', about: '#f6c417', play: '#e0392b' };
+
   const Mark = {
     el: null,
     x: null,
     y: null,
     row: null,
 
+    /* --- THE MARKER IS A BRICK THAT CONNECTS, THEN LETS GO -------------
+       At rest it is one 1x1 in the colour of the section you are on. Switch
+       and it makes its usual hop carrying the old colour; on landing a 1x1 in
+       the new section's colour drops onto its end and clicks in, a 1x2 for a
+       moment. Stay, and after a beat the old half lets go: it fades where it
+       is and the new brick slides home against the word. Switch again before
+       that and the old half simply drops away first. The hop is untouched. */
+    cell(pg, fresh) {
+      const c = el('b', { class: `mast__stud${fresh ? ' is-new' : ''}` });
+      c.style.setProperty('--b', SECTION_TONE[pg] || SECTION_TONE.home);
+      c.dataset.pg = pg;
+      return c;
+    },
+    /* the first stud comes off: a faded copy stays on the spot and the
+       remaining stud slides left into the place the old one held */
+    detach(fast) {
+      clearTimeout(this._dt);
+      const kids = this.el.children;
+      if (kids.length < 2) return;
+      const old = kids[0];
+      const keep = kids[kids.length - 1];
+      if (this.el.parentElement) {
+        const ghost = el('i', { class: `mast__mark mast__ghost${fast ? ' is-fast' : ''}`, 'aria-hidden': 'true' });
+        ghost.style.transform = this.el.style.transform;
+        const g = old.cloneNode(true);
+        g.classList.remove('is-new');
+        ghost.appendChild(g);
+        this.el.parentElement.insertBefore(ghost, this.el);
+        setTimeout(() => ghost.remove(), 460);
+      }
+      old.remove();
+      if (!fast && !REDUCED) {
+        keep.classList.remove('is-new');
+        keep.style.transition = 'none';
+        keep.style.transform = 'translateX(9px)';
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          keep.style.transition = 'transform 360ms cubic-bezier(0.22, 1, 0.36, 1)';
+          keep.style.transform = '';
+        }));
+      }
+    },
+    grow(page) {
+      if (!this.el || !SECTION_TONE[page]) return;
+      const key = page === 'work' ? 'home' : page;
+      const last = this.el.lastElementChild;
+      if (last && last.dataset.pg === key) return;
+      /* a switch before the last pair let go: that pair's old half goes now */
+      if (this.el.children.length > 1) this.detach(true);
+      this.el.appendChild(this.cell(key, true));
+      clearTimeout(this._dt);
+      this._dt = setTimeout(() => this.detach(false), 1700);
+    },
+
     mount() {
       this.el = el('i', { class: 'mast__mark', 'aria-hidden': 'true' });
+      const here = Shell.page === 'work' ? 'home' : Shell.page;
+      this.el.appendChild(this.cell(SECTION_TONE[here] ? here : 'home', false));
       /* Measuring before the sidebar is in the document gives zeroes, and a
          square that starts at the top-left corner of the list and springs down
          to Work is an entrance nobody asked for. The first placement is
@@ -19204,7 +19505,7 @@
       } catch (e) { w = a.offsetWidth; }
       return {
         x: a.offsetLeft + w + 7,
-        y: a.offsetTop + (a.offsetHeight - 5) / 2,
+        y: a.offsetTop + (a.offsetHeight - (this.el.offsetHeight || 5)) / 2,
       };
     },
 
@@ -19222,6 +19523,7 @@
          corner. */
       if (!want) return;
       this.row = want;
+
       const p = this.at(want);
       if (!p) return;
 
@@ -22815,6 +23117,7 @@
          "did my click land", and an answer that arrives 300ms later is a
          button that feels broken. */
       Rail.mark(page);
+      Mark.grow(page);
 
       const prev = Stage.built[from] || null;
       const swap = () => {
@@ -22982,43 +23285,7 @@
          of the window; on a phone the column dissolves into the page, so the
          same element simply comes after the © line and runs the width of the
          screen. Hidden on every other section by the stylesheet. */
-      const shell = Rail.el || work.closest('.home');
-      if (shell && !$('.lfoot', shell)) {
-        const foot = el('section', { class: 'lfoot', 'aria-hidden': 'true' });
-        const floor = el('div', { class: 'lfoot__floor', 'aria-hidden': 'true' });
-        foot.appendChild(floor);
-        shell.appendChild(foot);
-
-        const opts = () => ({
-          wall: true,
-          cols: ['#1f74e0', '#f6c417', '#e0392b'],
-          /* THE ARRANGEMENT, EXACTLY AS DRAWN. Bottom course first; each brick
-             is [first stud, studs, colour] with 0 blue, 1 yellow, 2 red. */
-          span: 26,
-          layout: [
-            [[0, 3, 2], [3, 3, 1], [6, 4, 0], [10, 2, 2], [12, 5, 1], [17, 3, 0], [20, 4, 2], [24, 2, 1]],
-            [[0, 4, 2], [4, 5, 1], [9, 1, 0], [10, 3, 2], [13, 4, 0], [17, 2, 1], [19, 5, 2], [24, 2, 1]],
-            [[0, 1, 1], [7, 4, 0], [11, 2, 2], [13, 3, 1], [20, 2, 1], [22, 4, 0]],
-            [[0, 4, 0], [9, 5, 1], [16, 5, 2], [23, 3, 2]],
-            [[0, 2, 0], [12, 1, 2], [13, 3, 0], [23, 2, 1]],
-          ],
-          /* small studs, as in the reference: about 15px on a phone */
-          /* THE SAME COMPOSITION AT EVERY WIDTH: the box is always exactly
-             24 studs across, so the drawing is never cropped differently on
-             a laptop and a phone — the studs scale instead */
-          unit: (r) => r.width / 24,
-        });
-        const deal = () => requestAnimationFrame(() => Pile.init(floor, opts()));
-        if ('IntersectionObserver' in window) {
-          const io = new IntersectionObserver((es) => {
-            if (!es.some((e2) => e2.isIntersecting)) return;
-            io.disconnect();
-            deal();
-          }, { rootMargin: '0px 0px 120px 0px' });
-          io.observe(floor);
-        } else deal();
-
-      }
+      LegoFloor.mount();
 
       /* AND NO FOOTER. `index.html` no longer has the `#foot` element, so
          `Shell.foot()` finds nothing and returns — the closing lines are the
@@ -23967,6 +24234,7 @@
     /* last, so the handle mounts above the furniture it sits beside */
     Peek.init();
     Llm.init();
+    LegoFloor.mount();
     /* after the page has built, because it asks whether this one has a canvas */
     Pinch.init();
     observeReveals();
@@ -23974,6 +24242,7 @@
        the next frame and once more when the webfont has landed — see the
        module. */
     Grid.init();
+    RailMark.init();
 
     /* One frame loop. It keeps running while the reveal is still easing toward
        its target, then parks itself until the next scroll. */
