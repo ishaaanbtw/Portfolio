@@ -526,12 +526,21 @@
          it read the same two sources in the same order. This agrees with it
          rather than second-guessing it — but it is written out in full, so the
          module is correct on its own if that script ever fails to run. */
-      /* A CASE STUDY HAS ONE DESIGN. Project pages are dark, always, and
-         neither the default nor a stored press applies to them — the page's
-         own head says so before the first paint and this agrees with it, so
-         the module is still correct if that script never runs. `locked` is
-         what stops `set()` undoing it; the pod that would have called `set()`
-         is hidden by the stylesheet, and this is the belt to that braces. */
+      /* A CASE STUDY HAS ONE DESIGN, AND IT IS THE LIGHT ONE. This comment
+         used to say the opposite of the line below it — "project pages are
+         dark, always" over `apply('light')` — and to credit a head script that
+         these pages do not carry. Both halves were wrong and the second was
+         load-bearing: with no head script and no stored press to inherit, a
+         study's first painted frame is simply whatever the stylesheet says,
+         and that is paper. Which is correct for the study — it ends on paper,
+         `.onward` is printed on it — and was being seen for a second at the
+         TOP of a film, where the first screen is black. That is fixed where it
+         belongs, in the markup and the stylesheet: see `data-hero` on the body
+         of the two film studies. This line is just the module agreeing.
+
+         `locked` is what stops `set()` undoing it; the pod that would have
+         called `set()` is hidden by the stylesheet, and this is the belt to
+         that braces. */
       if (document.body && document.body.dataset.page === 'project') {
         this.locked = true;
         this.apply('light');
@@ -6353,20 +6362,91 @@
           `</div>` +
 
           `<div class="room__veil" style="--vat:${say.length ? say[say.length - 1].at : 0.78}"></div>` +
-          `<div class="room__say">` + say.map((l, i) =>
-            `<div class="room__line${l.big ? ' room__line--big' : ''}"` +
-              ` style="--at:${l.at};--to:${l.to};--sord:${i === 0 ? 0 : 99}">` +
-              (l.mark
-                ? `<span class="room__lockup">` +
-                    `<img class="room__mark" src="${url(l.mark)}" alt="N45"` +
-                    ` width="192" height="192">` +
-                    (l.n ? (l.k ? `<span class="room__intro"><span class="lab-n">${esc(l.k)}</span>` +
-                      `<b class="room__title">${esc(l.n)}</b></span>` : `<span class="lab-n">${esc(l.n)}</span>`) : '') +
-                  `</span>`
-                : (l.n ? `<span class="lab-n">${esc(l.n)}</span>` : '')) +
-              (l.h ? `<h2 class="fg-h">${l.h}</h2>` : '') +
+          `<div class="room__say">` + say.map((l, i) => {
+            /* --- A CARD THAT HANDS OVER TO ITSELF ------------------------
+
+               A room line fades as one block between `at` and `to`, which is
+               right when everything on it is saying one thing for one length
+               of time. The title card is the one place that is not true. It
+               carries two statements and they are a SEQUENCE: the decision —
+               give X0 a system of its own — and then the thing that decision
+               produced, introduced by name. Said together they are a caption
+               under a logo; said in order they are the story.
+
+               IT IS A WIPE, AND IT USED TO BE TWO FADES. `hand` is one pair
+               of numbers — when the hand-over starts and how long it runs —
+               and from them the stylesheet drives a single front across the
+               card: the sentence survives only to the RIGHT of it, the lockup
+               only to the LEFT, so at every pixel exactly one of them is
+               there. That is the whole reason this is not two opacities any
+               more. Crossed as fades, the two were both legible at once for a
+               fortieth of the section and the name printed straight through
+               the sentence — a double exposure, which reads as a mistake no
+               matter how short it is. A front cannot do that.
+
+               AND THE FRONT IS GOLD, which is the other half of the idea. The
+               rule under `own design system` draws itself first, left to
+               right; the moment it is complete that same gold stands up and
+               sweeps the card, and what it leaves behind is the name. So the
+               transition has an agent — one thing you can follow from the
+               decision to the system — rather than being a dissolve between
+               two states that happen to be in the same place.
+
+               AND THE TWO HALVES SHARE A CELL. Stacked they would be a
+               sentence with a logo under it, which is two things on a card; in
+               one cell they are two states of one thing, and the mark ends up
+               in exactly the position it has always had. The sentence leads in
+               the markup too, so a screen reader is read the decision and then
+               the name — the same order, without the choreography. */
+            const hand = l.hand;
+            const lock = l.mark
+              ? `<span class="room__lockup${hand ? ' room__rise' : ''}">` +
+                  `<img class="room__mark" src="${url(l.mark)}" alt="N45"` +
+                  ` width="192" height="192">` +
+                  (l.n ? (l.k ? `<span class="room__intro"><span class="lab-n">${esc(l.k)}</span>` +
+                    `<b class="room__title">${esc(l.n)}</b></span>` : `<span class="lab-n">${esc(l.n)}</span>`) : '') +
+                `</span>`
+              : (l.n ? `<span class="lab-n">${esc(l.n)}</span>` : '');
+            /* --- A DECISION HAS TO BE SEEN BEING MADE --------------------
+
+               THE SENTENCE USED TO BE THERE ALREADY. The card's own rise is
+               one opacity over four hundredths of the section, so you arrived
+               at the room and the decision was simply printed on it — which
+               reads as a caption on a slide, not as somebody deciding
+               something. Nothing in it had happened; it had only appeared.
+
+               SO IT ASSEMBLES, in the film's own idiom: the eyebrow names what
+               this is, then the sentence arrives a line at a time on the
+               scroll, each line on the rise `.fg-wl` gives the wall's closing
+               words. `hat` is the first line's place and the rest follow it a
+               sixtieth of the section apart — close enough to be one sentence
+               arriving, far enough apart that you see it being written.
+
+               AND THE WEIGHT LANDS LAST, on the three words that are the
+               decision: `own design system` takes the full ink and its gold
+               rule draws under it after both lines are down. The sentence is
+               quiet; the part that mattered is not. */
+            const hat = l.hat != null ? l.hat : 0;
+            const head = l.h
+              ? `<div class="${hand ? 'room__lead' : 'room__head'}">` +
+                (l.hk ? `<p class="room__hk" style="--la:${l.hkat != null ? l.hkat : hat - 0.014}">`
+                  + `${esc(l.hk)}</p>` : '') +
+                `<h2 class="fg-h">` +
+                (Array.isArray(l.h)
+                  ? l.h.map((ln, k) => `<span class="room__ln" style="--la:${(hat + k * 0.016).toFixed(3)}">`
+                    + `${ln}</span>`).join('')
+                  : l.h) +
+                `</h2></div>`
+              : '';
+            return `<div class="room__line${l.big ? ' room__line--big' : ''}` +
+              `${hand ? ' room__line--hand' : ''}"` +
+              ` style="--at:${l.at};--to:${l.to};--sord:${i === 0 ? 0 : 99}` +
+              `${hand ? `;--wa:${hand.at};--wsp:${hand.sp}` : ''}">` +
+              (hand ? head + lock : lock + head) +
+              (hand ? `<i class="room__wipe" aria-hidden="true"></i>` : '') +
               (l.p ? `<p class="fg-p">${l.p}</p>` : '') +
-            `</div>`).join('') +
+            `</div>`;
+          }).join('') +
           `</div>` +
         `</div>`;
     },
@@ -6502,8 +6582,11 @@
         (s.p ? `<p${AT(0.11)} class="fg-ship__p beat">${esc(s.p)}</p>` : '') +
         `<div class="fg-ship__row">${hw}${S.map(fig).join('')}</div>` +
         `<div class="fg-ship__end">` +
-          (e.steps ? `<ol${AT(0.62)} class="fg-ship__steps beat">` + e.steps.map((t, i) =>
-            `<li${i === e.steps.length - 1 ? ' class="is-now"' : ''}>${esc(t)}</li>`).join('') + `</ol>` : '') +
+          /* A `Designed — Shipped — Available — Evolving` rail used to open
+             this block. It is gone, with its `steps` in content.js and its
+             rules in the stylesheet: four words restating the heading under
+             it and the three listings above it, on a page whose whole job is
+             to say the thing is out. */
           (e.h ? `<h3${AT(0.68)} class="fg-ship__eh beat">${esc(e.h)}</h3>` : '') +
           (e.p ? `<p${AT(0.72)} class="fg-ship__ep beat">${esc(e.p)}</p>` : '') +
         `</div>` +
@@ -6520,7 +6603,33 @@
       const win = (i) => ` style="--at:${(a0 + i * w).toFixed(3)};--to:${(i === S.length - 1 ? 2 : a0 + (i + 1) * w).toFixed(3)}"`;
       return `<div class="scn__in fg-steps">` +
         `<div class="fg-steps__side">` +
-          (s.n ? `<p${AT(0)} class="fg-steps__n beat beat--lead">${esc(s.n)}</p>` : '') +
+          /* THE NUMBER IS SET A CHARACTER AT A TIME, which is only so it can
+             be touched. `67%` as one text node is one box and one transform;
+             split, the 6 can lift while the 7 drops and the mark follows them
+             a beat later. Nothing about how it reads changes — the spans are
+             inline, the tracking and the leading are the paragraph's — and if
+             the stylesheet's hover rule never applies, a phone or a reader who
+             asked for less, what is left is the number exactly as it was.
+
+             `--ci` IS THE STAGGER AND `--jd` THE DIRECTION, both read off the
+             index here rather than guessed at in CSS, because a `:nth-child`
+             rule would have to be rewritten the day the number is not three
+             characters long. A digit alternates; anything that is not a digit
+             takes a third of the travel, so the `%` moves with them instead of
+             flapping about as though it were one of the figures.
+
+             AND A NON-DIGIT IS MARKED, which is what lets the stylesheet give
+             the `%` back the air this paragraph's -0.045em tracking takes off
+             it. Tracking that tight is right between figures and wrong between
+             a figure and a mark: the two were touching. */
+          (s.n ? `<p${AT(0)} class="fg-steps__n beat beat--lead">` +
+            [...String(s.n)].map((ch, i) => {
+              const digit = /\d/.test(ch);
+              return `<span class="fg-steps__nc${digit ? '' : ' fg-steps__nc--sym'}"` +
+                ` style="--ci:${i};--jd:${digit ? (i % 2 ? -1 : 1) : (i % 2 ? -0.34 : 0.34)}">` +
+                `${esc(ch)}</span>`;
+            }).join('') +
+            `</p>` : '') +
           (s.sub ? `<span${AT(0.01)} class="fg-kick fg-steps__sub beat beat--lead">${esc(s.sub)}</span>` : '') +
           (s.k ? `<span${AT(0.01)} class="fg-kick beat">${esc(s.k)}</span>` : '') +
           (s.h ? `<h2${AT(0.02)} class="fg-h fg-steps__h beat beat--lead">${s.h}` +
@@ -6971,6 +7080,30 @@
            enough for the tap pulse to be seen, and then eases on to wherever
            the scroll has got to. */
         gate: n.classList.contains('scn--showcase') ? { at: 0.11, cap: 0.17, ms: 1800 } : null,
+        /* AND THE CARDS ARE NOT ALLOWED TO BE SCROLLED PAST EITHER. `gate`
+           holds the tap so the pulse is always seen; everything after it was
+           at the mercy of the scroll, and the four cards tucking behind the
+           phone, springing into their fan and being flung out is 0.18 to 0.40
+           of this scene — about 670px of travel, which a flick covers in a
+           tenth of a second. The whole sequence existed and nobody saw it.
+
+           SO THE SCENE HAS A SPEED LIMIT RATHER THAN A SECOND HOLD. A hold
+           stops the film and makes the reader wait; a limit lets them keep
+           scrolling and simply refuses to play the cards faster than they can
+           be read. Under it nothing changes at all — at a reading pace the
+           step never reaches `max` and this branch never fires — and over it
+           the scene lags the scroll and catches up, which is the behaviour
+           `gate` already established two lines above.
+
+           `rate` IS PER SECOND, NOT PER FRAME, and that is not pedantry: the
+           scene's own catch-up two lines up is a per-frame step, which means
+           it runs twice as fast on a 120Hz laptop as on a 60Hz monitor — the
+           one place that is least acceptable is the limit whose entire job is
+           to be slow enough to watch. 0.19 a second takes the window's 0.22 a
+           little over a second on any display. That is the number to change if
+           it wants longer. */
+        slow: n.classList.contains('scn--showcase') ? { from: 0.18, to: 0.40, rate: 0.19 } : null,
+        sT: 0,
         gT: 0,
         gDone: false,
         gCatch: false,
@@ -7099,6 +7232,24 @@
           }
           /* back above the tap: the next pass down plays it again */
           if (s.gDone && !s.gCatch && p < g.at - 0.05) { s.gT = 0; s.gDone = false; }
+        }
+        /* THE SPEED LIMIT, AND IT IS LAST SO IT GOVERNS THE GATE'S CATCH-UP
+           TOO — that one is allowed 0.014 a frame, which is four times what
+           the cards can be read at. Only a forward step is clamped: scrubbing
+           back through the fan is a deliberate act and is left alone. */
+        if (s.slow && !this.still) {
+          const sl = s.slow;
+          if (p > sl.from && s.p < sl.to) {
+            const now = performance.now();
+            /* the first frame in the window has no previous one to measure
+               against, and a tab that was in the background has a useless
+               one — both are capped to a frame's worth rather than allowed to
+               become a jump */
+            const dt = s.sT ? Math.min(0.05, (now - s.sT) / 1000) : 1 / 60;
+            s.sT = now;
+            const step = sl.rate * dt;
+            if (p - s.p > step) { p = s.p + step; this.kick(); }
+          } else s.sT = 0;
         }
         /* AND ONCE IT IS FULLY BUILT AND THE READER IS PAST IT, THE PIN GOES.
            Holding a finished scene for its whole length again on the way back

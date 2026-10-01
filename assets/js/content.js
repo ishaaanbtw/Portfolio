@@ -1931,10 +1931,13 @@ window.SITE = {
                 { t: 'To ship on time', icon: 'bolt', b: 'A small, reusable kit to design every flow in the map and hand it to developers.' },
               ] } },
 
-            /* THE DECISION. One sentence on black, after CySync has been
-               credited and the needs are on the table. */
-            { id: 'x0-dec-1', kind: 'ask', dur: 110, dark: true,
-              h: 'Let’s give Cypherock X0 its <span class="fg-key">own design system</span>.' },
+            /* THE DECISION USED TO BE A SCENE OF ITS OWN HERE — `x0-dec-1`,
+               one sentence on black at 110svh. It said the same thing the
+               title card below says and then the title card said it again,
+               which is two near-empty screens in a row for one beat of the
+               story. The sentence has moved into that card: see `say[0]` of
+               `x0-system`, where it is held under the mark and then let go.
+               Nothing about the room's choreography changed to take it. */
 
             /* THE ASSEMBLY, and the longest scene in the film. The system is
                proved by building the product out of it on screen: eight parts
@@ -1997,16 +2000,58 @@ window.SITE = {
                 /* A TITLE CARD, AND IT IS ALLOWED TO BE ONE. The mark at 96px
                    in the middle of an otherwise empty column, held for a sixth
                    of the section, with the words on the same line and a gap
-                   smaller than the mark is tall. It is one object, it is the
-                   only object, and nothing happens until it has gone. */
+                   smaller than the mark is tall.
+
+                   AND IT CARRIES THE DECISION NOW. That sentence was a scene
+                   of its own immediately before this one — black, 110svh, one
+                   line — and it was making the same move this card makes:
+                   stating that X0 is getting a system of its own. Two screens,
+                   one beat. Here they are one object: the mark, its name, and
+                   under them the reason it exists.
+
+                   AND THEY ARE A SEQUENCE, NOT A STACK. The decision comes
+                   first because it is the decision — one person deciding X0
+                   will not inherit CySync — and the system is what that
+                   decision produced, so it is introduced after it and by name.
+                   Said at the same moment they read as a caption under a logo.
+
+                   `hand` IS THE HAND-OVER: when it starts and how long it
+                   runs. It was two fades crossing, and crossing fades on two
+                   things in one cell is a double exposure — for a fortieth of
+                   the section the name was printed through the sentence and
+                   both were legible. It is one front now: the sentence lives
+                   only to the right of it, the lockup only to the left, and
+                   the front itself is the gold rule standing up and sweeping
+                   the card. The rule finishes drawing at 0.07, the front
+                   leaves at 0.09, and by 0.17 the card is what it always was —
+                   the mark, held to the end of the dissolve as the section's
+                   label, in the exact position the placement note above solved
+                   for. See `.room__line--hand` in the stylesheet. */
                 { at: -0.02, to: 0.88, big: true, k: 'Introducing', n: 'N45 Design System',
-                  mark: 'assets/img/x0/system/n45-mark.png' },
+                  mark: 'assets/img/x0/system/n45-mark.png',
+                  hand: { at: 0.09, sp: 0.08 },
+
+                  /* THE FRAME IS EMPTY WHEN YOU GET HERE, AND THAT IS THE
+                     POINT. The card is on from the first frame but it has
+                     nothing in it: the eyebrow lands at 0.02, the first line
+                     at 0.034, the second at 0.05, and the gold rule draws
+                     under `own design system` from 0.066. Roughly fifty
+                     screens-worth of section later none of that matters, but
+                     the first three hundredths of it are the difference
+                     between a decision being made in front of you and a
+                     sentence that was already printed on the wall when you
+                     walked in. */
+                  hk: 'The decision',
+                  hkat: 0.02,
+                  hat: 0.034,
+                  h: ['Let’s give Cypherock X0',
+                    'its <span class="fg-key">own design system</span>.'] },
 
                 /* and it lands here, after you have watched the thing build
                    itself out of the parts standing around it */
                 { at: 0.90, to: 1.2,
                   h: 'We built the system before we built a single screen.',
-                  p: 'Not a library extracted from finished work. A grammar, written first — atomic, mobile-first, no inheritance from CySync — and by month six it was carrying surfaces nobody had specced when it was written.' },
+                  p: 'Atomic, built for a phone, nothing carried over from CySync. Six months in, it was holding screens we had not thought of when we wrote it.' },
               ],
 
               /* THE PRODUCT, and it is an empty one for a quarter of the
@@ -2297,7 +2342,7 @@ window.SITE = {
                 'assets/img/x0/explore/c184.webp',
                 'assets/img/x0/explore/c167.webp',
               ],
-              cap: 'An excerpt of the exploration files',
+              cap: 'A fraction of what we drew',
               tools: { k: 'Explored with', v: [
                 /* the marks are the official files from each company's brand
                    page, dropped into assets/img/logos under these names; a
@@ -2393,7 +2438,6 @@ window.SITE = {
                   ph: 'Listing screenshot to come' },
               ],
               end: {
-                steps: ['Designed', 'Shipped', 'Available', 'Evolving'],
                 h: 'Shipped is a milestone, not the finish line.',
                 p: 'X0 is live today, but the product will keep evolving. New releases, refinements and improvements will continue to shape the experience as more people use it.',
               } },

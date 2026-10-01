@@ -3691,6 +3691,48 @@ html.is-pvw { border-right: var(--pvw-gutter, 0px) solid transparent; }
 
 body.is-leaving .sheet { opacity: 0; transform: translateY(-8px); transition: opacity 260ms ease, transform 260ms ease; }
 
+/* --- A FILM STUDY OPENS ON ITS OWN BLACK ---------------------------------
+
+   WHAT IT LOOKED LIKE: you clicked a project and got about a second of flat
+   warm white, and then the study faded up through it, black hero and all. Two
+   separate things were doing that, and both of them are answered here.
+
+   THE FIRST IS THAT THE DOCUMENT IS EMPTY. `<main>` has nothing in it in the
+   markup — every part of a case study is built by the script at the end of the
+   body — so the first painted frame is whatever this stylesheet says `body`
+   and `.sheet` are, and that is `--surface-2` under `--paper`. Paper is the
+   right answer for the study: it is a light page below its film, and `.onward`
+   at the end of it is printed on that paper. It is the wrong answer for the
+   FIRST SCREEN, which on these two is #030303 from edge to edge. The page was
+   opening on the one colour it must not open on.
+
+   THE BODY'S COLOUR IS THE WINDOW'S. `html` declares no background of its own,
+   so the browser propagates `body`'s to the canvas: one declaration paints
+   every pixel, including the overscroll, before anything else exists.
+
+   AND THE SHEET IS RELEASED WHEN THERE IS A PAGE. `.sheet` is opaque paper in
+   the markup, so left alone it would cover the black it is standing on. It
+   holds the film's ground until `is-ready` — the last line of `boot`, by which
+   point the hero is built and 100vh of #030303 is sitting over it. The paper
+   underneath is then only ever seen where it belongs, at the end of the film.
+   A failure that stops `boot` short leaves the sheet black, which is the same
+   outcome as a case study that never got built: there is nothing on it either
+   way, and black is the honest colour for this page's nothing. */
+body[data-hero='film'] {
+  background-color: #030303;
+  background-image: none;
+}
+body[data-hero='film']:not(.is-ready) .sheet { background-color: #030303; }
+
+/* AND IT DOES NOT FADE UP. `sheetIn` is the right entrance for a page that
+   arrives all at once; it is the wrong one for a page whose first screen is a
+   film with an opening of its own. `.fhero [data-in]` already staggers the way
+   back, the title, the record and the cue over the first second and a half —
+   all of which was playing inside a page that was itself still fading in, from
+   white, which is the "loads in" half of what you could see. One entrance per
+   arrival, and on these two it belongs to the hero. */
+body[data-hero='film'] .sheet { animation: none; }
+
 /* ==========================================================================
    18. CLICK SPARK
    Measured off the reference frame-by-frame: six spokes at 60°, offset ~36°,
@@ -12446,8 +12488,21 @@ body[data-page='project'].phero-up .llm:not(.is-up) .llm__chip { animation: none
   /* the two the chrome group used to give it, and nothing else from it */
   position: absolute;
   z-index: 2;
-  top: var(--fh-pad);
-  left: var(--fh-pad);
+  /* NOT `--fh-pad`, WHICH IS THE FRAME'S INSET AND NOT THIS ELEMENT'S. The
+     rest of the hero's chrome — the record along the bottom, the cue — is
+     lettering ON the frame and is set in from its edge by `--fh-pad`. This is
+     not lettering, it is the navigation standing in the corner, and two
+     screens later the same control is the rail's arrow at the sidebar's own
+     inset. At 1512 that was 48,48 against 17,23: scroll off the opening frame
+     and the way back jumped thirty pixels left and twenty-five up.
+
+     So it takes the rail's two numbers, stated the same way `.rail--film
+     .rail--mast` states them, and the arrow is in one place for the whole
+     study. The corner is otherwise empty on these two — there is no mark and
+     no annotation up here — so nothing is left aligned to an inset this no
+     longer uses. */
+  top: calc(var(--mast-pad) + 0.35rem);
+  left: calc(var(--mast-pad) + var(--sa-left, 0px));
   pointer-events: auto;
   /* THE ONE THING THAT IS GENUINELY THIS CORNER'S. The rail's back link is
      ink on paper; this one is standing on the film's own black, so it takes
@@ -19877,6 +19932,187 @@ body[data-page='project'] .tmode { display: none; }
    thing in the final frame and the phone was arguing with it; at 44px the
    hero is unambiguous and the left stops outweighing the right. */
 .room__line .fg-h { font-size: min(var(--fg-poster), 2.75rem); max-width: 16ch; }
+
+/* A LINE WITH AN END OF ITS OWN — see `hto` on the title card in content.js.
+   It multiplies the card's opacity rather than replacing it, so the sentence
+   still arrives on the card's own rise and only its exit is early; sixteen is
+   the same rate `.room__line` leaves at, so the two reads as one hand letting
+   go rather than as a second animation. Above `--hto` the clamp is already 1,
+   which is why nothing has to say when it starts. */
+/* AND THE GOLD RULE UNDER `.fg-key` DRAWS WHILE THE SENTENCE IS UP. Its
+   defaults are an `ask` scene's — start at 0.3, done by 0.55 — and this line
+   is gone by 0.15. It draws between the card landing and the sentence being
+   let go instead: complete by 0.07, which is comfortably before the fade
+   starts, so the rule reads as the sentence finishing itself rather than as
+   something still arriving while the words leave. */
+/* THE SENTENCE'S HALF OF THE CARD. A wrapper rather than the headline itself,
+   because the eyebrow belongs to the decision and has to be wiped with it —
+   see the front in the hand-over block below, which masks this whole element.
+   `--key-at`/`--key-sp` are inherited from here by `.fg-key` inside it. */
+.room__lead,
+.room__head { display: grid; gap: 0.9rem; justify-items: start; }
+.room__lead { --key-at: 0.066; --key-sp: 0.02; }
+
+/* --- A LINE ARRIVING, WHICH IS THE WHOLE OF "BEING DECIDED" ---------------
+
+   The same move the wall's closing words make — `.fg-wl` above — restated
+   here because these lines are staggered against each other rather than
+   sharing one line's progress. Thirty is a third of a tenth of the section to
+   go from nothing to landed, which at this length is a line arriving rather
+   than a line fading up, and the third of an em it travels is small enough
+   that nothing around it appears to move. */
+.room__ln {
+  display: block;
+  --lo: clamp(0, calc((var(--p) - var(--la)) * 30), 1);
+  opacity: var(--lo);
+  translate: 0 calc((1 - var(--lo)) * 0.32em);
+}
+
+/* THE EYEBROW NAMES IT, and it lands before the sentence does so the frame
+   says what is about to happen rather than only showing the result. The
+   film's own annotation type — see `.lab-n` — at the ink the quiet chrome
+   uses. */
+.room__hk {
+  --lo: clamp(0, calc((var(--p) - var(--la)) * 30), 1);
+  opacity: var(--lo);
+  translate: 0 calc((1 - var(--lo)) * 0.32em);
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 246, 0.42);
+}
+
+/* AND THE THREE WORDS THAT ARE THE DECISION TAKE THE FULL INK. The sentence
+   is set at the room's quiet grey; `own design system` comes up to white on
+   the same clock as its gold rule, so the emphasis is the last thing to
+   happen and it happens on the part that mattered. Colour only — the words
+   do not move, because a phrase that shifts as it brightens reads as a
+   wobble rather than as weight. */
+/* AND THE SENTENCE IS STATED QUIETLY SO THAT CAN HAPPEN. Measured, the room's
+   headline ink is 245/245/246 — all but white — so a phrase brightening to
+   white inside it moved ten values and was invisible. The sentence sits at
+   58% of that ink and the three words come up to the full of it: the contrast
+   is the emphasis, and it only exists if the sentence is willing to be
+   quieter than the part that mattered. */
+.room__lead .fg-h { color: rgba(245, 245, 246, 0.58); }
+
+.room__lead .fg-key {
+  /* `currentcolor` INSIDE `color` IS THE INHERITED ONE, which is the sentence's
+     own quiet ink above — so this mixes from there toward white without that
+     value being restated here. `filter: brightness` would have been shorter
+     and wrong: the gold rule is a `::after` INSIDE this span, so it would have
+     been washed out by the same amount. */
+  color: color-mix(in srgb,
+    rgb(245, 245, 246) calc(clamp(0, calc((var(--p) - var(--key-at)) / var(--key-sp)), 1) * 100%),
+    currentcolor);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room__ln,
+  .room__hk { opacity: 1; translate: none; }
+  .room__lead .fg-key { filter: none; }
+}
+
+/* --- THE HAND-OVER IS A FRONT, NOT A CROSS-FADE --------------------------
+
+   WHAT WAS WRONG WITH TWO OPACITIES. The sentence and the lockup share one
+   cell, so fading one out while the other came up put both of them on the
+   same pixels at the same time — and for a fortieth of the section each was
+   around half lit and both were legible, which is `N45 Design System` printed
+   straight through `its own design system`. A double exposure reads as a
+   mistake however briefly it is there, and no amount of retiming fixes it,
+   because the two are never going to be in different places.
+
+   A FRONT CANNOT DO THAT. One number, `--w`, runs 0 to 1 across the card. The
+   sentence is masked to survive only to the RIGHT of it and the lockup only to
+   the LEFT, so every pixel belongs to exactly one of them at every instant,
+   and the wipe passing over the card is what you read instead.
+
+   THE FRONT IS A LENGTH, NOT A PERCENTAGE, and that is the one thing that has
+   to be right. A mask is resolved against its own element's box, and these two
+   boxes are different widths — the sentence runs to 16ch, the lockup is as
+   wide as a 96px mark and a name. At 50% they would be 60px apart and the
+   front would visibly bend as it crossed. `--wx` is an absolute distance from
+   the cell's left edge, which both elements share, so there is one front and
+   it is straight.
+
+   `--hand-run` IS HOW FAR IT TRAVELS, and it starts a soft edge's width to the
+   left of the cell so the sentence is whole on the first frame rather than
+   already feathered. It overshoots the wider of the two boxes on purpose:
+   finishing early would leave the last word of the sentence standing after the
+   front had gone past it. */
+.room__line--hand {
+  position: relative;
+  /* HOW FAR THE FRONT TRAVELS, and it is a length because the two halves it
+     wipes are different widths — a percentage would resolve against each of
+     their own boxes and the front would visibly bend as it crossed. Measured:
+     the wider half is the sentence, and it is the column's width — 480px at
+     1512, 410 at 1024. The number that matters is where the HARD edge lands,
+     which is the run less the soft edge's width: at 34rem that was 464, and
+     the last sixteen pixels of the sentence were left standing inside the
+     gradient forever. 36rem puts it at 496, past the content, which is what
+     stops a word surviving the front that went over it. The narrow block
+     below does the same arithmetic on its own smaller column. */
+  --hand-run: 36rem;
+  --hand-soft: 5rem;
+  --w: clamp(0, calc((var(--p) - var(--wa)) / var(--wsp)), 1);
+  --wx: calc(var(--w) * var(--hand-run) - var(--hand-soft));
+}
+
+/* AND THE TWO HALVES SHARE ONE CELL, which is what makes it a hand-over
+   rather than a list. Stacked, the sentence sat above the lockup and pushed
+   it 240px down the column — past the 184px the placement note above solved
+   for, and into the colour sheet for the rest of the section. */
+.room__line--hand > .room__lead,
+.room__line--hand > .room__lockup { grid-area: 1 / 1; }
+
+.room__line--hand > .room__lead {
+  -webkit-mask-image: linear-gradient(90deg, transparent var(--wx),
+    #000 calc(var(--wx) + var(--hand-soft)));
+  mask-image: linear-gradient(90deg, transparent var(--wx),
+    #000 calc(var(--wx) + var(--hand-soft)));
+}
+.room__line--hand > .room__rise {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--wx) - var(--hand-soft)),
+    transparent var(--wx));
+  mask-image: linear-gradient(90deg, #000 calc(var(--wx) - var(--hand-soft)),
+    transparent var(--wx));
+}
+
+/* THE EDGE, AND IT IS THE RULE STANDING UP. The gold line under `own design
+   system` finishes drawing at 0.07 and the front leaves at 0.09, so what
+   sweeps the card is the same gold a fortieth of a section later — the
+   transition has one agent you can follow from the decision to the system
+   rather than being a dissolve between two things that happen to be in the
+   same place. Brightest in the middle of its travel and nothing at either
+   end, so it is never a line parked on the card. */
+.room__wipe {
+  position: absolute;
+  top: -0.35rem;
+  bottom: -0.35rem;
+  left: var(--wx);
+  width: 1.5px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, #c99a4c 18%, #f0d49a 50%, #c99a4c 82%, transparent);
+  box-shadow: 0 0 0.75rem rgba(240, 212, 154, 0.35);
+  opacity: clamp(0, calc(min(var(--w), 1 - var(--w)) * 3.2), 1);
+}
+
+/* WITH MOTION OFF IT IS A SWAP, NOT A SWEEP. The masks come off entirely —
+   a front that jumps is worse than no front — and the two halves change over
+   at the middle of the same window, which keeps the order of the story
+   without animating anything across the card. */
+@media (prefers-reduced-motion: reduce) {
+  .room__line--hand > .room__lead,
+  .room__line--hand > .room__rise {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .room__line--hand > .room__lead { opacity: clamp(0, calc((0.5 - var(--w)) * 10), 1); }
+  .room__line--hand > .room__rise { opacity: clamp(0, calc((var(--w) - 0.5) * 10), 1); }
+  .room__wipe { display: none; }
+}
 .room__line .fg-p { font-size: min(var(--fg-lede), 1.0625rem); }
 
 /* SATOSHI, NOT THE MONO. The eyebrow was the last thing in this section set
@@ -20074,6 +20310,14 @@ body[data-page='project'] .tmode { display: none; }
   .cad-g--dash > * { stroke-width: 5; stroke-dasharray: 34 26; }
   .cad-g--grid path { stroke-width: 4; }
   .cad-g--label text { font-size: 74px; }
+
+  /* AND THE HAND-OVER'S FRONT CROSSES A NARROWER CARD. Measured at 834 and
+     390 the widest of the two halves is 351 and 348 — the column, not the
+     sentence's own measure — so the desktop's 36rem would spend its last two
+     fifths travelling over nothing with both halves already settled. 27rem
+     less a 3.5rem soft edge lands the hard front at 376, past the content and
+     nowhere near as far past it. */
+  .room__line--hand { --hand-run: 27rem; --hand-soft: 3.5rem; }
 
   /* --- what is said ------------------------------------------------------
 
@@ -21852,7 +22096,14 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
   height: 0.06em; border-radius: 1em;
   background: linear-gradient(90deg, #c99a4c, #f0d49a);
   transform-origin: left center;
-  transform: scaleX(clamp(0, calc((var(--p) - 0.3) / 0.25), 1));
+  /* THE TWO NUMBERS ARE TERMS NOW, AND THAT IS NOT TIDYING. 0.3 and 0.25 are
+     a sentence that is on screen for the whole of its scene, which is what an
+     `ask` is. The decision moved onto the title card inside `x0-system`, where
+     it is let go at 0.20 — so the rule was being asked to start drawing a
+     tenth of the section after the words it underlines had gone, and it simply
+     never appeared. The defaults are the `ask` scenes' own, unchanged; the
+     card states its own pair beside the fade that made it necessary. */
+  transform: scaleX(clamp(0, calc((var(--p) - var(--key-at, 0.3)) / var(--key-sp, 0.25)), 1));
   opacity: 0.9;
 }
 @media (prefers-reduced-motion: reduce) { .fg-key::after { transform: none; } }
@@ -22367,9 +22618,29 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
 .fg-kept__needs ol { gap: 1.1rem; }
 .fg-kept__needs li { background: none; padding: 0; border-radius: 0; gap: 0.9rem; }
 
-/* ==== rail v3: back is the arrow alone ==== */
-.rail--film.rail--mast .rail__back { font-size: 0; line-height: 0; padding: 0.15rem 0.3rem 0.15rem 0; margin-bottom: 0.85rem; }
-.rail--film.rail--mast .rail__back::before { font-size: 0.9375rem; line-height: 1.45; margin-right: 0; }
+/* ==== rail v3: back is the arrow alone ====
+
+   AND THE HERO'S BACK IS THE SAME CONTROL, so it is in the same rule. It was
+   still the older one — the word BACK set at 14px with 0.09em of tracking and
+   an arrow 5.6px in front of it, a 60 x 20 box at the hero's own 48px inset —
+   while the rail two screens later was a bare arrow at 15px in a 17 x 26 box
+   at the sidebar's 17px inset. Scrolling off the opening frame therefore made
+   the way back change shape AND jump thirty pixels left and twenty-five up,
+   which is one control moving rather than two states of the same one.
+
+   `font-size: 0` ON THE LINK AND A SIZE ON THE ARROW is how the rail already
+   does it, and it is deliberate rather than clever: the word stays in the
+   document, so the link still reads as "BACK" to a screen reader and still
+   carries its own accessible name, and what is painted is the arrow alone.
+
+   THE POSITION IS STATED WITH THE HERO'S OTHER CHROME — see `.fhero__back` in
+   section 44 — because it is the one thing here that is a coordinate rather
+   than a shape. It is the rail's two numbers, so the arrow does not move when
+   the opening frame hands over to the index. */
+.rail--film.rail--mast .rail__back,
+.fhero__back { font-size: 0; line-height: 0; padding: 0.15rem 0.3rem 0.15rem 0; margin-bottom: 0.85rem; }
+.rail--film.rail--mast .rail__back::before,
+.fhero__back::before { font-size: 0.9375rem; line-height: 1.45; margin-right: 0; }
 
 /* ==== rivals: competitor teardown ==== */
 .scn--rivals .scn__in { max-width: none; }
@@ -22589,7 +22860,7 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
 .scn--shipped .scn__in { max-width: none; }
 .fg-ship { --sh: clamp(13rem, 33vh, 24rem); display: grid; align-content: center; }
 .fg-ship__top { display: flex; align-items: center; gap: 1.5rem; margin-bottom: clamp(0.9rem, 2.2vh, 1.4rem); }
-.fg-ship__k, .fg-ship__st, .fg-ship figcaption, .fg-ship__steps {
+.fg-ship__k, .fg-ship__st, .fg-ship figcaption {
   font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
 }
 .fg-ship__k { color: var(--fg-quiet); }
@@ -22634,11 +22905,11 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
   display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.4rem clamp(2rem, 5vw, 4rem);
   align-items: baseline; max-width: 64rem;
 }
-.fg-ship__steps { grid-column: 1 / -1; list-style: none; margin: 0 0 0.5rem; padding: 0; display: flex; gap: 0.75rem; color: var(--fg-quiet); }
-.fg-ship__steps li { display: inline-flex; align-items: center; gap: 0.75rem; }
-.fg-ship__steps li + li::before { content: ''; width: 1.75rem; height: 1px; background: var(--fg-line); }
-.fg-ship__steps li.is-now { color: var(--fg-ink); }
-.fg-ship__steps li.is-now::after { content: ''; width: 2.5rem; height: 0; border-top: 1px dashed rgba(16, 16, 18, 0.3); }
+/* THE STEP RAIL THAT WAS HERE HAS GONE — `Designed`, `Shipped`, `Available`,
+   `Evolving`, hairlines between them and a dashed tail off the last. Six rules
+   and a `steps` array in content.js, all removed rather than hidden: it said
+   nothing the heading under it and the three listings above it were not
+   already saying. */
 .fg-ship__eh { margin: 0; font-size: clamp(1.1rem, 1.5vw, 1.35rem); font-weight: 500; line-height: 1.3; letter-spacing: -0.01em; color: var(--fg-ink); }
 .fg-ship__ep { margin: 0; font-size: 0.875rem; line-height: 1.55; color: var(--fg-dim); max-width: 56ch; }
 
@@ -22832,7 +23103,78 @@ body[data-project="cypherock-x0"] .tools { display: none !important; }
 .fg-steps__n {
   margin: 0; font-size: clamp(4.5rem, 9vw, 8.5rem); font-weight: 560;
   line-height: 0.85; letter-spacing: -0.045em; color: var(--fg-ink);
+  /* AND THE BOX IS THE NUMBER, NOT THE COLUMN. This is a `<p>`, so it was as
+     wide as the side column and the hover below fired anywhere along it —
+     measured, 90px of empty paper to the right of the `%` at 1512 and 187px
+     of it at 390, all of it live. `max-content` shrinks the box to the three
+     characters; `max-width` keeps that honest if the type ever outgrows the
+     column it sits in. Nothing moves: the number is left-aligned either way. */
+  width: max-content;
+  max-width: 100%;
 }
+/* --- AND IT JIGGLES FOR AS LONG AS YOU POINT AT IT ----------------------
+
+   One number, three characters, each its own inline box, oscillating out of
+   phase: the 6 goes up while the 7 goes down, then they swap, and they keep
+   swapping. `--jd` is the direction and `--ci` the order, both written on the
+   span by the renderer so this rule does not have to know how long the number
+   is. The opposition is free: the 7's `--jd` is the 6's negated, so one set of
+   keyframes drives both and they can never drift into step with each other.
+
+   A twelfth of an em is about eleven pixels at the desktop size: enough to see
+   from across the room, small enough that the number is never unreadable and
+   the line below it never moves.
+
+   AND THE AMPLITUDE IS WHAT STARTS AND STOPS, NOT THE ANIMATION, which is the
+   whole reason `--jamp` exists. An animation added on `:hover` and taken away
+   on leave snaps whatever it was in the middle of straight back to nothing,
+   and leaving mid-cycle is the normal case, so that is an eleven-pixel jump
+   every single time the pointer goes. Instead the animation is always on the
+   element and PAUSED; hovering runs it and takes the amplitude from 0 to 1.
+   On the way out the clock stops where it is and the amplitude eases back
+   down, so the figures glide to centre from wherever they had got to, and
+   pointing at it again picks up from exactly there. Paused costs nothing — a
+   paused animation does not tick — and a custom property substituted into
+   keyframes is still resolved every frame, which is what lets a stopped clock
+   still move.
+
+   `translate`, NOT `transform`: the paragraph itself carries a `translate`
+   from `.beat` for its entrance and these are its children, so the two never
+   meet, and nothing here needs `transform` for anything else. */
+@property --jamp { syntax: '<number>'; inherits: false; initial-value: 0; }
+
+@keyframes fgJig {
+  0%, 100% { translate: 0 0; }
+  25%  { translate: 0 calc(var(--jd, 0) * var(--jamp) * -0.085em); }
+  75%  { translate: 0 calc(var(--jd, 0) * var(--jamp) * 0.085em); }
+}
+
+.fg-steps__nc {
+  display: inline-block;
+  /* sinusoidal rather than eased at both ends: an oscillation that pauses at
+     its extremes reads as two separate moves instead of one thing wobbling */
+  animation: fgJig 1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-play-state: paused;
+  transition: --jamp 420ms ease;
+  transition-delay: calc(var(--ci, 0) * 60ms);
+}
+
+/* THE MARK GETS ITS AIR BACK. `.fg-steps__n` is tracked to -0.045em, which is
+   what a figure pair that size wants and is far too tight between a figure and
+   a `%` — at 136px it was taking six pixels out of a join that was already
+   close, and the 7 and the mark were touching. A tenth of an em here nets
+   about eight pixels of daylight without loosening the `67`, because it is on
+   the mark alone. Scales with the type, so it holds at every width. */
+.fg-steps__nc--sym { margin-left: 0.1em; }
+:root:not(.hover-cold) .fg-steps__n:hover .fg-steps__nc {
+  --jamp: 1;
+  animation-play-state: running;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-steps__nc { animation: none; transition: none; }
+  :root:not(.hover-cold) .fg-steps__n:hover .fg-steps__nc { --jamp: 0; }
+}
+
 .fg-steps__sub { display: block; margin-top: 0.75rem; }
 .fg-steps .fg-steps__h { font-size: clamp(1.5rem, 2.2vw, 2.2rem); margin: clamp(0.8rem, 2vh, 1.2rem) 0 clamp(1.1rem, 2.8vh, 1.8rem); }
 .fg-steps__i { padding: 0.7rem 0; }
@@ -23805,11 +24147,10 @@ body[data-page='notfound'] #main { min-height: 100svh; }
   .scn--rivals .fg-riv__role { min-height: 0; }
 }
 
-/* PHONE · SHIPPED: the Designed / Shipped / Available / Evolving line is
-   removed, and the listings row is a swipeable strip that also drifts on its
-   own (ShipScroll in site.js). */
+/* PHONE · SHIPPED: the listings row is a swipeable strip that also drifts on
+   its own (ShipScroll in site.js). The step rail this block used to hide here
+   is gone from every width now. */
 @media (max-width: 46rem) {
-  .fg-ship__steps { display: none; }
   .fg-ship__row {
     overflow-x: auto;
     scroll-snap-type: none;

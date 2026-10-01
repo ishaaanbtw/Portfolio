@@ -164,7 +164,14 @@
      itself — see the note above — rather than only in site.js, which
      runs at the end of the body. */</script>
 </head>
-<body data-page="project" data-project="x0-cards">
+<!-- `data-hero` STATES WHAT THE FIRST PAINTED FRAME IS, and it is in the
+     markup for the same reason `data-entrance` is up in the head: this page
+     is an empty <main> until the script at the end of the body fills it, so
+     the colour the window opens on has to be decided by something the browser
+     has already read. content.js knows this study is a film; it has not been
+     parsed yet when the first frame goes up. See `body[data-hero='film']` in
+     the stylesheet. -->
+<body data-page="project" data-project="x0-cards" data-hero="film">
 
   <aside id="rail"></aside>
 
