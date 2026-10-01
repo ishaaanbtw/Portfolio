@@ -12899,8 +12899,8 @@ body[data-page='project'].phero-up .llm:not(.is-up) .llm__chip { animation: none
 @media (max-width: 48rem) {
   .fhero__caption.phero__foot { display: flex; flex-direction: column; gap: 0.7rem; }
 }
-}
-.fhero[data-tone='light'] .fhero__back { color: rgba(16, 24, 40, 0.5); }
+/* the way back, in ink: the same arrow and spot as the X0 heroes */
+.fhero[data-tone='light'] .fhero__back { color: rgba(16, 24, 40, 0.6); }
 :root:not(.hover-cold) .fhero[data-tone='light'] .fhero__back:hover,
 .fhero[data-tone='light'] .fhero__back:focus-visible { color: rgba(16, 24, 40, 0.92); }
 .fhero[data-tone='light'] .fhero__mark-n { color: rgba(16, 24, 40, 0.88); }
@@ -25117,3 +25117,265 @@ body[data-page='project'] .gridtog { display: none !important; }
    the dock, its edge tab and the phone button all go, and so do the shortcuts. */
 body[data-nodock] .tools,
 body[data-nodock] .fab { display: none !important; }
+
+/* --- the premise block (Onefinnet: the business problem) ------------------
+   Type only, no card. Inherits the section's ink, so it works on paper and on
+   the dark band; the accent is the same green as the contrast card's verdict. */
+.blk-premise {
+  --pm-accent: #1e8a5c;
+  --pm-rule: color-mix(in srgb, currentColor 16%, transparent);
+  margin-block: clamp(1.25rem, 3vw, 2rem) clamp(2rem, 5vw, 3.25rem);
+}
+.sec--dark .blk-premise { --pm-accent: #5fd3a0; }
+.pm__brief {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.9rem;
+  margin: 0;
+  color: color-mix(in srgb, currentColor 52%, transparent);
+}
+.pm__k { font-size: var(--step--1); }
+.pm__not {
+  font-size: var(--step-1);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, currentColor 70%, transparent);
+}
+.pm__lede {
+  margin: 0.5rem 0 0;
+  font-size: var(--step-2);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+  max-width: 24ch;
+}
+.pm__chain {
+  list-style: none; padding: 0;
+  margin: clamp(1.75rem, 4vw, 2.75rem) 0 0;
+  display: grid;
+  grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr));
+  gap: 0 clamp(1rem, 2.4vw, 2rem);
+}
+.pm__step { position: relative; padding-top: 1rem; border-top: 1px solid var(--pm-rule); }
+.pm__n {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.72rem; letter-spacing: 0.08em;
+  color: color-mix(in srgb, currentColor 45%, transparent);
+}
+.pm__h { margin: 0.7rem 0 0.35rem; font-size: var(--step-0); font-weight: 600; }
+.pm__t {
+  margin: 0; font-size: var(--step--1); line-height: 1.5;
+  color: color-mix(in srgb, currentColor 68%, transparent);
+  max-width: 28ch;
+}
+/* the need: where the chain lands, and the one thing in colour */
+.pm__end { border-top: 2px solid var(--pm-accent); padding-top: calc(1rem - 1px); }
+.pm__end .pm__n, .pm__end .pm__h { color: var(--pm-accent); }
+.pm__end .pm__t { color: currentColor; }
+@media (max-width: 48rem) {
+  .pm__chain { grid-template-columns: 1fr; gap: 1.25rem; }
+}
+
+/* --- the growth diagram (Onefinnet: the business problem) -----------------
+   One panel, two rows, one time axis. Row A spends the whole width on one
+   customer; row B is through its steps in the first fifth and fills the rest
+   with a crowd that keeps arriving. Hairlines and type do the structure. */
+.blk-growth { --gw-a: #f08a97; --gw-b: #1e8a5c; --gw-ink2: color-mix(in srgb, currentColor 60%, transparent);
+  --gw-rule: color-mix(in srgb, currentColor 12%, transparent); --gw-tile: var(--paper, #f7f6f2);
+  margin-block: clamp(1.25rem, 3vw, 2rem) clamp(2rem, 5vw, 3.25rem); }
+.sec--dark .blk-growth { --gw-b: #5fd3a0; --gw-tile: #18303e; }
+.gw { margin-top: clamp(1.75rem, 4vw, 2.75rem); border-top: 1px solid var(--gw-rule); position: relative; }
+/* faint time grid behind both rows */
+.gw::before { content: ''; position: absolute; inset: 0 0 2.5rem calc(var(--gw-lw) + var(--gw-gap)); pointer-events: none;
+  background: repeating-linear-gradient(90deg, var(--gw-rule) 0 1px, transparent 1px 10%); opacity: .55; }
+.gw { --gw-lw: clamp(10rem, 18vw, 14rem); --gw-gap: clamp(1rem, 3vw, 2.5rem); }
+.gw__row { position: relative; display: grid; grid-template-columns: var(--gw-lw) minmax(0, 1fr); gap: var(--gw-gap);
+  align-items: center; padding: clamp(1.4rem, 3vw, 2rem) 0; border-bottom: 1px solid var(--gw-rule); }
+.gw__tag { font-family: var(--mono, ui-monospace, monospace); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gw-ink2); }
+.gw__head--a .gw__tag { color: var(--gw-a); }
+.gw__head--b .gw__tag { color: var(--gw-b); }
+.gw__name { margin: 0.45rem 0 0.25rem; font-size: var(--step-1); font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+.gw__note { margin: 0; font-size: var(--step--1); line-height: 1.45; color: var(--gw-ink2); }
+
+.gw__track { position: relative; height: 6.25rem; }
+.gw__line { position: absolute; left: 0; width: var(--to); top: 1.25rem; height: 2px; }
+.gw__row--a .gw__line { background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--gw-a) 45%, transparent) 0 5px, transparent 5px 10px); }
+.gw__row--b .gw__line { background: color-mix(in srgb, var(--gw-b) 55%, transparent); }
+.gw__stop { position: absolute; z-index: 2; left: var(--x); top: 0; transform: translateX(-50%);
+  display: grid; justify-items: center; gap: 0.4rem; text-align: center; width: 6.5rem; }
+.gw__ico { width: 2.5rem; height: 2.5rem; border-radius: 10px; display: grid; place-items: center;
+  background: var(--gw-tile); border: 1px solid var(--gw-rule); color: var(--gw-ink2); }
+.gw__ico svg { width: 1.15rem; height: 1.15rem; }
+.gw__row--b .gw__ico { color: var(--gw-b); border-color: color-mix(in srgb, var(--gw-b) 40%, transparent); }
+.gw__lab { font-size: 0.8rem; font-weight: 500; line-height: 1.25; }
+.gw__meta { font-size: 0.72rem; color: var(--gw-a); }
+.gw__stop--end .gw__ico { color: var(--gw-a); border: 1px dashed color-mix(in srgb, var(--gw-a) 55%, transparent); }
+
+.gw__queue { position: absolute; z-index: 3; top: 1.25rem; left: 9%; transform: translate(calc(-100% - 1.6rem), -50%);
+  display: grid; grid-template-columns: repeat(3, 6px); gap: 4px; }
+.gw__queue i { width: 6px; height: 6px; border-radius: 50%; background: color-mix(in srgb, currentColor 40%, transparent); }
+.gw__dot { position: absolute; top: 1.25rem; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; }
+.gw__dot--slow { z-index: 3; background: var(--gw-a); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gw-a) 22%, transparent);
+  animation: gwSlow 9s cubic-bezier(.5,0,.3,1) infinite; }
+.gw__dot--fast { z-index: 1; background: var(--gw-b); animation: gwFast 1.8s linear infinite; animation-delay: var(--d, 0s); }
+@keyframes gwSlow {
+  0% { left: 9%; opacity: 0; } 4% { opacity: 1; } 12% { left: 9%; }
+  30% { left: 38%; } 42% { left: 38%; }
+  62% { left: 67%; } 74% { left: 67%; }
+  92% { left: 94%; opacity: 1; } 100% { left: 94%; opacity: 0; }
+}
+@keyframes gwFast { 0% { left: 0%; opacity: 0; } 10% { opacity: 1; } 85% { opacity: 1; } 100% { left: 34%; opacity: 0; } }
+
+/* the crowd */
+.gw__crowd { position: absolute; inset: 0; }
+.gw__face { position: absolute; left: var(--x); top: calc(1.25rem + var(--y) * 0.85rem); width: 1.3rem; height: 1.3rem; margin: -0.65rem 0 0 -0.65rem;
+  border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 2px var(--gw-tile);
+  /* a person: head and shoulders in the lane's green on a tinted disc */
+  background:
+    radial-gradient(circle at 50% 37%, var(--gw-b) 0 19%, transparent 20%),
+    radial-gradient(ellipse 62% 44% at 50% 104%, var(--gw-b) 0 98%, transparent 100%),
+    color-mix(in srgb, var(--gw-b) 18%, var(--gw-tile));
+  animation: gwPop 5.2s cubic-bezier(.3,1.4,.5,1) infinite; animation-delay: calc(var(--i) * 0.2s); }
+@keyframes gwPop { 0% { opacity: 0; transform: scale(.3); } 6% { opacity: 1; transform: scale(1); } 88% { opacity: 1; transform: scale(1); } 96%, 100% { opacity: 0; transform: scale(.8); } }
+.gw__crowdlab { position: absolute; right: 0; bottom: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--gw-b); }
+
+.gw__axis { position: relative; margin-left: calc(var(--gw-lw) + var(--gw-gap)); height: 2.5rem; display: flex; align-items: center; }
+.gw__axis::before { content: ''; position: absolute; left: 0; right: 0.4rem; top: 50%; height: 1px; background: color-mix(in srgb, currentColor 30%, transparent); }
+.gw__axis::after { content: ''; position: absolute; right: 0; top: 50%; width: 7px; height: 7px; margin-top: -3.5px;
+  border-top: 1px solid color-mix(in srgb, currentColor 45%, transparent); border-right: 1px solid color-mix(in srgb, currentColor 45%, transparent); transform: rotate(45deg); }
+.gw__axis span { position: relative; padding-right: 0.75rem; background: var(--gw-axisbg, transparent); font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gw-ink2); }
+.sec--dark .gw__axis span { background: #132633; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gw__dot--slow { animation: none; left: 38%; }
+  .gw__dot--fast { animation: none; display: none; }
+  .gw__face { animation: none; }
+}
+@media (max-width: 48rem) {
+  .gw { --gw-lw: 1fr; }
+  .gw::before { display: none; }
+  .gw__row { grid-template-columns: 1fr; }
+  .gw__axis { margin-left: 0; }
+  .gw__stop { width: 4.5rem; }
+  .gw__lab { font-size: 0.7rem; }
+  .gw__ico { width: 2.1rem; height: 2.1rem; }
+  .gw__line, .gw__dot, .gw__queue { top: 1.05rem; }
+  .gw__queue { display: none; }
+  /* the needed lane re-spaced for a narrow track: three steps, then the crowd */
+  .gw__row--b .gw__stop { width: 3.8rem; }
+  .gw__row--b .gw__lab { font-size: 0.66rem; }
+  .gw__row--b .gw__stop:nth-child(7) { left: 9%; }
+  .gw__row--b .gw__stop:nth-child(8) { left: 28%; }
+  .gw__row--b .gw__stop:nth-child(9) { left: 47%; }
+  .gw__row--b .gw__line { width: 47%; }
+  .gw__face { left: calc(59% + (var(--x) - 37%) * 0.66); }
+  .gw__dot--fast { animation-name: gwFastM; }
+  .gw__face { width: 1rem; height: 1rem; margin: -0.5rem 0 0 -0.5rem; top: calc(1.05rem + var(--y) * 0.65rem); }
+}
+@keyframes gwFastM { 0% { left: 0%; opacity: 0; } 10% { opacity: 1; } 85% { opacity: 1; } 100% { left: 54%; opacity: 0; } }
+
+/* TYPE MATCHED TO THE REST OF THE STUDY: Geist throughout, sentence case, no
+   tracking — the eyebrow's 14/400 for labels, the sub-head's 16/500 for row
+   names, the card body's 13/400 for notes. No mono and no caps anywhere. */
+.gw__tag, .gw__axis span {
+  font-family: var(--sans); font-size: 0.875rem; font-weight: 400;
+  letter-spacing: 0; text-transform: none;
+}
+.gw__axis span { color: color-mix(in srgb, currentColor 55%, transparent); }
+.gw__name { font-size: 1rem; font-weight: 500; letter-spacing: -0.018em; }
+.gw__note { font-size: 0.8125rem; line-height: 1.55; color: color-mix(in srgb, currentColor 80%, transparent); }
+.gw__lab { font-size: 0.8125rem; font-weight: 400; }
+.gw__meta { font-size: 0.75rem; }
+.gw__crowdlab { font-size: 0.8125rem; font-weight: 500; }
+.pm__k { font-size: 0.875rem; color: color-mix(in srgb, currentColor 55%, transparent); }
+.pm__lede { font-size: 1.1875rem; font-weight: 500; letter-spacing: -0.012em; }
+@media (max-width: 48rem) { .gw__lab { font-size: 0.7rem; } .gw__row--b .gw__lab { font-size: 0.66rem; } }
+
+/* --- the shift: before → after, one row per pair (Onefinnet, Metrics) ----- */
+.blk-shift { --sh-ok: #1e8a5c; --sh-rule: color-mix(in srgb, currentColor 12%, transparent);
+  margin-block: clamp(1.25rem, 3vw, 2rem) clamp(2.5rem, 6vw, 4rem); }
+.sec--dark .blk-shift { --sh-ok: #5fd3a0; }
+.sh__cols, .sh__row { display: grid; grid-template-columns: minmax(0, 1fr) clamp(4rem, 14vw, 11rem) minmax(0, 1fr); align-items: center; gap: clamp(0.75rem, 2vw, 1.5rem); }
+.sh__cols { padding-bottom: 0.75rem; font-size: 0.875rem; color: color-mix(in srgb, currentColor 55%, transparent); border-bottom: 1px solid var(--sh-rule); }
+.sh__cols-to { color: var(--sh-ok); }
+.sh__list { list-style: none; margin: 0; padding: 0; }
+.sh__row { padding: clamp(0.85rem, 2vw, 1.15rem) 0; border-bottom: 1px solid var(--sh-rule); font-size: clamp(0.95rem, 1.4vw, 1.0625rem); }
+.sh__from { color: color-mix(in srgb, currentColor 50%, transparent); }
+.sh__to { display: flex; align-items: center; gap: 0.6rem; font-weight: 500; letter-spacing: -0.01em; }
+.sh__tick { flex: none; width: 1.35rem; height: 1.35rem; border-radius: 50%; display: grid; place-items: center;
+  color: var(--sh-ok); background: color-mix(in srgb, var(--sh-ok) 14%, transparent); }
+.sh__tick svg { width: 0.8rem; height: 0.8rem; }
+/* the wire: a hairline that runs from the old state to the new one */
+.sh__wire { position: relative; height: 1px; }
+.sh__wire i { position: absolute; inset: 0; background: linear-gradient(90deg, color-mix(in srgb, currentColor 18%, transparent), var(--sh-ok));
+  transform-origin: left; }
+.sh__wire i::after { content: ''; position: absolute; right: 0; top: 50%; width: 6px; height: 6px; margin-top: -3px;
+  border-top: 1px solid var(--sh-ok); border-right: 1px solid var(--sh-ok); transform: rotate(45deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .blk-shift .sh__wire i { transform: scaleX(0); transition: transform 700ms cubic-bezier(.6,0,.2,1); transition-delay: calc(150ms + var(--i) * 110ms); }
+  .blk-shift .sh__to { opacity: 0; transform: translateX(-6px); transition: opacity 500ms ease, transform 500ms ease; transition-delay: calc(550ms + var(--i) * 110ms); }
+  .blk-shift.is-in .sh__wire i { transform: none; }
+  .blk-shift.is-in .sh__to { opacity: 1; transform: none; }
+}
+
+/* --- the impact strip: four figures (Onefinnet, Metrics) ----------------- */
+@property --imp-v { syntax: '<integer>'; inherits: true; initial-value: 0; }
+.blk-impact { --imp-rule: color-mix(in srgb, currentColor 12%, transparent); margin-block: 0 clamp(1.5rem, 4vw, 2.5rem); }
+.imp__row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--imp-rule); }
+.imp__col { padding: clamp(1.25rem, 2.6vw, 1.75rem) clamp(1rem, 2.2vw, 1.75rem) 0; border-left: 1px solid var(--imp-rule); }
+.imp__col:first-child { border-left: 0; padding-left: 0; }
+.imp__col:last-child { padding-right: 0; }
+.imp__k { margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: color-mix(in srgb, currentColor 55%, transparent); }
+.imp__dir { width: 1.35rem; height: 1.35rem; border-radius: 50%; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); }
+.imp__dir svg { width: 0.8rem; height: 0.8rem; }
+.imp__n { margin: clamp(0.9rem, 2vw, 1.25rem) 0 0.35rem; font-size: clamp(2.75rem, 5.2vw, 4.25rem); font-weight: 500; letter-spacing: -0.045em; line-height: 0.95;
+  font-variant-numeric: tabular-nums; --imp-v: var(--v); counter-reset: imp var(--imp-v); }
+.imp__n::before { content: attr(data-pre) counter(imp) attr(data-suf); }
+.imp__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.imp__l { margin: 0; font-size: 1rem; font-weight: 500; letter-spacing: -0.018em; line-height: 1.3; }
+.imp__spark { display: block; width: 100%; height: 3.25rem; margin: clamp(1rem, 2.4vw, 1.5rem) 0 0.9rem; overflow: visible; }
+.imp__b { margin: 0 0 clamp(1.25rem, 2.6vw, 1.75rem); font-size: 0.8125rem; line-height: 1.55; color: color-mix(in srgb, currentColor 62%, transparent); max-width: 30ch; }
+.imp__note { margin: 1rem 0 0; font-size: 0.8125rem; color: color-mix(in srgb, currentColor 50%, transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  .blk-impact .imp__n { --imp-v: 0; transition: --imp-v 1400ms cubic-bezier(.2,.7,.2,1); transition-delay: calc(200ms + var(--i) * 140ms); }
+  .blk-impact.is-in .imp__n { --imp-v: var(--v); }
+  .blk-impact .imp__line { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1400ms cubic-bezier(.4,0,.2,1); transition-delay: calc(300ms + var(--i) * 140ms); }
+  .blk-impact .imp__area { opacity: 0; transition: opacity 800ms ease; transition-delay: calc(1100ms + var(--i) * 140ms); }
+  .blk-impact.is-in .imp__line { stroke-dashoffset: 0; }
+  .blk-impact.is-in .imp__area { opacity: 1; }
+}
+@media (max-width: 60rem) {
+  .imp__row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .imp__col:nth-child(3) { border-left: 0; padding-left: 0; }
+  .imp__col:nth-child(2) { padding-right: 0; }
+  .imp__col:nth-child(n+3) { border-top: 1px solid var(--imp-rule); }
+}
+@media (max-width: 40rem) {
+  .sh__cols, .sh__row { grid-template-columns: minmax(0, 1fr) 2.25rem minmax(0, 1fr); gap: 0.6rem; }
+  .sh__row { font-size: 0.875rem; }
+  .imp__row { grid-template-columns: 1fr; }
+  .imp__col { border-left: 0; padding-left: 0; padding-right: 0; border-top: 1px solid var(--imp-rule); }
+  .imp__col:first-child { border-top: 0; }
+}
+
+
+/* the trend lines keep moving after they draw in: a short bright glint runs
+   along each line on a loop, and the end point pulses like a live reading */
+.imp__glint { stroke-dasharray: 0.07 1.07; stroke-dashoffset: 1.07; opacity: 0; }
+.imp__end { transform-box: fill-box; transform-origin: center; opacity: 0; }
+.imp__halo { transform-box: fill-box; transform-origin: center; opacity: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .blk-impact.is-in .imp__glint { opacity: 1; animation: impGlint 3.2s cubic-bezier(.45,0,.3,1) infinite;
+    animation-delay: calc(1.8s + var(--i) * 0.35s); }
+  .blk-impact .imp__end { transition: opacity 400ms ease; transition-delay: calc(1500ms + var(--i) * 140ms); }
+  .blk-impact.is-in .imp__end { opacity: 1; }
+  .blk-impact.is-in .imp__halo { animation: impPulse 2.4s ease-out infinite; animation-delay: calc(1.7s + var(--i) * 0.35s); }
+}
+@media (prefers-reduced-motion: reduce) { .imp__end { opacity: 1; } }
+@keyframes impGlint { 0% { stroke-dashoffset: 1.07; } 70%, 100% { stroke-dashoffset: 0; } }
+@keyframes impPulse { 0% { opacity: .45; transform: scale(1); } 80%, 100% { opacity: 0; transform: scale(3); } }
+
+
+/* NO LAYOUT GRID INSIDE A CASE STUDY. The grid toggle still works on the home,
+   work and about pages; on a project page its lines are never drawn. */
+body[data-page='project'] .gridlay { display: none !important; }

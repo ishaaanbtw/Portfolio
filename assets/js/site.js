@@ -4323,6 +4323,129 @@
 
     quote: (b) => `<blockquote class="blk blk-quote">${esc(b.text)}</blockquote>`,
 
+    /* --- the shift (Onefinnet: before → after) -------------------------------
+       ONE LIST, READ ACROSS. The two old cards stated five pairs as two
+       separate lists, so the reader had to match row three to row three by
+       eye. Here every pair is one row: the old state muted on the left, a
+       rule that draws itself across, the new state in ink with its tick. The
+       rows arrive one after another as the block comes into view. */
+    shift: (b) => {
+      const tick = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 8.4l3 3 6.6-7"/></svg>';
+      const rows = (b.pairs || []).map(([from, to], i) =>
+        `<li class="sh__row" style="--i:${i}">` +
+          `<span class="sh__from">${esc(from)}</span>` +
+          `<span class="sh__wire" aria-hidden="true"><i></i></span>` +
+          `<span class="sh__to"><span class="sh__tick">${tick}</span>${esc(to)}</span>` +
+        `</li>`).join('');
+      return `<div class="blk blk-shift">` +
+        `<div class="sh__cols" aria-hidden="true"><span>${esc(b.fromLabel || 'Before')}</span><span></span><span class="sh__cols-to">${esc(b.toLabel || 'After')}</span></div>` +
+        `<ol class="sh__list">${rows}</ol>` +
+      `</div>`;
+    },
+
+    /* --- the impact strip (Onefinnet: the four numbers) ----------------------
+       THE NUMBERS ARE THE PICTURE. Four pastel cards with an icon tile each
+       made every figure the same weight as its own description. Now the
+       figure is the largest thing in its column, the direction is a small
+       coloured mark beside it, and the trend underneath draws itself in on
+       reveal from the same `trend` list as before. Hairlines, no boxes. */
+    impact: (b) => {
+      let sid = 0;
+      const spark = (vals, c) => {
+        const W = 320, H = 56, T = 6, B = H - 6;
+        const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1;
+        const pts = vals.map((v, i) => [(i * W) / (vals.length - 1), B - ((v - lo) / span) * (B - T)]);
+        const xy = (p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`;
+        let d = `M${xy(pts[0])}`;
+        for (let i = 1; i < pts.length - 1; i++) d += ` Q${xy(pts[i])} ${xy([(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2])}`;
+        const last = pts[pts.length - 1]; d += ` L${xy(last)}`;
+        const id = `imp${Date.now().toString(36)}${++sid}`;
+        return `<svg class="imp__spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" fill="none" aria-hidden="true">` +
+          `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".18"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs>` +
+          `<path class="imp__area" d="${d} L${W} ${H} L0 ${H} Z" fill="url(#${id})"/>` +
+          `<path class="imp__line" d="${d}" pathLength="1" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` +
+          `<path class="imp__glint" d="${d}" pathLength="1" stroke="${c}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="filter:brightness(1.35)"/>` +
+          `<circle class="imp__halo" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="4" fill="${c}"/>` +
+          `<circle class="imp__end" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.4" fill="${c}"/>` +
+        `</svg>`;
+      };
+      const ARROW = {
+        down: '<path d="M8 3v10M4 9l4 4 4-4"/>', up: '<path d="M8 13V3M4 7l4-4 4 4"/>', star: '<path d="M8 3v10M3 8h10"/>',
+      };
+      const cols = (b.items || []).map((m, i) => {
+        const v = String(m.value), num = parseInt(v.replace(/[^0-9]/g, ''), 10) || 0;
+        const pre = v.startsWith('+') ? '+' : '', suf = v.endsWith('%') ? '%' : '';
+        return `<li class="imp__col" style="--c:${m.c};--i:${i};--v:${num}">` +
+          `<p class="imp__k"><span class="imp__dir"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ARROW[m.icon] || ARROW.up}</svg></span>${esc(m.kicker || '')}</p>` +
+          `<p class="imp__n" data-pre="${pre}" data-suf="${suf}"><span class="imp__sr">${esc(v)}</span></p>` +
+          `<p class="imp__l">${m.label}</p>` +
+          (m.trend ? spark(m.trend, m.c) : '') +
+          `<p class="imp__b">${m.body}</p>` +
+        `</li>`;
+      }).join('');
+      return `<div class="blk blk-impact"><ol class="imp__row">${cols}</ol>` +
+        (b.note ? `<p class="imp__note">${esc(b.note)}</p>` : '') + `</div>`;
+    },
+
+    /* --- the growth diagram ---------------------------------------------------
+       THE BUSINESS PROBLEM, DRAWN ON ONE CLOCK. Both rows share a time axis,
+       left to right. Sales-led growth spends the whole width getting ONE
+       customer through a call, a demo and a manual onboarding; the channel it
+       needed gets through its three steps in the first fifth of the same
+       width and spends the rest of it accumulating customers. Length is time,
+       the crowd is scale — the comparison is read before a label is. CSS-only
+       motion; with reduced motion it holds as a still of the same picture. */
+    growth: (b) => {
+      const IC = {
+        phone: '<path d="M6.5 3.5h3l1.5 4-2 1.3a10 10 0 0 0 6.2 6.2l1.3-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"/>',
+        screen: '<rect x="3" y="4.5" width="18" height="12" rx="1.6"/><path d="M8.5 20h7M12 16.5V20"/>',
+        doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+        user: '<circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
+        signup: '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 9h8M8 13h5M14.5 16.5l1.6 1.6 3-3.2"/>',
+        bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+      };
+      const ico = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n] || IC.user}</svg>`;
+      const stop = (st, x, end) =>
+        `<div class="gw__stop${end ? ' gw__stop--end' : ''}" style="--x:${x}%">` +
+          `<span class="gw__ico">${ico(st.icon)}</span>` +
+          `<span class="gw__lab">${esc(st.label)}</span>` +
+          (st.meta ? `<span class="gw__meta">${esc(st.meta)}</span>` : '') + `</div>`;
+      const head = (L, k) => `<div class="gw__head gw__head--${k}"><span class="gw__tag">${esc(L.tag || '')}</span>` +
+        `<p class="gw__name">${esc(L.name || '')}</p>` + (L.note ? `<p class="gw__note">${L.note}</p>` : '') + `</div>`;
+
+      const A = b.from || {}, B = b.to || {};
+      const AX = [9, 38, 67], AEND = 94, BX = [6, 17, 28];
+      const AV = ['#f4ebff', '#eef4ff', '#ecfdf3', '#fff4ed', '#fdf2fa', '#f0f9ff'];
+      /* the crowd: a loose two-row field from where the steps end to the edge */
+      const crowd = Array.from({ length: 26 }, (_, i) => {
+        const col = Math.floor(i / 2), row = i % 2;
+        const x = 37 + col * 4.75 + (row ? 2.35 : 0);
+        return `<i class="gw__face" style="--x:${x.toFixed(1)}%;--y:${row ? 1 : -1};--i:${i};--c:${AV[i % AV.length]}"></i>`;
+      }).join('');
+
+      return `<div class="blk blk-growth">` +
+        (b.not ? `<p class="pm__brief"><span class="pm__k">${esc(b.notLabel || 'It wasn’t')}</span><s class="pm__not">${esc(b.not)}</s></p>` : '') +
+        (b.lede ? `<p class="pm__lede">${b.lede}</p>` : '') +
+        `<div class="gw">` +
+          `<div class="gw__row gw__row--a">${head(A, 'a')}` +
+            `<div class="gw__track"><i class="gw__line" style="--to:${AEND}%"></i>` +
+              `<span class="gw__queue" aria-hidden="true">${'<i></i>'.repeat(9)}</span>` +
+              `<span class="gw__dot gw__dot--slow" aria-hidden="true"></span>` +
+              (A.steps || []).map((st, i) => stop(st, AX[i])).join('') +
+              stop(A.end || {}, AEND, true) +
+            `</div></div>` +
+          `<div class="gw__row gw__row--b">${head(B, 'b')}` +
+            `<div class="gw__track"><i class="gw__line" style="--to:${BX[BX.length - 1]}%"></i>` +
+              Array.from({ length: 5 }, (_, i) => `<span class="gw__dot gw__dot--fast" style="--d:${(-i * 0.36).toFixed(2)}s" aria-hidden="true"></span>`).join('') +
+              (B.steps || []).map((st, i) => stop(st, BX[i])).join('') +
+              `<div class="gw__crowd" aria-hidden="true">${crowd}</div>` +
+              `<span class="gw__crowdlab">${esc(B.end?.label || '')}</span>` +
+            `</div></div>` +
+          `<div class="gw__axis" aria-hidden="true"><span>${esc(b.axis || 'Time to a customer')}</span></div>` +
+        `</div>` +
+      `</div>`;
+    },
+
     /* --- the contrast card ----------------------------------------------------
        Two framings set side by side. This was a plain monospace block first,
        which stated a contrast without showing one — the halves have to sit next

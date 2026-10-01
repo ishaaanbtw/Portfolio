@@ -2727,18 +2727,34 @@ window.SITE = {
                    \u2014 the line breaks in the third statement are deliberate. */
                 { type: 'head', title: 'The business problem' },
 
-                { type: 'contrast',
-                  not: 'We wanted to redesign\u2026',
-                  /* one row per statement, each with its own mark — the fourth keeps
-                     its second line as a quieter continuation, as in the reference */
-                  items: [
-                    { icon: 'building', text: 'The company had one major problem.' },
-                    { icon: 'case', text: 'The product was entirely enterprise-driven.' },
-                    { icon: 'chart', text: 'Growth depended on sales teams.' },
-                    { icon: 'person', text: 'Every customer required lengthy demos,',
-                      sub: 'manual onboarding, and high acquisition costs.' },
-                    { icon: 'target', text: 'The business needed a scalable acquisition channel.' },
-                  ] },
+                /* The business problem, drawn: the struck-through framing, then
+                   two lanes — how the company grew (one customer at a time,
+                   through sales) against the channel it needed (self-serve). */
+                { type: 'growth',
+                  notLabel: 'The brief wasn\u2019t',
+                  not: '\u201cWe wanted to redesign\u2026\u201d',
+                  lede: 'It started as a growth problem.',
+                  from: {
+                    tag: 'How it grew', name: 'Sales-led',
+                    note: 'Enterprise-only. Every customer went through sales.',
+                    steps: [
+                      { icon: 'phone', label: 'Sales call' },
+                      { icon: 'screen', label: 'Lengthy demo' },
+                      { icon: 'doc', label: 'Manual onboarding' },
+                    ],
+                    end: { icon: 'user', label: 'One customer', meta: 'High acquisition cost' },
+                  },
+                  to: {
+                    tag: 'What it needed', name: 'A scalable channel',
+                    note: 'Teams that find, try and start on their own.',
+                    steps: [
+                      { icon: 'signup', label: 'Sign up' },
+                      { icon: 'bolt', label: 'Self-serve setup' },
+                      { icon: 'screen', label: 'First job live' },
+                    ],
+                    end: { icon: 'users', label: 'Customers at scale' },
+                  },
+                  axis: 'Time to a customer' },
 
                 /* the 2x2 grid from the deck. `lift` is the one card a shade
                    lighter, as in the reference. */
@@ -3080,43 +3096,30 @@ window.SITE = {
                    two lists that answer each other row for row. No heading of its
                    own — the section heading already covers it, and the two labels
                    inside the card say what it is. */
-                { type: 'contrast',
-                  notLabel: 'Before', insteadLabel: 'After',
-                  notItems: [
-                    { text: 'Fragmented workflows' },
-                    { text: 'Manual and repetitive tasks' },
-                    { text: 'Low visibility and insights' },
-                    { text: 'Slow hiring process' },
-                    { text: 'Low user satisfaction' },
-                  ],
-                  items: [
-                    { text: 'Unified workflows' },
-                    { text: 'AI-powered automation' },
-                    { text: 'Real-time insights' },
-                    { text: 'Faster hiring' },
-                    { text: 'High user satisfaction' },
+                /* Before and after as five pairs read across, then the four
+                   numbers as the figures they are. */
+                { type: 'shift', fromLabel: 'Before', toLabel: 'After',
+                  pairs: [
+                    ['Fragmented workflows', 'Unified workflows'],
+                    ['Manual and repetitive tasks', 'AI-powered automation'],
+                    ['Low visibility and insights', 'Real-time insights'],
+                    ['Slow hiring process', 'Faster hiring'],
+                    ['Low user satisfaction', 'High user satisfaction'],
                   ] },
 
-                { type: 'metrics',
+                { type: 'impact',
                   note: 'Impact observed over 6 months after the new experience was released.',
                   items: [
-                    { value: '40%', label: 'Less recruiter effort', icon: 'down',
-                      c: '#2f9e6e', wash: '#e8f5ee',
+                    { value: '40%', kicker: 'Recruiter effort', label: 'Less recruiter effort', icon: 'down', c: '#2f9e6e',
                       body: 'Automation and AI assistance reduced manual tasks significantly.',
                       trend: [62, 60, 55, 52, 46, 44, 39, 36, 33, 28, 24, 21] },
-
-                    { value: '15%', label: 'Higher trial-to-paid conversion', icon: 'up',
-                      c: '#6d4dd8', wash: '#eeeafc',
+                    { value: '15%', kicker: 'Trial to paid', label: 'Higher trial-to-paid conversion', icon: 'up', c: '#6d4dd8',
                       body: 'A smoother experience helped more teams convert and stay longer.',
                       trend: [22, 25, 24, 31, 34, 38, 42, 47, 52, 58, 66, 74] },
-
-                    { value: '18%', label: 'Increase in task completion', icon: 'up',
-                      c: '#3b82f6', wash: '#e8f0fe',
+                    { value: '18%', kicker: 'Task completion', label: 'Increase in task completion', icon: 'up', c: '#3b82f6',
                       body: 'Users completed key actions faster, with fewer drops in between.',
                       trend: [30, 33, 37, 36, 44, 48, 52, 55, 61, 64, 70, 78] },
-
-                    { value: '+7', label: 'NPS score improvement', icon: 'star',
-                      c: '#d99a1a', wash: '#fdf3dd',
+                    { value: '+7', kicker: 'NPS', label: 'NPS score improvement', icon: 'up', c: '#d99a1a',
                       body: 'A consistent increase in satisfaction and overall user sentiment.',
                       trend: [34, 36, 35, 41, 44, 43, 50, 54, 58, 57, 64, 69] },
                   ] },
