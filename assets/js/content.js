@@ -2621,20 +2621,31 @@ window.SITE = {
              interface does. Pale field, dark ink, wider artifact. See the
              note on the X0 hero for what each key does. */
           hero: {
-            layout: 'bleed',
-            /* same reasoning as X0's — the artwork brings its own lavender, so
-               a lavender wall behind it doubled the ground. Paper, and the
-               screen rises out of it. */
-            ink: '#1a1730',
-            scale: 0.84,
-            at: 'bottom',
-            facts: ['B2B SaaS', 'Product design', '2024 — 25'],
-            line: 'The screens where a human decides what the model got right.',
+            /* THE FILM, FULL SCREEN — the same opening as X0 and X0 Cards,
+               on paper instead of black. 100 applications screened, ranked
+               and shortlisted onto the board, the board going live, then the
+               Talent logo. Source: .tools/talent-film/film.html */
+            kind: 'film',
+            tone: 'light',
+            film: 'assets/media/onefinnet/talent-film.webm',
+            film2: 'assets/media/onefinnet/talent-film.mp4',
+            poster: 'assets/media/onefinnet/talent-film.webp',
+            ground: '#f7f8fa',
+            /* no cinema title: the document hero's caption instead, on a
+               paper fade at the foot of the film */
+            caption: {
+              name: 'Onefinnet Talent',
+              facts: ['B2B SaaS', 'Product design', '2024 \u2014 25'],
+              line: 'The screens where a human decides what the model got right.',
+            },
+            prog: false,
           },
           /* The dock opens with the study, as it does on a project page. Set
              `reading: true` to have it collapse to its tab instead — the
              machinery for that is still in Rack.applyScope. */
           reading: false,
+          /* no annotation dock on this study */
+          dock: false,
           back: { label: 'BACK', href: 'index.html' },
           sections: [
             /* The opening stretch runs on a dark band — overview first, then the

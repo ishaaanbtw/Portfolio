@@ -11780,6 +11780,11 @@ body.sliding .sig {
   object-fit: cover;
 }
 
+/* the film hero: the panel keeps the layout's own box and the film sits in
+   it uncropped. The panel is painted the film's ground (#f7f8fa, set from the
+   study's data), so the spare margin reads as part of the film. */
+.phero__vid { object-fit: contain; }
+
 /* --- the caption --------------------------------------------------------- */
 
 /* IDENTITY ON THE LEFT, CONTEXT ON THE RIGHT, THE CUE IN THE CORNER. Baseline
@@ -12856,6 +12861,63 @@ body[data-page='project'].phero-up .llm:not(.is-up) .llm__chip { animation: none
    stays exactly as it is. It is the section's rule, not that study's: the
    next film hero that centres something on an edge inherits the fix instead
    of rediscovering it. */
+/* --- the light film hero ---------------------------------------------------
+   A film shot on paper (Onefinnet Talent) rather than on black. Same frame,
+   same entrance; the chrome inverts to ink, the bloom is dropped (it is a
+   glow for a dark field), and the stage sits flush so the top of the film —
+   where this one keeps its counter — is not hung off the window. */
+.fhero[data-tone='light'] { color: #101828; }
+/* the film covers the window as X0's does; a soft paper fade rises from the
+   bottom edge and the study caption sits on it */
+.fhero[data-tone='light'] .fhero__stage { inset: 0; }
+.fhero[data-tone='light'] .fhero__bloom { display: none; }
+.fhero[data-tone='light'] .fhero__scrim {
+  height: clamp(11rem, 31%, 20rem);
+  background: linear-gradient(
+    color-mix(in srgb, var(--fh-ground) 0%, transparent) 0%,
+    color-mix(in srgb, var(--fh-ground) 70%, transparent) 45%,
+    var(--fh-ground) 78%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  mask-image: linear-gradient(transparent, #000 40%);
+  -webkit-mask-image: linear-gradient(transparent, #000 40%);
+}
+.fhero__caption {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 var(--gut) clamp(1.5rem, 4vh, 2.5rem);
+  color: var(--ink, #101828);
+}
+/* on a portrait screen the film is letterboxed into the middle band (the
+   cover crop would cut the board in half) and the caption stacks */
+@media (max-aspect-ratio: 1 / 1) {
+  .fhero[data-tone='light'] .fhero__stage { inset: 14vh 0 auto 0; height: 46vh; }
+}
+@media (max-width: 48rem) {
+  .fhero__caption.phero__foot { display: flex; flex-direction: column; gap: 0.7rem; }
+}
+}
+.fhero[data-tone='light'] .fhero__back { color: rgba(16, 24, 40, 0.5); }
+:root:not(.hover-cold) .fhero[data-tone='light'] .fhero__back:hover,
+.fhero[data-tone='light'] .fhero__back:focus-visible { color: rgba(16, 24, 40, 0.92); }
+.fhero[data-tone='light'] .fhero__mark-n { color: rgba(16, 24, 40, 0.88); }
+.fhero[data-tone='light'] .fhero__mark-s,
+.fhero[data-tone='light'] .fhero__anno-l { color: rgba(16, 24, 40, 0.45); }
+.fhero[data-tone='light'] .fhero__anno-i { color: rgba(16, 24, 40, 0.7); }
+.fhero[data-tone='light'] .fhero__anno-r { background: rgba(16, 24, 40, 0.2); }
+.fhero[data-tone='light'] .fhero__h { color: #101828; }
+.fhero[data-tone='light'] .fhero__meta dt { color: rgba(16, 24, 40, 0.42); }
+.fhero[data-tone='light'] .fhero__meta dd { color: rgba(16, 24, 40, 0.78); }
+.fhero[data-tone='light'] .fhero__cue,
+.fhero[data-tone='light'] .fhero__prog { color: rgba(16, 24, 40, 0.42); }
+.fhero[data-tone='light'] .fhero__cue-l,
+.fhero[data-tone='light'] .fhero__prog-t { background: rgba(16, 24, 40, 0.12); }
+.fhero[data-tone='light'] .fhero__cue-l i,
+.fhero[data-tone='light'] .fhero__prog-t i { background: rgba(16, 24, 40, 0.7); }
+
 .fhero [data-in] {
   opacity: 0;
   transform: translateY(8px);
@@ -25045,3 +25107,13 @@ body[data-page='project'] .gridtog { display: none !important; }
 .rail__mk { z-index: 1; }
 .rail[data-on='0'] .rail__mk { opacity: 0; }
 .rail__list.has-mk .rail__mark { display: none; }
+
+/* A DOCUMENT STUDY UNDER A FILM HERO: the study's dark opening band meets the
+   film directly. The body's top padding is for a page that starts on paper,
+   and here it left a strip of paper between the two. */
+.fhero + .proj__body { padding-top: 0; }
+
+/* A STUDY CAN TURN THE ANNOTATION TOOLS OFF (`dock: false` in content.js):
+   the dock, its edge tab and the phone button all go, and so do the shortcuts. */
+body[data-nodock] .tools,
+body[data-nodock] .fab { display: none !important; }

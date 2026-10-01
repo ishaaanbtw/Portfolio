@@ -7584,6 +7584,10 @@
          key in content.js and the comment beside it explaining what it does
          were both decorative. This is that assignment. */
       if (typeof Rack !== 'undefined') Rack.reading = !!p.reading;
+      /* and whether there is a dock at all: `dock: false` hides the tools on
+         this study only — `applyScope` clears it again off a project page */
+      if (typeof Rack !== 'undefined') Rack.noDock = p.dock === false;
+      document.body.toggleAttribute('data-nodock', p.dock === false);
 
       const item = this.item;
       const name = item ? item.title : p.title;
@@ -7669,7 +7673,10 @@
          uses and is what requirement twelve asks for. `.onward` was lifted out
          for the same reason one pass earlier; see the note where the rail moves
          in. */
-      if (item) main.appendChild(this.hero(p, item));
+      /* A DOCUMENT STUDY CAN OPEN ON A FILM TOO — the same full-screen
+         `filmHero` the film studies use (Onefinnet Talent does). */
+      if (p.hero && p.hero.kind === 'film') main.appendChild(this.filmHero(p));
+      else if (item) main.appendChild(this.hero(p, item));
       else {
         col.appendChild(el('header', { class: 'proj__head' },
           `<span class="proj__eyebrow">${esc(p.eyebrow || '')}</span>` +
@@ -7927,6 +7934,32 @@
           width: shot.w || null, height: shot.h || null,
           decoding: 'async', fetchpriority: 'high',
         }));
+      } else if (shot && shot.video) {
+        /* A FILM IN THE HERO RATHER THAN A STILL. Same frame, same caption;
+           only the artwork moves. `contain` and a matching ground so the
+           film is never cropped by whatever box the layout hands it — its
+           story ends on a centred logo and a crop would cut that. */
+        media.textContent = '';
+        if (shot.ground) media.style.background = shot.ground;
+        art.classList.add('phero__art--film');
+        const v = el('video', {
+          class: 'phero__img phero__vid', autoplay: '', loop: '', muted: '',
+          playsinline: '', preload: 'auto', 'aria-label': shot.alt || null,
+          poster: shot.poster ? url(shot.poster) : null,
+        });
+        v.muted = true; v.defaultMuted = true;
+        [shot.video, shot.video2].filter(Boolean).forEach((src) => v.appendChild(el('source', {
+          src: url(src), type: /\.webm$/i.test(src) ? 'video/webm' : 'video/mp4' })));
+        const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const sync = () => {
+          try {
+            if (still.matches) { v.pause(); return; }
+            const pr = v.play(); if (pr && pr.catch) pr.catch(() => {});
+          } catch (err) { /* autoplay refused; the poster stands in */ }
+        };
+        v.addEventListener('loadeddata', sync);
+        if (still.addEventListener) still.addEventListener('change', sync);
+        media.appendChild(v);
       } else {
         mountThumb(item, media);
       }
@@ -8039,6 +8072,9 @@
       const h = el('header', {
         class: 'fhero',
         style: d.ground ? `--fh-ground:${d.ground}` : null,
+        /* `tone: 'light'` for a film shot on paper rather than on black —
+           the chrome inverts to ink; see the light block in section 44 */
+        'data-tone': d.tone || null,
       });
 
       const stage = el('div', { class: 'fhero__stage', 'aria-hidden': 'true' });
@@ -8179,6 +8215,26 @@
           d.meta.map((m) => `<div><dt>${esc(m.k)}</dt><dd>${esc(m.v)}</dd></div>`).join('')));
       }
       h.appendChild(words);
+      /* THE STUDY CAPTION INSTEAD OF THE CINEMA TITLE. A study that states
+         `caption` gets the document hero's own foot — name and facts on the
+         left, the line and the cue on the right — laid over a paper fade at
+         the bottom of the film (Onefinnet Talent). */
+      if (d.caption) {
+        const c = d.caption;
+        const foot = el('div', { class: 'phero__foot fhero__caption', 'data-in': '3' });
+        const id = el('div', { class: 'phero__id' });
+        id.appendChild(el(d.h ? 'p' : 'h1', { class: 'phero__name' }, esc(c.name || '')));
+        if ((c.facts || []).length) {
+          id.appendChild(el('p', { class: 'phero__facts' },
+            c.facts.map((f) => `<span>${esc(f)}</span>`).join('<i aria-hidden="true">\u00b7</i>')));
+        }
+        foot.appendChild(id);
+        const side = el('div', { class: 'phero__side' });
+        if (c.line) side.appendChild(el('p', { class: 'phero__line' }, esc(c.line)));
+        side.appendChild(el('p', { class: 'phero__cue', 'aria-hidden': 'true' }, 'Scroll<i>\u2193</i>'));
+        foot.appendChild(side);
+        h.appendChild(foot);
+      }
 
       /* --- 4. the way down ----------------------------------------------
          NOT A BOUNCING ARROW. A word, a 1px rule under it, and a short
@@ -9566,6 +9622,7 @@
       };
 
       addEventListener('keydown', (e) => {
+        if (document.body.hasAttribute('data-nodock')) return;
         if (hit(e, 'input, textarea, [contenteditable]')) return;
         const meta = e.metaKey || e.ctrlKey;
 
@@ -9809,6 +9866,7 @@
     /* re-evaluate on scroll and on drawer changes */
     applyScope() {
       if (!this.rack) return;
+      document.body.toggleAttribute('data-nodock', !!this.noDock && this.onProject());
       /* A phone has no edge tab — the CSS hides it — so every rule below that
          collapses the dock would take the tools away with nothing left to bring
          them back. The FAB is always on screen instead, and the dock's state
