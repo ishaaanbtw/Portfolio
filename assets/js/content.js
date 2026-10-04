@@ -234,6 +234,9 @@ window.SITE = {
        Cal.com page for the 15-minute event, opened in a new tab — Cal.com is
        the scheduling system and nothing here imitates it. The email address
        is still one press away in the Links list. */
+    /* opens INSIDE the page (see `Door` in site.js): the Cal.com calendar in
+       a pop-up that follows the light/dark switch. The href is still the real
+       booking page, for cmd-click and no-JS. */
     primary: { label: 'Book a call', action: 'book-call', href: 'https://cal.com/ishaanbtw/15min' },
     secondary: { label: 'Resume', action: 'resume' },
   },
@@ -3363,7 +3366,9 @@ window.SITE = {
             { id: 'xc-outcome', nav: 'Outcome', kind: 'ask', dur: 150, mid: true,
               kicker: 'Outcome',
               h: 'A product family, not an accessory.',
-              p: 'Every touchpoint, from the box to the card to the app, shares one visual language.' },
+              p: 'Every touchpoint, from the box to the card to the app, shares one visual language.',
+              /* the live 3D card under the line: drag to turn it over */
+              card3d: true },
 
             { id: 'xc-end', kind: 'object', dur: 120, dark: true, rest: true,
               shot: { label: 'The whole family', of: 'Box, four cards and the phone running the X0 app, together', kind: 'render', ratio: 1.778 },

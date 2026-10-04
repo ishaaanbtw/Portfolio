@@ -5746,6 +5746,11 @@
           : `<h2${AT(0.06)} class="fg-h fg-h--l fg-h--wide` +
             ` beat beat--still">${s.h}</h2>`) +
         (s.p ? `<p${AT(s.pat == null ? 0.34 : s.pat)} class="fg-p beat">${s.p}</p>` : '') +
+        /* THE CARD ITSELF, LIVE. `card3d: true` on an ask scene adds a slot
+           that the page's own module (see work/x0-cards.html) fills with the
+           drag-to-rotate three.js card from assets/js/x0-card.js. */
+        (s.card3d ? `<div${AT(0.42)} class="fg-card3d beat" data-card3d` +
+          ` role="img" aria-label="${esc(s.card3dLabel || '3D model of the X0 card. Drag to rotate.')}"></div>` : '') +
       `</div>`,
 
     /* --- 07 · the brief, and then eight questions ------------------------
@@ -19595,7 +19600,7 @@
       const book = S.hero.primary || {};
       cta.appendChild(el('a', {
         class: 'btn btn--sm', href: book.href, 'data-action': book.action,
-        target: '_blank', rel: 'noopener',
+        /* no new tab: `Door` opens the calendar inside the page */
       }, `<span class="btn__label">${esc(book.label)}</span>`));
       cta.appendChild(el('a', {
         class: 'btn btn--sm btn--ghost', href: S.person.resumeUrl, 'data-action': 'resume',
@@ -24153,7 +24158,7 @@
       this.el.hidden = false;
       if (sc) sc.scrollTop = 0;
       requestAnimationFrame(() => this.el.classList.add('is-up'));
-      setTimeout(() => this.x && this.x.focus({ preventScroll: true }), 240);
+      setTimeout(() => this.x && this.x.focus({ preventScroll: true, focusVisible: false }), 240);
       Sound.chime();
     },
 
@@ -24167,6 +24172,184 @@
       setTimeout(() => { if (!this.open_) this.el.hidden = true; }, REDUCED ? 1 : 420);
     },
   };
+
+  /* ================================================== 6d. the contact door ==
+
+     BOOK A CALL, INSIDE THE PAGE. It used to hand the visitor to somebody
+     else's window: Cal.com in a new tab. Each is the exact moment a portfolio stops feeling like one thing,
+     which is the argument `Paper` already makes for the resume — so both are
+     built from Paper's own parts (veil, window, bar, close) and move with the
+     same spring. (Email links are deliberately NOT routed here.)
+
+     EVERY LINK STAYS A REAL LINK. The click is intercepted, not the href
+     removed, so a middle-click, a cmd-click, a long-press or a page with no JS
+     still reaches cal.com or the mail app.
+
+     THE CALENDAR IS CAL.COM'S OWN, embedded with their official script and
+     loaded on first open only — nothing is fetched by visitors who never ask.
+     It follows the site's light/dark switch and uses the site's accent. */
+  const Door = {
+    shell(kind, title) {
+      const win = el('div', {
+        class: `paper__win door__win door__win--${kind}`, role: 'dialog', 'aria-modal': 'true',
+        'aria-label': title,
+      });
+      const bar = el('div', { class: 'paper__bar' });
+      bar.appendChild(el('p', { class: 'paper__title door__title' }, esc(title)));
+      const acts = el('div', { class: 'paper__acts' });
+      const x = el('button', { class: 'paper__x door__x', type: 'button', 'aria-label': 'Close' },
+        '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" '
+        + 'stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>');
+      acts.appendChild(x);
+      bar.appendChild(acts);
+      win.appendChild(bar);
+      const body = el('div', { class: 'door__body' });
+      win.appendChild(body);
+      const root = el('div', { class: `paper door door--${kind}`, hidden: '' });
+      root.appendChild(el('div', { class: 'paper__veil' }));
+      root.appendChild(win);
+      App.mount(root);
+      const d = { root, win, body, x, acts, open_: false, onClose: null };
+      d.open = () => {
+        if (d.open_) return;
+        d.open_ = true;
+        d.from = document.activeElement;
+        App.lock(true);
+        document.documentElement.classList.add('is-door');
+        root.hidden = false;
+        requestAnimationFrame(() => root.classList.add('is-up'));
+        setTimeout(() => x.focus({ preventScroll: true, focusVisible: false }), 240);
+        Sound.chime && Sound.chime();
+      };
+      d.close = () => {
+        if (!d.open_) return;
+        d.open_ = false;
+        root.classList.remove('is-up');
+        App.lock(false);
+        document.documentElement.classList.remove('is-door');
+        if (d.from && d.from.focus) d.from.focus({ preventScroll: true });
+        setTimeout(() => { if (!d.open_) { root.hidden = true; d.onClose && d.onClose(); } }, REDUCED ? 1 : 420);
+      };
+      x.addEventListener('click', d.close);
+      $('.paper__veil', root).addEventListener('click', d.close);
+      addEventListener('keydown', (e) => { if (e.key === 'Escape' && d.open_) d.close(); });
+      return d;
+    },
+
+    /* a short note in the site's voice, laid over the window's body */
+    note(d, head, line, closeAfter) {
+      const n = el('div', { class: 'door__note', role: 'status' },
+        '<span class="door__tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        + 'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>'
+        + `<p class="door__nh">${esc(head)}</p><p class="door__nl">${esc(line)}</p>`);
+      d.win.appendChild(n);
+      requestAnimationFrame(() => n.classList.add('is-in'));
+      clearTimeout(d._t);
+      if (closeAfter) d._t = setTimeout(() => d.close(), closeAfter);
+      return n;
+    },
+
+    /* ---------------------------------------------------------- booking */
+    calLink(href) {
+      const m = String(href || '').match(/cal\.com\/([^?#]+)/i);
+      return m ? m[1].replace(/\/$/, '') : null;
+    },
+    theme() { return document.documentElement.classList.contains('is-dark') ? 'dark' : 'light'; },
+
+    loadCal() {
+      if (window.Cal && window.Cal.ns && window.Cal.ns.door) return;
+      /* Cal.com's official embed loader, verbatim in behaviour: it queues
+         calls until embed.js arrives. */
+      (function (C, A, L) {
+        const p = function (a, ar) { a.q.push(ar); };
+        const d = C.document;
+        C.Cal = C.Cal || function () {
+          const cal = C.Cal; const ar = arguments;
+          if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement('script')).src = A; cal.loaded = true; }
+          if (ar[0] === L) {
+            const api = function () { p(api, arguments); };
+            const namespace = ar[1]; api.q = api.q || [];
+            if (typeof namespace === 'string') { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ['initNamespace', namespace]); } else p(cal, ar);
+            return;
+          }
+          p(cal, ar);
+        };
+      })(window, 'https://app.cal.com/embed/embed.js', 'init');
+      window.Cal('init', 'door', { origin: 'https://app.cal.com' });
+      const cal = window.Cal.ns.door;
+      cal('ui', {
+        theme: this.theme(),
+        hideEventTypeDetails: false,
+        layout: 'month_view',
+        /* Cal.com's surfaces painted in the site's own tokens (--surface-2,
+           --surface, --border), so the calendar sits IN the window instead of
+           as a second box inside it */
+        cssVarsPerTheme: {
+          light: { 'cal-brand': '#a8722c', 'cal-bg': '#fdfcf9', 'cal-bg-muted': '#f8f7f3',
+            'cal-border': '#e4e0d8', 'cal-border-subtle': '#e4e0d8', 'cal-border-booker': '#e4e0d8' },
+          dark: { 'cal-brand': '#c9a06a', 'cal-bg': '#18181b', 'cal-bg-muted': '#0f0f11',
+            'cal-border': '#272729', 'cal-border-subtle': '#272729', 'cal-border-booker': '#272729' },
+        },
+      });
+      cal('on', { action: 'linkReady', callback: () => this.book && this.book.root.classList.add('is-ready') });
+      const done = () => {
+        if (!this.book || this.book.booked) return;
+        this.book.booked = true;
+        this.note(this.book, 'You’re booked.', 'A calendar invite is on its way to your inbox. Talk soon.', 4200);
+      };
+      cal('on', { action: 'bookingSuccessfulV2', callback: done });
+      cal('on', { action: 'bookingSuccessful', callback: done });
+      /* the site's theme switch, followed live */
+      new MutationObserver(() => cal('ui', { theme: this.theme() }))
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    },
+
+    openBook(href) {
+      const link = this.calLink(href) || this.calLink(S.hero && S.hero.primary && S.hero.primary.href);
+      if (!link) return false;
+      if (!this.book) {
+        this.book = this.shell('book', 'Book a call');
+        this.book.onClose = () => {
+          /* after a booking, start clean next time */
+          if (this.book.booked) this.book.mounted = null;
+        };
+      }
+      const b = this.book;
+      if (b.mounted !== link) {
+        b.booked = false;
+        $$('.door__note', b.win).forEach((n) => n.remove());
+        b.root.classList.remove('is-ready');
+        b.body.innerHTML = '<div class="door__load" aria-hidden="true"><i></i><i></i><i></i></div>'
+          + '<div class="door__cal" id="door-cal"></div>';
+        this.loadCal();
+        window.Cal.ns.door('inline', {
+          elementOrSelector: '#door-cal', calLink: link,
+          config: { layout: 'month_view', theme: this.theme() },
+        });
+        b.mounted = link;
+      }
+      b.open();
+      return true;
+    },
+
+    /* --------------------------------------------- one door for every link */
+    init() {
+      document.addEventListener('click', (e) => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const a = e.target.closest && e.target.closest('a[href]');
+        if (!a) return;
+        const href = a.getAttribute('href') || '';
+        /* ONLY CAL.COM. Email links are left alone on purpose: they open the
+           mail app as before, and the In progress tile's mailto has to reach
+           its own handler untouched (five quick clicks open the study). */
+        if (/^https?:\/\/(app\.)?cal\.com\//i.test(href)) {
+          e.preventDefault(); e.stopPropagation();
+          this.openBook(href);
+        }
+      }, true);
+    },
+  };
+  Door.init();
 
   function observeReveals() {
     const io = new IntersectionObserver(

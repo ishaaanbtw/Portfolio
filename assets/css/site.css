@@ -9118,7 +9118,7 @@ body[data-page='project'] strong { font-weight: 550; }
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(100%, 54rem);
+  width: min(100%, 62rem);
   max-height: 100%;
   min-height: 0;
   border-radius: clamp(12px, 2vw, 18px);
@@ -25379,3 +25379,127 @@ body[data-nodock] .fab { display: none !important; }
 /* NO LAYOUT GRID INSIDE A CASE STUDY. The grid toggle still works on the home,
    work and about pages; on a project page its lines are never drawn. */
 body[data-page='project'] .gridlay { display: none !important; }
+
+
+/* --- X0 CARDS · THE LIVE CARD UNDER THE OUTCOME -------------------------
+   A box for the three.js canvas (assets/js/x0-card.js). Sized by height so
+   the card reads the same on any width; the canvas fills it.
+
+   NO `filter` ON THE CANVAS. A drop-shadow filter on a WebGL canvas is
+   re-blurred on every frame it redraws, which on a Retina screen is a
+   million-pixel blur per frame of dragging: that was the lag. The shadow is
+   a static gradient on its own layer instead, painted once. */
+.fg-card3d {
+  position: relative;
+  width: min(100%, 520px);
+  height: clamp(300px, 46vh, 520px);
+  margin-top: clamp(0.5rem, 2vh, 1.5rem);
+  cursor: grab;
+  justify-self: center;
+  contain: layout paint;
+}
+.fg-card3d:active { cursor: grabbing; }
+.fg-card3d::before {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: 4%;
+  width: 46%; height: 12%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(12, 14, 20, 0.16), rgba(12, 14, 20, 0));
+  pointer-events: none;
+}
+.fg-card3d canvas { position: relative; outline: none; }
+.is-phone .fg-card3d { height: clamp(260px, 42vh, 420px); }
+
+/* ==========================================================================
+   THE CONTACT DOOR — Book a call and Email, inside the page (`Door` in
+   site.js). Built on the resume viewer's parts (.paper, .paper__win,
+   .paper__bar, .paper__x), so these rules only add what differs.
+   ========================================================================== */
+.door { z-index: 97; }
+.door__win { position: relative; }
+.door__win--book { width: min(100%, 62rem); height: auto; max-height: 100%; }
+/* the window takes the calendar's own height (Cal.com sizes its iframe to its
+   content); it only holds a height while the calendar is still loading */
+.door--book:not(.is-ready) .door__body { min-height: min(34rem, 70vh); }
+
+.door__body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* the calendar fills the window; Cal.com's iframe sizes itself inside */
+/* Cal.com's booker keeps ~16px from the sides of its frame but almost
+   nothing from the top, so the gap under the bar is added here to match */
+.door__cal { position: relative; padding-top: 14px; opacity: 0; transition: opacity 260ms var(--ease); }
+.door--book.is-ready .door__cal { opacity: 1; }
+.door__cal iframe { display: block; width: 100% !important; }
+
+/* three quiet dots while Cal.com wakes up */
+.door__load {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease);
+}
+.door--book.is-ready .door__load { opacity: 0; }
+.door__load i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ink); opacity: 0.25;
+  animation: doorDot 1s var(--ease) infinite;
+}
+.door__load i:nth-child(2) { animation-delay: 0.15s; }
+.door__load i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes doorDot { 0%, 100% { opacity: 0.18; transform: none; } 50% { opacity: 0.6; transform: translateY(-3px); } }
+
+/* --- the thank-you note, laid over the window ----------------------------- */
+.door__note {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.5rem; padding: 2rem; text-align: center;
+  background: var(--paper-2);
+  opacity: 0; transition: opacity 280ms var(--ease);
+}
+.door__note.is-in { opacity: 1; }
+.door__tick {
+  display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 0.5rem;
+  border-radius: 50%; background: var(--accent); color: #fff;
+  transform: scale(0.6); transition: transform 520ms var(--spring-soft, var(--ease));
+}
+.door__note.is-in .door__tick { transform: none; }
+.door__tick svg { width: 24px; height: 24px; }
+.door__nh { margin: 0; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+.door__nl { margin: 0; max-width: 28ch; font-size: 0.9375rem; color: var(--ink); opacity: 0.65; }
+
+/* --- dark: the resume viewer's bar was written for light ink -------------- */
+/* shared by every pop-up (resume, Book a call, Email) so they read as one set */
+.is-dark .paper .paper__title { color: var(--ink); opacity: 0.6; }
+.is-dark .paper .paper__x { color: var(--ink); }
+:root.is-dark:not(.hover-cold) .paper .paper__x:hover { background: rgba(255, 255, 255, 0.08); }
+.is-dark .paper .paper__veil { background: rgba(0, 0, 0, 0.5); }
+
+/* --- phones: the calendar takes the whole screen -------------------------- */
+@media (max-width: 48rem) {
+  .door--book { padding: 0; }
+  .door__win--book {
+    width: 100%; height: 100%;
+    border-radius: 0; border: 0;
+    padding-top: var(--sa-top); padding-bottom: var(--sa-bottom);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .door__note, .door__tick, .door__cal { transition-duration: 1ms; }
+  .door__load i { animation: none; }
+}
+
+/* the phone menu button sits above everything; step it aside while a door is open */
+:root.is-door .pmenu__btn { opacity: 0; pointer-events: none; transition: opacity 200ms var(--ease); }
+
+/* no ring on the close button when the pop-up opens with the mouse; keyboard
+   users still get one */
+.paper__x:focus:not(:focus-visible) { outline: none; box-shadow: none; }
