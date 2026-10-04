@@ -2529,7 +2529,14 @@ window.SITE = {
            and left it looking like a screenshot of something else. On a field
            it reads as the poster it is, and it picks up the Eido card's push
            on hover — the two are neighbours in the grid. */
-        thumbFit: 'sheet',
+        /* THE FLOW REEL: 12s, 60fps, seamless loop, one continuous motion.
+           The decks first flick through their screens, then every card rides
+           one rail round "hiring."; a single smooth
+           rotation (continuous velocity and acceleration) carries two decks
+           apart into a ring, slows to an orbit, and gathers them back.
+           Source: .tools/talent-vortex/flow.html. Plays muted on a loop. */
+        thumb: 'assets/media/onefinnet/talent-flow4.mp4',
+        thumbPoster: 'assets/media/onefinnet/talent-flow4.webp',
         preview: 'words', line: 'Shortlisted',
         /* --- THE CHAPTER COVER ------------------------------------------
 
