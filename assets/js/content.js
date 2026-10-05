@@ -3715,6 +3715,35 @@ window.SITE = {
      photographs that do not exist. The page is a document now, and a document
      is these five fields. */
   about: {
+    /* ---- THE OPENING: who I am, before what I've done ------------------
+       DRAFT COPY, written to be edited. `photo.src` is empty on purpose: the
+       box shows a marked placeholder until a real portrait is dropped in
+       (e.g. 'assets/img/about/portrait.jpg', portrait 4:5). */
+    intro: {
+      photo: { src: '', alt: 'Ishaan Gupta', note: 'Your portrait · 4:5' },
+      /* `<em>` sets a word in the italic the homepage headline uses */
+      lede: 'I design the whole thing, from the object in your hand to the app on your <em>screen</em>.',
+      paras: [
+        'A product designer who also writes the code. Right now I’m designing '
+          + 'the X0 ecosystem at Cypherock.',
+      ],
+    },
+
+    /* Tools and Kind words were here; removed for now. To bring either back,
+       add a `tools: { title, items: [{ name, what }] }` or
+       `quotes: { title, items: [{ text, who, role }] }` entry — the page
+       renders a section only when its entry exists. */
+
+    /* ---- OUTSIDE WORK. Image slots: add `src` to each when the photos exist. */
+    life: {
+      title: 'Outside work',
+      items: [
+        { src: '', caption: 'A photo from somewhere you travelled', ratio: 0.8 },
+        { src: '', caption: 'Something you make or tinker with', ratio: 1 },
+        { src: '', caption: 'A hobby, a place, a habit', ratio: 0.8 },
+      ],
+    },
+
     /* the one word over the timeline */
     eyebrow: 'Experience',
 
@@ -3743,48 +3772,35 @@ window.SITE = {
       {
         company: 'Cypherock',
         glyph: 'cypherock',
+        logo: 'assets/img/logos/cypherock-tile.webp',
+        url: 'https://www.cypherock.com/',
         role: 'Product Designer',
-        when: 'Currently',
-        body: 'Self-custody hardware for people who would rather not trust an '
-          + 'exchange with their keys. I lead the design of the X0 ecosystem — '
-          + 'the NFC card, its packaging and the wallet app that talks to it — '
-          + 'and the CySync clients behind it.',
+        /* START MONTH TO CONFIRM: set to the month you joined */
+        when: 'Jan 2026 – Present',
+        /* marks the job you're in now: green pulsing node + "Now" pill */
+        current: true,
+        body: 'Self-custody hardware wallets. I lead design for the X0 ecosystem: '
+          + 'the NFC card, its packaging and the companion app.',
         wins: [
-          'Took X0 from concept to beta in four months: a mobile-first hardware '
-            + 'wallet spanning the physical NFC card, the packaging, the '
-            + 'manufacturing-ready assets and the companion app.',
-          'Architected the N45 design system — components, tokens, interaction '
-            + 'patterns and the documentation that made handoff repeatable across '
-            + 'platforms.',
-          'Designed the NFC and BLE interaction flows across CySync Desktop, '
-            + 'Mobile and the X1 Vault, with the firmware, hardware and frontend teams.',
-          'Led the CySync v2 redesign: a forecast +40% engagement, 25% fewer '
-            + 'interaction steps and +70% daily actives.',
-          'Built the affiliate ecosystem end to end — landing page, partner '
-            + 'dashboard and admin portal, with the onboarding and commission '
-            + 'workflows under them.',
+          'Took X0 from concept to beta in four months.',
+          'Built the N45 design system that made handoff repeatable across platforms.',
+          'Led the CySync v2 redesign: +40% engagement, 25% fewer steps.',
         ],
         tags: ['Product Design', 'Interaction Design', 'Design Systems', 'Hardware', 'Crypto'],
       },
       {
         company: 'Onefinnet',
         initials: 'ON',
+        logo: 'assets/img/logos/onefinnet-tile.png',
+        url: 'https://onefinnet.com/',
         role: 'UI/UX Designer',
-        when: '2 years',
-        body: 'A B2B SaaS recruitment platform for the US market. I owned the '
-          + 'product design and the strategic direction of Onefinnet Talent, '
-          + 'directing a cross-functional team of seven.',
+        when: 'Jan 2024 – Dec 2025',
+        body: 'A B2B recruitment platform for the US market. I owned product '
+          + 'design for Onefinnet Talent and led a team of seven.',
         wins: [
-          'Created a new core revenue stream in Onefinnet Talent, driving 12% '
-            + 'growth in enterprise adoption inside six months.',
-          'Shipped a freemium acquisition model: +23% monthly actives and a 15% '
-            + 'improvement in lead conversion.',
-          'Designed the flagship AI assistant for job creation and interview '
-            + 'scheduling — 40% less manual recruiter effort, +18% retention.',
-          'Launched an integrated meeting scheduler MVP in a 60-day sprint; 180 '
-            + 'early adopters and a 90% positive usability score.',
-          'Built a design system from scratch with 100+ reusable components, '
-            + 'cutting handoff time 30% and inconsistencies 40%.',
+          'Created a new revenue stream: +12% enterprise adoption in six months.',
+          'Designed the AI assistant for hiring: 40% less recruiter effort.',
+          'Built a 100+ component design system, cutting handoff time 30%.',
         ],
         tags: ['Product Design', 'B2B SaaS', 'Design Systems', 'Research', 'Prototyping'],
       },

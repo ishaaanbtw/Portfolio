@@ -25503,3 +25503,261 @@ body[data-page='project'] .gridlay { display: none !important; }
 /* no ring on the close button when the pop-up opens with the mouse; keyboard
    users still get one */
 .paper__x:focus:not(:focus-visible) { outline: none; box-shadow: none; }
+
+/* --- THE CAPTION SITS INSIDE THE ARTWORK ---------------------------------
+   Same card shape as always; the title and meta are laid over the bottom of
+   the media, on a dark gradient so they stay readable on any artwork, light
+   or dark, in either theme. The caption rides the media's hover lift so the
+   two move as one piece. */
+.home__work .wcard { position: relative; }
+.home__work .wcard__meta {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 3;
+  padding: 3.25rem 1rem 0.85rem;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.42) 45%, rgba(0, 0, 0, 0) 100%);
+  pointer-events: none;
+  transition: transform 900ms var(--ease-soft);
+}
+.home__work .wcard__title { color: #fff; }
+.home__work .wcard__tags { color: rgba(255, 255, 255, 0.72); }
+:root:not(.hover-cold) .home__work .wcard:hover .wcard__meta { transform: translateY(-3px); }
+:root:not(.hover-cold) .home__work .wcard:hover .wcard__tags { color: rgba(255, 255, 255, 0.9); }
+
+/* ONE GUTTER EVERYWHERE. With the caption inside the artwork there is nothing
+   to leave room for under a card, so rows sit as close as columns do: 15px
+   (0.9375rem) between every card and placeholder, on every screen size. */
+.home__work .showcase__grid--rows,
+.home__work .sstack,
+.home__work .showcase__col { gap: 0.9375rem; }
+@media (max-width: 52rem) {
+  .home__work .showcase__col { gap: 0.9375rem; }
+}
+@media (max-width: 40rem) {
+  .home__work .srow, .home__work .srow--cols, .home__work .sstack,
+  .home__work .showcase__grid, .home__work .showcase__grid--rows,
+  .home__work .showcase__col { gap: 0.9375rem; }
+}
+
+/* ==========================================================================
+   ABOUT · THE REWORK — who I am first, then the work, then the person.
+   ========================================================================== */
+
+/* THE OPENING spans both columns: a portrait and a statement in the same
+   voice as the homepage headline. */
+.ab__intro {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: clamp(10rem, 17vw, 15rem) minmax(0, 1fr);
+  gap: clamp(1.5rem, 3vw, 3rem);
+  align-items: end;
+  max-width: calc(var(--ab-side) + var(--ab-read) + 3rem);
+  margin-bottom: clamp(3rem, 8vh, 5rem);
+}
+.ab__portrait, .ab__frame {
+  position: relative;
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.ab__portrait img, .ab__frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* an empty slot says what belongs in it, plainly */
+.ab__portrait.is-empty, .ab__frame.is-empty {
+  box-shadow: inset 0 0 0 1px var(--border);
+  background: repeating-linear-gradient(135deg, transparent 0 9px, var(--border-soft) 9px 10px), var(--surface-2);
+}
+.ab__ph {
+  position: absolute; inset: auto 0.6rem 0.55rem;
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-3);
+}
+.ab__lede {
+  margin: 0 0 1rem;
+  font-size: clamp(1.625rem, 2.4vw, 2.25rem);
+  font-weight: 500;
+  line-height: 1.18;
+  letter-spacing: -0.022em;
+  color: var(--text-1);
+  max-width: 22ch;
+}
+.ab__lede em { font-style: italic; font-weight: 500; }
+.ab__para {
+  margin: 0 0 0.6rem;
+  max-width: 34rem;
+  font-size: var(--step-0);
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.ab__para:last-child { margin-bottom: 0; }
+
+/* THE SIDE COLUMN sits level with the experience instead of floating in the
+   middle of the window. */
+.ab__side { top: 1.5rem; transform: none; }
+
+/* EXPERIENCE, TIDIED: one tone for the evidence so the page has two greys
+   (body, quiet) instead of four. */
+.ab__wins li { color: var(--text-2); }
+.ab__body { color: var(--text-1); }
+
+/* --- tools ---------------------------------------------------------------- */
+.ab__tools {
+  margin: 0; padding: 0; list-style: none;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 0.5rem;
+}
+.ab__tool {
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.ab__tool-mk {
+  display: grid; place-items: center; flex: none;
+  width: 1.9rem; height: 1.9rem; border-radius: 6px;
+  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border);
+  font-size: 0.8125rem; font-weight: 600; color: var(--text-1);
+}
+.ab__tool-t { display: grid; line-height: 1.25; }
+.ab__tool-t b { font-size: var(--step--1); font-weight: 550; color: var(--text-1); }
+.ab__tool-t i { font-style: normal; font-size: 0.75rem; color: var(--text-3); }
+
+/* --- kind words ------------------------------------------------------------ */
+.ab__quotes { margin: 0; padding: 0; list-style: none; display: grid; gap: 1.5rem; }
+.ab__quote { padding-left: 1rem; border-left: 2px solid var(--border); }
+.ab__q { margin: 0 0 0.5rem; font-size: var(--step-05); line-height: 1.45; letter-spacing: -0.01em; color: var(--text-1); max-width: 34rem; }
+.ab__qby { margin: 0; font-size: 0.8125rem; color: var(--text-3); }
+.ab__qby b { font-weight: 550; color: var(--text-2); }
+.ab__quote.is-ph .ab__q { color: var(--text-3); font-style: italic; }
+
+/* --- outside work ---------------------------------------------------------- */
+.ab__life { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9375rem; align-items: end; }
+.ab__shot { margin: 0; }
+.ab__shot figcaption { margin-top: 0.45rem; font-size: 0.75rem; color: var(--text-3); }
+
+@media (max-width: 60rem) {
+  .ab__intro { grid-template-columns: minmax(0, 1fr); align-items: start; margin-bottom: 0; }
+  .ab__portrait { max-width: 14rem; }
+  .ab__side { top: auto; }
+}
+@media (max-width: 30rem) {
+  .ab__life { grid-template-columns: 1fr 1fr; }
+}
+
+/* the company's mark, a small rounded tile before its name */
+.ab__head { align-items: center; }
+.ab__logo {
+  width: 1.75rem; height: 1.75rem; flex: none;
+  border-radius: 7px; object-fit: cover;
+  box-shadow: inset 0 0 0 1px var(--border), 0 0 0 1px var(--border);
+  margin-right: 0.15rem;
+}
+
+/* ABOUT · CENTRED. The document is centred in the canvas instead of hugging
+   the left, the reading column is a little wider, and the intro uses the same
+   two columns as the sections under it, so the portrait sits over the side
+   column and the statement over the experience. */
+.about {
+  --ab-side: clamp(11rem, 14vw, 14rem);
+  --ab-read: 48rem;
+  --ab-gap: clamp(2rem, 4vw, 4rem);
+  column-gap: var(--ab-gap);
+  max-width: calc(var(--ab-side) + var(--ab-read) + var(--ab-gap) + 2.5rem);
+  margin-inline: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+.ab__intro {
+  grid-template-columns: var(--ab-side) minmax(0, 1fr);
+  column-gap: var(--ab-gap);
+  max-width: none;
+}
+.ab__main { max-width: var(--ab-read); }
+.ab__co a { color: inherit; text-decoration: none; }
+.ab__co a .ab__ext { display: inline-block; margin-left: 0.3rem; font-size: 0.7em; color: var(--text-3); transform: translateY(-0.15em); transition: transform 240ms var(--ease), color 240ms var(--ease); }
+:root:not(.hover-cold) .ab__co a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+:root:not(.hover-cold) .ab__co a:hover .ab__ext { color: var(--text-1); transform: translate(2px, -0.3em); }
+@media (max-width: 60rem) {
+  .ab__intro { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ABOUT · MORE AIR. The opening gets real room above and below, the document
+   steps in from the sidebar's edge, and the sections breathe further apart. */
+.about { padding-top: clamp(4rem, 16vh, 10rem); padding-left: clamp(2rem, 3vw, 3.5rem); }
+.ab__intro { margin-bottom: clamp(5rem, 14vh, 9rem); align-items: center; }
+.ab__lede { margin-bottom: 1.5rem; }
+.ab__para { font-size: var(--step-05, 1.0625rem); color: var(--text-3); max-width: 30rem; }
+.ab__main { gap: clamp(3.5rem, 9vh, 6rem); }
+.ab__job + .ab__job { margin-top: clamp(1rem, 3vh, 2rem); }
+.ab__wins { gap: 0.6rem; margin-top: var(--sp-4); }
+.ab__body { max-width: 32rem; }
+
+/* --- THE JOB YOU'RE IN NOW ------------------------------------------------
+   A live signal you don't have to read: the timeline node turns green and
+   breathes, and a small "Now" pill with the same pulsing dot sits beside the
+   company name. Green because it is the universal "active" colour. */
+.ab__job.is-current .ab__node {
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+  animation: abLive 2.2s ease-out infinite;
+}
+.ab__now {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.2rem 0.55rem 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.35);
+  font-size: 0.75rem; font-weight: 550; line-height: 1;
+  color: #4ade80;
+  align-self: center;
+}
+.ab__now i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+  animation: abLive 2.2s ease-out infinite;
+}
+:root:not(.is-dark) .ab__now { color: #15803d; background: rgba(34, 197, 94, 0.1); }
+@keyframes abLive {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ab__job.is-current .ab__node, .ab__now i { animation: none; }
+}
+
+/* --- THE JOB HEADER, REORDERED -------------------------------------------- */
+.ab__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.85rem;
+}
+.ab__logo { width: 2.5rem; height: 2.5rem; border-radius: 9px; margin: 0; }
+.ab__id { display: grid; gap: 0.2rem; min-width: 0; }
+.ab__top { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.ab__co { font-size: var(--step-1, 1.25rem); }
+.ab__co a .ab__ext { opacity: 0; transform: translate(-2px, -0.15em); }
+:root:not(.hover-cold) .ab__co a:hover .ab__ext { opacity: 1; }
+.ab__role {
+  font-family: inherit; text-transform: none; letter-spacing: 0;
+  font-size: var(--step--1); color: var(--text-3);
+}
+.ab__when {
+  margin: 0; align-self: start; padding-top: 0.35rem;
+  font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.06em;
+  color: var(--text-3); white-space: nowrap;
+}
+.ab__now { padding: 0.18rem 0.5rem 0.18rem 0.42rem; font-size: 0.6875rem; }
+/* the summary steps back so the name leads; the wins step back again */
+.ab__body { margin-top: var(--sp-4); color: var(--text-2); font-size: var(--step--1); }
+.ab__wins li { color: var(--text-3); }
+.ab__job.is-current .ab__node, .ab__node { top: 1rem; }
+@media (max-width: 40rem) {
+  .ab__head { grid-template-columns: auto minmax(0, 1fr); }
+  .ab__when { grid-column: 2; padding-top: 0.15rem; }
+}
+.ab__co { font-size: 1.25rem; letter-spacing: -0.015em; }
+.ab__co a .ab__ext { opacity: 1; margin-left: 0.2rem; font-size: 0.6em; color: var(--text-4); transform: translateY(-0.35em); }
+.ab__when { font-family: inherit; letter-spacing: 0; font-size: var(--step--1); padding-top: 0.2rem; }

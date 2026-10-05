@@ -657,9 +657,16 @@
         seen.add(k);
         majors.push(k);
       };
+      /* ABOUT IS A DOCUMENT, NOT A GRID OF CARDS. There the grid draws only the
+         column gutters and the page edges: no midlines (they ran through the
+         portrait and the paragraphs), and not the reading column's left edge,
+         which is where the experience timeline already draws its rail. */
+      const doc = !!document.querySelector('.about');
       $$(this.SEL).forEach((n) => {
         const r = n.getBoundingClientRect();
         if (r.width < 24) return;
+        if (doc && n.classList.contains('ab__main')) { add(r.right - host.left); return; }
+        if (doc && n.classList.contains('about')) return;
         add(r.left - host.left);
         add(r.right - host.left);
       });
@@ -667,7 +674,7 @@
 
       /* and a fainter one down the middle of every gap wide enough to take it */
       const minors = [];
-      for (let i = 0; i < majors.length - 1; i += 1) {
+      for (let i = 0; i < (doc ? 0 : majors.length - 1); i += 1) {
         const gap = majors[i + 1] - majors[i];
         if (gap >= this.SPLIT) minors.push(majors[i] + gap / 2);
       }
@@ -23857,6 +23864,25 @@
         return ul;
       };
 
+      /* ---- THE OPENING, across both columns: a portrait and who I am --- */
+      const ph = (o, cls) => {
+        const box = el('div', { class: `${cls}${o && o.src ? '' : ' is-empty'}`,
+          style: `aspect-ratio:${(o && o.ratio) || 0.8}` });
+        if (o && o.src) box.appendChild(el('img', { src: url(o.src), alt: esc(o.alt || o.caption || ''), loading: 'lazy', decoding: 'async' }));
+        else box.appendChild(el('span', { class: 'ab__ph' }, esc((o && (o.note || o.caption)) || 'Photo')));
+        return box;
+      };
+      const intro = c.intro;
+      let introEl = null;
+      if (intro) {
+        introEl = el('section', { class: 'ab__intro' });
+        introEl.appendChild(ph(intro.photo, 'ab__portrait'));
+        const words = el('div', { class: 'ab__words' });
+        if (intro.lede) words.appendChild(el('h1', { class: 'ab__lede' }, intro.lede));
+        (intro.paras || []).forEach((t) => words.appendChild(el('p', { class: 'ab__para' }, esc(t))));
+        introEl.appendChild(words);
+      }
+
       /* ---- the narrow column: what you look up ------------------------- */
       const side = el('aside', { class: 'ab__side' });
 
@@ -23921,13 +23947,25 @@
           /* `is-current` is the filled node and the darker company name. It is
              read off the content rather than hardcoded to the first entry, so
              a future job at the top does not silently inherit it. */
-          const now = /current/i.test(j.when || '');
+          const now = !!j.current || /current|present/i.test(j.when || '');
           const item = el('li', { class: `ab__job${now ? ' is-current' : ''}` });
           item.appendChild(el('i', { class: 'ab__node', 'aria-hidden': 'true' }));
+          /* THE HEADER IN TWO LINES, so each fact has its own weight:
+             logo | company (+ Now)          dates
+                  | role
+             The logo spans both lines; the dates sit quietly on the right. */
           const head = el('div', { class: 'ab__head' });
-          head.appendChild(el('h2', { class: 'ab__co' }, esc(j.company)));
-          head.appendChild(el('p', { class: 'ab__role' },
-            `${esc(j.role)}<span aria-hidden="true"> · </span>${esc(j.when)}`));
+          if (j.logo) head.appendChild(el('img', { class: 'ab__logo', src: url(j.logo), alt: '', 'aria-hidden': 'true', decoding: 'async' }));
+          const id = el('div', { class: 'ab__id' });
+          const top = el('div', { class: 'ab__top' });
+          top.appendChild(el('h2', { class: 'ab__co' }, j.url
+            ? `<a href="${esc(j.url)}" target="_blank" rel="noopener">${esc(j.company)}<span class="ab__ext" aria-hidden="true">↗</span></a>`
+            : esc(j.company)));
+          if (now) top.appendChild(el('span', { class: 'ab__now' }, '<i aria-hidden="true"></i>Now'));
+          id.appendChild(top);
+          id.appendChild(el('p', { class: 'ab__role' }, esc(j.role)));
+          head.appendChild(id);
+          if (j.when) head.appendChild(el('p', { class: 'ab__when' }, esc(j.when)));
           item.appendChild(head);
           if (j.body) item.appendChild(el('p', { class: 'ab__body' }, esc(j.body)));
           if ((j.wins || []).length) {
@@ -23936,10 +23974,58 @@
               `<i class="ab__o" aria-hidden="true"></i><span>${esc(w)}</span>`)));
             item.appendChild(ul);
           }
-          if ((j.tags || []).length) item.appendChild(chips(j.tags));
+          /* the job tags repeated the Expertise list beside them; gone */
           list.appendChild(item);
         });
         g.appendChild(list);
+        body.appendChild(g);
+      }
+
+      /* ---- tools ------------------------------------------------------ */
+      const tl = c.tools || {};
+      if ((tl.items || []).length) {
+        const g = el('section', { class: 'ab__grp' });
+        g.appendChild(label(tl.title || 'Tools'));
+        const ul = el('ul', { class: 'ab__tools' });
+        tl.items.forEach((t) => {
+          const li = el('li', { class: 'ab__tool' });
+          li.appendChild(el('span', { class: 'ab__tool-mk', 'aria-hidden': 'true' }, esc(t.name.slice(0, 1))));
+          li.appendChild(el('span', { class: 'ab__tool-t' }, `<b>${esc(t.name)}</b><i>${esc(t.what || '')}</i>`));
+          ul.appendChild(li);
+        });
+        g.appendChild(ul);
+        body.appendChild(g);
+      }
+
+      /* ---- kind words --------------------------------------------------- */
+      const qt = c.quotes || {};
+      if ((qt.items || []).length) {
+        const g = el('section', { class: 'ab__grp' });
+        g.appendChild(label(qt.title || 'Kind words'));
+        const ul = el('ul', { class: 'ab__quotes' });
+        qt.items.forEach((q) => {
+          const li = el('li', { class: `ab__quote${q.placeholder ? ' is-ph' : ''}` });
+          li.appendChild(el('p', { class: 'ab__q' }, `“${esc(q.text)}”`));
+          li.appendChild(el('p', { class: 'ab__qby' }, `<b>${esc(q.who)}</b> · ${esc(q.role || '')}`));
+          ul.appendChild(li);
+        });
+        g.appendChild(ul);
+        body.appendChild(g);
+      }
+
+      /* ---- outside work -------------------------------------------------- */
+      const lf = c.life || {};
+      if ((lf.items || []).length) {
+        const g = el('section', { class: 'ab__grp' });
+        g.appendChild(label(lf.title || 'Outside work'));
+        const row = el('div', { class: 'ab__life' });
+        lf.items.forEach((it) => {
+          const fig = el('figure', { class: 'ab__shot' });
+          fig.appendChild(ph(it, 'ab__frame'));
+          if (it.caption && it.src) fig.appendChild(el('figcaption', {}, esc(it.caption)));
+          row.appendChild(fig);
+        });
+        g.appendChild(row);
         body.appendChild(g);
       }
 
@@ -23972,6 +24058,7 @@
         body.appendChild(g);
       }
 
+      if (introEl) page.append(introEl);
       page.append(side, body);
 
     },
