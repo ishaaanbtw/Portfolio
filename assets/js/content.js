@@ -157,6 +157,15 @@ window.SITE = {
     /* The statement. Same string the hero used to set at 46px; `*word*` is the
        italic, exactly as in `canvas.headline`. */
     say: 'I’m Ishaan, a product designer who *engineers*.',
+    /* The brick-head above the statement: a grid of head directions and a
+       3x3 sheet of expressions, in the cell order `Mascot` expects. */
+    mascot: {
+      /* 9 columns (left -> right) x 5 rows (up -> down) of head turns */
+      directions: 'assets/img/mascot/ishaan-directions-45.webp',
+      grid: [9, 5],
+      reactions: 'assets/img/mascot/ishaan-reactions.webp',
+      label: 'Ishaan',
+    },
     site: [
       /* Work is the home page, because the home page IS the work — the grid of
          projects is the first thing on it. The fuller archive is one link at

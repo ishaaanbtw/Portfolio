@@ -10207,6 +10207,41 @@
       unit: (r) => r.width / 24,
       });
       const deal = () => requestAnimationFrame(() => Pile.init(floor, opts()));
+
+      /* --- PLAY WITH THE BRICKS (an easter egg, deliberately unmarked) ----
+         Nothing happens for a single nudge. Keep moving bricks around this
+         floor — one long drag or a few short ones, any direction — and once
+         the hand has carried them about TRAVEL px in total the floor gives a
+         soft settle and the brick-head pops out (`Mascot`, via
+         `mascot:summon`). Measured on the pointer while a brick is held, so
+         it works the same on touch and mouse and never touches the pile's
+         own physics. */
+      {
+        const TRAVEL = 300;
+        let held = null, total = 0, fired = false;
+        floor.addEventListener('pointerdown', (e) => {
+          if (fired || !e.target.closest || !e.target.closest('.pbrk')) return;
+          held = { id: e.pointerId, x: e.clientX, y: e.clientY };
+        });
+        addEventListener('pointermove', (e) => {
+          if (!held || e.pointerId !== held.id) return;
+          total += Math.hypot(e.clientX - held.x, e.clientY - held.y);
+          held.x = e.clientX; held.y = e.clientY;
+          if (total < TRAVEL) return;
+          held = null; fired = true;
+          if (floor.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            floor.animate([
+              { transform: 'none' }, { transform: 'translateY(1.5px)' },
+              { transform: 'translateY(-1px)' }, { transform: 'none' },
+            ], { duration: 320, easing: 'ease-out' });
+          }
+          document.dispatchEvent(new CustomEvent('mascot:summon'));
+        }, { passive: true });
+        const done = (e) => { if (held && e.pointerId === held.id) held = null; };
+        addEventListener('pointerup', done, { passive: true });
+        addEventListener('pointercancel', done, { passive: true });
+      }
+
       if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver((es) => {
         if (!es.some((e2) => e2.isIntersecting)) return;
@@ -19559,6 +19594,187 @@
      THE ACTIVE ROW IS A SQUARE, 5px, in the ink. That is the entire indicator.
      An underline moves the baseline, a background is a button, and a colour
      change on its own is not visible next to rows that are already muted. */
+  /* ------------------------------------------------------------------ mascot
+     THE BRICK-HEAD AT THE TOP OF THE COLUMN. A vanilla port of page-mascot's
+     <Mascot />: two 3x3 atlases (nine head directions, nine expressions)
+     stacked as background layers, and the only thing that ever changes is
+     `background-position`. The head follows the pointer by eight sectors with
+     a little hysteresis so it doesn't flicker on a boundary; a click blinks,
+     then pays off with heart / sparkle / grin in turn, and four quick boops
+     make it dizzy. Touch devices get the clicks without the tracking.
+     It starts tucked away; the L key brings it out, and so does shaking a
+     brick in the footer floor (see `LegoFloor`) — which is then remembered. */
+  const Mascot = {
+    FACES: ['blink', 'heart', 'sparkle', 'surprised', 'starstruck', 'bashful', 'sleepy', 'dizzy', 'delighted'],
+    /* how far the pointer has to travel, in px from the head, to turn it all
+       the way to the edge column / row of the directions grid */
+    REACH_X: 960, REACH_Y: 520,
+    PAYOFFS: ['heart', 'sparkle', 'delighted'],
+    SQUASH: [
+      { transform: 'scale(1, 1)', easing: 'ease-in' },
+      { transform: 'scale(1.10, 0.86)', offset: 0.18, easing: 'ease-out' },
+      { transform: 'scale(0.95, 1.08)', offset: 0.45, easing: 'ease-in-out' },
+      { transform: 'scale(1.03, 0.97)', offset: 0.72, easing: 'ease-in-out' },
+      { transform: 'scale(1, 1)' },
+    ],
+
+    build(m) {
+      if (!m || !m.directions || !m.reactions) return null;
+      const label = m.label || 'mascot';
+      const btn = el('button', { class: 'mascot', type: 'button', 'aria-label': `Boop the ${label}`, 'data-wall': '' });
+      const squash = el('span', { class: 'mascot__squash' });
+      const dir = el('span', { class: 'mascot__layer' });
+      const face = el('span', { class: 'mascot__layer mascot__layer--face' });
+      dir.style.backgroundImage = `url(${url(m.directions)})`;
+      face.style.backgroundImage = `url(${url(m.reactions)})`;
+      squash.append(dir, face);
+      btn.appendChild(squash);
+
+      /* THE DIRECTIONS SHEET IS A GRID OF ANY SIZE (`grid: [cols, rows]`,
+         default 3x3): columns turn the head left -> right, rows tilt it
+         up -> down, the middle cell looks straight out. */
+      const [GC, GR] = m.grid || [3, 3];
+      const MC = (GC - 1) / 2, MR = (GR - 1) / 2;
+      dir.style.backgroundSize = `${GC * 100}% ${GR * 100}%`;
+      const pos = (node, i) => { node.style.backgroundPosition = `${(i % 3) * 50}% ${Math.floor(i / 3) * 50}%`; };
+      const cellAt = (c, r) => {
+        dir.style.backgroundPosition = `${GC > 1 ? (c / (GC - 1)) * 100 : 0}% ${GR > 1 ? (r / (GR - 1)) * 100 : 0}%`;
+      };
+      const show = (r) => {
+        btn.classList.toggle('is-reacting', !!r);
+        pos(face, this.FACES.indexOf(r || 'blink'));
+      };
+      cellAt(MC, MR); show(null);
+
+      /* --- tucked away until asked for ---
+         Hidden by default on every layout; the L key pops it out of the
+         column and L again tucks it back. Remembered — see KEY below. */
+      btn.classList.add('is-tucked');
+      const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let running = [];
+      const stop = () => { running.forEach((x) => x.cancel()); running = []; };
+      /* the room it takes in the column, read from the CSS so a size change
+         there is the only change needed */
+      const room = () => {
+        btn.classList.remove('is-tucked');
+        const cs = getComputedStyle(btn);
+        return { h: cs.height, mt: cs.marginTop, mb: cs.marginBottom };
+      };
+      const shut = { height: '0px', marginTop: '0px', marginBottom: '0px' };
+      const setOut = (out) => {
+        stop();
+        const r = room();
+        if (reduced() || !btn.animate) { btn.classList.toggle('is-tucked', !out); return; }
+        const open = { height: r.h, marginTop: r.mt, marginBottom: r.mb };
+        if (out) {
+          if (btn._aim) btn._aim();   /* land already looking at the cursor */
+          /* POPCORN: the column opens, then the head bursts up out of
+             nothing, spins a little in the air, lands with a squash and
+             settles. */
+          running.push(btn.animate([shut, open], { duration: 260, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }));
+          running.push(squash.animate([
+            { transform: 'translateY(16px) scale(0.05) rotate(0deg)', opacity: 0, easing: 'cubic-bezier(0.2, 1.6, 0.4, 1)' },
+            { transform: 'translateY(-5px) scale(1.22, 1.12) rotate(-14deg)', opacity: 1, offset: 0.28, easing: 'ease-out' },
+            { transform: 'translateY(-7px) scale(0.95, 1.06) rotate(9deg)', offset: 0.46, easing: 'ease-in' },
+            { transform: 'translateY(0) scale(1.14, 0.86) rotate(-3deg)', offset: 0.64, easing: 'ease-out' },
+            { transform: 'translateY(-2px) scale(0.97, 1.04) rotate(2deg)', offset: 0.8, easing: 'ease-in-out' },
+            { transform: 'none', opacity: 1 },
+          ], { duration: 680 }));
+        } else {
+          /* a last little hop, gone, then the column closes behind it */
+          const away = squash.animate([
+            { transform: 'none', opacity: 1, easing: 'ease-out' },
+            { transform: 'translateY(-4px) scale(1.12) rotate(-6deg)', opacity: 1, offset: 0.35, easing: 'ease-in' },
+            { transform: 'translateY(6px) scale(0.05) rotate(10deg)', opacity: 0 },
+          ], { duration: 260, fill: 'forwards' });
+          const close = btn.animate([open, shut], { duration: 220, delay: 180, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' });
+          running.push(away, close);
+          close.onfinish = () => { btn.classList.add('is-tucked'); stop(); };
+        }
+      };
+      /* REMEMBERED ON THIS BROWSER. Once someone has found it (the shake,
+         see LegoFloor) it is simply there on every later visit; L still toggles it
+         and the last state wins, so L is also the way to put it away. */
+      const KEY = 'ig.mascot';
+      const save = (out) => { try { localStorage.setItem(KEY, out ? '1' : '0'); } catch (err) { /* private mode */ } };
+      try { if (localStorage.getItem(KEY) === '1') btn.classList.remove('is-tucked'); } catch (err) { /* ignore */ }
+
+      addEventListener('keydown', (e) => {
+        if (!btn.isConnected || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.key !== 'l' && e.key !== 'L') return;
+        const t = e.target;
+        if (t && t.closest && t.closest('input, textarea, select, [contenteditable], [contenteditable="true"]')) return;
+        const out = btn.classList.contains('is-tucked');
+        setOut(out); save(out);
+      });
+
+      /* THE EASTER EGG: `LegoFloor` fires `mascot:summon` once someone has
+         played with the bricks in the footer pile for a while. Already out, it just gets a boop. On a
+         phone the floor is at the foot of the page and the head at the top,
+         so the page is brought back to the statement first and the pop
+         happens where it can be seen. */
+      document.addEventListener('mascot:summon', () => {
+        if (!btn.isConnected) return;
+        save(true);
+        if (!btn.classList.contains('is-tucked')) { btn.click(); return; }
+        const anchor = btn.nextElementSibling || btn;
+        const r = anchor.getBoundingClientRect();
+        const visible = r.top >= 0 && r.bottom <= innerHeight;
+        if (visible) { setOut(true); return; }
+        anchor.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'center' });
+        setTimeout(() => setOut(true), reduced() ? 0 : 650);
+      });
+
+      /* --- follow the pointer ---
+         The pointer's offset from the head maps straight onto the grid —
+         no angle buckets — and the head WALKS there one cell per frame
+         rather than snapping, so a fast flick still sweeps through every
+         in-between pose instead of jumping across the sheet. */
+      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        const clamp = (v) => Math.max(-1, Math.min(1, v));
+        let pointer = null, cur = [Math.round(MC), Math.round(MR)], goal = cur.slice(), raf = 0, last = 0;
+        const STEP_MS = 22;
+        const walk = (t) => {
+          raf = 0;
+          if (t - last >= STEP_MS) {
+            last = t;
+            cur = cur.map((v, k) => v + Math.sign(goal[k] - v));
+            cellAt(cur[0], cur[1]);
+          }
+          if (cur[0] !== goal[0] || cur[1] !== goal[1]) raf = requestAnimationFrame(walk);
+        };
+        const aim = () => {
+          if (!pointer || !btn.isConnected || btn.classList.contains('is-tucked')) return;
+          const b = btn.getBoundingClientRect();
+          const dx = pointer.x - (b.left + b.width / 2), dy = pointer.y - (b.top + b.height / 2);
+          goal = [
+            Math.round(MC + MC * clamp(dx / this.REACH_X)),
+            Math.round(MR + MR * clamp(dy / this.REACH_Y)),
+          ];
+          if (!raf && (goal[0] !== cur[0] || goal[1] !== cur[1])) raf = requestAnimationFrame(walk);
+        };
+        window.addEventListener('pointermove', (e) => { pointer = { x: e.clientX, y: e.clientY }; aim(); }, { passive: true });
+        window.addEventListener('scroll', aim, { passive: true });
+        btn._aim = aim;
+      }
+
+      /* --- boop --- */
+      let timers = [], boops = 0, at = 0;
+      btn.addEventListener('click', () => {
+        timers.forEach(clearTimeout); timers = [];
+        const later = (ms, r) => timers.push(setTimeout(() => show(r), ms));
+        const now = Date.now();
+        boops = now - at < 1600 ? boops + 1 : 1; at = now;
+        if (boops >= 4) { boops = 0; show('dizzy'); later(1100, null); }
+        else { show('blink'); later(120, this.PAYOFFS[(boops - 1) % 3]); later(560, null); }
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && squash.animate) {
+          squash.animate(this.SQUASH, { duration: 420, easing: 'linear' });
+        }
+      });
+      return btn;
+    },
+  };
+
   const Rail = {
     /* Rendered as one node and handed back, so the page that wants it decides
        where it goes rather than this reaching into the document. */
@@ -19589,6 +19805,10 @@
          job: it stops a piece coming to REST on the type as it falls. Nothing
          stopped a piece being DRAGGED there, which is the whole of what was
          reported. */
+      /* the brick-head, above the statement — see `Mascot` */
+      const mascot = Mascot.build(c.mascot);
+      if (mascot) keep.appendChild(mascot);
+
       const say = el('div', { class: 'mast__say', 'data-wall': '' });
       /* `headline()` splits the sentence into words for the reveal and reads
          the same `*word*` italic the hero read. The reveal timings are the

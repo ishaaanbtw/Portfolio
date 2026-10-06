@@ -1071,6 +1071,28 @@ body.pile-hold * { cursor: grabbing; }
 
 .mast__say { margin: 0 0 0.75rem; }
 
+/* the brick-head above the statement (Mascot in site.js) */
+.mascot {
+  /* The atlas cell carries air for the hearts and zzz, so the box is bigger
+     than the head and pulled back with negative margins: what lines up with
+     the column's left edge and top is the head itself (~24px wide). */
+  position: relative; display: block; flex-shrink: 0;
+  width: 43px; height: 43px; margin: -10px 0 4px -9px; padding: 0;
+  border: 0; background: transparent; appearance: none;
+  cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+/* hidden until the L key brings it out — takes no room while tucked */
+.mascot.is-tucked { display: none; }
+.mascot:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; border-radius: 8px; }
+.mascot__squash { position: relative; display: block; width: 100%; height: 100%; transform-origin: 50% 78%; }
+.mascot__layer {
+  position: absolute; inset: 0;
+  background-size: 300% 300%; background-repeat: no-repeat;
+}
+.mascot__layer--face { opacity: 0; }
+.mascot.is-reacting .mascot__layer { opacity: 0; }
+.mascot.is-reacting .mascot__layer--face { opacity: 1; }
+
 /* THE STATEMENT, AT A THIRD OF WHAT IT WAS. See the note above for why this is
    the one value that is not the reference's, and what test settles it. */
 .home .mast__say .canvas__headline {
@@ -1555,6 +1577,11 @@ body.pile-hold * { cursor: grabbing; }
      right and can be ordered around the work. The block still exists in the DOM
      and is still what `Bricks.zone` measures; it simply stops being a box. */
   .mast__keep { display: contents; }
+  /* the brick-head rides with the statement: same order, a full row of its
+     own, and DOM order puts it first. Left at the default order 0 it became
+     the grid's first item in one track and the row opened a gap above the
+     statement. */
+  .mascot { order: 1; grid-column: 1 / -1; }
   .mast__say { order: 1; grid-column: 1 / -1; margin-bottom: 0.75rem; }
   .mast__cta { order: 2; grid-column: 1 / -1; margin-bottom: clamp(1.75rem, 5vh, 2.5rem); }
   /* THE STACK TAKES THE SLOT THE VIEWS USED TO TAKE. `.mast` is
@@ -23987,6 +24014,8 @@ body[data-page='notfound'] #main { min-height: 100svh; }
   margin: 0 0 1.5rem;
 }
 :root.is-phone .mast__say { order: 2; }
+/* the brick-head stays glued to the statement, under the air band, not above it */
+:root.is-phone .mascot { order: 2; }
 /* the statement at the desktop sidebar's size on the phone's home section */
 :root.is-phone body[data-page='home'] .mast__say .canvas__headline { font-size: 1.375rem; }
 :root.is-phone .mast__cta { order: 3; }
