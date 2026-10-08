@@ -749,10 +749,10 @@ window.SITE = {
         },
         study: {
           /* THE ROUTE THIS STUDY LIVES AT, and the reason it is a word rather
-             than an index: `/work/cypherock-x0.html` is a URL somebody can
-             read aloud, send, and land on cold. The shell file at
-             work/<slug>.html carries nothing but this name; everything below
-             is what it finds. */
+             than an index: `ishaan-gupta.in/cypherock-x0` is a URL somebody
+             can read aloud, send, and land on cold. The shell file at
+             <slug>.html (site root) carries nothing but this name; everything
+             below is what it finds. */
           slug: 'cypherock-x0',
           /* the hardware chapter follows this one directly */
           next: 'x0-cards',

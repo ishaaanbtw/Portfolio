@@ -2,10 +2,10 @@
 <!-- ishaan-gupta.in — keep in step with the pages that actually exist -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://ishaan-gupta.in/</loc><priority>1.0</priority></url>
-  <url><loc>https://ishaan-gupta.in/about.html</loc><priority>0.8</priority></url>
-  <url><loc>https://ishaan-gupta.in/play.html</loc><priority>0.5</priority></url>
-  <url><loc>https://ishaan-gupta.in/work/cypherock-x0.html</loc><priority>0.8</priority></url>
+  <url><loc>https://ishaan-gupta.in/about</loc><priority>0.8</priority></url>
+  <url><loc>https://ishaan-gupta.in/play</loc><priority>0.5</priority></url>
+  <url><loc>https://ishaan-gupta.in/cypherock-x0</loc><priority>0.8</priority></url>
   <!-- x0-cards is hidden while in progress; restore when it ships:
-  <url><loc>https://ishaan-gupta.in/work/x0-cards.html</loc><priority>0.8</priority></url> -->
-  <url><loc>https://ishaan-gupta.in/work/onefinnet-talent.html</loc><priority>0.8</priority></url>
+  <url><loc>https://ishaan-gupta.in/x0-cards</loc><priority>0.8</priority></url> -->
+  <url><loc>https://ishaan-gupta.in/onefinnet-talent</loc><priority>0.8</priority></url>
 </urlset>

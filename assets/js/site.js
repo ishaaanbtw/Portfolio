@@ -85,10 +85,10 @@
   })();
 
   /* ------------------------------------------------------- WHERE THE SITE IS
-     Case studies live at `/work/<slug>.html`, one directory deeper than
-     everything else. That on its own is enough to break every relative path in
-     content.js: `assets/img/x0/…` resolved against `/work/cypherock-x0.html`
-     asks for `/work/assets/img/…`, which is not there.
+     Every page now sits at the top level (case studies included, at
+     `/<slug>`), but the site is not always served from `/` — a preview
+     deployment, a sub-path or a disk — and a relative path in content.js
+     resolved against the wrong base asks for files that are not there.
 
      A `<base>` tag would fix it in one line and break opening the site off a
      disk, where the root of the server is the root of the drive. So the root is
@@ -109,10 +109,25 @@
     return u.replace(/assets\/js\/site\.js(?:[?#].*)?$/, '');
   })();
 
+  /* CLEAN ADDRESSES. content.js names pages by their files (`about.html`,
+     `index.html`) because that is what they are on disk, and off a disk
+     (`file://`) that is the only form that opens. Served over http —
+     Vercel with `cleanUrls`, or preview.command — the same names are written
+     the way a normal site reads: `about.html` -> `/about`, `index.html` ->
+     `/`. Only a bare top-level page name is touched; anything with a folder
+     or another extension is left exactly as written. */
+  const CLEAN = location.protocol !== 'file:';
+  const tidy = (p) => {
+    if (!CLEAN) return p;
+    const m = /^([a-z0-9-]+)\.html((?:[?#].*)?)$/i.exec(p);
+    if (!m) return p;
+    return (m[1].toLowerCase() === 'index' ? '' : m[1]) + m[2];
+  };
+
   /* absolute, protocol-relative, root-relative, anchors and data: are already
      answers; anything else is relative to the site and gets the prefix */
   const url = (p) => (typeof p === 'string' && p && !/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(p)
-    ? ROOT + p : p);
+    ? ROOT + tidy(p) : p);
 
   /* --- I AM LEAVING BY A LINK, AND THE NEXT PAGE SHOULD KNOW ---------------
 
@@ -173,24 +188,12 @@
     catch (e) { return true; }
   };
 
-  /* THE ROUTE A CASE STUDY LIVES AT. The shell is a real file — work/<slug>.html
-     — and the link names it in full, extension included, on every protocol.
-
-     IT USED TO DROP THE `.html` OVER http, ON THE BELIEF THAT VERCEL REWRITES
-     THE EXTENSIONLESS FORM ONTO THE FILE. It does not, and that belief cost
-     every case-study link on the deployed site: `cleanUrls` is `false` in
-     vercel.json, which means `/work/cypherock-x0` is not a route at all.
-     Verified against the live deployment — `/onefinnet-review` returns 404
-     while `/onefinnet-review.html` returns 200 — so the pretty form was a
-     guaranteed 404 in production and worked only off a disk, which is the one
-     place it was written to fall back for.
-
-     THE OTHER WAY ROUND WOULD ALSO WORK AND IS NOT WORTH IT. Setting
-     `cleanUrls: true` buys the extensionless address bar, but it also maps
-     `work.html` onto `/work` while `work/<slug>.html` maps onto `/work/<slug>`
-     — a file and a directory claiming the same path, which is the shape Vercel
-     refuses to deploy. Naming the file is one line and cannot collide. */
-  const projectHref = (slug) => `${ROOT}work/${slug}.html`;
+  /* THE ROUTE A CASE STUDY LIVES AT: the top level, next to /about —
+     `ishaan-gupta.in/cypherock-x0`. The file is `<slug>.html` at the root;
+     `cleanUrls` in vercel.json serves it without the extension and redirects
+     the old `/work/<slug>.html` addresses here. Off a disk the extension is
+     kept, because there is no server to drop it. */
+  const projectHref = (slug) => `${ROOT}${slug}${CLEAN ? '' : '.html'}`;
 
   /* ======================================================== 0. utils ====== */
 
@@ -1481,7 +1484,9 @@
         const url = new URL(a.href, location.href);
         if (url.origin !== location.origin || a.target === '_blank') return;
         if (url.pathname === location.pathname && url.hash) return;
-        if (!/\.html?$/.test(url.pathname) && url.pathname !== '/') return;
+        /* a page of this site: a clean path or an .html file — not a PDF, a
+           markdown file or anything else with its own extension */
+        if (/\.[a-z0-9]+$/i.test(url.pathname) && !/\.html?$/i.test(url.pathname)) return;
         e.preventDefault();
         hop();
         document.body.classList.add('is-leaving');
@@ -2102,7 +2107,7 @@
 
            The href is untouched and nothing about the anchor changes, which is
            the whole point: a middle-click, a cmd-click, "open in new tab" and a
-           right-click copy all still reach `work/<slug>.html`, because those
+           right-click copy all still reach `/<slug>`, because those
            are people who have already decided. A plain left click is the only
            one intercepted, and it is intercepted on the same four conditions
            `Route.init` uses — a modifier held is a modifier meant.
@@ -5754,7 +5759,7 @@
             ` beat beat--still">${s.h}</h2>`) +
         (s.p ? `<p${AT(s.pat == null ? 0.34 : s.pat)} class="fg-p beat">${s.p}</p>` : '') +
         /* THE CARD ITSELF, LIVE. `card3d: true` on an ask scene adds a slot
-           that the page's own module (see work/x0-cards.html) fills with the
+           that the page's own module (see x0-cards.html) fills with the
            drag-to-rotate three.js card from assets/js/x0-card.js. */
         (s.card3d ? `<div${AT(0.42)} class="fg-card3d beat" data-card3d` +
           ` role="img" aria-label="${esc(s.card3dLabel || '3D model of the X0 card. Drag to rotate.')}"></div>` : '') +
@@ -7692,7 +7697,7 @@
 
     /* WHICH STUDY THIS PAGE IS.
 
-       The shell file at work/<slug>.html contains one fact — its slug, on the
+       The shell file at <slug>.html contains one fact — its slug, on the
        body — and everything else is looked up here, out of the same
        `showcase.items` the home grid and the Work index are built from. So a
        case study is written once, in content.js, and the tile, the index entry
@@ -23581,9 +23586,9 @@
     },
 
     /* A section, or null. The comparison is on the last path segment because
-       that is the only part that identifies the file: `cleanUrls` is off (see
-       the note over `projectHref`), the site is served from a root that is not
-       always `/`, and the same three names have to be recognised off a disk. */
+       that is the only part that identifies the page: it is `/about` when
+       served (clean URLs, see `tidy`) and `about.html` off a disk, and both
+       have to be recognised. */
     of(raw, abs) {
       if (!raw || /^(?:[a-z][a-z0-9+.-]*:(?!\/)|#|mailto:|tel:)/i.test(raw)) return null;
       let path;
@@ -23593,7 +23598,9 @@
         if (u.hash && u.pathname === location.pathname) return null;
         path = u.pathname;
       } catch (err) { return null; }
-      const file = path.slice(path.lastIndexOf('/') + 1) || 'index.html';
+      /* `/about` and `about.html` are the same section; `/` is the home */
+      let file = path.slice(path.lastIndexOf('/') + 1) || 'index.html';
+      if (!/\.html?$/i.test(file)) file += '.html';
       return this.PAGES[file] || null;
     },
 

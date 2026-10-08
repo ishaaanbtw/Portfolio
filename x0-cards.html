@@ -10,7 +10,7 @@
 (function () {
   var d = document.documentElement; d.setAttribute('data-wip', '');
   try { if (sessionStorage.getItem('ig-owner') === '1') return; } catch (e) {}
-  location.replace('../index.html');
+  location.replace('index.html');
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -22,12 +22,12 @@
      first glyph is wanted, which is a swap you can see. The italic and the mono
      are not preloaded on purpose: one word on the home page is italic and only
      case studies set code, so both can arrive late without anything moving. -->
-<link rel="preload" href="../assets/fonts/Satoshi-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/Satoshi-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <!-- Geist stays preloaded too: the film is set in Satoshi but the hero and
      the ending above and below it are the site's own furniture, and those
      are Geist. Two faces on this one page, both self-hosted, both started
      before the stylesheet is parsed. -->
-<link rel="preload" href="../assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT.
      What this is: site.js section 5c2c, site.css sections 44 and 44b. Why it
      cannot live in site.js: the sheet is the page's own paper and the document
@@ -112,7 +112,7 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="../assets/css/site.css?v=wip154">
+<link rel="stylesheet" href="assets/css/site.css?v=wip154">
 <!-- The mark follows the reader's system theme, not the site's. favicon.svg
      carries the media query inside it, which Chrome and Firefox honour;
      Safari renders SVG favicons but ignores their CSS, so the dark copy is
@@ -129,21 +129,21 @@
      is a week of the old mark in everybody's tab. Out here it falls under the
      short-lived rule instead — and it is where /favicon.ico and
      /apple-touch-icon.png are probed for anyway. -->
-<link rel="icon" href="../favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="icon" href="../favicon-32.png" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" href="favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ishaan Gupta">
 <meta property="og:title" content="X0 Cards — Ishaan Gupta">
 <meta property="og:description" content="X0 Cards: the second chapter of X0, where the digital product becomes a physical one.">
-<meta property="og:image" content="../assets/img/og.png">
+<meta property="og:image" content="assets/img/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="X0 Cards — Ishaan Gupta">
 <meta name="twitter:description" content="X0 Cards: the second chapter of X0, where the digital product becomes a physical one.">
-<meta name="twitter:image" content="../assets/img/og.png">
+<meta name="twitter:image" content="assets/img/og.png">
 <!-- ONE DESIGN, AND IT IS DECIDED BEFORE THE FIRST PAINT.
 
      The shell — home, about, play — has two themes and picks one from the
@@ -202,8 +202,8 @@
     <main id="main"></main>
   </div>
 
-  <script src="../assets/js/content.js?v=wip154"></script>
-  <script src="../assets/js/site.js?v=wip154"></script>
+  <script src="assets/js/content.js?v=wip154"></script>
+  <script src="assets/js/site.js?v=wip154"></script>
   <!-- THE LIVE CARD in the Outcome scene. The card code is INLINED (a copy of
        assets/js/x0-card.js) and the artwork comes from x0-card-tex.js, because
        a page opened straight from disk may not import module files or give
@@ -408,12 +408,12 @@ async function mountX0Card(container, opts = {}) {
         /* from disk, the artwork has to come embedded; over http, the real files */
         if (location.protocol === 'file:') await new Promise((ok) => {
           const sc = document.createElement('script');
-          sc.src = '../assets/js/x0-card-tex.js?v=wip154'; sc.onload = sc.onerror = ok;
+          sc.src = 'assets/js/x0-card-tex.js?v=wip154'; sc.onload = sc.onerror = ok;
           document.head.appendChild(sc);
         });
         const T = window.X0_CARD_TEX || {};
         mountX0Card(el, {
-          texPath: '../assets/media/x0/card-tex/',
+          texPath: 'assets/media/x0/card-tex/',
           frontFallback: T.front || 'front_fallback.png',
           backFallback: T.back || 'back_fallback.png',
           background: null, halo: 0, exposure: 0.8, touchAction: 'pan-y',
