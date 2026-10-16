@@ -964,7 +964,7 @@ window.SITE = {
                reads as a fact and the same fact set as a sentence reads as a
                claim.
 
-               EVERY VALUE HERE IS DOCUMENTED. Seven months, concept to beta,
+               EVERY VALUE HERE IS DOCUMENTED. Concept to beta,
                the scope and the collaborators are all out of the knowledge base
                rather than written for the page. There is no team size and no
                launch metric because neither is recorded anywhere, and a case
@@ -976,11 +976,11 @@ window.SITE = {
                 + 'self-custody simpler, more approachable and more '
                 + '<b>physical</b> than the vault it sits beside.',
               rows: [
-                { k: 'Role', v: 'Senior Product Designer — end to end, concept to beta' },
-                { k: 'Timeline', v: 'Seven months · Dec 2025 — present' },
+                { k: 'Role', v: 'Senior Product Designer · Sole lead designer, end to end, concept to beta' },
+                { k: 'Timeline', v: 'Dec 2025 to present' },
                 { k: 'Team', v: 'Design of one, with firmware, hardware, blockchain and frontend engineering' },
                 { k: 'Scope', v: 'Product strategy · Information architecture · UX · UI · Design system · Industrial and packaging design' },
-                { k: 'Surfaces', v: 'The NFC card · X0 Wallet for iOS and Android · CySync desktop' },
+                { k: 'Surfaces', v: 'The NFC card · X0 Wallet for iOS and Android' },
               ] },
 
             /* ==============================================================
@@ -1523,7 +1523,7 @@ window.SITE = {
               
               h: 'The phone was already in their hand.',
               h2: 'So we stopped shipping a screen.',
-              p: 'Most hardware wallets still rely on their own screen and buttons. It adds cost, complexity and friction — for something people already have in their pocket.',
+              p: 'Most hardware wallets still rely on their own screen and buttons. It adds cost, complexity and friction, for something people already have in their pocket.',
               /* IMAGES TO COME. Leave `src` empty and the frame shows a grey
                  placeholder with its label; fill `src` with a path under
                  assets/img/x0/ and the picture takes its place. */
@@ -1727,9 +1727,21 @@ window.SITE = {
               k: 'Information architecture',
               ia: {
                 W: 1180, H: 720,
+                /* TWO WAYS IN. With cards is the product; Explore mode is the
+                   card-less browse added for App Store review and for people
+                   deciding whether to buy (Explore Mode PRD v1.0). In Explore,
+                   rows with `ex.off` step back, `only: 'explore'` parts appear,
+                   and every action that needs a card is marked and opens the
+                   one shared Buy X0 sheet instead. */
+                /* the map opens on Explore mode */
+                start: 'explore',
+                modes: [
+                  { id: 'explore', t: 'Explore mode', hint: 'No cards, no wallets. Anything that needs a card opens the Buy X0 sheet.' },
+                  { id: 'cards', t: 'With X0 cards' },
+                ],
                 groups: [
                   { id: 'run',   n: '01', t: 'First run',         x: 0,   y: 0,   at: 0.04 },
-                  { id: 'setup', n: '02', t: 'Wallet setup',      x: 248, y: 0,   at: 0.13 },
+                  { id: 'setup', n: '02', t: 'Wallet setup',      x: 248, y: 0,   at: 0.13, off: true },
                   { id: 'home',  n: '03', t: 'Home',              x: 496, y: 0,   at: 0.22 },
                   { id: 'act',   n: '04', t: 'From Home',         x: 744, y: 0,   at: 0.31 },
                   { id: 'log',   n: '05', t: 'Activity',          x: 992, y: 0,   at: 0.40 },
@@ -1741,48 +1753,54 @@ window.SITE = {
                   /* 01 · first run */
                   { id: 'welcome', flow: true, g: 'run', t: 'Welcome', m: '4 intro screens · Consent', x: 0, y: 36,
                     steps: ['Welcome', 'Meet X0', 'Security across cards', 'No seed phrase backup', '22,000+ currencies', 'Data consent'] },
-                  { id: 'device', g: 'run', t: 'Choose device', m: 'X0 or X1 · 1–4 cards', x: 0, y: 100,
+                  { id: 'device', ex: { off: true }, g: 'run', t: 'Choose device', m: 'X0 or X1 · 1–4 cards', x: 0, y: 100,
                     steps: ['Cypherock X0 or X1', 'How many cards'] },
-                  { id: 'tap', flow: true, g: 'run', t: 'Tap a card', m: 'Checks for wallets', x: 0, y: 164, card: true,
+                  { id: 'tap', ex: { off: true }, flow: true, g: 'run', t: 'Tap a card', m: 'Checks for wallets', x: 0, y: 164, card: true,
                     steps: ['Intro', 'Tap to approve', 'New or existing user'] },
-                  { id: 'who', g: 'run', t: 'New or existing?', kind: 'decide', x: 0, y: 234, w: 150, h: 36,
+                  { id: 'who', ex: { steps: ['New user: set up the cards', 'Existing user: read the wallets already on them', 'Explore the App: look around without cards'] }, g: 'run', t: 'New or existing?', kind: 'decide', x: 0, y: 234, w: 150, h: 36,
                     steps: ['New user: set up the cards', 'Existing user: read the wallets already on them'] },
-                  { id: 'cards', flow: true, g: 'run', t: 'New cards', m: 'Scan · Authenticate · Pair', x: 24, y: 292, w: 164, card: true,
+                  { id: 'cards', ex: { off: true }, flow: true, g: 'run', t: 'New cards', m: 'Scan · Authenticate · Pair', x: 24, y: 292, w: 164, card: true,
                     steps: ['Scan all four cards', 'Authenticate all four', 'Pair all four', 'Cards ready'] },
-                  { id: 'existing', flow: true, g: 'run', t: 'Existing cards', m: 'Reads wallets on cards', x: 24, y: 356, w: 164,
+                  { id: 'explore', only: 'explore', flow: true, g: 'run', t: 'Explore the App', m: 'No cards yet · Look around', x: 24, y: 420, w: 164,
+                    steps: ['Explore the App, on new or existing', 'Continue', 'Home, with no wallets'] },
+                  { id: 'existing', ex: { off: true }, flow: true, g: 'run', t: 'Existing cards', m: 'Reads wallets on cards', x: 24, y: 356, w: 164,
                     steps: ['Tap the cards', 'Wallets found on them'] },
 
                   /* 02 · a wallet */
-                  { id: 'options', g: 'setup', t: 'Wallet options', m: 'Open · Create · Import', kind: 'hub', x: 248, y: 36,
+                  { id: 'options', ex: { off: true }, g: 'setup', t: 'Wallet options', m: 'Open · Create · Import', kind: 'hub', x: 248, y: 36,
                     steps: ['Wallets found on the cards', 'Create a new wallet', 'Import from a seed phrase', 'Restore with Cypherock Cover'] },
-                  { id: 'found', flow: true, g: 'setup', t: 'Found wallet', m: 'Open it directly', x: 272, y: 100, w: 164,
+                  { id: 'found', ex: { off: true }, flow: true, g: 'setup', t: 'Found wallet', m: 'Open it directly', x: 272, y: 100, w: 164,
                     steps: ['Pick a wallet found on the cards', 'Straight to Home'] },
-                  { id: 'create', flow: true, g: 'setup', t: 'Create wallet', m: 'Name · PIN · 4 cards', x: 272, y: 164, w: 164, card: true, pin: true,
+                  { id: 'create', ex: { off: true }, flow: true, g: 'setup', t: 'Create wallet', m: 'Name · PIN · 4 cards', x: 272, y: 164, w: 164, card: true, pin: true,
                     steps: ['Tap to approve', 'Up to four wallets', 'Name it', 'Confirm name & seed length', 'Set a PIN', 'Tap four cards in order', 'Created', 'First asset'] },
-                  { id: 'import', flow: true, g: 'setup', t: 'Import wallet', m: 'Seed phrase · 4 cards', x: 272, y: 228, w: 164, card: true,
+                  { id: 'import', ex: { off: true }, flow: true, g: 'setup', t: 'Import wallet', m: 'Seed phrase · 4 cards', x: 272, y: 228, w: 164, card: true,
                     steps: ['Tap to approve', 'About seed phrases', 'Enter phrase or private key', 'Tap four cards in order', 'Imported', 'First asset'] },
-                  { id: 'cover', g: 'setup', t: 'Cypherock Cover', m: 'Subscription restore', kind: 'option', x: 272, y: 292, w: 164,
+                  { id: 'cover', ex: { off: true }, g: 'setup', t: 'Cypherock Cover', m: 'Subscription restore', kind: 'option', x: 272, y: 292, w: 164,
                     steps: ['Offered on wallet options', 'No flow designed behind it yet'] },
 
                   /* 03 · Home */
-                  { id: 'home', g: 'home', t: 'Home', m: ['Wallet switcher · Balance', 'Actions · Accounts'], kind: 'hub', tag: 'Tab 1', x: 496, y: 100, h: 64,
+                  { id: 'home', ex: { steps: ['No wallets: the real empty state', 'Assets listed at zero', 'Bell: the Explore version of notifications', 'Gear: settings, unchanged'] }, g: 'home', t: 'Home', m: ['Wallet switcher · Balance', 'Actions · Accounts'], kind: 'hub', tag: 'Tab 1', x: 496, y: 100, h: 64,
                     steps: ['Combine portfolio, or one wallet', 'Balance', 'Send · Receive · Swap · Buy · Earn', 'Your accounts', 'Bell and gear in the header'] },
-                  { id: 'empty', flow: true, g: 'home', t: 'Empty', m: 'No wallets yet', kind: 'state', x: 520, y: 184, w: 164, h: 40,
+                  { id: 'empty', ex: { nudge: true, m: 'Add wallet opens Buy X0', steps: ['No wallets', 'Add wallet', 'Buy X0 sheet'] }, flow: true, g: 'home', t: 'Empty', m: 'No wallets yet', kind: 'state', x: 520, y: 184, w: 164, h: 40,
                     steps: ['No wallets', 'Add wallet', 'Wallet options'] },
                   { id: 'offline', flow: true, g: 'home', t: 'Offline', m: 'Last synced · Retry', kind: 'state', x: 520, y: 236, w: 164, h: 40,
                     steps: ['Prices may be outdated', 'Last synced', 'Tap to retry'] },
 
+                  { id: 'nudge', only: 'explore', g: 'home', t: 'Buy X0 sheet', m: ['Get X0 cards · I have my cards', 'Not now'], kind: 'hub', x: 496, y: 404, h: 64,
+                    ties: ['empty', 'notif', 'swap', 'wc', 'addw', 'recover'],
+                    steps: ['Says why the action needs X0 cards', 'Get X0 cards: the shop', 'I have my cards: back to new or existing', 'Not now: closes, nothing lost', 'Shown every time'] },
+
                   /* 04 · from Home */
                   { id: 'portfolio', g: 'act', t: 'Portfolio', m: 'Chart · Allocation · Assets', x: 744, y: 36,
                     steps: ['1D to 1Y', 'Asset allocation', 'Asset list', 'Recent transactions'] },
-                  { id: 'notif', g: 'act', t: 'Notifications', m: 'Transactions · Security', x: 744, y: 100,
+                  { id: 'notif', ex: { nudge: true, m: 'No permission prompt', steps: ['Stay on top of every transaction', 'Get Cypherock X0', 'Buy X0 sheet'] }, g: 'act', t: 'Notifications', m: 'Transactions · Security', x: 744, y: 100,
                     steps: ['Received', 'Sent', 'Swapped', 'Swap failed', 'Transfer failed', 'Face ID enabled'] },
-                  { id: 'send', flow: true, g: 'act', t: 'Send', m: 'Recipient · Fee · Review', x: 744, y: 164, card: true, pin: true,
+                  { id: 'send', ex: { off: true }, flow: true, g: 'act', t: 'Send', m: 'Recipient · Fee · Review', x: 744, y: 164, card: true, pin: true,
                     steps: ['Wallet', 'Token', 'Recipient', 'Amount & note', 'Network fee', 'Review', 'PIN', 'Tap a card', 'Broadcast'] },
-                  { id: 'receive', flow: true, g: 'act', t: 'Receive', m: 'Token · Network · QR', x: 744, y: 228,
+                  { id: 'receive', ex: { off: true }, flow: true, g: 'act', t: 'Receive', m: 'Token · Network · QR', x: 744, y: 228,
                     steps: ['Wallet', 'Token', 'Confirm', 'Address & QR, per network', 'Address options'] },
-                  { id: 'swap', flow: true, g: 'act', t: 'Swap', m: 'Pair · Provider · Review', tag: 'Tab 2', x: 744, y: 292, card: true,
-                    steps: ['Wallet', 'Pay token', 'Receive token', 'Amount', 'Provider', 'Quote', 'Review', 'Tap a card', 'Complete — or failed, back to the start'] },
+                  { id: 'swap', ex: { nudge: true, m: 'Live quotes · No balances', steps: ['Wallet, none yet', 'Pay token, most popular first', 'Receive token', 'Amount, no balance check', 'Provider', 'Live quote', 'Review', 'Get Cypherock X0', 'Buy X0 sheet'] }, flow: true, g: 'act', t: 'Swap', m: 'Pair · Provider · Review', tag: 'Tab 2', x: 744, y: 292, card: true,
+                    steps: ['Wallet', 'Pay token', 'Receive token', 'Amount', 'Provider', 'Quote', 'Review', 'Tap a card', 'Complete, or failed and back to the start'] },
                   { id: 'addacct', flow: true, g: 'act', t: 'Add account', m: 'Asset · Network · Accounts', x: 744, y: 356, card: true,
                     steps: ['Select asset', 'Network', 'Tap a card', 'Checking the blockchain', 'Choose accounts', 'Added to portfolio'] },
                   { id: 'earn', flow: true, g: 'act', t: 'Earn', m: 'Waitlist', tag: 'Tab 3', x: 744, y: 420,
@@ -1795,23 +1813,26 @@ window.SITE = {
                     steps: ['Sent', 'Received', 'Swapped', 'Pending'] },
 
                   /* 06 · Profile */
-                  { id: 'profile', g: 'prof', t: 'Profile', m: 'Wallets · dApps · App', kind: 'hub', tag: 'Tab 4', x: 496, y: 540,
+                  { id: 'profile', ex: { steps: ['WalletConnect', 'Wallets, 0 of 4', 'Add wallet', 'Recover wallet', 'App settings', 'Explore Cypherock X0: the shop', 'Support · Terms', 'Exit Explore mode'] }, g: 'prof', t: 'Profile', m: 'Wallets · dApps · App', kind: 'hub', tag: 'Tab 4', x: 496, y: 540,
                     steps: ['WalletConnect', 'Manage wallets', 'Add wallet', 'Recover wallet', 'App settings', 'Support · Terms'] },
-                  { id: 'wc', flow: true, g: 'prof', t: 'WalletConnect', m: 'URL · Wallet · Accounts', x: 520, y: 604, w: 164,
+                  { id: 'wc', ex: { nudge: true, m: 'Tap or link opens Buy X0', steps: ['Tap it, or a dApp link opens the app', 'Buy X0 sheet, no connection attempted'] }, flow: true, g: 'prof', t: 'WalletConnect', m: 'URL · Wallet · Accounts', x: 520, y: 604, w: 164,
                     steps: ['Paste a URL', 'Select wallet', 'Select accounts', 'Connecting', 'Connection details'] },
 
+                  { id: 'exitx', only: 'explore', flow: true, g: 'prof', t: 'Exit Explore mode', m: 'Back to Welcome', x: 520, y: 668, w: 164,
+                    steps: ['Last item on Profile', 'Back to Welcome', 'No confirmation'] },
+
                   /* 07 · the wallet's life */
-                  { id: 'addw', flow: true, g: 'wal', t: 'Add wallet', m: 'Returns to setup', x: 248, y: 540,
+                  { id: 'addw', ex: { nudge: true, m: 'Opens Buy X0', steps: ['Buy X0 sheet'] }, flow: true, g: 'wal', t: 'Add wallet', m: 'Returns to setup', x: 248, y: 540,
                     steps: ['Opens wallet options', 'Create or import'] },
-                  { id: 'manage', g: 'wal', t: 'Manage wallets', m: 'Up to 4 · Swipe to delete', x: 248, y: 604,
+                  { id: 'manage', ex: { m: '0 of 4 · No wallets', steps: ['Wallets, 0 of 4', 'No wallet rows'] }, g: 'wal', t: 'Manage wallets', m: 'Up to 4 · Swipe to delete', x: 248, y: 604,
                     steps: ['Wallets, 3 of 4', 'Wallet settings', 'Swipe to delete'] },
-                  { id: 'recover', flow: true, g: 'wal', t: 'Recover wallet', m: '4 cards · Pick · PIN', x: 248, y: 668, card: true, pin: true,
-                    steps: ['Instructions', 'Tap all four cards', 'Wallets found', 'PIN', 'Tap two cards', 'The card missing it', 'The rest', 'Recovered — or none found, or no free slot'] },
-                  { id: 'wset', g: 'wal', t: 'Wallet settings', m: 'One wallet', x: 0, y: 540,
+                  { id: 'recover', ex: { nudge: true, m: 'Opens Buy X0', steps: ['Buy X0 sheet'] }, flow: true, g: 'wal', t: 'Recover wallet', m: '4 cards · Pick · PIN', x: 248, y: 668, card: true, pin: true,
+                    steps: ['Instructions', 'Tap all four cards', 'Wallets found', 'PIN', 'Tap two cards', 'The card missing it', 'The rest', 'Recovered, or none found, or no free slot'] },
+                  { id: 'wset', ex: { off: true }, g: 'wal', t: 'Wallet settings', m: 'One wallet', x: 0, y: 540,
                     steps: ['View seed phrase', 'Delete wallet'] },
-                  { id: 'seed', flow: true, g: 'wal', t: 'View seed phrase', m: 'Face ID · Tap to reveal', x: 24, y: 604, w: 164,
+                  { id: 'seed', ex: { off: true }, flow: true, g: 'wal', t: 'View seed phrase', m: 'Face ID · Tap to reveal', x: 24, y: 604, w: 164,
                     steps: ['Face ID', 'Tap to reveal', '12, 18 or 24 words', 'Screenshots blocked'] },
-                  { id: 'delete', flow: true, g: 'wal', t: 'Delete wallet', m: '4 cards · PIN · Caution', kind: 'danger', x: 24, y: 668, w: 164, card: true, pin: true,
+                  { id: 'delete', ex: { off: true }, flow: true, g: 'wal', t: 'Delete wallet', m: '4 cards · PIN · Caution', kind: 'danger', x: 24, y: 668, w: 164, card: true, pin: true,
                     steps: ['All four cards needed', 'PIN', 'Caution, confirmed', 'Tap four cards in order', 'Deleted'] },
 
                   /* 08 · settings */
@@ -1836,6 +1857,11 @@ window.SITE = {
                   { f: 'who', t: 'existing', r: 'spine' },
                   { f: 'cards', t: 'options', r: 'r', x: 210, ty: 70 },
                   { f: 'existing', t: 'options', r: 'r', x: 210, ty: 70 },
+                  /* explore mode: the selection screen comes straight after
+                     the welcome, and Explore the App goes straight to Home */
+                  { f: 'welcome', t: 'who', r: 'pts', only: 'explore', pts: [[188, 60], [200, 60], [200, 252], [150, 252]] },
+                  { f: 'who', t: 'explore', r: 'spine', only: 'explore' },
+                  { f: 'explore', t: 'home', r: 'r', x: 466, only: 'explore' },
 
                   { f: 'options', t: 'found', r: 'spine' },
                   { f: 'options', t: 'create', r: 'spine' },
@@ -1856,12 +1882,13 @@ window.SITE = {
                   { f: 'home', t: 'earn', r: 'r', x: 714 },
 
                   { f: 'portfolio', t: 'txns', r: 'r', x: 962 },
-                  { f: 'notif', t: 'txns', r: 'r', x: 962 },
+                  { f: 'notif', t: 'txns', r: 'r', x: 962, xoff: true },
                   { f: 'txns', t: 'txd', r: 'down', x: 1086 },
                   { f: 'send', t: 'txd', r: 'r', x: 962 },
-                  { f: 'swap', t: 'txd', r: 'r', x: 962 },
+                  { f: 'swap', t: 'txd', r: 'r', x: 962, xoff: true },
 
                   { f: 'profile', t: 'wc', r: 'spine' },
+                  { f: 'profile', t: 'exitx', r: 'spine', only: 'explore' },
                   { f: 'profile', t: 'settings', r: 'r', x: 714 },
                   { f: 'profile', t: 'addw', r: 'l', x: 466 },
                   { f: 'profile', t: 'manage', r: 'l', x: 466 },
@@ -2109,7 +2136,7 @@ window.SITE = {
                    a pixel because it is the same outline. */
                 draw: { at: 0.10, sp: 7.15, out: 0.34, gone: 0.42 },
 
-                alt: 'The X0 Home screen — combined portfolio, balance, send and receive, accounts' },
+                alt: 'The X0 Home screen: combined portfolio, balance, send and receive, accounts' },
 
               /* THE TEN BANDS OF THE SCREEN. `from`/`to` are percentages down
                  the render, measured at its dark gutters, and each one lands
@@ -2160,7 +2187,7 @@ window.SITE = {
                   n: { x: '24%', y: '21%', w: 'min(40vw, 18vh)', dx: '-7vw', dy: '-11vh', dep: '-20px' },
                   src: 'assets/img/x0/system/colour.svg', pw: 1557, ph: 764,
                   m: { n: 'Colour', s: '10 tokens, named not numbered', at: 'br' },
-                  alt: 'The N45 greyscale ramp — ten named steps with their hex values' },
+                  alt: 'The N45 greyscale ramp: ten named steps with their hex values' },
 
                 /* components. NOT dimmed: the file is exported at 30% opacity,
                    so the artwork is doing its own receding. */
@@ -2202,7 +2229,7 @@ window.SITE = {
                      phone at 52vw is off the frame */
                   n: { x: '46%', y: '14%', w: 'min(44vw, 20vh)', dx: '-5vw', dy: '-7vh', dep: '20px' },
                   src: 'assets/img/x0/system/snackbar.svg', pw: 376, ph: 76,
-                  alt: 'The success snackbar — System synced successfully' },
+                  alt: 'The success snackbar: System synced successfully' },
 
                 /* it stays. There is no slide-to-confirm on the Home screen,
                    and sending a piece in to build something that is not there
@@ -2222,7 +2249,7 @@ window.SITE = {
                   n: { x: '26%', y: '84%', w: 'min(30vw, 14vh)', dx: '-6vw', dy: '6vh', dep: '-18px' },
                   src: 'assets/img/x0/system/button.webp', pw: 400, ph: 96,
                   m: { n: 'The button', s: 'One shape, every primary action', at: 'bl' },
-                  alt: 'The primary button — Continue' },
+                  alt: 'The primary button: Continue' },
 
                 /* three pixels tall, and it stays: the Home screen has no
                    progress bar either */
@@ -2418,7 +2445,7 @@ window.SITE = {
               poster: 'assets/media/x0/app-walkthrough.webp',
               alt: 'The X0 card tapped against the back of a phone, and the confirmation that follows',
               h: 'This is what replaced the hardware.',
-              p: 'Everything about it is designed around a hand doing something physical. Stand-in footage — the shot to take is the hand, the card and the phone on a tripod, one key light, dark ground.' },
+              p: 'Everything about it is designed around a hand doing something physical. Stand-in footage: the shot to take is the hand, the card and the phone on a tripod, one key light, dark ground.' },
 
             /* THE LAST CHAPTER OF THE PRODUCT: IT SHIPPED. One headline, a
                status, and the three places X0 lives now, shown as the real
@@ -2562,8 +2589,8 @@ window.SITE = {
             + 'to stop: every screen is a place a human decides what the model '
             + 'got right.',
           facts: [
-            { k: 'Role', v: 'Product Designer — end to end, plus product direction' },
-            { k: 'Timeline', v: 'Jan 2024 — Nov 2025 · Noida, on-site' },
+            { k: 'Role', v: 'Product Designer, end to end, plus product direction' },
+            { k: 'Timeline', v: 'Jan 2024 to Nov 2025 · Noida, on-site' },
             { k: 'Team', v: 'Cross-functional team of 7' },
             { k: 'Platform', v: 'Web · Recruiter, admin and candidate surfaces' },
           ],
@@ -3330,12 +3357,12 @@ window.SITE = {
               kicker: 'The card',
               h: 'Vertical. Silver. Quiet.',
               facts: [
-                'Why minimal — [TBD]',
-                'Why vertical — [TBD]',
-                'Why silver — [TBD]',
-                'Why the chip stayed untouched — [TBD]',
-                'Why the branding was reduced — [TBD]',
-                'Why the typography changed — [TBD]',
+                'Why minimal: [TBD]',
+                'Why vertical: [TBD]',
+                'Why silver: [TBD]',
+                'Why the chip stayed untouched: [TBD]',
+                'Why the branding was reduced: [TBD]',
+                'Why the typography changed: [TBD]',
               ] },
 
             /* 08 · details, with almost no words */
@@ -3422,8 +3449,8 @@ window.SITE = {
       { id: 'problem', nav: 'The Problem', eyebrow: 'The Problem',
         heading: 'Core Issue: Extensibility for enterprise teams',
         body: [
-          'The no-code dashboard covers the core loop well. The issue starts when you want Websets to run on its own or talk to other tools — reacting to a monitored event, keeping a list fresh on a schedule, or piping results into Clay, Slack, or a CRM.',
-          'These aren’t niche edge cases. The people who’d get the most out of Websets — account executives, recruiters, outbound leads, GTM operators — generally aren’t engineers. The automation layer, the part that turns Websets into a sales pipeline, is locked behind a skill its target users don’t have.',
+          'The no-code dashboard covers the core loop well. The issue starts when you want Websets to run on its own or talk to other tools: reacting to a monitored event, keeping a list fresh on a schedule, or piping results into Clay, Slack, or a CRM.',
+          'These aren’t niche edge cases. The people who’d get the most out of Websets (account executives, recruiters, outbound leads, GTM operators) generally aren’t engineers. The automation layer, the part that turns Websets into a sales pipeline, is locked behind a skill its target users don’t have.',
         ],
         blocks: [
           { type: 'row', caption: 'Each surface stops at the same wall: full functionality needs API scripting.',
@@ -3533,13 +3560,13 @@ window.SITE = {
       media: 'assets/img/x0/x0.webp',
       title: 'Cypherock',
       body: 'Product designer. The X0 card from concept to beta, the wallet app around it, and the design system under both.',
-      hint: 'Dec 2025 — now · Gurugram',
+      hint: 'Dec 2025 to now · Gurugram',
     },
     vibecoding: {
       tone: 'light',
       media: 'assets/media/x0/app-walkthrough.webp',
       title: 'Vibecoding',
-      body: 'Designing by building it. This site is hand-written HTML, CSS and JavaScript — no framework, no build step, every measurement taken off a real screen.',
+      body: 'Designing by building it. This site is hand-written HTML, CSS and JavaScript. No framework, no build step, every measurement taken off a real screen.',
       hint: 'Claude Code · Figma MCP · a lot of Chromium',
     },
     poker: {
@@ -3627,7 +3654,7 @@ window.SITE = {
       {
         title: 'Eido Labs',
         role: 'Co-Founder',
-        year: '2025 — now',
+        year: '2025 to now',
         summary:
           'An agentic funding layer for onchain organisations. I own product surface, design system and the narrative.',
         tags: ['Product', 'Design system', '0→1'],
@@ -3639,7 +3666,7 @@ window.SITE = {
         role: 'Contract Designer',
         year: '2025',
         summary:
-          'Rethought transaction review for multisig signers — the moment where a wrong click costs the most.',
+          'Rethought transaction review for multisig signers, the moment where a wrong click costs the most.',
         tags: ['Security UX', 'Research'],
         href: '#',
         accent: '#12ff80',
@@ -3667,7 +3694,7 @@ window.SITE = {
       {
         title: 'Cruize Finance',
         role: 'Founding Product Designer',
-        year: '2022 — 23',
+        year: '2022 to 2023',
         summary:
           'Structured products for people who had never touched an options chain. Complexity hidden, never removed.',
         tags: ['DeFi', 'Onboarding'],
@@ -3864,7 +3891,7 @@ window.SITE = {
      button puts on the clipboard, and the two need not be the same address. */
   footer: {
     email: 'ishaangupta.888@gmail.com',
-    note: 'Hand-built with vanilla HTML, CSS and JavaScript — no framework, no build step.',
+    note: 'Hand-built with vanilla HTML, CSS and JavaScript. No framework, no build step.',
     // {year} is replaced automatically
     fine: '© {year} Ishaan Gupta',
     links: [

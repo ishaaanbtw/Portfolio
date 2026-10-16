@@ -1,4 +1,4 @@
-# IshaanLLM — Knowledge Base
+# IshaanLLM Knowledge Base
 
 > This document is the single source of truth for IshaanLLM. It is intentionally broader than a conventional portfolio bio: it captures Ishaan's professional identity, design thinking, working preferences, projects, interests, and the way he tends to communicate and make decisions.
 >
@@ -18,7 +18,7 @@ open: true
 
 when: who, yourself, introduce, bio
 
-Ishaan is someone who likes making things, playing things, and figuring out how things work. A lot of his life has been around building or getting better at something — from playing competitive games and sports to building random things with LEGO. He likes having something to work on, something to improve, or something to explore.
+Ishaan is someone who likes making things, playing things, and figuring out how things work. A lot of his life has been around building or getting better at something, from playing competitive games and sports to building random things with LEGO. He likes having something to work on, something to improve, or something to explore.
 
 Gaming has been a big part of his life. He likes competitive games, but what keeps him interested is not only the competition. Games give him a place where he can express himself, step into worlds that do not exist in real life, meet people he would probably never meet otherwise, and talk without worrying too much about being judged. He enjoys the fact that a game can make an imaginary world feel real for a while.
 
@@ -52,7 +52,7 @@ The choice was not a sudden switch away from technology. It was more like choosi
 
 Ishaan likes having things to learn, build, play, or improve. He can spend a lot of time on something once it catches his attention. He tends to compare options, try things himself, and keep changing them until he is happy with the result.
 
-He does not like doing something only because that is how it is normally done. He is comfortable changing direction when something does not feel right. He also likes having a mix of things in his life — work and design, games, sports, building things, collecting things, and following interests that have nothing to do with work.
+He does not like doing something only because that is how it is normally done. He is comfortable changing direction when something does not feel right. He also likes having a mix of things in his life: work and design, games, sports, building things, collecting things, and following interests that have nothing to do with work.
 
 ### Personal interests & life outside work
 
@@ -178,12 +178,12 @@ when: principles, rules, beliefs
 
 ask: What are your design principles?
 
-- **Clarity over clutter** — show what matters and avoid making users process everything at once.
-- **Intentionality over decoration** — visual elements should support the experience.
-- **Motion with purpose** — animation should explain, connect, transform, or add personality.
-- **Cohesion over isolated screens** — the experience should feel like one product.
-- **Distinctiveness without gimmicks** — avoid generic design patterns when a better product-specific solution exists.
-- **Details matter** — spacing, state changes, transitions, hierarchy, and micro-interactions can materially change how a product feels.
+- **Clarity over clutter:** show what matters and avoid making users process everything at once.
+- **Intentionality over decoration:** visual elements should support the experience.
+- **Motion with purpose:** animation should explain, connect, transform, or add personality.
+- **Cohesion over isolated screens:** the experience should feel like one product.
+- **Distinctiveness without gimmicks:** avoid generic design patterns when a better product-specific solution exists.
+- **Details matter:** spacing, state changes, transitions, hierarchy, and micro-interactions can materially change how a product feels.
 
 ### What makes my approach different
 
@@ -316,7 +316,7 @@ open: true
 
 ask: What do you do at Cypherock?
 
-**Role:** Senior Product Designer — sole design lead
+**Role:** Senior Product Designer, sole design lead
 
 **Location:** Gurugram, India
 
@@ -324,7 +324,7 @@ ask: What do you do at Cypherock?
 
 #### Overview
 
-Ishaan owns all design decisions as the sole lead designer across Cypherock's hardware wallet ecosystem — X0, X1 Vault, and CySync Desktop & Mobile — aligning product direction with the CEO, Product, Marketing and Engineering.
+Ishaan owns all design decisions as the sole lead designer across Cypherock's hardware wallet ecosystem (X0, X1 Vault, and CySync Desktop & Mobile), aligning product direction with the CEO, Product, Marketing and Engineering.
 
 His work spans product UI, interaction design, design systems, the hardware/software relationship, and case-study/portfolio storytelling.
 
@@ -332,7 +332,7 @@ His work spans product UI, interaction design, design systems, the hardware/soft
 
 - Owns all design decisions as sole lead designer across the hardware wallet ecosystem (X0, X1 Vault, CySync Desktop & Mobile), aligning product direction with the CEO, Product, Marketing and Engineering.
 - Led the end-to-end design of Cypherock X0 over 10 months, from concept to production readiness (now in security audit): a mobile-first ecosystem spanning NFC cards, premium packaging, manufacturing assets and the X0 Wallet app, including its product architecture and self-custody flows for wallet creation, recovery and transaction authorization.
-- Architected the N45 Design System for X0 — an AI-ready system of components, tokens and docs built for Claude, ChatGPT, Cursor and Figma MCP.
+- Architected the N45 Design System for X0, an AI-ready system of components, tokens and docs built for Claude, ChatGPT, Cursor and Figma MCP.
 - Shaped swap and staking experiences in CySync through partner integrations with Houdini Swap and staking providers, turning technical constraints into simple flows for trading and earning yield.
 - Drove the product design of the Cypherock X1 Vault, crafting NFC and BLE flows for wallet setup, card authentication, transaction verification and recovery across CySync Desktop & Mobile with the firmware, hardware and frontend teams.
 - Led the redesign of CySync v2, architecting BLE-powered interactions between the X1 Vault and CySync Desktop & Mobile.
@@ -808,10 +808,10 @@ where: about
 tags: awards, recognition, trophies, competitions
 ask: Have you won any awards?
 
-- **CII Young Designer Award — Winning Entry**, Confederation of Indian Industry (CII).
-- **Student Service Design Challenge — Honorable Mention**, Barcelona Design Week (SSDC).
-- **D’Source Corona Design Challenge — Winner**, IDC School of Design, Mumbai.
-- **24hr Design Hackathon — 2nd Runner-Up**, Doon University, Dehradun.
+- **CII Young Designer Award, Winning Entry**, Confederation of Indian Industry (CII).
+- **Student Service Design Challenge, Honorable Mention**, Barcelona Design Week (SSDC).
+- **D’Source Corona Design Challenge, Winner**, IDC School of Design, Mumbai.
+- **24hr Design Hackathon, 2nd Runner-Up**, Doon University, Dehradun.
 
 ---
 
@@ -864,7 +864,7 @@ tags: faq, questions
 
 ### Who is Ishaan?
 
-Ishaan is a Senior Product Designer — currently the sole design lead at Cypherock — with about three years of experience designing self-custodial crypto products. His work spans digital products, interaction design, design systems, visual design, motion, and hardware-connected experiences.
+Ishaan is a Senior Product Designer, currently the sole design lead at Cypherock, with about three years of experience designing self-custodial crypto products. His work spans digital products, interaction design, design systems, visual design, motion, and hardware-connected experiences.
 
 ### What is Ishaan working on?
 
@@ -1074,6 +1074,6 @@ internal: true
 
 Add new information below as the portfolio evolves.
 
-**Last updated:** October 16, 2026 — work, skills, education, awards and contact sections brought in line with the current resume (Ishaan_Gupta_SPD.pdf).
+**Last updated:** October 16, 2026. Work, skills, education, awards and contact sections brought in line with the current resume (Ishaan_Gupta_SPD.pdf).
 
 **Version:** Expanded foundation based on the original knowledge-base template plus available prior conversation context. Unknowns are intentionally marked rather than fabricated.

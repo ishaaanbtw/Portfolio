@@ -1081,7 +1081,7 @@
     page: document.body.dataset.page || 'home',
 
     init() {
-      document.title = `${S.person.name} — ${this.page === 'home' ? 'Portfolio' : this.page[0].toUpperCase() + this.page.slice(1)}`;
+      document.title = `${S.person.name} · ${this.page === 'home' ? 'Portfolio' : this.page[0].toUpperCase() + this.page.slice(1)}`;
       /* Three of the four things that used to be called here are gone with the
          furniture they built: `nav()` (the header row of links), `menu()` (the
          phone's bar) and `foot()` (the full-width footer). Each has a note
@@ -2063,7 +2063,7 @@
             : item.study ? projectHref(item.study.slug) : (item.href || '#'),
           'aria-label': wip
             ? `${item.title}: ${item.wip.label}. ${item.wip.note}.`
-            : `${item.title} — ${item.meta || ''}`,
+            : `${item.title} · ${item.meta || ''}`,
         });
         const media = el('div', { class: 'wcard__media' },
           (PREVIEW[item.preview] || PREVIEW.bloom)(item));
@@ -4064,7 +4064,7 @@
       return `<figure class="blk blk-frame blk-tour"${b.max ? ` style="--fw:${esc(b.max)}"` : ''}>` +
         `<div class="tour"${b.max ? ` style="--tw:${esc(b.max)}"` : ''}>` +
           `<div class="tour__rail">` +
-            `<span>${esc(b.label || 'X0 Wallet — Onboarding')}</span>` +
+            `<span>${esc(b.label || 'X0 Wallet · Onboarding')}</span>` +
             `<span class="tour__count">01 / ${String(stops.length).padStart(2, '0')}</span>` +
           `</div>` +
           scene +
@@ -5060,8 +5060,8 @@
       return `M${bx - dy * S} ${by + dx * S}L${x} ${y}L${bx + dy * S} ${by - dx * S}`;
     },
 
-    read(n) {
-      const st = n.steps || [];
+    read(n, st) {
+      st = st || n.steps || [];
       return st.join(n.flow ? ' → ' : ' · ');
     },
 
@@ -5079,34 +5079,51 @@
       const out = {};
       d.edges.forEach((e) => { (out[e.f] = out[e.f] || []).push(e.t); });
 
+      /* TWO MODES, ONE DRAWING. A node can carry `ex` (what changes in
+         Explore mode: `off`, a `nudge`, other `m` or `steps`) and any part
+         can be `only: 'explore'`. Both versions are written into the markup
+         and the host's data-mode picks one, so switching is instant and the
+         reveal is untouched. */
+      const X = (n) => n.ex || {};
       const marks = (n) => {
-        const m = (n.card ? this.CARD : '') + (n.pin ? '<i class="fg-ia__pin">PIN</i>' : '')
+        const card = (n.card ? this.CARD : '') + (n.pin ? '<i class="fg-ia__pin">PIN</i>' : '');
+        const m = (X(n).nudge && card ? `<span class="fg-ia__mv" data-v="c">${card}</span>` : card)
+          + (X(n).nudge ? '<i class="fg-ia__x0" data-v="x">Buy X0</i>' : '')
           + (n.tag ? `<i class="fg-ia__tag">${esc(n.tag)}</i>` : '');
         return m ? `<span class="fg-ia__mk">${m}</span>` : '';
       };
-      const meta = (n) => (n.m ? [].concat(n.m) : [])
-        .map((l) => `<span class="fg-ia__m">${esc(l)}</span>`).join('');
+      const lines = (m, v) => (m ? [].concat(m) : [])
+        .map((l) => `<span class="fg-ia__m"${v ? ` data-v="${v}"` : ''}>${esc(l)}</span>`).join('');
+      const meta = (n) => (X(n).m ? lines(n.m, 'c') + lines(X(n).m, 'x') : lines(n.m));
+      const tags = (o) => (o.only ? ` data-only="${esc(o.only)}"` : '')
+        + ((o.ex && o.ex.off) || o.off ? ' data-off' : '');
 
       const groups = d.groups.map((g) =>
-        `<span class="fg-ia__g beat" data-g="${g.id}"` +
+        `<span class="fg-ia__g beat" data-g="${g.id}"${tags(g)}` +
           ` style="--at:${g.at.toFixed(3)};left:${g.x}px;top:${g.y}px">` +
           `<b>${esc(g.n)}</b>${esc(g.t)}</span>`).join('');
 
       const nodes = d.nodes.map((n) => {
         const b = this.box(n);
         return `<button type="button" class="fg-ia__n${n.kind ? ` fg-ia__n--${n.kind}` : ''} beat"` +
-            ` data-n="${n.id}" data-g="${n.g}" data-read="${esc(this.read(n))}"` +
+            ` data-n="${n.id}" data-g="${n.g}" data-read="${esc(this.read(n))}"${tags(n)}` +
+            (X(n).steps ? ` data-read-x="${esc(this.read(n, X(n).steps))}"` : '') +
+            (n.ties ? ` data-ties="${esc(n.ties.join(' '))}"` : '') +
             ` style="--at:${n._at.toFixed(3)};left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">` +
             `<span class="fg-ia__t"><span>${esc(n.t)}</span>${marks(n)}</span>` +
             meta(n) +
           `</button>`;
       }).join('');
 
-      const wires = d.edges.map((e) => {
+      /* kept for the fit, which re-spaces the columns to the frame */
+      this.data = this.data || {};
+      this.data[s.id] = { d, N };
+      const wires = d.edges.map((e, ei) => {
         const pts = this.route(e, N);
         const at = Math.min(0.84, Math.max(N[e.f]._at, N[e.t]._at) + 0.03);
         const cls = `fg-ia__e${e.r === 'ret' ? ' fg-ia__e--ret' : ''}${e.soft ? ' fg-ia__e--soft' : ''}`;
-        return `<g class="${cls}" data-f="${e.f}" data-t="${e.t}" style="--at:${at.toFixed(3)}">` +
+        const off = e.xoff || X(N[e.f]).off || X(N[e.t]).off;
+        return `<g class="${cls}" data-i="${ei}" data-f="${e.f}" data-t="${e.t}"${tags(e)}${off ? ' data-off' : ''} style="--at:${at.toFixed(3)}">` +
             `<path class="fg-ia__line" d="${this.path(pts)}"${e.r === 'ret' ? '' : ' pathLength="1"'}/>` +
             (e.soft ? '' : `<path class="fg-ia__head" d="${this.head(pts)}"/>`) +
           `</g>`;
@@ -5120,7 +5137,15 @@
           `<li><i class="fg-ia__pin">PIN</i>Wallet PIN</li>` +
           `<li><i class="fg-ia__sw fg-ia__sw--danger"></i>Irreversible</li>` +
           `<li><i class="fg-ia__sw fg-ia__sw--option"></i>Option only</li>` +
+          (d.modes ? `<li data-only="explore"><i class="fg-ia__x0">Buy X0</i>Needs cards</li>` : '') +
         `</ul>`;
+      /* the switch between the two ways into the app */
+      const modes = d.modes
+        ? `<div class="fg-ia__mode beat" style="--at:0.03" role="group" aria-label="Map the app">` +
+            d.modes.map((m) => `<button type="button" data-mode="${esc(m.id)}" aria-pressed="${m.id === (d.start || d.modes[0].id)}"` +
+              `${m.hint ? ` data-hint="${esc(m.hint)}"` : ''}>${esc(m.t)}</button>`).join('') +
+          `</div>`
+        : '';
 
       /* THE SAME DATA AS AN OUTLINE, for a frame too narrow to draw it in.
          Each flow opens to its screens; "Leads to" is read off the edges, so
@@ -5129,24 +5154,30 @@
           `<li><span class="fg-ia__lh"><b>${esc(g.n)}</b>${esc(g.t)}</span><ul>` +
             d.nodes.filter((n) => n.g === g.id).map((n) => {
               const to = (out[n.id] || []).map((id) => N[id].t);
+              const stx = X(n).steps;
               /* the node's kind rides on the row so the phone draws the
                  same hub / state / option / decision / irreversible shapes
                  the diagram does; "leads to" sits on the card itself, since
                  there are no wires to carry it */
-              return `<li class="fg-ia__li${n.kind ? ` fg-ia__li--${n.kind}` : ''}"><details><summary>` +
+              return `<li class="fg-ia__li${n.kind ? ` fg-ia__li--${n.kind}` : ''}"${tags(n)}><details><summary>` +
                   `<span class="fg-ia__t"><span>${esc(n.t)}</span>${marks(n)}</span>` +
-                  (n.m ? `<span class="fg-ia__m">${esc([].concat(n.m).join(' · '))}</span>` : '') +
+                  (X(n).m ? lines([].concat(n.m).join(' · '), 'c') + lines([].concat(X(n).m).join(' · '), 'x')
+                    : (n.m ? `<span class="fg-ia__m">${esc([].concat(n.m).join(' · '))}</span>` : '')) +
                   (to.length ? `<span class="fg-ia__go"><svg viewBox="0 0 22 8" aria-hidden="true"><path d="M1 4h19M16.5 1.2 20 4l-3.5 2.8"/></svg>${esc(to.join(' · '))}</span>` : '') +
                 `</summary>` +
-                `<p class="fg-ia__steps">${esc(this.read(n))}</p>` +
+                (stx ? `<p class="fg-ia__steps" data-v="c">${esc(this.read(n))}</p>` +
+                  `<p class="fg-ia__steps" data-v="x">${esc(this.read(n, stx))}</p>`
+                  : `<p class="fg-ia__steps">${esc(this.read(n))}</p>`) +
               `</details></li>`;
             }).join('') +
           `</ul></li>`).join('') + `</ol>`;
 
-      return `<div class="fg-ia" data-ia="${esc(s.id)}">` +
+      return `<div class="fg-ia" data-ia="${esc(s.id)}"${d.modes ? ` data-mode="${esc(d.start || d.modes[0].id)}"` : ''}>` +
+          /* the label and the switch above the drawing; what you are pointing
+             at and the key that reads it below, where the drawing leaves room */
           `<div class="fg-ia__head">` +
             (s.k ? `<span${AT(0.02)} class="fg-kick beat">${esc(s.k)}</span>` : '') +
-            key +
+            modes +
           `</div>` +
           `<div class="fg-ia__fit">` +
             `<div class="fg-ia__size" style="--w:${d.W}px;--h:${d.H}px">` +
@@ -5157,8 +5188,11 @@
               `</div>` +
             `</div>` +
           `</div>` +
-          `<p class="fg-ia__read beat" style="--at:0.1" aria-live="polite">` +
-            `<span class="fg-ia__hint">${PHONE ? 'Swipe to explore. Tap any screen to trace where it leads.' : 'Point at any part to trace where it leads.'}</span></p>` +
+          `<div class="fg-ia__foot">` +
+            `<p class="fg-ia__read beat" style="--at:0.1" aria-live="polite">` +
+              `<span class="fg-ia__hint">${PHONE ? 'Swipe to explore. Tap any screen to trace where it leads.' : 'Point at any part to trace where it leads.'}</span></p>` +
+            key +
+          `</div>` +
           list +
         `</div>`;
     },
@@ -5185,20 +5219,87 @@
          it the canvas holds that size and the frame pans instead. */
       const MIN = 0.72;
       const MAX = 1.12;
+      /* THE COLUMNS BREATHE INTO THE FRAME. The drawing is authored on a
+         248px column pitch (a 188px column and a 60px gutter). When the frame
+         is wider than the drawing at the scale its height allows, the spare
+         width goes into the gutters, never into the boxes: every x is
+         re-placed by its column, a point inside a column keeps its offset and
+         a point in a gutter (a trunk line) keeps its share of the gutter, so
+         the routing reads exactly as authored, just with more air. */
+      const D = IA.data && IA.data[host.dataset.ia];
+      const PITCH = 248, COL = IA.DW, GUT = PITCH - COL;
+      const NCOL = Math.round((W - COL) / PITCH) + 1;
+      const lay = (G) => {
+        if (!D) return W;
+        const fx = (x) => {
+          const i = Math.max(0, Math.floor(x / PITCH));
+          const o = x - i * PITCH;
+          return i * (COL + G) + (o <= COL ? o : COL + ((o - COL) / GUT) * G);
+        };
+        const byN = {};
+        $$('.fg-ia__n', canvas).forEach((el) => { byN[el.dataset.n] = el; });
+        D.d.nodes.forEach((n) => { if (byN[n.id]) byN[n.id].style.left = `${fx(n.x).toFixed(1)}px`; });
+        $$('.fg-ia__g', canvas).forEach((el) => {
+          const g = D.d.groups.find((q) => q.id === el.dataset.g);
+          if (g) el.style.left = `${fx(g.x).toFixed(1)}px`;
+        });
+        $$('.fg-ia__e', svg).forEach((el) => {
+          const e = D.d.edges[+el.dataset.i];
+          if (!e) return;
+          const pts = IA.route(e, D.N).map((q) => [+fx(q[0]).toFixed(1), q[1]]);
+          const line = $('.fg-ia__line', el);
+          const head = $('.fg-ia__head', el);
+          if (line) line.setAttribute('d', IA.path(pts));
+          if (head) head.setAttribute('d', IA.head(pts));
+        });
+        const Wn = Math.round(fx(W));
+        canvas.style.width = `${Wn}px`;
+        svg.setAttribute('width', Wn);
+        svg.setAttribute('viewBox', `0 0 ${Wn} ${H}`);
+        return Wn;
+      };
+      let lastG = -1;
       const doFit = () => {
         const w = fit.clientWidth;
         const h = fit.clientHeight;
         if (!w || (!h && !PHONE)) return;
-        let k = Math.min(w / W, h / H, MAX);
-        let pan = k < MIN;
-        if (pan) k = Math.min(MIN, h / H);
-        /* ON A PHONE the diagram itself is kept, as on desktop, at a fixed
-           readable scale in a frame you swipe across; the frame is sized to
-           the drawing's height rather than the other way round. */
-        if (PHONE) { k = 0.64; pan = true; }
+        /* HEIGHT SETS THE SCALE, WIDTH SETS THE SPACING. The scale is what the
+           frame's height allows; whatever width that leaves goes into the
+           gutters, up to four times the authored one. Only when even 32px
+           gutters (still room for a trunk and its arrowhead) cannot fit at a
+           readable scale does the frame pan instead. A short window used to
+           count as "too small" and kept the authored spacing, which is what
+           left the right side empty. */
+        const GMIN = 32;
+        const tight = COL * NCOL + GMIN * (NCOL - 1);
+        let k = Math.min(h / H, MAX);
+        let pan = false;
+        let G = GUT;
+        if (PHONE) {
+          /* ON A PHONE the diagram itself is kept, as on desktop, at a fixed
+             readable scale in a frame you swipe across */
+          k = 0.64; pan = true;
+        } else if (w / k >= tight) {
+          G = Math.max(GMIN, Math.min(GUT * 4, ((w / k) - COL * NCOL) / (NCOL - 1)));
+        } else if (w / tight >= MIN) {
+          k = w / tight; G = GMIN;
+        } else {
+          k = Math.min(MIN, h / H); pan = true;
+        }
+        G = Math.round(G);
+        const Wn = G === lastG ? Math.round(G * (NCOL - 1) + COL * NCOL) : lay(G);
+        lastG = G;
+        size.style.setProperty('--w', `${Wn}px`);
         size.style.setProperty('--k', k.toFixed(4));
         fit.classList.toggle('is-pan', pan);
+        edge();
       };
+      /* a frame you pan fades at the side there is more of */
+      function edge() {
+        const more = fit.scrollWidth - fit.clientWidth - fit.scrollLeft > 4;
+        fit.classList.toggle('has-more', fit.classList.contains('is-pan') && more);
+      }
+      fit.addEventListener('scroll', edge, { passive: true });
       doFit();
       /* REFIT ONLY WHEN THE FRAME CHANGES, not when the readout does. The
          line under the drawing grows and shrinks as parts are pointed at, and
@@ -5212,6 +5313,18 @@
       };
       if ('ResizeObserver' in window) new ResizeObserver(refit).observe(fit);
       addEventListener('resize', refit, { passive: true });
+      /* THE HEAD AND THE KEY CAN CHANGE HEIGHT on their own (the mode switch
+         adds a mark to the key, and the key can wrap), and the drawing gets
+         what is left. The readout beside the key is not watched, on purpose. */
+      [$('.fg-ia__head', host), $('.fg-ia__key', host)].forEach((el) => {
+        if (!el || !('ResizeObserver' in window)) return;
+        let lastH = el.offsetHeight;
+        new ResizeObserver(() => {
+          if (el.offsetHeight === lastH) return;
+          lastH = el.offsetHeight;
+          doFit();
+        }).observe(el);
+      });
 
       /* THE GRAPH, read back off the markup so there is one source for it */
       const nodes = {};
@@ -5219,16 +5332,20 @@
       const wires = $$('.fg-ia__e', svg);
 
       let pinned = null;
+      const mode = () => host.dataset.mode || '';
+      const shown = (x) => !(mode() === 'explore' ? x.hasAttribute('data-off') && x.classList.contains('fg-ia__e')
+        : x.dataset.only === 'explore');
       const clear = () => {
         host.classList.remove('has-lit');
         $$('.is-lit, .is-on', canvas).forEach((x) => x.classList.remove('is-lit', 'is-on'));
-        read.innerHTML = hint;
+        read.innerHTML = hintNow;
       };
       const light = (ids, on, label, text) => {
         clear();
         host.classList.add('has-lit');
         const set = new Set(ids);
         wires.forEach((w) => {
+          if (!shown(w)) return;
           if (set.has(w.dataset.f) || set.has(w.dataset.t)) {
             w.classList.add('is-lit');
             /* last child paints last: a lit line is never under a dim one */
@@ -5239,20 +5356,44 @@
         wires.forEach((w) => {
           if (w.classList.contains('is-lit')) { reach.add(w.dataset.f); reach.add(w.dataset.t); }
         });
+        ids.forEach((id) => {
+          const t = nodes[id] && nodes[id].dataset.ties;
+          if (t) t.split(' ').forEach((x) => reach.add(x));
+        });
         reach.forEach((id) => nodes[id] && nodes[id].classList.add('is-lit'));
         ids.forEach((id) => nodes[id] && nodes[id].classList.add('is-on'));
         if (on) on.classList.add('is-lit');
         read.innerHTML = `<b>${esc(label)}</b><span>${esc(text || '')}</span>`;
       };
       const node = (b) => {
-        light([b.dataset.n], null, $('.fg-ia__t > span', b).textContent, b.dataset.read);
+        light([b.dataset.n], null, $('.fg-ia__t > span', b).textContent,
+          (mode() === 'explore' && b.dataset.readX) || b.dataset.read);
       };
       const group = (g) => {
-        const ids = Object.keys(nodes).filter((id) => nodes[id].dataset.g === g.dataset.g);
+        const ids = Object.keys(nodes).filter((id) => nodes[id].dataset.g === g.dataset.g
+          && (mode() === 'explore' ? !nodes[id].hasAttribute('data-off') : nodes[id].dataset.only !== 'explore'));
         const names = ids.map((id) => $('.fg-ia__t > span', nodes[id]).textContent);
         light(ids, g, g.textContent.replace(/^\d+/, ''), names.join(' · '));
       };
       const at = (e) => e.target.closest && (e.target.closest('.fg-ia__n') || e.target.closest('.fg-ia__g'));
+
+      /* THE SWITCH. One press swaps which version of the map is drawn; the
+         readout's resting line says what the mode is. */
+      let hintNow = hint;
+      /* the mode the map opens in may carry its own resting line */
+      const startBtn = $('.fg-ia__mode button[aria-pressed="true"]', host);
+      if (startBtn && startBtn.dataset.hint) {
+        hintNow = `<span class="fg-ia__hint">${esc(startBtn.dataset.hint)}</span>`;
+        read.innerHTML = hintNow;
+      }
+      $$('.fg-ia__mode button', host).forEach((btn) => btn.addEventListener('click', () => {
+        if (mode() === btn.dataset.mode) return;
+        host.dataset.mode = btn.dataset.mode;
+        $$('.fg-ia__mode button', host).forEach((x) => x.setAttribute('aria-pressed', String(x === btn)));
+        hintNow = btn.dataset.hint ? `<span class="fg-ia__hint">${esc(btn.dataset.hint)}</span>` : hint;
+        pinned = null;
+        clear();
+      }));
       const show = (x) => (x.classList.contains('fg-ia__g') ? group(x) : node(x));
 
       /* HOVER ONLY ONCE THE MAP IS BUILT, AND NEVER WHILE SCROLLING. The map
@@ -7731,7 +7872,7 @@
 
       const item = this.item;
       const name = item ? item.title : p.title;
-      document.title = `${name} — ${S.person.name}`;
+      document.title = `${name} · ${S.person.name}`;
 
       /* ONE STUDY IS DIRECTED RATHER THAN WRITTEN, and it shares nothing
          below this line: no measure, no section rail, no baseline rhythm, no
@@ -9939,7 +10080,7 @@
       $('.fab__ico', this.fab).innerHTML = this.fabIcon(name);
       $('.fab__say', this.fab).textContent = live;
       this.fab.setAttribute('aria-label',
-        live ? live + ' — tap to go back to Move' : 'Annotation tools');
+        live ? live + '. Tap to go back to Move' : 'Annotation tools');
     },
 
     /* Which sticker is armed. The drawer has hover states but had no selected
@@ -17369,7 +17510,7 @@
         eyebrow: 'Out of time',
         head: "Time's up",
         sub: n
-          ? `You were close — ${n} of ${st.slots.length} in place.`
+          ? `You were close. ${n} of ${st.slots.length} in place.`
           : 'You were close.',
         again: 'Try again',
       });
@@ -20226,7 +20367,7 @@
        own opaque origin. So the message says which file, and what to
        double-click. */
     NODOC: 'This page was opened from a file rather than a server, so the browser '
-      + 'will not let it read <code>IshaanLLM_Knowledge_Base.md</code> — the '
+      + 'will not let it read <code>IshaanLLM_Knowledge_Base.md</code>. The '
       + 'document is fine, it just cannot be reached from here. Double-click '
       + '<code>preview.command</code> in the portfolio folder and everything below works.',
     ERR: 'I could not read my knowledge base just now.',
@@ -20681,7 +20822,7 @@
         const intro = el('div', { class: 'llm__intro' });
         intro.appendChild(el('p', { class: 'llm__intro-h' }, 'What do you want to know?'));
         intro.appendChild(el('p', { class: 'llm__intro-p' },
-          'It answers from one document I wrote — the work, the thinking behind it, '
+          'It answers from one document I wrote: the work, the thinking behind it, '
           + 'and the person who made it. When something isn’t in there, it says so.'));
         this.log.appendChild(intro);
 
@@ -23712,7 +23853,7 @@
          the phone bar on exactly these three sections. */
       Shell.page = page;
       document.body.dataset.page = page;
-      document.title = `${S.person.name} — ${page === 'home' ? 'Portfolio' : page[0].toUpperCase() + page.slice(1)}`;
+      document.title = `${S.person.name} · ${page === 'home' ? 'Portfolio' : page[0].toUpperCase() + page.slice(1)}`;
       if (Stage.wrap) Stage.wrap.classList.toggle('home--play', page === 'play');
 
       /* the bricks, before the view is built or shown — a first build needs an

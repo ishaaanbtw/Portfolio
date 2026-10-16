@@ -18212,6 +18212,111 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
 .fg-ia__key .fg-ia__sw--danger { opacity: 0.8; }
 .fg-ia__key .fg-ia__sw--option { border-color: var(--fg-ink); }
 
+/* --- two ways in: with cards, or Explore mode ------------------------------ */
+
+/* under the drawing: the readout on the left, the key that reads the
+   drawing in the empty corner on the right */
+.fg-ia__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 2rem;
+}
+.fg-ia { container-type: inline-size; grid-template-columns: minmax(0, 1fr); }
+/* the frame is as wide as the page gives it, never as wide as the drawing
+   in it: the drawing is re-spaced to the frame, so a frame that grew with
+   its drawing would feed the next fit a wider frame */
+.fg-ia__fit { min-width: 0; }
+/* NOTHING DOWN HERE MAY CHANGE SIZE ON HOVER. The drawing is fitted to what
+   the head and the foot leave, so a key that wrapped when a long readout
+   squeezed it, or a readout that grew a line, rescaled or shifted the whole
+   map under the pointer. The key never shrinks or wraps; the readout always
+   holds two lines and never more; and where the two cannot share a row the
+   foot stacks by the frame's width alone, never by what is being read. */
+.fg-ia__foot .fg-ia__read {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  height: 2.9em;
+  min-height: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.fg-ia__foot .fg-ia__key { flex: none; flex-wrap: nowrap; white-space: nowrap; justify-content: flex-end; }
+@container (max-width: 1180px) {
+  .fg-ia__foot { flex-direction: column; align-items: flex-start; }
+  .fg-ia__foot .fg-ia__read { flex: none; width: 100%; }
+  /* still in the bottom-right corner, just on its own line */
+  .fg-ia__foot .fg-ia__key { align-self: flex-end; }
+}
+.fg-ia__mode {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--fg-ground);
+  border: 1px solid var(--fg-line);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(16, 16, 18, 0.04);
+}
+.fg-ia__mode button {
+  margin: 0;
+  padding: 0.38rem 0.85rem;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--fg-dim);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+.fg-ia__mode button:hover { color: var(--fg-ink); }
+.fg-ia__mode button[aria-pressed='true'] { color: var(--fg-ground); background: var(--fg-ink); }
+.fg-ia__mode button:focus-visible { outline: 2px solid var(--fg-ink); outline-offset: 2px; }
+
+/* the mark for an action that needs a card, in Explore mode */
+.fg-ia__x0 {
+  font-style: normal;
+  font-size: 8.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: var(--fg-ground);
+  background: var(--fg-ink);
+}
+.fg-ia__mv { display: inline-flex; align-items: center; gap: 4px; }
+
+/* each version shows only in its own mode */
+.fg-ia[data-mode='cards'] [data-v='x'],
+.fg-ia[data-mode='explore'] [data-v='c'],
+.fg-ia[data-mode='cards'] [data-only='explore'],
+.fg-ia[data-mode='explore'] .fg-ia__e[data-off] { display: none; }
+
+/* IN EXPLORE MODE WHAT CANNOT BE REACHED STEPS BACK, by colour as the hover
+   does, so the reveal keeps the opacity */
+.fg-ia[data-mode='explore'] .fg-ia__n[data-off] {
+  color: rgba(16, 16, 18, 0.24);
+  border-color: rgba(16, 16, 18, 0.06);
+  border-style: dashed;
+  background-color: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+.fg-ia[data-mode='explore'] .fg-ia__n[data-off] :is(.fg-ia__m, .fg-ia__t) { color: inherit; }
+.fg-ia[data-mode='explore'] .fg-ia__n[data-off] :is(.fg-ia__pin, .fg-ia__tag) { color: inherit; border-color: rgba(16, 16, 18, 0.08); }
+.fg-ia[data-mode='explore'] .fg-ia__n[data-off] .fg-ia__card { stroke: rgba(16, 16, 18, 0.2); }
+.fg-ia[data-mode='explore'] .fg-ia__n--danger[data-off]::before { opacity: 0.15; }
+.fg-ia[data-mode='explore'] .fg-ia__g[data-off] { color: rgba(16, 16, 18, 0.28); }
+.fg-ia[data-mode='explore'] .fg-ia__li[data-off] summary { opacity: 0.4; border-style: dashed; }
+
 /* --- the canvas ---------------------------------------------------------- */
 
 .fg-ia__fit {
@@ -18219,6 +18324,11 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   min-height: 0;
   display: grid;
   place-items: center;
+}
+/* there is more to the right: let the drawing fade out rather than stop at a cut */
+.fg-ia__fit.has-more {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent);
 }
 /* too narrow to draw at a readable size: hold the size, pan the frame */
 .fg-ia__fit.is-pan {
