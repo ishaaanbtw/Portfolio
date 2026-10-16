@@ -1926,7 +1926,7 @@ window.SITE = {
                needed sits under the words, and the decision follows. */
             { id: 'x0-cysync', nav: 'Design System', act: 'III · Decisions', kind: 'kept', dur: 130,
               h: 'We started from what CySync already had.',
-              p: 'CySync is the desktop app for X1, and a lot of care had gone into it. Its flows came with us: how sending, receiving and reading a transaction work. Its visual parts were made for a desktop window.',
+              p: 'CySync is the <b>desktop app</b> for X1, and a lot of care had gone into it. Its flows came with us: how sending, receiving and reading a transaction work. Its visual parts were made for a desktop window, and X0 would have <b>no desktop app at all</b>.',
               /* PIECES OF THE CYSYNC DESIGN FILE: its colour ramp (the real
                  hexes), its components and a few of the screens built from
                  them, each on a matching plate under its plain name. */
