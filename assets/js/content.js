@@ -37,10 +37,10 @@ window.SITE = {
        150dpi, resize to 1200 wide, save as webp. */
     resume: {
       title: 'Resume',
-      sheets: ['assets/resume/p1.webp', 'assets/resume/p2.webp'],
+      sheets: ['assets/resume/p1.webp'],
       /* the aspect of one page, so the viewer can hold its shape before the
          image has loaded and nothing jumps when it does */
-      ratio: 1200 / 1553,
+      ratio: 1200 / 1554,
 
       /* THE LINKS, BECAUSE A PICTURE OF A LINK IS NOT A LINK.
          The pages are images, which is what makes the viewer feel like part of
@@ -57,28 +57,18 @@ window.SITE = {
          rect [x0 y0 x1 y1]:
 
            left = x0/W        top    = (H - y1)/H
-           width = (x1-x0)/W  height = (y1-y0)/H
-
-         The LinkedIn one is written out in full here on purpose. In the PDF it
-         is not a URI at all — the address was typed without a scheme, so the
-         exporter turned it into a "go to a remote FILE named
-         www.linkedin.com/in/ishaangupta24.pdf" link, which is dead in every
-         reader. Putting https:// in front of it in the source fixes it at the
-         root; this row is what makes it work in the meantime. */
+           width = (x1-x0)/W  height = (y1-y0)/H */
       links: [
-        /* page 1 */
+        /* page 1 — the PDF does not link the phone number; the tel: row is
+           added here so it can be tapped on a phone */
         [
-          ['mailto:ishaangupta.888@gmail.com', 6.72, 8.096, 21.063, 1.447],
-          ['tel:+919717085986', 29.665, 8.133, 12.995, 1.203],
-          ['https://ishaan-gupta.in/', 54.024, 8.096, 11.322, 1.447],
-          ['https://www.linkedin.com/in/ishaangupta24', 67.227, 8.096, 26.958, 1.447],
-          ['https://www.cypherock.com', 18.396, 30.641, 7.842, 1.461],
-          ['https://onefinnet.com/talent', 17.219, 60.617, 7.366, 1.447],
-        ],
-        /* page 2 */
-        [
-          ['https://www.upes.ac.in/blog/design/this-upesite-is-making-renting-items-the-new-cool',
-            14.998, 8.439, 8.753, 1.461],
+          ['mailto:ishaangupta.888@gmail.com', 5.105, 5.703, 21.063, 1.509],
+          ['tel:+919717085986', 28.014, 5.791, 12.67, 1.258],
+          ['https://ishaan-gupta.in/', 58.955, 5.703, 11.322, 1.509],
+          ['https://www.linkedin.com/in/ishaangupta24', 71.959, 5.703, 22.935, 1.509],
+          ['https://www.cypherock.com', 4.469, 18.533, 9.882, 1.703],
+          ['https://onefinnet.com/talent', 4.469, 44.257, 9.302, 1.701],
+          ['https://www.cohesity.com', 4.469, 60.798, 33.173, 1.703],
         ],
       ],
     },

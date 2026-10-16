@@ -86,7 +86,7 @@ when: now, currently, today, doing
 
 ask: What are you working on right now?
 
-Ishaan is a Product Designer at Cypherock in Gurgaon, India, where he works across the X0 hardware wallet ecosystem and related software experiences. Detailed professional information is kept in the work sections below.
+Ishaan is a Senior Product Designer at Cypherock in Gurugram, India, and the company's sole design lead. He has about three years of experience designing self-custodial crypto products, from mobile wallets to swap and staking flows, with a focus on making complex on-chain mechanics simple for everyday users. At Cypherock he owns design across the hardware wallet ecosystem: X0, X1 Vault and CySync Desktop & Mobile. Detailed professional information is kept in the work sections below.
 
 ### Location / education
 
@@ -94,7 +94,7 @@ when: based, located, live, living, city, from, gurugram, india
 
 **Location:** Gurugram, India.
 
-**Education:** Bachelor's of Design, Interaction Design, UPES, Dehradun (Aug 2020 – Jul 2024), CGPA 8.48; minor specialization in Computer Science.
+**Education:** Bachelor of Design, Interaction Design, UPES, Dehradun (Aug 2020 – Jul 2024), CGPA 8.48; minor in Computer Science.
 
 ## 2. Identity & Professional Positioning
 
@@ -254,7 +254,7 @@ when: code, coding, engineering, technical, developer
 
 **Known:** Ishaan is comfortable thinking about product behavior and implementation details, particularly around UI interactions, prototypes, state transitions, and digital product behavior.
 
-**Education / technical foundation:** Bachelor's of Design in Interaction Design with a minor specialization in Computer Science. This supports a design practice that comfortably crosses product, interaction, and technical/product-system concerns. fileciteturn2file0L53-L55
+**Education / technical foundation:** Bachelor of Design in Interaction Design with a minor in Computer Science. This supports a design practice that comfortably crosses product, interaction, and technical/product-system concerns.
 
 ### Technologies / tools
 
@@ -263,25 +263,21 @@ when: tools, software, figma, framer, stack
 ask: What tools do you use?
 
 - Figma
+- Figma Make
 - FigJam
 - Framer
 - Rive
 - ProtoPie
-- Adobe Creative Suite
-- Miro
-- Notion
 - Jira
 - Confluence
-- Claude
-- Claude + Figma MCP
-- AI automation workflows
-- UI design systems / component thinking fileciteturn2file0L9-L10
+- Claude, Cursor and Figma MCP
+- Design systems / component thinking
 
-**Tools and technical workflow:** Figma, FigJam, Framer, Rive, ProtoPie, Adobe Creative Suite, Miro, Notion, Jira, Confluence, Claude, Claude + Figma MCP, and AI automation workflows.
+**Tools and technical workflow:** Figma, Figma Make, FigJam, Framer, Rive, ProtoPie, Jira, Confluence, and AI-assisted workflows with Claude, Cursor and Figma MCP. At Cypherock he built an AI-ready design system whose components, tokens and docs are made for Claude, ChatGPT, Cursor and Figma MCP.
 
-**Domain knowledge:** B2B SaaS, HRTech, hardware product ecosystems, crypto, fintech, D2C, wallet infrastructure, self-custody UX, DeFi, NFTs, dApps, multi-chain ecosystems, and hardware security modules. fileciteturn2file0L4-L13
+**Domain knowledge:** Data protection & security, crypto & fintech, hardware products, B2B SaaS, HRTech and D2C; in Web3 specifically, wallet infrastructure, self-custody UX, DeFi, swaps & staking, dApps, multi-chain, and hardware security modules (HSMs).
 
-**Coding languages/frameworks:** Not specified in the resume; IshaanLLM should not invent them. 
+**Coding languages/frameworks:** Not specified in the resume; IshaanLLM should not invent them.
 
 ### How I work with engineers
 
@@ -311,7 +307,7 @@ when: prototype, prototyping, motion, rive, protopie
 ## 6. Work Experience
 
 where: work
-tags: experience, jobs, roles, cypherock, onefinnet, worked
+tags: experience, jobs, roles, cypherock, onefinnet, veritas, cohesity, intern, internship, worked
 ask: Where have you worked?
 see: Cypherock X0, Onefinnet Talent
 open: true
@@ -320,28 +316,35 @@ open: true
 
 ask: What do you do at Cypherock?
 
-**Role:** Product Designer
+**Role:** Senior Product Designer — sole design lead
 
-**Location:** Gurgaon, India
+**Location:** Gurugram, India
 
-**Dates:** Dec 2025 – Present. fileciteturn2file0L14-L18
+**Dates:** Dec 2025 – Present.
 
 #### Overview
 
-Ishaan has worked deeply on the Cypherock X0 ecosystem, including the wallet application experience and the way the physical X0 product is represented digitally.
+Ishaan owns all design decisions as the sole lead designer across Cypherock's hardware wallet ecosystem — X0, X1 Vault, and CySync Desktop & Mobile — aligning product direction with the CEO, Product, Marketing and Engineering.
 
-His work spans product UI, interaction design, visual systems, hardware/software relationship, and case-study/portfolio storytelling.
+His work spans product UI, interaction design, design systems, the hardware/software relationship, and case-study/portfolio storytelling.
 
 #### Responsibilities / documented scope
 
-- Led end-to-end product design of Cypherock X0 from concept to beta launch over seven months.
-- Designed a mobile-first hardware wallet ecosystem spanning physical NFC card design, high-end packaging, manufacturing-ready assets, and the companion X0 Wallet application.
-- Architected the N45 Design System as the foundation for the X0 ecosystem, including reusable components, design tokens, interaction patterns, and documentation.
-- Defined the X0 Wallet product architecture and interaction model across wallet creation, recovery, transaction authorization, portfolio management, and NFC-based hardware interactions.
-- Designed NFC and BLE interaction flows across CySync Desktop, Mobile, and X1 Vault in collaboration with firmware, blockchain, hardware, and frontend teams.
-- Led the CySync v2 redesign around BLE-powered interactions between X1 Vault and CySync Desktop/Mobile.
-- Built the affiliate ecosystem across landing page, partner dashboard, and admin portal.
-- Integrated Claude Code MCP into research, PRDs, documentation, and design exploration. fileciteturn2file0L15-L32
+- Owns all design decisions as sole lead designer across the hardware wallet ecosystem (X0, X1 Vault, CySync Desktop & Mobile), aligning product direction with the CEO, Product, Marketing and Engineering.
+- Led the end-to-end design of Cypherock X0 over 10 months, from concept to production readiness (now in security audit): a mobile-first ecosystem spanning NFC cards, premium packaging, manufacturing assets and the X0 Wallet app, including its product architecture and self-custody flows for wallet creation, recovery and transaction authorization.
+- Architected the N45 Design System for X0 — an AI-ready system of components, tokens and docs built for Claude, ChatGPT, Cursor and Figma MCP.
+- Shaped swap and staking experiences in CySync through partner integrations with Houdini Swap and staking providers, turning technical constraints into simple flows for trading and earning yield.
+- Drove the product design of the Cypherock X1 Vault, crafting NFC and BLE flows for wallet setup, card authentication, transaction verification and recovery across CySync Desktop & Mobile with the firmware, hardware and frontend teams.
+- Led the redesign of CySync v2, architecting BLE-powered interactions between the X1 Vault and CySync Desktop & Mobile.
+- Built the end-to-end affiliate ecosystem (landing page, partner dashboard, admin portal), defining onboarding and commission workflows for scalable partner acquisition.
+
+#### Outcomes / impact
+
+- N45 Design System: design turnaround cut from about 10 days to about 2 (5× faster), with fewer iteration cycles.
+- CySync v2 redesign: 40% increase in user engagement, 25% fewer interaction steps, and 70% growth in DAU.
+- Cypherock X0: reached production readiness after 10 months and is now in security audit.
+
+**Unknown / To confirm:** Do not invent any other metrics, launch outcomes, adoption numbers or conversion rates beyond the ones above.
 
 #### Key work discussed previously
 
@@ -353,10 +356,6 @@ His work spans product UI, interaction design, visual systems, hardware/software
 - Physical/printed product collateral.
 - Visual assets for X0 case studies.
 
-#### Outcomes / impact
-
-**Unknown / To confirm:** Do not invent metrics, launch outcomes, adoption numbers, conversion rates, or business impact.
-
 ---
 
 ### Onefinnet
@@ -367,40 +366,48 @@ ask: What did you do at Onefinnet?
 
 **Location:** Noida, India
 
-**Dates:** Jan 2024 – Nov 2025. fileciteturn2file0L33-L33
+**Dates:** Jan 2024 – Nov 2025.
 
 #### Overview
 
-Ishaan spearheaded the end-to-end product design and product direction for Onefinnet Talent, a B2B SaaS recruitment platform for the US market. He led a cross-functional team of 7, created a new core revenue stream, and drove 12% growth in enterprise adoption within six months. fileciteturn2file0L33-L36
+Ishaan spearheaded end-to-end design for Onefinnet Talent, a B2B SaaS recruitment platform for the US market, leading a cross-functional team of 7 to launch a new revenue stream and drive 12% growth in enterprise adoption within six months.
 
 #### Responsibilities / documented scope
 
-- Led end-to-end product design and product direction for Onefinnet Talent.
-- Led a cross-functional team of 7.
+- Spearheaded end-to-end design for Onefinnet Talent and led a cross-functional team of 7.
 - Architected a Freemium acquisition model.
-- Designed the product's AI Assistant for automated job creation and interview scheduling.
-- Directed the MVP for an integrated Meeting Scheduler supporting Google Meet and Zoom.
-- Championed continuous, data-driven user testing and A/B testing.
-- Built a design system from scratch with 100+ reusable components.
-- Integrated Claude, Midjourney, and Figma plugins into the design workflow. fileciteturn2file0L37-L50
+- Pioneered the design of the flagship AI Assistant for automated job creation and interview scheduling.
+- Directed the rapid prototyping and launch of an integrated Meeting Scheduler for Google Meet and Zoom.
+- Ran a data-driven testing program, including A/B tests.
+- Built a design system of 100+ components.
 
 #### Outcomes / impact
 
 - +12% enterprise adoption within 6 months.
-- +23% Monthly Active Users through the Freemium acquisition model.
-- +15% lead conversion rate improvement.
-- 40% reduction in manual recruiter effort through the AI Assistant.
-- +18% user retention from the AI Assistant.
-- Meeting Scheduler launched in a 60-day sprint, validated with 180+ early adopters and 90% positive usability feedback.
-- 40% reduction in design iteration time and faster stakeholder sign-off through AI-powered design tooling.
-- +25% user satisfaction for delivered features based on post-launch surveys.
-- +18% task-completion rate from A/B testing and iterative UX improvements.
-- NPS increased from 38 to 45 (+7 points).
-- 30% reduction in design-to-development handoff time and 40% reduction in design inconsistencies through the 100+ component design system. fileciteturn2file0L33-L51
+- +23% Monthly Active Users and +15% lead conversion through the Freemium acquisition model.
+- 40% reduction in manual recruiter effort and +18% user retention from the AI Assistant.
+- Meeting Scheduler MVP delivered in a 60-day sprint and validated with 180+ early adopters (90% positive feedback).
+- A/B testing lifted task completion by 18% and NPS from 38 to 45.
+- The 100+ component design system cut handoff time by 30% and design inconsistencies by 40%.
+
+---
+
+### Veritas Technologies (now Cohesity)
+
+ask: What did you do at Veritas?
+
+**Role:** CX Designer Intern
+
+**Location:** Pune, India
+
+**Dates:** Jun 2023 – Jul 2023.
+
+- Ran a competitive analysis of Veritas' data protection products on ransomware resiliency, benchmarking recovery and security capabilities against competitors to inform product and CX strategy.
+- Created persona cards for enterprise data protection user groups, helping internal stakeholders understand user needs.
 
 ### Other experience
 
-**Unknown / To confirm:** Freelance projects, internships, collaborations, client work, side projects, and earlier roles should be added only after Ishaan confirms them.
+**Unknown / To confirm:** Freelance projects, other internships, collaborations, client work, side projects, and earlier roles should be added only after Ishaan confirms them.
 
 ---
 
@@ -426,7 +433,7 @@ Cypherock X0 combines a physical hardware product with a software wallet experie
 
 ask: What was your role?
 
-Product/interface design and related visual/interaction work. Exact ownership boundaries should be confirmed before IshaanLLM makes detailed claims.
+Ishaan was the sole lead designer and led the end-to-end design of X0 over 10 months, from concept to production readiness (it is now in security audit). His scope covered the NFC cards, premium packaging, manufacturing assets and the X0 Wallet app, including its product architecture and self-custody flows. He also architected the N45 Design System for it.
 
 ### Process
 
@@ -472,7 +479,7 @@ see: Cypherock X0, Skills & Expertise
 
 ask: What problem did this solve?
 
-**Known at a high level:** Onefinnet Talent is one of Ishaan's portfolio/work areas.
+**Known at a high level:** Onefinnet Talent is a B2B SaaS recruitment platform for the US market. Ishaan led its end-to-end design at Onefinnet.
 
 ### Context
 
@@ -482,7 +489,7 @@ ask: What problem did this solve?
 
 ask: What was your role?
 
-Design-related work. Exact scope to confirm.
+Ishaan spearheaded end-to-end design and led a cross-functional team of 7, including the Freemium acquisition model, the AI Assistant, the Meeting Scheduler and a 100+ component design system. Documented outcomes are listed under Work Experience → Onefinnet.
 
 ### Process
 
@@ -549,11 +556,15 @@ see: Cypherock X0, Contact / Hiring
 
 **Observed:** Ishaan thinks in terms of consistency, reusable patterns, visual relationships, and component states.
 
-**To confirm:** Formal design-system ownership and specific systems/tools.
+**Documented:** He architected the N45 Design System at Cypherock, an AI-ready system of components, tokens and docs that cut design turnaround from about 10 days to about 2. At Onefinnet he built a design system of 100+ components that cut handoff time by 30% and design inconsistencies by 40%.
 
 ### Research
 
-**Documented research and design methods:** UX/UI Design, Interaction Design, Responsive Web Design, Accessibility (WCAG 2.2), Usability Testing, A/B Testing, Persona Development, Customer Journey Mapping, Information Architecture, and Design Thinking. fileciteturn2file0L4-L7
+**Documented design & research skills:** UX/UI Design, Interaction Design, Design Systems, Mobile-First Design, User Research, Usability Testing, A/B Testing, Wireframing, Prototyping, Information Architecture, Journey Mapping, and Accessibility (WCAG 2.2).
+
+**Product & strategy:** Product Ownership, Product Discovery, Requirements Gathering, PRD Writing, and Roadmapping.
+
+**Collaboration:** Agile/Scrum, cross-functional teams, stakeholder management, and design-to-dev handoff.
 
 **Still unknown:** Exact number of research studies, interviews, participants, and the precise ownership split between research and product design.
 
@@ -769,7 +780,7 @@ ask: Where did you study?
 
 when: degree, studied, course, bdes, design school
 
-Bachelor's of Design, Interaction Design
+Bachelor of Design, Interaction Design
 
 ### Institution
 
@@ -785,7 +796,7 @@ Aug 2020 – Jul 2024
 
 ### Academic details
 
-CGPA: 8.48. Minor specialization: Computer Science. fileciteturn2file0L53-L55
+CGPA: 8.48. Minor: Computer Science.
 
 ---
 
@@ -797,10 +808,10 @@ where: about
 tags: awards, recognition, trophies, competitions
 ask: Have you won any awards?
 
-- **CII Young Designer Award — Winning Entry**, Confederation of Indian Industry.
+- **CII Young Designer Award — Winning Entry**, Confederation of Indian Industry (CII).
 - **Student Service Design Challenge — Honorable Mention**, Barcelona Design Week (SSDC).
-- **D’Source Corona Design Challenge — Winning Entry**, IDC School of Design, Mumbai.
-- **24hr Design Hackathon — 2nd Runner Up**, Doon University, Dehradun. fileciteturn2file0L56-L60
+- **D’Source Corona Design Challenge — Winner**, IDC School of Design, Mumbai.
+- **24hr Design Hackathon — 2nd Runner-Up**, Doon University, Dehradun.
 
 ---
 
@@ -817,7 +828,7 @@ ask: How can I get in touch?
 
 ### Ideal opportunities
 
-**Evidence-based fit from documented experience:** Product design work involving complicated digital products, B2B SaaS, HRTech, crypto/fintech, hardware + software ecosystems, self-custody UX, interaction design, design systems, and AI-enabled product workflows.
+**Evidence-based fit from documented experience:** Senior product design work involving complex digital products, self-custodial crypto and fintech, hardware + software ecosystems, swaps and staking, B2B SaaS, HRTech, data protection and security, interaction design, design systems, and AI-enabled product workflows.
 
 This is a fit assessment based on experience, not a statement that Ishaan is actively looking for a role.
 
@@ -835,7 +846,7 @@ ask: How can I contact you?
 
 **Portfolio:** ishaan-gupta.in
 
-**LinkedIn:** www.linkedin.com/in/ishaangupta24 fileciteturn2file0L2-L3
+**LinkedIn:** linkedin.com/in/ishaangupta24
 
 ### Resume
 
@@ -843,7 +854,7 @@ when: resume, cv, portfolio pdf
 
 ask: Can I see your resume?
 
-The current resume used as a source for this knowledge base is documented as **Ishaan Gupta Res(1).pdf**.
+Ishaan's current resume (Ishaan_Gupta_SPD.pdf) is the source for the work, education, skills and awards sections here. Visitors can open it from the **+ Resume** button on the portfolio, which also lets them download it.
 
 ---
 
@@ -853,11 +864,11 @@ tags: faq, questions
 
 ### Who is Ishaan?
 
-Ishaan is a product/interface designer whose work spans digital products, interaction design, visual design, motion, hardware-connected experiences, and portfolio storytelling.
+Ishaan is a Senior Product Designer — currently the sole design lead at Cypherock — with about three years of experience designing self-custodial crypto products. His work spans digital products, interaction design, design systems, visual design, motion, and hardware-connected experiences.
 
 ### What is Ishaan working on?
 
-A major area of his work is Cypherock X0 and its associated wallet/product experience. He has also worked with Onefinnet, including Onefinnet Talent and design-related visual/hiring work.
+At Cypherock he leads design across X0, X1 Vault and CySync Desktop & Mobile, including swap and staking experiences and the N45 Design System. Before that he led design for Onefinnet Talent at Onefinnet, and he interned as a CX Designer at Veritas Technologies (now Cohesity).
 
 ### What is Ishaan good at?
 
@@ -1063,6 +1074,6 @@ internal: true
 
 Add new information below as the portfolio evolves.
 
-**Last updated:** September 9, 2026
+**Last updated:** October 16, 2026 — work, skills, education, awards and contact sections brought in line with the current resume (Ishaan_Gupta_SPD.pdf).
 
 **Version:** Expanded foundation based on the original knowledge-base template plus available prior conversation context. Unknowns are intentionally marked rather than fabricated.
