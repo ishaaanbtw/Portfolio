@@ -1852,7 +1852,7 @@
 
     const vid = el('video', {
       class: `wcard__thumb wcard__thumb--${sheet ? 'sheet' : 'cover'}`,
-      autoplay: '', loop: '', muted: '', playsinline: '',
+      ...(item.still ? {} : { autoplay: '' }), loop: '', muted: '', playsinline: '',
       /* 'auto', not 'metadata': the file is a few hundred KB and it is the
          only thing on the card. Fetching just the header saved nothing and
          pushed the first frame further out. */
@@ -1937,9 +1937,15 @@
 
     /* respect reduced-motion: hold the first frame instead of looping */
     const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+    /* A STILL TILE STARTS FROM ITS OWN FIRST FRAME. The X1 loop opens on the
+       assembled product and only then comes apart, so it must not be playing
+       under the wake sheet or off screen: it waits on frame one until the page
+       is uncovered and the tile is in view, and goes back to frame one when it
+       leaves, so every arrival starts on the logo. */
+    let gateOpen = !item.still;
     const sync = () => {
       try {
-        if (still.matches) { vid.pause(); return; }
+        if (still.matches || !gateOpen) { vid.pause(); return; }
         /* play() is a promise in browsers and a no-op in jsdom, so neither the
            rejection nor the missing return value can be assumed away */
         const p = vid.play();
@@ -1948,6 +1954,33 @@
     };
     vid.addEventListener('loadeddata', sync);
     if (still.addEventListener) still.addEventListener('change', sync);
+
+    if (item.still && 'IntersectionObserver' in window) {
+      const body = document.body;
+      const uncovered = () => !body.classList.contains('waking')
+        || body.classList.contains('sliding') || body.classList.contains('landed');
+      let seen = false, poll = 0;
+      const open = () => {
+        clearInterval(poll); poll = 0;
+        if (!seen) return;
+        if (!uncovered()) { poll = setInterval(() => { if (uncovered()) open(); }, 120); return; }
+        if (gateOpen) return;
+        gateOpen = true;
+        try { vid.currentTime = 0; } catch (err) { /* not seekable yet */ }
+        sync();
+      };
+      new IntersectionObserver((entries) => {
+        seen = entries[entries.length - 1].isIntersecting;
+        if (seen) { open(); return; }
+        clearInterval(poll); poll = 0;
+        gateOpen = false;
+        vid.pause();
+        try { vid.currentTime = 0; } catch (err) { /* not seekable yet */ }
+      }, { threshold: 0.35 }).observe(media);
+    } else if (item.still) {
+      gateOpen = true;
+      vid.autoplay = true;
+    }
 
     media.appendChild(host);
   }
@@ -2057,14 +2090,19 @@
       const byTitle = {};
       items.forEach((item) => {
         const wip = !!item.wip;
-        const card = el('a', {
-          class: wip ? 'wcard wcard--wip' : 'wcard',
-          href: wip ? item.wip.href
-            : item.study ? projectHref(item.study.slug) : (item.href || '#'),
-          'aria-label': wip
-            ? `${item.title}: ${item.wip.label}. ${item.wip.note}.`
-            : `${item.title} · ${item.meta || ''}`,
-        });
+        /* `still`: a picture of the work, not a way into it. A plain block
+           with no href and no focus, so there is nothing to press or tab to. */
+        const card = item.still
+          ? el('div', { class: 'wcard wcard--still', role: 'group',
+            'aria-label': `${item.title} · ${item.meta || ''}` })
+          : el('a', {
+            class: wip ? 'wcard wcard--wip' : 'wcard',
+            href: wip ? item.wip.href
+              : item.study ? projectHref(item.study.slug) : (item.href || '#'),
+            'aria-label': wip
+              ? `${item.title}: ${item.wip.label}. ${item.wip.note}.`
+              : `${item.title} · ${item.meta || ''}`,
+          });
         const media = el('div', { class: 'wcard__media' },
           (PREVIEW[item.preview] || PREVIEW.bloom)(item));
         mountThumb(item, media);
@@ -4129,6 +4167,13 @@
        These exist for the Research section, which is meant to read like a page
        out of a design file: a quiet contextual line, a sub-heading, a bullet
        list at a comfortable measure, and artifacts sitting in white frames. */
+
+    /* HAND-BUILT MARKUP, for a study whose boards are composed rather than
+       assembled from the blocks above (Fury). `key` names an entry in
+       window.STUDY_HTML, which that study's own script defines — it is loaded
+       by its page only, before this file. `html` inline is accepted too. A
+       missing key renders nothing rather than throwing. */
+    raw: (b) => `<div class="blk blk-raw">${b.html || ((window.STUDY_HTML || {})[b.key] || '')}</div>`,
 
     /* A slot for an image that has not arrived yet.
 
@@ -18923,6 +18968,24 @@
       });
     },
   };
+
+  /* EVERY [data-zoom] OPENS, wherever and whenever it was rendered. `bind`
+     was never called by anything, so frames showed the zoom cursor and did
+     nothing. One delegated listener on the document covers every page and
+     every block printed after load, and ignores the copy inside the lightbox. */
+  document.addEventListener('click', (e) => {
+    const f = e.target.closest && e.target.closest('[data-zoom]');
+    if (!f || f.closest('.lbox') || e.defaultPrevented) return;
+    if (e.target.closest('a, button') && !e.target.closest('a, button').contains(f)) return;
+    Lightbox.show(f);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const f = e.target.closest && e.target.closest('[data-zoom]');
+    if (!f || f !== e.target || f.closest('.lbox')) return;
+    e.preventDefault();
+    Lightbox.show(f);
+  });
 
   /* ------------------------------------------------------------------ Marquee
      Continuous scrollers that slow on hover instead of stopping.

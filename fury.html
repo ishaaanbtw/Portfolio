@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fury · Ishaan Gupta</title>
+<meta name="description" content="Fury: an AI companion for social anxiety, from mobile to a Meta Quest 2 VR experience.">
+<meta name="theme-color" content="#ffffff">
+<!-- The one font the page always needs, started before the stylesheet has been
+     parsed. Without this the request only begins once the CSS is read and the
+     first glyph is wanted, which is a swap you can see. The italic and the mono
+     are not preloaded on purpose: one word on the home page is italic and only
+     case studies set code, so both can arrive late without anything moving. -->
+<link rel="preload" href="assets/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<!-- THE ENTRANCE DECIDES BEFORE THE FIRST PAINT.
+     What this is: site.js section 5c2c, site.css sections 44 and 44b. Why it
+     cannot live in site.js: the sheet is the page's own paper and the document
+     starts white, and site.js runs at the end of the body — a decision made
+     there is one painted frame of the wrong colour before the right one. So
+     the test is applied here, in the head, and this block is byte-identical in
+     every page that loads the script. Only one thing differs between them, and
+     it is an attribute on <html>: see below.
+
+     ARRIVING, NOT MOVING. An intro is something you sit through when you get
+     somewhere; the moment it becomes a toll on every click it stops being an
+     intro and starts being a wait. So it plays on an arrival at the home page —
+     a cold visit, a typed address, a bookmark, and a reload, which is an
+     arrival at the same address and the thing you do most while building the
+     site — and it does not play on a click, on back or forward, or anywhere
+     else on the site.
+
+     ONLY THE LANDING PAGE HAS AN ENTRANCE, and `data-entrance` on <html> in
+     index.html is the whole of that decision. The sheet is a drawing OF the
+     home page: `Boot.marks` measures the masthead's statement and each project
+     card's image box off the live layout, and on About, Play, a case study or
+     the 404 it would find none of them and put up a blank sheet. So those
+     pages run this identical block, clear the flag below, and return. The
+     attribute is deliberately not a path test — `/`, `/index.html` and a
+     rewritten `/` are the same page under three spellings, and a rule that has
+     to know which is a rule that will be wrong on a rename.
+
+     AND SWITCHING SECTIONS NEVER REACHES HERE AT ALL. Work, About and Play are
+     views of one shell: `Route` swaps them with `pushState` and no navigation,
+     so the document is not reloaded and there is no load to suppress. Reloading
+     while on About loads about.html, which has no `data-entrance`, so that is
+     answered too — by the same line, not a second rule.
+
+     WHAT CHANGED, AND WHY THE OLD RULE HAD TO GO. This used to gate on a
+     session flag: the first page of the tab armed and marked the session, and
+     every page after it read the mark and did not. That is a clean mechanism
+     and it got one case wrong on purpose — a reload of the home page, which is
+     the most common way anybody sees this sequence, was treated as "already
+     seen" and skipped. The flag has been replaced by two facts that are not
+     inferences either: the browser's own report of what kind of navigation
+     this was, and a flag the LEAVING page writes (`hop` in site.js).
+
+     THE FAILSAFE IS THE TIMEOUT: if site.js never lands, the class comes off
+     by itself and the page is simply the page. -->
+<script>
+(function () {
+  try {
+    var d = document.documentElement;
+
+    /* READ AND CLEAR, ON EVERY PAGE, BEFORE ANYTHING CAN RETURN. `site:hop` is
+       set by `hop()` in site.js immediately before an internal link hands an
+       address to the browser. Every page consumes it — including the ones with
+       no entrance — so it is true for exactly one load and can never go stale
+       and suppress a genuine arrival later in the session. */
+    var hopped = false;
+    try {
+      hopped = !!sessionStorage.getItem('site:hop');
+      sessionStorage.removeItem('site:hop');
+    } catch (e) { /* private mode */ }
+
+    if (!d.hasAttribute('data-entrance')) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    /* `?intro` forces it, which is how you watch the sequence without caring
+       how you got here. */
+    if (!/(^|[?&])intro(=|&|$)/.test(location.search)) {
+      /* BACK AND FORWARD ARE NOT ARRIVALS, and this is the browser reporting
+         its own navigation rather than the page guessing from a header. A
+         restore from the back/forward cache never runs this script at all; a
+         back that has to rebuild the document does, and lands here. */
+      var nav = null;
+      try { nav = performance.getEntriesByType('navigation')[0]; } catch (e) {}
+      if (nav && nav.type === 'back_forward') return;
+      /* and a click is not an arrival. A reload cannot see this flag — the
+         load that followed the click already consumed it — which is exactly
+         why a reload arms and the click that preceded it did not. */
+      if (hopped) return;
+    }
+
+    d.classList.add('wake-armed');
+    setTimeout(function () { d.classList.remove('wake-armed'); }, 4000);
+  } catch (e) {}
+})();
+</script>
+<link rel="stylesheet" href="assets/css/site.css?v=wip192">
+<!-- The mark follows the reader's system theme, not the site's. favicon.svg
+     carries the media query inside it, which Chrome and Firefox honour;
+     Safari renders SVG favicons but ignores their CSS, so the dark copy is
+     also linked with a media attribute it does understand. The PNG is for
+     anything that cannot take an SVG at all, and favicon.ico answers the
+     request browsers make whether it is linked or not. The apple-touch icon
+     has to be a PNG — iOS will not take the SVG — and is full-bleed square
+     because iOS rounds the corners itself.
+
+     AT THE ROOT, NOT IN assets/img, AND THAT IS A CACHING DECISION. Everything
+     under assets/img is pictures that never change once they are published, so
+     vercel.json tells browsers to keep them for a week. An icon is not that: it
+     is a small file that changes when the brand does, and a week of a stale one
+     is a week of the old mark in everybody's tab. Out here it falls under the
+     short-lived rule instead — and it is where /favicon.ico and
+     /apple-touch-icon.png are probed for anyway. -->
+<link rel="icon" href="favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ishaan Gupta">
+<meta property="og:title" content="Fury · Ishaan Gupta">
+<meta property="og:description" content="Fury: an AI companion for social anxiety, from mobile to a Meta Quest 2 VR experience.">
+<meta property="og:image" content="assets/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fury · Ishaan Gupta">
+<meta name="twitter:description" content="Fury: an AI companion for social anxiety, from mobile to a Meta Quest 2 VR experience.">
+<meta name="twitter:image" content="assets/img/og.png">
+<!-- ONE DESIGN, AND IT IS DECIDED BEFORE THE FIRST PAINT.
+
+     The shell — home, about, play — has two themes and picks one from the
+     local hour unless a visitor has pressed the pod, and that is right for a
+     site somebody arrives at in the evening. A case study is not that: it is
+     one composition, art-directed once, and half of the decisions in it are
+     about what colour something is. So a project page is dark, always, and
+     does not read the clock or the stored press.
+
+     STATED HERE RATHER THAN IN site.js, for the same reason the entrance is:
+     the script runs at the end of the body, and a decision made there is one
+     painted frame of the wrong colour before the right one. `Theme.init`
+     makes the same decision again, so the module is correct on its own if
+     this ever fails to run, and the theme pod is not drawn on this page at
+     all — see section 19 of the stylesheet. -->
+<script>/* nothing to do: light is the ground, and `Theme.init` locks it.
+     This block is kept so the decision has a stated home in the page
+     itself — see the note above — rather than only in site.js, which
+     runs at the end of the body. */</script>
+</head>
+<body data-page="project" data-project="fury">
+
+  <aside id="rail"></aside>
+
+  <!-- A PROJECT ENDS ON ITS OWN WORK, AND THAT IS WHY THERE ARE NO SLOTS HERE.
+
+       `Shell.foot()` is not conditional and does not need to
+       be: each one looks for its element and returns if there is not one. So the
+       question "does this page have the home footer" is answered by the page,
+       in its own markup, and the answer here is no. It was yes, and that is the
+       whole of the bug that was reported — a case study ran out and then handed
+       the reader 294px of the home footer's address block followed by 341px of
+       the home sky, neither of which this page had anything to do with. 404.html
+       has been proving the mechanism the whole time: no slots, no footer.
+
+       What ends the page instead is `.onward` — Index, Previous, Next — which
+       `Project` already builds as the last block of `#main`. It is the right
+       ending; it was simply not the last thing on the page. -->
+  <div class="sheet">
+    <main id="main"></main>
+  </div>
+
+  <script src="assets/js/content.js?v=wip192"></script>
+  <!-- Fury's boards, as markup: read by the `raw` block in site.js -->
+  <script src="assets/js/fury.js?v=wip192"></script>
+  <script src="assets/js/site.js?v=wip192"></script>
+</body>
+</html>

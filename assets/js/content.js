@@ -610,8 +610,7 @@ window.SITE = {
        Not links, not focusable, no hover; each is [stack, proportion]. Delete
        a line when a real project takes its place. */
     placeholders: [
-      ['a', 1.1], ['a', 1.6],
-      ['b', 0.9], ['b', 1.4],
+      ['b', 0.9],
     ],
     items: [
       /* --------------------------------------------------- X0 digital identity
@@ -2543,13 +2542,27 @@ window.SITE = {
          `meta` and the fact chips are taken from that title card, so the two
          now agree. Earlier values (2025, "Remote", "Product Designer") were
          placeholders written before the card existed.                        */
+      /* --------------------------------------------------- X1 Vault, in 3D
+         NOT A DOOR. `still` makes the tile a picture rather than a link: no
+         href, nothing to press, but the same hover as every other card. It is
+         a 16s, 60fps silent loop of the three.js model of the X1 Vault: it
+         opens and ends on the assembled front with the logo, eases round as it
+         comes apart, holds, and goes back together. `still` also holds it on
+         frame one until the page is uncovered and the tile is in view.
+         Rendered from the model, poster is its first frame. */
+      { title: 'Cypherock X1 Vault', meta: '3D product model, 2026',
+        still: true,
+        col: 'b', ratio: 1.6,
+        thumb: 'assets/media/x1/x1-vault-thumb.mp4?v=2',
+        thumbPoster: 'assets/media/x1/x1-vault-thumb.webp?v=2',
+        preview: 'bloom' },
       { title: 'Onefinnet Talent', meta: 'B2B SaaS, 2024–25, Noida (on-site)',
         href: '#onefinnet-talent',
         /* THE COUNTER. Narrower stack and the widest proportion in the set, so
            it is plainly a different shape from the one beside it and its caption
            lands well above that one's — which is what stops the two columns
            reading as a row. */
-        col: 'b', ratio: 1.72,
+        col: 'a', ratio: 1.72,
         /* `sheet` rather than the default `cover`: the artwork is a title card,
            not a photograph, so cropping it to the panel cost the outer columns
            and left it looking like a screenshot of something else. On a field
@@ -3170,6 +3183,192 @@ window.SITE = {
                 'Using AI responsibly. The challenge was not to automate blindly but to assist intelligently, keeping humans in control while AI handled the heavy lifting.',
                 'Designing for scale and change. Teams, roles and data all grow, so the admin panel had to be a system that absorbs that rather than an interface that breaks under it.',
               ] },
+          ],
+        } },
+      /* ----------------------------------------------------------------- Fury
+         The Behance study (2023, gallery 170247419), rebuilt from the Figma
+         source ("Untitled", key Ju9mNyoaiUD2W0HHMKNhjb) LAYER BY LAYER rather
+         than as flattened boards. Every picture in assets/img/fury/ is a single
+         asset lifted out of that file — the wordmark, the headset, each phone,
+         each key-feature card (with its text layers switched off), each survey
+         chart, each VR screen, each photo — and everything that was text in
+         Figma is text here, set in this page's own type.
+
+         HOW IT IS BUILT. The sections use the shared document-study frame
+         (rail, sticker eyebrows, headings) and each board is an `html` block:
+         a composition written for this study, styled in site.css under
+         "FURY". Nothing in that markup is shared with another study.
+
+         `tone: 'dark'` on this study means a Fury-pink band.               */
+      { title: 'Fury', meta: 'Mobile & VR, 2024',
+        href: '#fury',
+        /* takes the empty frame that sat under Onefinnet in stack a */
+        col: 'a', ratio: 1.6,
+        preview: 'words', line: 'Step into confidence',
+        brief: {
+          tagline: 'An AI companion for social anxiety, from phone to headset.',
+          summary: 'Fury starts on mobile, expands into XR and reaches a Meta '
+            + 'Quest 2 experience where people can safely rehearse the social '
+            + 'situations they fear, and track their growth every step of the way.',
+          facts: [
+            { k: 'Scope', v: 'Mobile & Virtual Reality Design' },
+            { k: 'Year', v: '2024' },
+            { k: 'Timeline', v: '8 weeks, waterfall' },
+            { k: 'Platform', v: 'Mobile app · Meta Quest 2 · Cardboard VR' },
+          ],
+          does: [
+            'Primary and secondary research',
+            'Survey of 65 people, 7 interviews',
+            'Information architecture and task flows',
+            'Mobile UI and VR interface design',
+            'Figma prototype and Unity build',
+            'Usability testing on Oculus Quest 2',
+          ],
+          cta: 'View the complete case study',
+          spread: [
+            { at: 'a', src: 'assets/img/thumbs/fury.webp', w: 1600, h: 1000,
+              alt: 'Fury’s key features: VR integration, the wheel of emotions, the gamified alter ego and cardboard VR.' },
+          ],
+        },
+        study: {
+          slug: 'fury',
+          end: {
+            h: 'Thanks for your valuable time.',
+            meta: 'That’s Fury: a mobile companion that helps people name what they feel, and a VR space where they can practise facing it.',
+          },
+          company: 'Fury',
+          category: 'Mobile & VR',
+          year: '2024',
+          place: 'India',
+          role: 'UX Designer',
+          lede: 'What if facing social fear could feel safe, guided, and even exciting?',
+          eyebrow: 'Fury · Mobile & VR Design',
+          title: 'Social Phobia',
+          /* the wordmark and the headset, the two layers of the board's
+             opening, composed on a transparent canvas over the night field */
+          hero: {
+            field: 'transparent', ink: '#f4f4f5',
+            visual: { src: 'assets/img/fury/hero.webp', w: 1400, h: 960,
+              alt: 'The FURY wordmark in pink over a white Meta Quest 2 headset' },
+            facts: ['Mobile & VR', '2024', '8 weeks', 'Figma \u00b7 Unity'],
+          },
+          reading: false,
+          dock: false,
+          back: { label: 'BACK', href: 'index.html' },
+          sections: [
+
+            { id: 'overview', nav: 'Overview', eyebrow: 'What & Why ?',
+              heading: 'Fury: designing for progressive immersion in social growth',
+              body: [
+                'What if facing social fear could feel safe, guided, and even exciting? <b>Fury is an AI companion</b> that does exactly that, starting on mobile, expanding into XR, and reaching a <b>Meta Quest 2 VR experience</b> where users can safely explore social scenarios and track their growth every step of the way.',
+              ],
+              blocks: [
+                { type: 'facts', items: [
+                  { label: 'Role', values: ['Sole designer', 'Unity build'] },
+                  { label: 'Timeline', values: ['2024', '8 weeks', 'Waterfall'] },
+                  { label: 'Surfaces', values: ['Mobile app', 'VR app'] },
+                  { label: 'Research', values: ['7 interviews', '65 survey responses', '3 expert testers'] },
+                  { label: 'Tools', values: ['Figma', 'Unity'] },
+                ] },
+                { type: 'raw', html: '<p class="fy-bridge">But first, the thing nobody talks about.</p>' },
+              ] },
+
+            { id: 'problem', nav: 'The Problem', eyebrow: 'Shhhhhh !!',
+              heading: 'Problem statement',
+              body: ['<span class="fy-ps">Enabling <span class="fy-ps__ring">socially anxious<svg viewBox="0 0 240 70" preserveAspectRatio="none" aria-hidden="true"><path class="fy-ps__o" pathLength="1" d="M128 9 C70 5 14 14 8 34 C2 56 70 64 132 61 C196 58 236 46 232 28 C228 12 186 6 118 12"/><path class="fy-ps__k" pathLength="1" d="M214 6 L218 -10"/><path class="fy-ps__k" pathLength="1" d="M226 10 L240 -4"/><path class="fy-ps__k" pathLength="1" d="M233 20 L246 16"/></svg></span> people to overcome obstacles and develop meaningful connections.</span>'],
+              blocks: [ { type: 'raw', key: 'problem' },
+                { type: 'raw', html: '<p class="fy-bridge">Numbers only say so much. So I went to the people behind them.</p>' },
+              ] },
+
+            { id: 'research', nav: 'Research', eyebrow: 'Discovery',
+              heading: 'Qualitative research',
+              body: ['With such a complex project, this was the stage that defined the product: what social anxiety actually looks like, in people\u2019s heads and in the room.'],
+              blocks: [
+                { type: 'raw', key: 'methods' },
+                { type: 'raw', html: '<p class="fy-bridge">Seven conversations later, the patterns started to show.</p>' },
+              ] },
+
+            { id: 'insights', nav: 'Insights', eyebrow: 'Booyaahhh!!', tone: 'dark',
+              heading: 'Insight gathering',
+              body: ['After digging deep into the topic, it helped me get the <b>full picture</b> of the situation: finding common threads, respecting what people have to say, and finding different viewpoints.'],
+              blocks: [ { type: 'raw', key: 'stickies' }, { type: 'raw', key: 'insights' },
+                { type: 'raw', html: '<p class="fy-bridge">Then I checked whether it held up beyond the people I knew.</p>' },
+              ] },
+
+            { id: 'validation', nav: 'Validation', eyebrow: 'Online media analysis',
+              heading: 'Validation',
+              body: ['A literature review showed me the trends and where to begin; a survey checked whether the same things were happening in my own surroundings.'],
+              blocks: [
+                { type: 'raw', key: 'validate' },
+                { type: 'raw', html: '<p class="fy-bridge">Two people kept showing up in the data.</p>' },
+              ] },
+
+            { id: 'define', nav: 'Personas', eyebrow: 'UX Research',
+              heading: 'User Persona',
+              body: [],
+              blocks: [ { type: 'raw', key: 'personaBoard' },
+                { type: 'raw', html: '<p class="fy-bridge">They didn\u2019t need more information. They needed a safe place to practise.</p>' },
+              ] },
+
+            { id: 'ideate', nav: 'Why VR', eyebrow: 'Ideate',
+              heading: 'Ideate',
+              body: [],
+              blocks: [ { type: 'raw', key: 'ideate' },
+                { type: 'raw', html: '<p class="fy-bridge">Out of the sticky notes, one idea held: start small on the phone, go deeper in VR.</p>' },
+              ] },
+
+            { id: 'solution', nav: 'Solution', eyebrow: 'Let\u2019s Cook',
+              heading: 'Proposed Solution',
+              body: [],
+              blocks: [ { type: 'raw', key: 'dual' },
+                { type: 'raw', html: '<p class="fy-bridge">Then came the work of making it real.</p>' },
+              ] },
+
+            { id: 'structure', nav: 'Architecture', eyebrow: '(01) Ideate',
+              heading: 'Information architecture',
+              body: ['Organising, structuring and labelling content in an effective and sustainable way, so users can find information and complete tasks.'],
+              blocks: [
+                { type: 'raw', key: 'ia' },
+                { type: 'head', title: 'Task flows' },
+                { type: 'raw', key: 'flows' },
+                { type: 'raw', html: '<p class="fy-bridge">With the flows on paper, the screens came next.</p>' },
+              ] },
+
+            { id: 'design', nav: 'UI Design', eyebrow: 'Lets gooo!!!',
+              heading: 'UI design',
+              body: ['After creating the user flows and information architecture on paper, I began wireframing in Figma, where I began setting up a <b>basic design system</b> for myself to ease the workload.'],
+              blocks: [
+                { type: 'head', title: 'Flow 01: Onboarding', body: ['The first two minutes decide whether someone comes back. Here is the whole first run, screen by screen, and why each step is there.'] },
+                { type: 'raw', key: 'protoOnboarding' },
+                { type: 'head', title: 'Flow 02: Going for therapy', body: ['From home to a VR session in under a minute, on a phone and a piece of cardboard.'] },
+                { type: 'raw', key: 'protoTherapy' },
+                /* ONE STORY, NOT TWO CHAPTERS. Flow 02 ends with the phone in a
+                   Cardboard; Flow 03 picks up on a Quest and steps inside it. */
+                { type: 'head', title: 'Flow 03: Inside the session', body: ['Cardboard gets anyone started. On a Quest 2 the session wraps all the way around you, and these are the screens you meet in there.'] },
+                { type: 'raw', key: 'vr' },
+                { type: 'head', title: 'Unity development', body: ['A 3D environment experience, built in Unity.'] },
+                { type: 'raw', key: 'unity' },
+                { type: 'raw', html: '<p class="fy-bridge">Time to hand it to someone else.</p>' },
+              ] },
+
+            { id: 'testing', nav: 'Testing', eyebrow: 'Mobile & VR app',
+              heading: 'Usability testing',
+              body: [],
+              blocks: [ { type: 'raw', key: 'testing' },
+                { type: 'raw', html: '<p class="fy-bridge">A few questions always come up.</p>' },
+              ] },
+
+            { id: 'faq', nav: 'FAQ', eyebrow: 'FAQ',
+              heading: 'Some questions that generally arise',
+              body: [],
+              blocks: [ { type: 'raw', key: 'faq' },
+                { type: 'raw', html: '<p class="fy-bridge">And where it could go next.</p>' },
+              ] },
+
+            { id: 'future', nav: 'Future Scope', eyebrow: 'Potential Upgrades', tone: 'dark',
+              heading: 'Future scope',
+              body: [],
+              blocks: [ { type: 'raw', key: 'revenue' } ] },
           ],
         } },
       /* ------------------------------------------------------------- X0 Cards

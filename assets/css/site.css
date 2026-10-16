@@ -25900,3 +25900,2510 @@ body[data-page='project'] .gridlay { display: none !important; }
 .ab__co { font-size: 1.25rem; letter-spacing: -0.015em; }
 .ab__co a .ab__ext { opacity: 1; margin-left: 0.2rem; font-size: 0.6em; color: var(--text-4); transform: translateY(-0.35em); }
 .ab__when { font-family: inherit; letter-spacing: 0; font-size: var(--step--1); padding-top: 0.2rem; }
+
+
+/* =========================================================================
+   FURY — the study's own identity
+   -------------------------------------------------------------------------
+   Everything below is scoped to body[data-project="fury"], so it cannot move
+   another study. It is drawn from the Fury boards in Figma rather than from
+   this site's document-study defaults:
+
+     night field   #18181c, with a scatter of small stars
+     Fury pink     #f52d5d   bands, numbers, the quote marks, the swatches
+     lime          #bfee61   the sticker kickers ("Shhhhhh !!", "Let's Cook")
+     blue          #2d7df5   the small uppercase research labels
+     Sora          headings  (the boards use Whyte Inktrap, which has no web
+                             licence here; Sora is the closest free geometric)
+     Space Grotesk stickers, as on the boards
+
+   `tone: 'dark'` in content.js means a pink band on this page, not the navy
+   one the other studies use. White boards (files prefixed `b-`) sit in a
+   window frame with the three dots, which is how every board on Behance is
+   presented.
+   ========================================================================= */
+
+@font-face {
+  font-family: 'Sora';
+  src: url('../fonts/Sora-Variable.woff2') format('woff2');
+  font-weight: 100 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../fonts/SpaceGrotesk-Variable.woff2') format('woff2');
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+html:has(body[data-project="fury"]) { background: #18181c; }
+
+body[data-project="fury"] {
+  --fury-night: #18181c;
+  --fury-card: #26262c;
+  --fury-pink: #f52d5d;
+  --fury-lime: #bfee61;
+  --fury-blue: #2d7df5;
+  --fury-display: 'Sora', 'Geist', system-ui, sans-serif;
+  --fury-sticker: 'Space Grotesk', 'Geist', system-ui, sans-serif;
+
+  /* the page's own tokens, turned to night, so the shell follows */
+  --tone: dark;
+  --text-1: #f4f4f5;
+  --text-2: #c9c9cf;
+  --text-3: #9a9aa3;
+  --text-4: #4a4a52;
+  --surface: #18181c;
+  --surface-2: #1f1f24;
+  --border: #33333a;
+  --border-soft: #26262c;
+  --accent: #f52d5d;
+
+  background-color: #18181c;
+  /* THE STARS. Three layers of single-pixel dots at prime-ish tile sizes, so
+     the repeat never lines up into a visible grid. Fixed, so they hold still
+     while the boards scroll past — the night outside the window. */
+  background-image:
+    radial-gradient(1.2px 1.2px at 23px 41px, rgba(255,255,255,.55), transparent 60%),
+    radial-gradient(1px 1px at 157px 113px, rgba(255,255,255,.35), transparent 60%),
+    radial-gradient(1.4px 1.4px at 311px 287px, rgba(255,255,255,.45), transparent 60%),
+    radial-gradient(1px 1px at 89px 233px, rgba(190,190,210,.3), transparent 60%);
+  background-size: 337px 337px, 211px 251px, 409px 389px, 271px 293px;
+  background-attachment: fixed;
+  color: #f4f4f5;
+}
+body[data-project="fury"] .sheet { background: transparent; }
+body[data-project="fury"] .sec { --tone: dark; }
+
+/* --- the hero: the board's own opening, edge to edge on the field -------- */
+body[data-project="fury"] .phero[data-layout='panel'] .phero__art {
+  box-shadow: none;
+  border-radius: 0;
+}
+body[data-project="fury"] .phero__img { object-fit: contain; background: #18181c; }
+body[data-project="fury"] .phero__name {
+  font-family: var(--fury-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+body[data-project="fury"] .phero__facts span { color: #b5b5bd; }
+body[data-project="fury"] .phero__line {
+  font-family: var(--fury-display);
+  color: #fff;
+}
+
+/* --- section type --------------------------------------------------------- */
+
+/* THE STICKER. The eyebrow becomes the lime tag from the boards: Space
+   Grotesk, black on lime, a small radius and a few degrees off true, as if
+   someone slapped it on the heading. */
+body[data-project="fury"] .sec__eyebrow {
+  display: inline-block;
+  font-family: var(--fury-sticker);
+  font-weight: 500;
+  font-size: clamp(0.85rem, 0.8rem + 0.25vw, 1.05rem);
+  letter-spacing: -0.02em;
+  color: #0d0d0f;
+  background: var(--fury-lime);
+  padding: 0.18em 0.6em 0.22em;
+  border-radius: 6px;
+  transform: rotate(-4deg);
+  transform-origin: left bottom;
+  margin: 0 0 0.35rem 0.6rem;
+  box-shadow: 0 6px 16px -10px rgba(0, 0, 0, .6);
+}
+body[data-project="fury"] .sec__heading {
+  font-family: var(--fury-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 1.3rem + 2.6vw, 3.6rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: #fff;
+  max-width: 22ch;
+}
+/* the problem statement is a sentence, not a title */
+body[data-project="fury"] #problem .sec__heading {
+  font-size: clamp(1.6rem, 1.1rem + 1.8vw, 2.6rem);
+  max-width: 28ch;
+}
+body[data-project="fury"] .sec__body p { color: #c3c3ca; }
+body[data-project="fury"] .sec__body b { color: #fff; }
+
+body[data-project="fury"] .blk-head__t {
+  font-family: var(--fury-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: #fff;
+}
+body[data-project="fury"] .blk-head__b,
+body[data-project="fury"] .bul li { color: #c3c3ca; }
+body[data-project="fury"] .blk-head__b b,
+body[data-project="fury"] .bul li b { color: #fff; }
+body[data-project="fury"] .blk__sub,
+body[data-project="fury"] .blk__sub2 {
+  font-family: var(--fury-display);
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+/* bullets are the FAQ's pink arrows */
+body[data-project="fury"] .bul li::before {
+  content: '\2192';
+  background: none;
+  color: var(--fury-pink);
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  font-weight: 600;
+  top: 0;
+}
+
+body[data-project="fury"] .fframe__cap { color: #8d8d96; }
+
+/* --- the pink band -------------------------------------------------------- */
+body[data-project="fury"] .sec--dark {
+  background: var(--fury-pink);
+  box-shadow: 0 0 0 100vmax var(--fury-pink);
+  color: #fff;
+}
+body[data-project="fury"] .sec--dark .sec__eyebrow { color: #0d0d0f; }
+body[data-project="fury"] .sec--dark .sec__heading,
+body[data-project="fury"] .sec--dark .blk-head__t,
+body[data-project="fury"] .sec--dark .blk__sub,
+body[data-project="fury"] .sec--dark .blk__sub2 { color: #fff; }
+body[data-project="fury"] .sec--dark .sec__body p,
+body[data-project="fury"] .sec--dark .blk-head__b,
+body[data-project="fury"] .sec--dark .bul li,
+body[data-project="fury"] .sec--dark .bul__lead { color: rgba(255, 255, 255, .88); }
+body[data-project="fury"] .sec--dark .sec__body b,
+body[data-project="fury"] .sec--dark .bul li b { color: #fff; }
+body[data-project="fury"] .sec--dark .bul li::before { color: #fff; }
+body[data-project="fury"] .sec--dark .fframe__cap { color: rgba(255, 255, 255, .8); }
+body[data-project="fury"] .sec--dark .blk-facts dt { color: rgba(255, 255, 255, .78); }
+
+/* --- chips: white pills with the pink swatch, as on the problem board ---- */
+body[data-project="fury"] .blk-facts dt {
+  font-family: var(--fury-sticker);
+  color: #9a9aa3;
+}
+body[data-project="fury"] .blk-facts dd > span,
+body[data-project="fury"] .sec--dark .blk-facts dd > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  background: #f4f4f5;
+  color: #111114;
+  border: 0;
+  border-radius: 7px;
+  padding: 0.35em 0.75em 0.35em 0.4em;
+  font-family: var(--fury-display);
+  font-size: 0.88rem;
+}
+body[data-project="fury"] .blk-facts dd > span::before {
+  content: '';
+  width: 1.5em;
+  height: 1.1em;
+  border-radius: 3px;
+  background: #a3203f;
+  flex: none;
+}
+
+/* --- cards --------------------------------------------------------------- */
+body[data-project="fury"] .gapc,
+body[data-project="fury"] .gapc--lift {
+  background: var(--fury-card);
+  border: 1px solid #303037;
+  border-radius: 14px;
+  min-height: 8.5rem;
+}
+body[data-project="fury"] .gapc__t {
+  font-family: var(--fury-display);
+  color: #fff;
+}
+body[data-project="fury"] .gapc__b { color: #b5b5bd; }
+body[data-project="fury"] .gapc__b b { color: var(--fury-lime); font-weight: 500; }
+
+/* on the pink band the cards turn to paper, as the interview cards do */
+body[data-project="fury"] .sec--dark .gapc,
+body[data-project="fury"] .sec--dark .gapc--lift {
+  background: #fff;
+  border-color: transparent;
+}
+body[data-project="fury"] .sec--dark .gapc__t { color: var(--fury-pink); }
+body[data-project="fury"] .sec--dark .gapc__b { color: #3a3a40; }
+body[data-project="fury"] .sec--dark .gapc__b b { color: #111114; font-weight: 600; }
+
+/* THE NUMBERS. "1 in 7", "13.7%", "0.75" are the board's headline figures and
+   are set that size. */
+body[data-project="fury"] #problem .gapgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body[data-project="fury"] #problem .gapc { min-height: 11rem; }
+body[data-project="fury"] #problem .gapc__t {
+  font-size: clamp(2.4rem, 1.6rem + 2.6vw, 3.8rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+  font-weight: 700;
+  color: #111114;
+}
+@media (max-width: 720px) {
+  body[data-project="fury"] #problem .gapgrid { grid-template-columns: 1fr; }
+}
+
+/* the feature cards carry their board number in pink */
+body[data-project="fury"] #overview .gapc__t { font-weight: 600; }
+
+/* --- the quote, as the board's pink quote card ---------------------------- */
+body[data-project="fury"] .blk-quote {
+  font-family: var(--fury-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fff;
+  background: #18181c;
+  border-radius: 16px;
+  padding: 1.6rem 1.8rem 1.6rem 4.2rem;
+  position: relative;
+  max-width: 38rem;
+  border: 0;
+}
+body[data-project="fury"] .blk-quote::before {
+  content: '\201C';
+  position: absolute;
+  left: 1.1rem;
+  top: 0.6rem;
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--fury-pink);
+}
+
+/* --- the timeline, as the board's staircase of pills ---------------------- */
+body[data-project="fury"] .tl__when {
+  font-family: var(--fury-sticker);
+  color: var(--fury-lime);
+}
+body[data-project="fury"] .tl__t {
+  display: inline-block;
+  font-family: var(--fury-display);
+  background: #f4f4f5;
+  color: #111114;
+  border-radius: 999px;
+  padding: 0.3em 0.95em;
+  font-size: 0.92rem;
+}
+body[data-project="fury"] .tl__row:last-child .tl__t { background: var(--fury-pink); color: #fff; }
+body[data-project="fury"] .tl__dot { background: var(--fury-pink); }
+
+/* --- the callout ---------------------------------------------------------- */
+body[data-project="fury"] .blk-call p {
+  border-left: 3px solid var(--fury-pink);
+  color: #c3c3ca;
+}
+body[data-project="fury"] .blk-call b { color: #fff; }
+
+/* --- WINDOWS. A white board sits in the frame every Behance board has: a
+   white card, a generous radius, three dots and an empty address pill. The
+   board itself is a crop, so the window is drawn here rather than baked into
+   the file — it stays sharp and stays consistent. */
+body[data-project="fury"] .fframe:has(img[src*="/fury/b-"]) {
+  background: #fff;
+  border-radius: 22px;
+  padding: 3rem 1.1rem 1.1rem;
+  box-shadow: 0 30px 70px -40px rgba(0, 0, 0, .8);
+}
+body[data-project="fury"] .fframe:has(img[src*="/fury/b-"])::before {
+  content: '';
+  position: absolute;
+  left: 1.25rem;
+  top: 1.15rem;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+  background: #18181c;
+  box-shadow: 1rem 0 0 #18181c, 2rem 0 0 #18181c;
+}
+body[data-project="fury"] .fframe:has(img[src*="/fury/b-"])::after {
+  content: '';
+  position: absolute;
+  left: 4.6rem;
+  right: 1.25rem;
+  top: 0.95rem;
+  height: 1.05rem;
+  max-width: 26rem;
+  border-radius: 999px;
+  border: 1px solid #d4d4d8;
+}
+/* everything else is already on its own night or pink ground: round it */
+body[data-project="fury"] .fframe:not(:has(img[src*="/fury/b-"])) .shotimg { border-radius: 16px; }
+
+/* the shell's paper and sky are fixed layers above the body; on this page the
+   night is the ground, so they step aside and the stars show through */
+body[data-project="fury"] > .pane { background: transparent; box-shadow: none; }
+body[data-project="fury"] > .pane::after { display: none; }
+body[data-project="fury"] > .pane > .sky-root { display: none; }
+
+/* the section rail, in night ink whatever band it is over */
+/* !important because the rail sets its ink per band (data-ink) from the
+   section's tone, and on this page every band wants the same light ink */
+body[data-project="fury"] .rail__link,
+body[data-project="fury"] .rail__back { color: rgba(255, 255, 255, .52) !important; }
+body[data-project="fury"] .rail__link.is-active { color: #fff !important; }
+body[data-project="fury"] .rail__link:hover { color: var(--fury-lime) !important; }
+
+/* below 70rem the rail becomes a strip across the top with a paper fill;
+   on this page that strip is night */
+@media (max-width: 70rem) {
+  body[data-project="fury"] .rail { background: rgba(24, 24, 28, 0.92); }
+}
+
+/* -------------------------------------------------------------------------
+   FURY — the rebuilt boards (assets/js/fury.js)
+   Every class here starts fy- and lives under body[data-project="fury"].
+   ------------------------------------------------------------------------- */
+body[data-project="fury"] .blk-raw { max-width: 100%; }
+body[data-project="fury"] .blk-raw :where(img) { display: block; max-width: 100%; height: auto; }
+
+/* a lightbox-able image with no frame of its own */
+body[data-project="fury"] .fy-zoom { width: 100%; max-width: 100%; }
+body[data-project="fury"] .fy-zoom .shotimg { width: 100%; height: auto; border-radius: 14px; }
+body[data-project="fury"] .fy-zoom--paper .shotimg { background: #fff; padding: 0.75rem; }
+body[data-project="fury"] .fy-zoom--device .shotimg { border-radius: 26px; }
+
+/* --- the sticker, as a standalone element -------------------------------- */
+body[data-project="fury"] .fy-sticker {
+  display: inline-block;
+  font-family: var(--fury-sticker);
+  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+  color: #0d0d0f;
+  background: var(--fury-lime);
+  padding: 0.2em 0.65em 0.24em;
+  border-radius: 6px;
+  transform: rotate(-4deg);
+  box-shadow: 0 6px 16px -10px rgba(0, 0, 0, .6);
+}
+body[data-project="fury"] .fy-sticker--white { background: #fff; }
+body[data-project="fury"] .fy-sticker--big { font-size: clamp(1.3rem, 1rem + 1vw, 1.9rem); padding: 0.25em 0.7em; border-radius: 10px; }
+body[data-project="fury"] .fy-label {
+  display: block;
+  font-family: var(--fury-sticker);
+  font-size: 0.72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--fury-blue);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+/* --- the window ------------------------------------------------------------ */
+body[data-project="fury"] .fy-win {
+  border-radius: 26px;
+  background: #222227;
+  border: 1px solid #2e2e35;
+  overflow: hidden;
+  box-shadow: 0 40px 80px -50px rgba(0, 0, 0, .9);
+}
+body[data-project="fury"] .fy-win--light { background: #fafafa; border-color: transparent; color: #111114; }
+body[data-project="fury"] .fy-win__bar {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 1.1rem 1.4rem 0.4rem;
+}
+body[data-project="fury"] .fy-win__bar i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: currentColor; color: #f4f4f5; }
+body[data-project="fury"] .fy-win--light .fy-win__bar i { color: #111114; }
+body[data-project="fury"] .fy-win__url {
+  flex: 1; max-width: 34rem; margin-left: 1.2rem;
+  border: 1px solid #4a4a52; border-radius: 999px;
+  padding: 0.28rem 1rem 0.28rem 2rem;
+  font-size: 0.66rem; letter-spacing: .06em; text-transform: uppercase; color: #8d8d96;
+  background: radial-gradient(circle at 0.95rem 50%, transparent 0.25rem, #8d8d96 0.26rem, #8d8d96 0.34rem, transparent 0.35rem) no-repeat;
+}
+body[data-project="fury"] .fy-win--light .fy-win__url { border-color: #c9c9cf; color: #6d6d75; }
+body[data-project="fury"] .fy-win__in { padding: clamp(1rem, 3vw, 2.4rem); }
+
+/* --- Step into confidence -------------------------------------------------- */
+body[data-project="fury"] .fy-conf {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 1rem;
+  min-height: 28rem;
+}
+body[data-project="fury"] .fy-conf__h {
+  font-family: var(--fury-display); font-weight: 700;
+  font-size: clamp(2.2rem, 1.4rem + 3vw, 4rem); line-height: 1; letter-spacing: -0.04em;
+  margin: 0.5rem 0 1.4rem; color: #000;
+}
+body[data-project="fury"] .fy-conf__line {
+  font-family: var(--fury-display); font-size: clamp(1rem, .9rem + .5vw, 1.35rem); line-height: 1.6; color: #111114; max-width: 22rem;
+}
+body[data-project="fury"] .fy-pill {
+  font-style: normal; background: var(--fury-pink); color: #fff; border-radius: 999px; padding: 0.05em 0.6em;
+}
+body[data-project="fury"] .fy-pill--ghost { background: transparent; color: var(--fury-pink); box-shadow: inset 0 0 0 1.5px var(--fury-pink); }
+body[data-project="fury"] .fy-cta {
+  display: inline-block; margin-top: 1.6rem;
+  font-family: var(--fury-sticker); font-weight: 600; font-size: 1.05rem; color: #111;
+  border: 1.5px solid var(--fury-pink); padding: 0.45rem 0.9rem; position: relative;
+}
+body[data-project="fury"] .fy-cta::before, body[data-project="fury"] .fy-cta::after {
+  content: ''; position: absolute; width: 7px; height: 7px; background: #fff; border: 1.5px solid var(--fury-pink);
+}
+body[data-project="fury"] .fy-cta::before { left: -5px; top: -5px; }
+body[data-project="fury"] .fy-cta::after { right: -5px; bottom: -5px; }
+body[data-project="fury"] .fy-conf__art img { width: 100%; max-height: 36rem; object-fit: contain; filter: drop-shadow(0 30px 40px rgba(0,0,0,.25)); }
+body[data-project="fury"] .fy-conf__dots { position: absolute; right: 0.5rem; top: 0.5rem; display: flex; gap: .35rem; }
+body[data-project="fury"] .fy-conf__dots i { width: .75rem; height: .75rem; border-radius: 50%; background: var(--fury-pink); }
+body[data-project="fury"] .fy-conf__dots i:nth-child(2) { background: #47c41f; }
+body[data-project="fury"] .fy-conf__dots i:nth-child(3) { background: #111; }
+body[data-project="fury"] .fy-conf__badge {
+  position: absolute; right: 0; bottom: 0; width: 5.6rem; height: 5.6rem; border-radius: 10px;
+  background: linear-gradient(160deg, #f52d5d, #b4163d); display: grid; place-items: center; padding: 0.9rem;
+}
+body[data-project="fury"] .fy-conf__badge img { filter: brightness(0) invert(1); }
+
+/* --- Synergy -------------------------------------------------------------- */
+body[data-project="fury"] .fy-syn { text-align: center; margin-top: clamp(3rem, 8vw, 6rem); }
+body[data-project="fury"] .fy-syn__h {
+  font-family: var(--fury-display); font-weight: 600; color: #fff;
+  font-size: clamp(1.9rem, 1.2rem + 2.6vw, 3.4rem); line-height: 1.08; letter-spacing: -0.035em; margin: 0;
+}
+body[data-project="fury"] .fy-syn__p { color: #9a9aa3; max-width: 32rem; margin: 1rem auto 2.2rem; line-height: 1.6; }
+body[data-project="fury"] .fy-syn__list { list-style: none; padding: 0; margin: 0 auto; display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5rem 3rem; }
+body[data-project="fury"] .fy-syn__list li { display: flex; align-items: center; gap: 0.9rem; text-align: left; font-family: var(--fury-sticker); font-weight: 600; color: var(--fury-pink); line-height: 1.25; }
+body[data-project="fury"] .fy-syn__list img { width: 3.2rem; height: 3.2rem; }
+body[data-project="fury"] .fy-syn__art { max-width: 46rem; margin: 2rem auto 0; position: relative; z-index: 1; }
+body[data-project="fury"] .fy-syn__bar {
+  height: 3rem; margin: -1.4rem auto 0; width: 100%;
+  background: linear-gradient(90deg, #e7245a, #c21549); position: relative; z-index: 0;
+}
+
+/* --- Key features bento ---------------------------------------------------- */
+body[data-project="fury"] .fy-feat { margin-top: clamp(3rem, 7vw, 5rem); }
+body[data-project="fury"] .fy-feat__top { display: flex; justify-content: space-between; align-items: end; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
+body[data-project="fury"] .fy-tags { display: flex; gap: .4rem; }
+body[data-project="fury"] .fy-tags span { font-family: var(--fury-sticker); font-size: .85rem; border: 1px solid var(--fury-lime); color: var(--fury-lime); border-radius: 999px; padding: .2rem .8rem; }
+body[data-project="fury"] .fy-tags .is-on { background: var(--fury-lime); color: #0d0d0f; }
+body[data-project="fury"] .fy-bento {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  grid-template-rows: 14rem 2.6rem 13rem 12rem;
+  grid-template-areas:
+    "g l c"
+    "w l e"
+    "w v e"
+    "w v e";
+  gap: 0.9rem;
+}
+body[data-project="fury"] .fy-tile {
+  position: relative; overflow: hidden; border-radius: 10px; padding: 1.1rem 1.2rem;
+  color: #fff; isolation: isolate;
+}
+body[data-project="fury"] .fy-tile h4 { font-family: var(--fury-display); font-weight: 600; letter-spacing: -0.03em; font-size: 1.35rem; line-height: 1.15; margin: 1rem 0 .5rem; }
+body[data-project="fury"] .fy-tile p { font-size: .88rem; line-height: 1.5; color: rgba(255,255,255,.82); margin: 0 0 .5rem; max-width: 18rem; }
+body[data-project="fury"] .fy-tile__n { font-family: var(--fury-sticker); font-size: .75rem; opacity: .6; }
+body[data-project="fury"] .fy-tile__art { position: absolute; z-index: -1; }
+body[data-project="fury"] .fy-tile--green { grid-area: g; background: linear-gradient(135deg, #b8f43a, #38c91b); color: #0d0d0f; display: grid; }
+body[data-project="fury"] .fy-tile__sel {
+  position: relative; place-self: center; margin: 0; text-align: center;
+  font-family: var(--fury-display); font-weight: 700; font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.4rem); line-height: 1.05; letter-spacing: -0.03em; color: #0d0d0f;
+  border: 2px solid #0d0d0f; padding: .5rem 1.1rem; display: grid;
+}
+body[data-project="fury"] .fy-tile__sel span:first-child { font-weight: 500; }
+body[data-project="fury"] .fy-tile__sel i { position: absolute; width: 10px; height: 10px; background: #fff; border: 2px solid #0d0d0f; }
+body[data-project="fury"] .fy-tile__sel i:nth-of-type(1) { left: -6px; top: -6px; }
+body[data-project="fury"] .fy-tile__sel i:nth-of-type(2) { right: -6px; top: -6px; }
+body[data-project="fury"] .fy-tile__sel i:nth-of-type(3) { left: -6px; bottom: -6px; }
+body[data-project="fury"] .fy-tile__sel i:nth-of-type(4) { right: -6px; bottom: -6px; }
+body[data-project="fury"] .fy-tile--night { background: #141417; border: 1px solid #2c2c33; }
+body[data-project="fury"] .fy-tile--limit { grid-area: l; }
+body[data-project="fury"] .fy-tile--limit .fy-tile__art { left: 0; right: 0; bottom: 0; width: 100%; height: 45%; object-fit: cover; object-position: bottom; }
+body[data-project="fury"] .fy-tile--blue { grid-area: c; background: #2a9be4; display: flex; justify-content: flex-end; align-items: center; text-align: right; }
+body[data-project="fury"] .fy-tile--blue .fy-tile__n { position: absolute; right: 1.2rem; top: 1rem; }
+body[data-project="fury"] .fy-tile--blue h4 { font-size: clamp(1.3rem, 1rem + 1vw, 2rem); font-weight: 500; }
+body[data-project="fury"] .fy-tile__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: left; z-index: -1; }
+body[data-project="fury"] .fy-tile--wheel { grid-area: w; }
+body[data-project="fury"] .fy-tile--wheel .fy-tile__art { right: 0; bottom: 0; width: 100%; height: auto; }
+body[data-project="fury"] .fy-tile--pink { grid-area: v; background: var(--fury-pink); text-align: right; }
+body[data-project="fury"] .fy-tile--pink p { margin-left: auto; }
+body[data-project="fury"] .fy-tile--pink .fy-tile__art { left: 0; bottom: 0; width: 100%; height: 58%; object-fit: cover; object-position: left bottom; }
+body[data-project="fury"] .fy-tile--ego { grid-area: e; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); align-items: start; }
+body[data-project="fury"] .fy-tile--ego > div { position: relative; z-index: 1; }
+body[data-project="fury"] .fy-tile--ego .fy-tile__art { right: 0; bottom: 0; width: 72%; height: auto; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-bento {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas: "g l" "c c" "w v" "e e";
+  }
+  body[data-project="fury"] .fy-tile { min-height: 14rem; }
+  body[data-project="fury"] .fy-tile--wheel, body[data-project="fury"] .fy-tile--pink { min-height: 24rem; }
+  body[data-project="fury"] .fy-tile--ego { grid-template-columns: 1fr; min-height: 26rem; }
+  body[data-project="fury"] .fy-tile--ego .fy-tile__art { width: 90%; }
+}
+
+/* --- Scope of work: the staircase ------------------------------------------ */
+body[data-project="fury"] .fy-gantt {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  row-gap: 0.55rem;
+  padding: 2.2rem 0 0.5rem;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), #33333a calc(25% - 1px) 25%);
+}
+body[data-project="fury"] .fy-gantt__weeks {
+  position: absolute; inset: 0 0 auto 0; display: grid; grid-template-columns: repeat(4, 1fr);
+  font-family: var(--fury-sticker); font-size: .75rem; color: var(--fury-lime);
+}
+body[data-project="fury"] .fy-gantt__step {
+  grid-column: calc(var(--i) + 1) / span 2;
+  justify-self: start;
+  white-space: nowrap;
+  font-family: var(--fury-display); font-size: .88rem; color: #111114;
+  background: #e4e4e7; border-radius: 999px; padding: 0.3rem 0.9rem;
+}
+body[data-project="fury"] .fy-gantt__step.is-end { grid-column: 7 / span 2; justify-self: end; background: #000; color: #fff; box-shadow: inset 0 0 0 1px #4a4a52; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-gantt { grid-template-columns: 1fr; background: none; padding-top: 0; }
+  body[data-project="fury"] .fy-gantt__weeks { display: none; }
+  body[data-project="fury"] .fy-gantt__step { grid-column: 1; margin-left: calc(var(--i) * 1.4rem); }
+  body[data-project="fury"] .fy-gantt__step.is-end { grid-column: 1; justify-self: start; }
+}
+
+/* --- Problem ---------------------------------------------------------------- */
+body[data-project="fury"] .fy-prob { background: #18181c; border-radius: 26px; padding: clamp(1.2rem, 3vw, 2.6rem); }
+body[data-project="fury"] .fy-chips { list-style: none; padding: 0; margin: 0 0 2.6rem; display: flex; flex-wrap: wrap; gap: .6rem; }
+body[data-project="fury"] .fy-chips li {
+  display: inline-flex; align-items: center; gap: .65rem;
+  background: linear-gradient(180deg, #e9e9ec, #b9b9bf); color: #111114; border-radius: 8px;
+  padding: .35rem .9rem .35rem .35rem; font-family: var(--fury-display); font-size: .88rem;
+}
+body[data-project="fury"] .fy-chips li::before { content: ''; width: 2rem; height: 1.45rem; border-radius: 5px; background: linear-gradient(135deg, #c7174a, #7f1530); }
+body[data-project="fury"] .fy-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem 1.6rem; align-items: center; }
+body[data-project="fury"] .fy-stat { text-align: center; }
+body[data-project="fury"] .fy-stat b {
+  display: block; font-family: var(--fury-display); font-weight: 700; color: #fff;
+  font-size: clamp(3rem, 2rem + 4vw, 5.6rem); line-height: 1; letter-spacing: -0.05em;
+}
+body[data-project="fury"] .fy-stat small { font-size: .55em; margin: 0 .05em; }
+body[data-project="fury"] .fy-stat span { display: block; margin-top: .6rem; color: #b5b5bd; font-size: .95rem; line-height: 1.45; max-width: 18rem; margin-inline: auto; }
+body[data-project="fury"] .fy-stat--icon img { width: 9rem; margin: 0 auto; }
+body[data-project="fury"] .fy-quote {
+  margin: 0; position: relative; background: var(--fury-pink); color: #fff; border-radius: 14px;
+  padding: 1.4rem 1.6rem 1.6rem 3.4rem; font-family: var(--fury-display); font-weight: 600; font-size: 1.05rem; line-height: 1.5;
+}
+body[data-project="fury"] .fy-quote::before { content: '\201C'; position: absolute; left: 1rem; top: .5rem; font-size: 3.2rem; line-height: 1; }
+body[data-project="fury"] .fy-quote::after { content: '\201D'; position: absolute; right: 1rem; bottom: -1.3rem; font-size: 3.2rem; line-height: 1; }
+@media (max-width: 760px) { body[data-project="fury"] .fy-stats { grid-template-columns: 1fr; } }
+
+/* --- Mind maps -------------------------------------------------------------- */
+body[data-project="fury"] .fy-maps { display: grid; gap: 1.6rem; }
+body[data-project="fury"] .fy-maps figure { margin: 0; }
+body[data-project="fury"] .fy-maps figcaption { color: #8d8d96; font-size: .85rem; margin-top: .6rem; }
+
+/* --- Observation bubbles ------------------------------------------------------ */
+body[data-project="fury"] .fy-bubbles {
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 1rem; align-items: start;
+  background: #fafafa; border-radius: 26px; padding: clamp(1.2rem, 3vw, 2.6rem);
+}
+body[data-project="fury"] .fy-bubble { position: relative; border-radius: 10px; padding: 1.1rem 1.3rem; box-shadow: 0 16px 30px -18px rgba(0,0,0,.45); }
+body[data-project="fury"] .fy-bubble h5 { margin: 0 0 .45rem; font-family: var(--fury-display); font-weight: 600; font-size: 1rem; line-height: 1.3; }
+body[data-project="fury"] .fy-bubble p { margin: 0; font-size: .85rem; line-height: 1.5; opacity: .88; }
+body[data-project="fury"] .fy-bubble::after { content: ''; position: absolute; width: 14px; height: 14px; background: inherit; transform: rotate(45deg); left: -6px; top: 1.4rem; }
+body[data-project="fury"] .fy-bubble--big { grid-column: 1 / span 7; color: #fff; background: #2569a8; margin-top: 2.4rem; }
+body[data-project="fury"] .fy-bubble--big h5 { font-size: 1.3rem; }
+body[data-project="fury"] .fy-bubble--sky { grid-column: 8 / span 5; color: #fff; background: #22aaf2; }
+body[data-project="fury"] .fy-bubble--paper { grid-column: 8 / span 5; color: #111114; background: #fff; border: 1px solid #e4e4e7; margin-top: -1rem; }
+body[data-project="fury"] .fy-bubble--ink { grid-column: 4 / span 5; color: #fff; background: #262a40; margin-top: -1.4rem; }
+body[data-project="fury"] .fy-bubble--pink { grid-column: 9 / span 4; color: #fff; background: var(--fury-pink); margin-top: -0.6rem; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-bubble { grid-column: 1 / -1 !important; margin-top: 0 !important; }
+}
+
+/* --- Interview questions --------------------------------------------------- */
+body[data-project="fury"] .fy-qs {
+  position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem;
+  background: #fafafa; border-radius: 26px; padding: 3rem clamp(1.2rem, 3vw, 2.6rem) clamp(1.2rem, 3vw, 2.6rem);
+}
+body[data-project="fury"] .fy-qs__tag { position: absolute; right: 2.4rem; top: 1rem; transform: rotate(5deg); }
+body[data-project="fury"] .fy-q { background: #f4f5f9; border: 1px solid #e3e5ec; border-radius: 6px; padding: 1.1rem 1.2rem; display: flex; flex-direction: column; justify-content: end; min-height: 9rem; }
+body[data-project="fury"] .fy-q b { font-family: var(--fury-display); color: var(--fury-pink); font-size: 2rem; letter-spacing: -0.03em; }
+body[data-project="fury"] .fy-q p { margin: .5rem 0 0; color: #111114; font-size: .92rem; line-height: 1.5; }
+body[data-project="fury"] .fy-q--01 { min-height: 12rem; }
+body[data-project="fury"] .fy-q--03 { min-height: 15rem; }
+body[data-project="fury"] .fy-q--05 { grid-row: span 2; }
+body[data-project="fury"] .fy-q--07 { grid-column: 1 / -1; min-height: 6rem; }
+@media (max-width: 760px) { body[data-project="fury"] .fy-qs { grid-template-columns: 1fr; } body[data-project="fury"] .fy-q--05 { grid-row: auto; } }
+
+/* --- Insights --------------------------------------------------------------- */
+body[data-project="fury"] .fy-insights { margin: 2rem 0 0; padding-left: 1.2rem; display: grid; gap: .5rem; }
+body[data-project="fury"] .fy-insights li { color: rgba(255,255,255,.9); font-size: 1.05rem; line-height: 1.6; }
+body[data-project="fury"] .fy-insights b { color: #fff; }
+
+/* --- Reading list ------------------------------------------------------------ */
+body[data-project="fury"] .fy-reads { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; counter-reset: rd; }
+body[data-project="fury"] .fy-reads li {
+  background: #fafafa; color: #111114; border-radius: 12px; padding: 1.1rem 1.2rem 1.3rem;
+  font-family: Georgia, 'Times New Roman', serif; font-size: 1.05rem; line-height: 1.35;
+}
+body[data-project="fury"] .fy-reads li:nth-child(3n+2) { font-family: var(--fury-display); font-weight: 600; font-size: .98rem; }
+body[data-project="fury"] .fy-reads li:nth-child(n+7) { opacity: .55; }
+body[data-project="fury"] .fy-reads span { display: block; font-family: var(--fury-sticker); font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--fury-pink); margin-bottom: .5rem; }
+@media (max-width: 760px) { body[data-project="fury"] .fy-reads { grid-template-columns: 1fr; } }
+
+/* --- Survey charts ----------------------------------------------------------- */
+body[data-project="fury"] .fy-survey {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem;
+}
+body[data-project="fury"] .fy-survey__n { grid-column: 1 / -1; display: flex; align-items: baseline; gap: .7rem; }
+body[data-project="fury"] .fy-survey__n b { font-family: var(--fury-display); font-size: 3.2rem; letter-spacing: -0.04em; color: var(--fury-lime); line-height: 1; }
+body[data-project="fury"] .fy-survey__n span { color: #9a9aa3; font-family: var(--fury-sticker); }
+body[data-project="fury"] .fy-chart { margin: 0; background: var(--fury-card); border: 1px solid #303037; border-radius: 14px; padding: 1.2rem 1.3rem; }
+body[data-project="fury"] .fy-chart figcaption { font-size: .9rem; color: #e4e4e7; line-height: 1.4; margin-bottom: 1rem; min-height: 2.5em; }
+body[data-project="fury"] .fy-pie__row { display: flex; align-items: center; gap: 1.4rem; }
+body[data-project="fury"] .fy-pie__disc { width: 7.5rem; aspect-ratio: 1; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+body[data-project="fury"] .fy-pie__key { list-style: none; padding: 0; margin: 0; display: grid; gap: .45rem; font-size: .88rem; color: #c3c3ca; }
+body[data-project="fury"] .fy-pie__key i { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .5rem; vertical-align: -1px; }
+body[data-project="fury"] .fy-pie__key b { color: #fff; margin-left: .25rem; }
+body[data-project="fury"] .fy-bars__plot { display: grid; grid-template-columns: repeat(5, 1fr); gap: .6rem; height: 9rem; align-items: end; border-bottom: 1px solid #3a3a42; }
+body[data-project="fury"] .fy-bars__col { height: 100%; display: flex; flex-direction: column; justify-content: end; align-items: center; position: relative; }
+body[data-project="fury"] .fy-bars__col i { width: 100%; background: linear-gradient(180deg, #a993e6, #7d68c9); border-radius: 4px 4px 0 0; }
+body[data-project="fury"] .fy-bars__v { font-size: .72rem; color: #c3c3ca; margin-bottom: .3rem; }
+body[data-project="fury"] .fy-bars__x { position: absolute; bottom: -1.4rem; font-size: .72rem; color: #8d8d96; }
+body[data-project="fury"] .fy-bars__ends { display: flex; justify-content: space-between; margin: 1.6rem 0 0; font-size: .72rem; color: #8d8d96; font-family: var(--fury-sticker); }
+@media (max-width: 760px) { body[data-project="fury"] .fy-survey { grid-template-columns: 1fr; } }
+
+/* --- Personas ----------------------------------------------------------------
+   Each persona is its own panel: a tinted ground, an accent taken from its
+   avatar (Salman green, Babita coral), its number set large in that accent,
+   and room between the cards. The two panels read as two people, not one grid. */
+body[data-project="fury"] .fy-persona {
+  --acc: #8fd16a;
+  position: relative; isolation: isolate; overflow: hidden;
+  display: grid; gap: 1.25rem;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "id id id" "demo g c" "demo b m";
+  padding: clamp(1.4rem, 3.5vw, 3rem);
+  margin-bottom: clamp(3rem, 7vw, 5.5rem);
+  border-radius: 28px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--acc) 12%, #1d1d22), #1b1b20 55%);
+  border: 1px solid color-mix(in srgb, var(--acc) 28%, #2c2c33);
+}
+body[data-project="fury"] .fy-persona--flip { --acc: #ec6a66; grid-template-areas: "id id id" "demo g c" "demo b m"; }
+body[data-project="fury"] .fy-persona__n {
+  position: absolute; right: clamp(1rem, 3vw, 2.6rem); top: clamp(.4rem, 2vw, 1.4rem); left: auto;
+  font-family: var(--fury-display); font-weight: 700; line-height: 1; letter-spacing: -0.06em;
+  font-size: clamp(5rem, 3rem + 7vw, 9.5rem); color: var(--acc); opacity: .16; z-index: -1;
+}
+body[data-project="fury"] .fy-pc { background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.06); border-radius: 16px; padding: 1.5rem 1.6rem; color: #d4d4d8; }
+body[data-project="fury"] .fy-pc:nth-of-type(3) { grid-area: g; }
+body[data-project="fury"] .fy-pc:nth-of-type(4) { grid-area: c; }
+body[data-project="fury"] .fy-pc:nth-of-type(5) { grid-area: b; }
+body[data-project="fury"] .fy-pc:nth-of-type(6) { grid-area: m; }
+body[data-project="fury"] .fy-pc h5 { margin: 0 0 .9rem; font-family: var(--fury-display); font-weight: 600; font-size: 1.05rem; color: #fff; }
+body[data-project="fury"] .fy-pc ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .65rem; font-size: .9rem; line-height: 1.6; color: #b5b5bd; }
+body[data-project="fury"] .fy-pc li::marker { color: var(--acc); }
+body[data-project="fury"] .fy-pc--id {
+  grid-area: id; display: flex; align-items: center; gap: 1.4rem;
+  background: none; border: 0; padding: 0 0 1.6rem; border-radius: 0;
+  border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: .4rem;
+}
+body[data-project="fury"] .fy-pc--id img { width: 6.5rem; height: 6.5rem; border-radius: 18px; box-shadow: 0 0 0 3px var(--acc); }
+body[data-project="fury"] .fy-pc--id b { font-family: var(--fury-display); font-size: clamp(1.8rem, 1.3rem + 1.5vw, 2.6rem); font-weight: 700; color: #fff; letter-spacing: -0.035em; line-height: 1; }
+body[data-project="fury"] .fy-pc--demo { grid-area: demo; }
+body[data-project="fury"] .fy-pc--demo dl { margin: 0 0 1.8rem; display: grid; gap: .55rem; font-size: .92rem; }
+body[data-project="fury"] .fy-pc--demo dl div { display: flex; gap: .4rem; }
+body[data-project="fury"] .fy-pc--demo dt { color: #fff; font-weight: 600; }
+body[data-project="fury"] .fy-pc--demo dd { margin: 0; color: #b5b5bd; }
+body[data-project="fury"] .fy-slider { position: relative; display: flex; justify-content: space-between; font-size: .72rem; color: #e4e4e7; font-weight: 600; padding-bottom: .7rem; margin: 1.1rem 0 0; border-bottom: 1px solid rgba(255,255,255,.18); }
+body[data-project="fury"] .fy-slider i { position: absolute; bottom: -5px; left: var(--at); width: 9px; height: 9px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 0 3px #1d1d22; }
+@media (max-width: 900px) {
+  body[data-project="fury"] .fy-persona, body[data-project="fury"] .fy-persona--flip { grid-template-columns: 1fr 1fr; grid-template-areas: "id id" "demo demo" "g c" "b m"; }
+}
+@media (max-width: 600px) {
+  body[data-project="fury"] .fy-persona, body[data-project="fury"] .fy-persona--flip { grid-template-columns: 1fr; grid-template-areas: "id" "demo" "g" "c" "b" "m"; }
+  body[data-project="fury"] .fy-pc--id img { width: 4.5rem; height: 4.5rem; }
+}
+
+/* --- Empathy map ---------------------------------------------------------------
+   The classic four quadrants, as a single panel: Thinks & Feels and Says & Does
+   on top, Hears and Sees below, a cross dividing them and the person at the
+   centre where the cross meets. Each quadrant's text sits in its outer corner
+   and keeps clear of the avatar; icons sit beside their headings. */
+body[data-project="fury"] .fy-empathy {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: "tf sd" "he se";
+  border-radius: 28px;
+  background: #1d1d22;
+  border: 1px solid #2c2c33;
+  overflow: hidden;
+}
+body[data-project="fury"] .fy-empathy::before,
+body[data-project="fury"] .fy-empathy::after { content: ''; position: absolute; background: #34343c; }
+body[data-project="fury"] .fy-empathy::before { left: 50%; top: 0; bottom: 0; width: 1px; }
+body[data-project="fury"] .fy-empathy::after { top: 50%; left: 0; right: 0; height: 1px; }
+body[data-project="fury"] .fy-emp { padding: clamp(1.6rem, 3vw, 2.6rem); text-align: left; min-height: 15rem; }
+body[data-project="fury"] .fy-emp--top { grid-area: tf; padding-right: 7rem; padding-bottom: 6rem; }
+body[data-project="fury"] .fy-emp--right { grid-area: sd; padding-left: 7rem; padding-bottom: 6rem; text-align: right; }
+body[data-project="fury"] .fy-emp--left { grid-area: he; padding-right: 7rem; padding-top: 6rem; }
+body[data-project="fury"] .fy-emp--bottom { grid-area: se; padding-left: 7rem; padding-top: 6rem; text-align: right; }
+body[data-project="fury"] .fy-emp h5 {
+  display: flex; align-items: center; gap: .6rem;
+  font-family: var(--fury-display); font-weight: 600; font-size: 1.25rem; letter-spacing: -0.02em; color: #fff; margin: 0 0 1rem;
+}
+body[data-project="fury"] .fy-emp--right h5, body[data-project="fury"] .fy-emp--bottom h5 { justify-content: flex-end; }
+body[data-project="fury"] .fy-emp svg {
+  float: none; display: inline-block; margin: 0 0 .7rem; width: 2.4rem; height: 2.4rem; padding: .5rem;
+  border-radius: 50%; background: rgba(245, 45, 93, .14); stroke: var(--fury-pink);
+  fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+}
+body[data-project="fury"] .fy-emp ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; font-size: .9rem; line-height: 1.55; color: #b5b5bd; max-width: 26rem; }
+body[data-project="fury"] .fy-emp--right ul, body[data-project="fury"] .fy-emp--bottom ul { margin-left: auto; }
+body[data-project="fury"] .fy-emp--top li { font-style: italic; color: #d4d4d8; }
+body[data-project="fury"] .fy-emp__me {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1;
+  width: 10rem; height: 10rem; border-radius: 50%; padding: .6rem;
+  background: #1d1d22; border: 1.5px dashed #6d6d75;
+}
+body[data-project="fury"] .fy-emp__me img { width: 100%; height: 100%; border-radius: 50%; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-empathy { grid-template-columns: 1fr; grid-template-areas: "me" "tf" "sd" "he" "se"; }
+  body[data-project="fury"] .fy-empathy::before, body[data-project="fury"] .fy-empathy::after { display: none; }
+  body[data-project="fury"] .fy-emp__me { position: static; transform: none; grid-area: me; justify-self: center; margin: 1.6rem 0 .4rem; width: 8rem; height: 8rem; }
+  body[data-project="fury"] .fy-emp { padding: 1.4rem 1.4rem !important; min-height: 0; text-align: left !important; border-top: 1px solid #2c2c33; }
+  body[data-project="fury"] .fy-emp h5 { justify-content: flex-start !important; }
+  body[data-project="fury"] .fy-emp ul { margin-left: 0 !important; }
+}
+
+/* --- Existing treatment ------------------------------------------------------ */
+body[data-project="fury"] .fy-treat { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: #fafafa; border-radius: 26px; padding: clamp(1rem, 3vw, 2.2rem); }
+body[data-project="fury"] .fy-treat__card { border: 1.5px dashed #9a9aa3; border-radius: 6px; padding: 1.2rem; color: #111114; }
+body[data-project="fury"] .fy-treat__card h5 { font-family: var(--fury-display); font-weight: 600; font-size: 1.1rem; margin: 0 0 .5rem; }
+body[data-project="fury"] .fy-treat__card p { font-size: .88rem; line-height: 1.5; margin: 0 0 1rem; color: #3a3a40; }
+body[data-project="fury"] .fy-treat__card img { margin: 0 auto; max-height: 20rem; width: auto; mix-blend-mode: multiply; }
+@media (max-width: 760px) { body[data-project="fury"] .fy-treat { grid-template-columns: 1fr; } }
+
+/* --- Why VR ------------------------------------------------------------------ */
+body[data-project="fury"] .fy-why {
+  display: grid; grid-template-columns: 1fr auto 1fr; grid-template-rows: auto auto;
+  grid-template-areas: "a h b" "c h d"; gap: 2rem 2.5rem; align-items: center; margin: 4rem 0 2rem;
+}
+body[data-project="fury"] .fy-why__h {
+  grid-area: h; margin: 0; font-family: var(--fury-display); font-weight: 800; color: var(--fury-pink);
+  font-size: clamp(3.2rem, 2rem + 5vw, 6.5rem); letter-spacing: -0.05em; line-height: 1;
+}
+body[data-project="fury"] .fy-why__pt h5 { display: flex; align-items: center; gap: .6rem; margin: 0 0 .4rem; font-family: var(--fury-sticker); font-weight: 600; font-size: 1.15rem; color: var(--fury-pink); }
+body[data-project="fury"] .fy-why__pt h5::before { content: ''; width: .8rem; height: .8rem; border-radius: 50%; background: var(--fury-pink); box-shadow: 0 0 0 3px #18181c, 0 0 0 4.5px var(--fury-pink); flex: none; }
+body[data-project="fury"] .fy-why__pt p { margin: 0; color: #b5b5bd; font-size: .9rem; line-height: 1.5; max-width: 19rem; }
+body[data-project="fury"] .fy-why__pt--a { grid-area: a; text-align: right; } body[data-project="fury"] .fy-why__pt--a h5 { justify-content: flex-end; flex-direction: row-reverse; } body[data-project="fury"] .fy-why__pt--a p, body[data-project="fury"] .fy-why__pt--c p { margin-left: auto; }
+body[data-project="fury"] .fy-why__pt--b { grid-area: b; }
+body[data-project="fury"] .fy-why__pt--c { grid-area: c; text-align: right; } body[data-project="fury"] .fy-why__pt--c h5 { justify-content: flex-end; flex-direction: row-reverse; }
+body[data-project="fury"] .fy-why__pt--d { grid-area: d; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-why { grid-template-columns: 1fr; grid-template-areas: "h" "a" "b" "c" "d"; }
+  body[data-project="fury"] .fy-why__pt { text-align: left !important; }
+  body[data-project="fury"] .fy-why__pt h5 { justify-content: flex-start !important; flex-direction: row !important; }
+  body[data-project="fury"] .fy-why__pt p { margin-left: 0 !important; }
+}
+
+/* --- Visualisation ---------------------------------------------------------- */
+body[data-project="fury"] .fy-vis { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 2rem; align-items: center; }
+body[data-project="fury"] .fy-vis__pills { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: .8rem; }
+body[data-project="fury"] .fy-vis__pills li {
+  display: inline-flex; align-items: center; gap: .8rem; border: 1px solid #4a4a52; border-radius: 999px;
+  padding: .35rem 1.4rem .35rem .35rem; color: #e4e4e7; font-family: var(--fury-display); font-size: .92rem;
+  transform: translateY(calc(sin(var(--i) * 1.7rad) * .6rem));
+}
+body[data-project="fury"] .fy-vis__pills i { width: 2.4rem; height: 2.4rem; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f6d3e0, #c99ab5); box-shadow: 0 0 0 1px #6d6d75; }
+body[data-project="fury"] .fy-vis__txt h4 { font-family: var(--fury-sticker); color: var(--fury-pink); font-size: 1.1rem; margin: 0 0 .6rem; }
+body[data-project="fury"] .fy-vis__txt p { color: #c3c3ca; line-height: 1.7; margin: 0; }
+@media (max-width: 760px) { body[data-project="fury"] .fy-vis { grid-template-columns: 1fr; } }
+
+/* --- Proposed solution ------------------------------------------------------ */
+body[data-project="fury"] .fy-dual__name { display: inline-block; margin: 4.5rem 0 1rem; background: var(--fury-pink); color: #fff; border-radius: 999px; padding: .45rem 1.4rem; font-family: var(--fury-display); font-size: 1.1rem; }
+body[data-project="fury"] .fy-dual__p { max-width: 40rem; margin: 0 auto; color: #e4e4e7; line-height: 1.8; }
+body[data-project="fury"] .fy-dual__p mark { background: #33333a; color: var(--fury-lime); border-radius: 999px; padding: .1em .7em; }
+body[data-project="fury"] .fy-app__ico { display: grid; place-items: center; border-radius: 50%; overflow: hidden; }
+body[data-project="fury"] .fy-app__ico--pink { background: var(--fury-pink); margin-left: auto; }
+body[data-project="fury"] .fy-app__ico--lime { background: var(--fury-lime); }
+/* --- Proposed solution: the journey from phone to headset -----------------
+   fury.js `dual` + its runner. A tall run with a pinned frame; the scroll is
+   the clock (--p and the vars the runner writes). Every position on the
+   stage is a share of one 1000 x 560 plate, every size a share of its width. */
+body[data-project="fury"] #solution { text-align: center; }
+body[data-project="fury"] #solution .sec__eyebrow { display: block; width: fit-content; margin: 0 auto -0.1rem; translate: -5.4em 0; }
+body[data-project="fury"] #solution .sec__heading { margin-inline: auto; max-width: none; font-size: clamp(2.4rem, 1.4rem + 3.6vw, 4.6rem); }
+
+body[data-project="fury"] .fy-eco { --p: 0; --iris: 0%; --off: 1; --pglow: 1; --vglow: 0; --spot: 0; text-align: center; }
+body[data-project="fury"] .fy-eco__run { position: relative; height: 340vh; margin-top: clamp(1rem, 3vw, 2rem); }
+body[data-project="fury"] .fy-eco__pin {
+  position: sticky; top: 0; height: 100vh; height: 100svh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(.6rem, 2vh, 1.4rem);
+}
+
+/* the caption: which part of the journey you are in */
+body[data-project="fury"] .fy-eco__cap { position: relative; width: 100%; height: 5.6rem; }
+body[data-project="fury"] .fy-eco__step {
+  position: absolute; inset: 0; display: grid; justify-items: center; align-content: center; gap: .35rem;
+  opacity: 0; translate: 0 14px; transition: opacity .45s ease, translate .6s cubic-bezier(.2, .8, .2, 1); pointer-events: none;
+}
+body[data-project="fury"] .fy-eco__step.is-on { opacity: 1; translate: 0 0; }
+body[data-project="fury"] .fy-eco__step b { font-family: var(--fury-display); font-size: .75rem; letter-spacing: .14em; color: var(--fury-pink); }
+body[data-project="fury"] .fy-eco__st { font-family: var(--fury-display); font-weight: 700; font-size: clamp(1.4rem, 1rem + 1.4vw, 2.2rem); letter-spacing: -.03em; color: #fff; }
+body[data-project="fury"] .fy-eco__sp { color: #a1a1aa; font-size: .95rem; }
+
+body[data-project="fury"] .fy-eco__stage {
+  position: relative; container-type: inline-size;
+  width: min(100%, calc((100svh - 12rem) * 1000 / 560)); aspect-ratio: 1000 / 560;
+}
+body[data-project="fury"] .fy-eco__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+body[data-project="fury"] .fy-eco__ghost { fill: none; stroke: #34343c; stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1 9; }
+body[data-project="fury"] .fy-eco__arc { fill: none; stroke-width: 4.5; stroke-linecap: round; stroke-dasharray: 1 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 6px rgba(191, 238, 97, .35)); }
+body[data-project="fury"] .fy-eco__pen { fill: none; stroke: #fff; stroke-width: 14; stroke-linecap: round; stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+body[data-project="fury"] .fy-eco__dash { fill: none; stroke: #7a7a82; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 4 5; }
+
+/* the phone */
+body[data-project="fury"] .fy-eco__dev { position: absolute; z-index: 1; }
+body[data-project="fury"] .fy-eco__phone {
+  left: 23.5%; top: 12.5%; width: 16%; height: 62%; box-sizing: border-box; padding: .55cqw;
+  border-radius: 3cqw; background: #0b0b0d;
+  box-shadow: 0 0 0 .22cqw #34343c, 0 3cqw 6cqw -2cqw #000, 0 0 calc(7cqw * var(--pglow)) calc(.6cqw * var(--pglow)) rgba(245, 45, 93, calc(.45 * var(--pglow)));
+}
+body[data-project="fury"] .fy-eco__screen { position: relative; height: 100%; border-radius: 2.5cqw; overflow: hidden; background: #000; }
+body[data-project="fury"] .fy-eco__shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; opacity: 0; will-change: opacity, transform; }
+body[data-project="fury"] .fy-eco__screen .fy-eco__shot:first-child { opacity: 1; }
+body[data-project="fury"] .fy-eco__island { position: absolute; left: 50%; top: 1.4%; width: 32%; height: 2.6%; translate: -50% 0; border-radius: 99px; background: #000; }
+/* the Toolkit's reflections, lit for the handoff */
+body[data-project="fury"] .fy-eco__spot {
+  position: absolute; left: 3%; right: 3%; top: 31.5%; height: 21%; border-radius: 1.2cqw;
+  border: .25cqw solid var(--fury-lime); box-shadow: 0 0 2.4cqw rgba(191, 238, 97, .7), inset 0 0 1.4cqw rgba(191, 238, 97, .35);
+  opacity: var(--spot); scale: calc(.96 + .04 * var(--spot));
+}
+
+/* the headset: a visor-shaped lens on a bezel, glowing when it is in use */
+body[data-project="fury"] .fy-eco__visor { left: 54.5%; top: 26.8%; width: 30%; height: 33.9%; }
+body[data-project="fury"] .fy-eco__visor::before {
+  content: ''; position: absolute; inset: -14%; border-radius: 40%;
+  background: radial-gradient(closest-side, rgba(191, 238, 97, .45), transparent); opacity: var(--vglow); filter: blur(2cqw); z-index: -1;
+}
+body[data-project="fury"] .fy-eco__lens { position: absolute; inset: 0; clip-path: url(#fyEcoVisor); background: linear-gradient(160deg, #3a3a42, #141417); }
+body[data-project="fury"] .fy-eco__view { position: absolute; inset: 4.5% 2.6% 4.5% 2.6%; clip-path: url(#fyEcoVisor); background: #050506; }
+body[data-project="fury"] .fy-eco__iris { position: absolute; inset: 0; clip-path: circle(var(--iris) at 50% 46%); }
+body[data-project="fury"] .fy-eco__view .fy-eco__shot { object-position: center; }
+body[data-project="fury"] .fy-eco__iris .fy-eco__shot:first-child { opacity: 1; }
+body[data-project="fury"] .fy-eco__off {
+  position: absolute; inset: 0; display: grid; place-items: center; opacity: var(--off); pointer-events: none;
+  background: radial-gradient(circle at 50% 40%, #1b1b20, #050506 70%);
+}
+body[data-project="fury"] .fy-eco__off span { font-family: var(--fury-display); font-size: 1.1cqw; letter-spacing: .18em; text-transform: uppercase; color: #5b5b63; }
+
+body[data-project="fury"] .fy-eco__name { position: absolute; z-index: 1; font-family: var(--fury-display); font-weight: 700; font-size: 1.7cqw; color: #fff; white-space: nowrap; translate: -50% 0; }
+body[data-project="fury"] .fy-eco__name b { font-size: .8em; padding: .15em .45em; margin-right: .3em; border-radius: .4em; color: #fff; background: var(--fury-pink); }
+body[data-project="fury"] .fy-eco__name--m { left: 31.5%; top: 78.5%; }
+body[data-project="fury"] .fy-eco__name--v { left: 69.5%; top: 64.5%; }
+body[data-project="fury"] .fy-eco__name--v b { background: var(--fury-lime); color: #0d0d0f; }
+
+/* the notes: written on as the scroll reaches them */
+body[data-project="fury"] .fy-eco__notes { list-style: none; margin: 0; padding: 0; }
+body[data-project="fury"] .fy-eco__notes li {
+  --q: 0; position: absolute; z-index: 1; translate: 0 -50%; max-width: 21cqw;
+  font-family: 'Swanky and Moo Moo', var(--fury-sticker), cursive; font-size: 1.95cqw; line-height: 1.05; color: #d4d4d8;
+}
+body[data-project="fury"] .fy-eco__notes--l li { text-align: right; }
+body[data-project="fury"] .fy-eco__notes--r li { max-width: 12.6cqw; }
+body[data-project="fury"] .fy-eco__notes li span { display: inline-block; clip-path: inset(-20% calc((1 - var(--q)) * 102%) -20% -2%); }
+body[data-project="fury"] .fy-eco__notes li.is-on span { text-shadow: 0 0 1.4cqw rgba(255, 255, 255, .12); }
+
+/* you, travelling between them */
+body[data-project="fury"] .fy-eco__you {
+  position: absolute; z-index: 3; width: 5.4cqw; aspect-ratio: 1; border-radius: 50%; overflow: hidden; opacity: 0;
+  background: var(--fury-lime); border: .32cqw solid #fff;
+  box-shadow: 0 0 0 .6cqw rgba(191, 238, 97, .25), 0 0 3cqw rgba(191, 238, 97, .8);
+}
+body[data-project="fury"] .fy-eco__you img { width: 100%; height: 100%; object-fit: cover; }
+body[data-project="fury"] .fy-eco__link { display: none; }
+
+/* where you are in it */
+body[data-project="fury"] .fy-eco__rail { list-style: none; display: flex; gap: .5rem; margin: 0; padding: 0; }
+body[data-project="fury"] .fy-eco__rail li { width: 1.6rem; height: 4px; border-radius: 4px; background: #34343c; transition: background .3s ease, width .4s ease; }
+body[data-project="fury"] .fy-eco__rail li.is-on { background: var(--fury-lime); }
+body[data-project="fury"] .fy-eco__rail li.is-on:last-of-type, body[data-project="fury"] .fy-eco__rail li.is-on:has(+ li:not(.is-on)) { width: 3rem; }
+
+body[data-project="fury"] .fy-eco .fy-dual__name { margin-top: clamp(1rem, 3vw, 2rem); }
+
+/* --- flat: phones and reduced motion. The same parts, stacked. ------------ */
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__run { height: auto; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__pin { position: static; height: auto; }
+body[data-project="fury"] .fy-eco.is-flat :is(.fy-eco__cap, .fy-eco__rail, .fy-eco__svg, .fy-eco__you, .fy-eco__spot) { display: none; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__stage { width: 100%; aspect-ratio: auto; display: flex; flex-direction: column; align-items: center; gap: 1rem; container-type: normal; }
+body[data-project="fury"] .fy-eco.is-flat :is(.fy-eco__dev, .fy-eco__name) { position: relative; left: auto; top: auto; translate: none; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__phone { order: 1; width: min(56vw, 15rem); height: auto; aspect-ratio: 543 / 1179; padding: .4rem; border-radius: 2rem; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__screen { border-radius: 1.6rem; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__name--m { order: 2; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__notes--l { order: 3; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__link { order: 4; display: grid; place-items: center; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__link svg { width: 2.2rem; height: 3.6rem; fill: none; stroke: var(--fury-lime); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__visor { order: 5; width: 100%; height: auto; aspect-ratio: 1.6; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__name--v { order: 6; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__notes--r { order: 7; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__name { font-size: 1.15rem; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__notes { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__notes li { position: static; translate: none; max-width: none; font-size: 1.1rem; padding: .3rem .8rem; border: 1px dashed #4a4a52; border-radius: 999px; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__notes li span { clip-path: none; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__shot { transition: opacity .6s ease; }
+
+/* --- Proposed solution: real devices ---------------------------------------
+   The phone is an iPhone built in CSS: a natural-titanium band, a black glass
+   bezel, the Dynamic Island, the side buttons and a sheen across the glass.
+   It turns to face you while it is in use. The headset is the real Quest 2
+   render, standing in front of what you see inside it: a curved screen that
+   opens like an iris on the handoff. */
+body[data-project="fury"] .fy-eco__phone {
+  left: 22.4%; top: 10.5%; width: 15.6%; height: 63.6%; padding: .34cqw; border-radius: 2.75cqw;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.55), rgba(255,255,255,0) 6%, rgba(255,255,255,0) 94%, rgba(255,255,255,.4)),
+    linear-gradient(160deg, #e3e2de 0%, #a7a59f 22%, #5e5d59 48%, #8f8d87 70%, #d4d2cc 100%);
+  box-shadow:
+    inset 0 0 0 .07cqw rgba(255,255,255,.65),
+    0 2.6cqw 4cqw -1.6cqw rgba(0,0,0,.9),
+    0 0 calc(8cqw * var(--pglow)) calc(.4cqw * var(--pglow)) rgba(245, 45, 93, calc(.42 * var(--pglow)));
+  transform: perspective(110cqw) rotateY(calc(16deg * (1 - var(--pglow)))) rotateX(calc(4deg * (1 - var(--pglow))));
+  transition: transform .2s linear;
+}
+/* side buttons: action + volume on the left, power on the right */
+body[data-project="fury"] .fy-eco__phone::before,
+body[data-project="fury"] .fy-eco__phone::after {
+  content: ''; position: absolute; width: .26cqw; border-radius: .2cqw;
+  background: linear-gradient(90deg, #6f6e69, #c9c7c1);
+}
+body[data-project="fury"] .fy-eco__phone::before {
+  left: -.22cqw; top: 17%; height: 4.5%;
+  box-shadow: 0 3.4cqw 0 0 #a6a49e, 0 3.4cqw 0 0 #a6a49e;
+}
+body[data-project="fury"] .fy-eco__phone::after { right: -.22cqw; top: 26%; height: 11%; background: linear-gradient(90deg, #c9c7c1, #6f6e69); }
+/* the two volume keys, drawn as one element's shadows so the frame stays one box */
+body[data-project="fury"] .fy-eco__phone .fy-eco__screen::before {
+  content: ''; position: absolute; left: -.6cqw; top: 27%; width: .26cqw; height: 7%; border-radius: .2cqw;
+  background: linear-gradient(90deg, #6f6e69, #c9c7c1); box-shadow: 0 6.2cqw 0 0 #a6a49e; z-index: -1;
+}
+body[data-project="fury"] .fy-eco__screen { position: relative; overflow: visible; border-radius: 2.42cqw; background: #050506; box-sizing: border-box; border: .5cqw solid #050506; }
+body[data-project="fury"] .fy-eco__screen > img, body[data-project="fury"] .fy-eco__screen > .fy-eco__spot { border-radius: 1.95cqw; }
+body[data-project="fury"] .fy-eco__screen > img { clip-path: inset(0 round 1.95cqw); }
+body[data-project="fury"] .fy-eco__screen::after {
+  content: ''; position: absolute; inset: 0; border-radius: 1.95cqw; pointer-events: none; z-index: 2;
+  background: linear-gradient(118deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.04) 26%, rgba(255,255,255,0) 40%);
+}
+body[data-project="fury"] .fy-eco__island { top: 1.5%; width: 31%; height: 3.6%; z-index: 3; box-shadow: inset .3cqw 0 .4cqw rgba(40, 40, 60, .9); }
+
+/* inside the headset: a curved screen, floating */
+body[data-project="fury"] .fy-eco__visor { left: 52%; top: 12%; width: 34%; height: 33%; transform: perspective(90cqw) rotateY(-18deg); transform-origin: left center; }
+body[data-project="fury"] .fy-eco__visor::before { inset: -18% -10%; }
+body[data-project="fury"] .fy-eco__lens {
+  clip-path: none; border-radius: 1.3cqw; background: #0c0c0f;
+  box-shadow: inset 0 0 0 .08cqw rgba(255,255,255,.18), 0 2.4cqw 4cqw -1.6cqw rgba(0,0,0,.9);
+}
+body[data-project="fury"] .fy-eco__view { inset: .45cqw; clip-path: none; border-radius: 1cqw; overflow: hidden; }
+body[data-project="fury"] .fy-eco__view::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,0) 30%), radial-gradient(120% 90% at 50% 50%, transparent 60%, rgba(0,0,0,.5));
+}
+body[data-project="fury"] .fy-eco__off span { font-size: 1cqw; }
+
+/* the headset itself */
+body[data-project="fury"] .fy-eco__quest {
+  position: absolute; z-index: 2; left: 57%; top: 44.5%; width: 26%; height: auto; pointer-events: none;
+  filter: drop-shadow(0 1.6cqw 1.6cqw rgba(0,0,0,.8)) drop-shadow(0 0 calc(2.6cqw * var(--vglow)) rgba(191, 238, 97, calc(.55 * var(--vglow))));
+  animation: fyQuestFloat 6s ease-in-out infinite;
+}
+@keyframes fyQuestFloat { 50% { translate: 0 -.8cqw; rotate: -1.2deg; } }
+body[data-project="fury"] .fy-eco__name--m { left: 30.2%; top: 78.6%; }
+body[data-project="fury"] .fy-eco__name--v { left: 70%; top: 83%; }
+
+@media (prefers-reduced-motion: reduce) { body[data-project="fury"] .fy-eco__quest { animation: none; } }
+
+/* flat */
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__phone { transform: none; border-radius: 2.4rem; padding: .3rem; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__screen { border-width: .35rem; border-radius: 2.1rem; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__screen > img, body[data-project="fury"] .fy-eco.is-flat .fy-eco__screen::after { border-radius: 1.75rem; clip-path: inset(0 round 1.75rem); }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__phone::before, body[data-project="fury"] .fy-eco.is-flat .fy-eco__phone::after, body[data-project="fury"] .fy-eco.is-flat .fy-eco__screen::before { display: none; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__visor { transform: none; aspect-ratio: 1.85; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__lens { border-radius: 14px; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__view { inset: 4px; border-radius: 11px; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__quest { position: relative; left: auto; top: auto; order: 5; width: 62%; margin: -2.5rem auto -.5rem; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__name--v { order: 6; }
+
+/* --- Information architecture ----------------------------------------------- */
+/* --- Information architecture, as a map you can point at ------------------
+   fury.js `FIA`. The same reading as the X0 map (point at a screen, what it
+   connects to stays lit and the rest steps back, the readout says what it is
+   made of), in Fury's ink: hairline boxes on the light window, the spine in
+   Sora, the four tabs as the pink pills they were on the board, the check-in
+   in navy. The rest steps back by colour, never by opacity, because opacity
+   is what the draw-in animates. */
+body[data-project="fury"] .fy-win--ia .fy-win__in { padding: clamp(1.2rem, 3.4vw, 2.8rem); }
+body[data-project="fury"] .fia { --ink: #111114; --line: #d9d9de; --dim: #6d6d75; --navy: #1b2a44; color: var(--ink); }
+
+body[data-project="fury"] .fia__fit { position: relative; display: grid; justify-items: center; min-width: 0; }
+body[data-project="fury"] .fia__fit.is-pan { justify-items: start; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+body[data-project="fury"] .fia__size { --k: 1; position: relative; flex: none; width: calc(var(--w) * var(--k)); height: calc(var(--h) * var(--k)); }
+body[data-project="fury"] .fia__canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; scale: var(--k); }
+body[data-project="fury"] .fia__wires { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+
+/* wires: drawn out once, then they only change colour */
+body[data-project="fury"] .fia__e {
+  fill: none; stroke: rgba(17, 17, 20, 0.42); stroke-width: 1;
+  stroke-linecap: butt; stroke-linejoin: round;
+  transition: stroke 0.22s ease;
+}
+body[data-project="fury"] .fia__e--soft { stroke: rgba(17, 17, 20, 0.2); }
+body[data-project="fury"] .fia__line { vector-effect: non-scaling-stroke; stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+body[data-project="fury"] .fia__head { vector-effect: non-scaling-stroke; opacity: 0; }
+body[data-project="fury"] .fia.is-in .fia__line {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.55s cubic-bezier(.4, 0, .2, 1) calc(0.12s + var(--i) * 0.035s), stroke 0.22s ease;
+}
+body[data-project="fury"] .fia.is-in .fia__head { opacity: 1; transition: opacity 0.2s ease calc(0.6s + var(--i) * 0.035s); }
+
+/* boxes */
+body[data-project="fury"] .fia__n {
+  position: absolute; box-sizing: border-box; margin: 0; padding: 0 12px;
+  display: grid; align-content: center; gap: 3px; text-align: left;
+  font: inherit; color: var(--ink); background: #fff;
+  border: 1px solid var(--line); border-radius: 6px;
+  cursor: default; -webkit-tap-highlight-color: transparent;
+  opacity: 0; translate: 0 6px;
+  transition: color .22s ease, border-color .22s ease, background-color .22s ease, box-shadow .22s ease;
+}
+body[data-project="fury"] .fia.is-in .fia__n {
+  opacity: 1; translate: 0 0;
+  transition: opacity .45s ease calc(var(--i) * 0.035s), translate .6s cubic-bezier(.2, .7, .2, 1) calc(var(--i) * 0.035s),
+    color .22s ease, border-color .22s ease, background-color .22s ease, box-shadow .22s ease;
+}
+body[data-project="fury"] .fia.is-still .fia__n { opacity: 1; translate: 0 0; }
+body[data-project="fury"] .fia.is-still .fia__line { stroke-dashoffset: 0; }
+body[data-project="fury"] .fia.is-still .fia__head { opacity: 1; }
+body[data-project="fury"] .fia__n:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+body[data-project="fury"] .fia__t { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; font-weight: 500; line-height: 1.2; white-space: nowrap; }
+body[data-project="fury"] .fia__m { display: block; font-size: 10.5px; line-height: 1.3; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .22s ease; }
+
+/* the way in: Sora, a firm hairline, centred like the board */
+body[data-project="fury"] .fia__n--spine { border-color: var(--ink); justify-items: center; text-align: center; }
+body[data-project="fury"] .fia__n--spine .fia__t { font-family: var(--fury-display); font-size: 13.5px; }
+/* the check-in: the one dark box on the map */
+body[data-project="fury"] .fia__n--check { background: var(--navy); border-color: var(--navy); color: #fff; justify-items: center; text-align: center; box-shadow: 0 10px 24px -14px rgba(27, 42, 68, .6); }
+body[data-project="fury"] .fia__n--check .fia__t { font-family: var(--fury-display); font-size: 14px; }
+body[data-project="fury"] .fia__n--check .fia__m { color: rgba(255, 255, 255, .62); }
+/* the four tabs */
+body[data-project="fury"] .fia__n--tab { background: var(--fury-pink); border-color: var(--fury-pink); color: #fff; border-radius: 4px; justify-items: center; }
+body[data-project="fury"] .fia__n--tab .fia__t { font-family: var(--fury-display); font-size: 13.5px; }
+
+body[data-project="fury"] .fia__vr {
+  margin-left: auto; font-style: normal; font-size: 8.5px; font-weight: 600; line-height: 1; letter-spacing: .06em;
+  padding: 2px 5px; border-radius: 999px; color: #111114; background: var(--fury-lime);
+}
+
+/* POINTING: what it connects to stays, the rest steps back by colour */
+body[data-project="fury"] .fia.has-lit .fia__n:not(.is-lit) { color: rgba(17, 17, 20, .28); border-color: rgba(17, 17, 20, .07); background-color: rgba(255, 255, 255, .55); box-shadow: none; }
+body[data-project="fury"] .fia.has-lit .fia__n:not(.is-lit) .fia__m { color: inherit; }
+body[data-project="fury"] .fia.has-lit .fia__n--tab:not(.is-lit) { background-color: rgba(245, 45, 93, .22); border-color: transparent; color: rgba(255, 255, 255, .9); }
+body[data-project="fury"] .fia.has-lit .fia__n--check:not(.is-lit) { background-color: rgba(27, 42, 68, .22); border-color: transparent; color: rgba(255, 255, 255, .9); }
+body[data-project="fury"] .fia.has-lit .fia__n--check:not(.is-lit) .fia__m { color: rgba(255, 255, 255, .6); }
+body[data-project="fury"] .fia.has-lit .fia__n:not(.is-lit) .fia__vr { background: rgba(191, 238, 97, .35); color: rgba(17, 17, 20, .4); }
+body[data-project="fury"] .fia.has-lit .fia__e { stroke: rgba(17, 17, 20, .1); }
+body[data-project="fury"] .fia.has-lit .fia__e.is-lit { stroke: var(--ink); }
+body[data-project="fury"] .fia__n.is-lit { border-color: rgba(17, 17, 20, .45); }
+body[data-project="fury"] .fia__n--tab.is-lit, body[data-project="fury"] .fia__n--check.is-lit { border-color: transparent; }
+body[data-project="fury"] .fia__n.is-on { border-color: var(--ink); box-shadow: 0 0 0 .5px var(--ink), 0 12px 26px -16px rgba(17, 17, 20, .5); }
+body[data-project="fury"] .fia__n--tab.is-on, body[data-project="fury"] .fia__n--check.is-on { box-shadow: 0 0 0 2px #fafafa, 0 0 0 3px var(--ink), 0 12px 26px -16px rgba(17, 17, 20, .5); }
+
+/* under the map: the readout, and the key in the corner. Neither may change
+   size on hover, so the readout always holds two lines and the key never wraps. */
+body[data-project="fury"] .fia__foot { display: flex; align-items: center; justify-content: space-between; gap: .75rem 2rem; margin-top: clamp(1rem, 2.4vw, 1.6rem); }
+body[data-project="fury"] .fia__read {
+  flex: 1 1 0; min-width: 0; margin: 0; height: 2.9em; overflow: hidden;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  font-size: .8125rem; line-height: 1.45; color: var(--dim);
+}
+body[data-project="fury"] .fia__read b { font-family: var(--fury-display); font-weight: 600; color: var(--ink); margin-right: .6rem; }
+body[data-project="fury"] .fia__hint { color: #8d8d96; }
+body[data-project="fury"] .fia__key {
+  flex: none; list-style: none; margin: 0; padding: .55rem 1rem;
+  display: flex; flex-wrap: nowrap; white-space: nowrap; gap: .4rem 1.3rem;
+  font-size: .75rem; font-weight: 500; color: var(--ink);
+  background: #fff; border: 1px solid var(--line); border-radius: 999px;
+}
+body[data-project="fury"] .fia__key li { display: inline-flex; align-items: center; gap: .5rem; }
+body[data-project="fury"] .fia__key svg { width: 1.375rem; height: .5rem; fill: none; stroke: var(--ink); stroke-width: 1.25; }
+body[data-project="fury"] .fia__key svg.fia__soft { stroke: rgba(17, 17, 20, .3); }
+body[data-project="fury"] .fia__key .fia__vr { margin-left: 0; }
+body[data-project="fury"] .fia__sw { width: .75rem; height: .75rem; border-radius: 3px; background: var(--navy); }
+@media (max-width: 62rem) {
+  body[data-project="fury"] .fia__foot { flex-direction: column; align-items: stretch; }
+  body[data-project="fury"] .fia__key { align-self: flex-end; }
+}
+
+/* --- the outline, for a screen too narrow to draw in ---------------------- */
+body[data-project="fury"] .fia__list { display: none; }
+@media (max-width: 46rem) {
+  body[data-project="fury"] .fia__fit,
+  body[data-project="fury"] .fia__foot { display: none; }
+  body[data-project="fury"] .fia__list { display: grid; gap: 1.5rem; list-style: none; margin: 0; padding: 0; }
+  body[data-project="fury"] .fia__lh { font-family: var(--fury-display); font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--dim); }
+  body[data-project="fury"] .fia__lh.is-tab { display: inline-block; padding: .3rem .9rem; border-radius: 4px; background: var(--fury-pink); color: #fff; text-transform: none; letter-spacing: 0; }
+  body[data-project="fury"] .fia__list ul { list-style: none; margin: .65rem 0 0; padding: 0 0 0 .9rem; border-left: 1px solid var(--ink); display: grid; gap: .45rem; }
+  body[data-project="fury"] .fia__li { position: relative; }
+  body[data-project="fury"] .fia__li::before { content: ''; position: absolute; left: -.9rem; top: 1.3rem; width: .9rem; border-top: 1px solid var(--ink); }
+  body[data-project="fury"] .fia__list summary { list-style: none; display: grid; gap: 2px; padding: .6rem .8rem; background: #fff; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+  body[data-project="fury"] .fia__list summary::-webkit-details-marker { display: none; }
+  body[data-project="fury"] .fia__li--spine summary { border-color: var(--ink); }
+  body[data-project="fury"] .fia__li--check summary { background: var(--navy); border-color: var(--navy); color: #fff; }
+  body[data-project="fury"] .fia__li--check .fia__m { color: rgba(255, 255, 255, .62); }
+  body[data-project="fury"] .fia__list details[open] summary { border-color: var(--ink); }
+  body[data-project="fury"] .fia__steps { margin: .4rem .2rem .2rem; font-size: .78rem; line-height: 1.5; color: var(--dim); }
+}
+
+/* --- Task flows -------------------------------------------------------------- */
+/* --- Task flows, in the same hand as the map ------------------------------
+   fury.js `FTF`. Wires, the dimming, the readout and the key are the map's
+   own (.fia__*); only the steps and the switch are new. One flow at a time,
+   on a frame as tall as the tallest, so switching never moves the page. */
+body[data-project="fury"] .fy-win--flows .fy-win__in { padding: clamp(1.2rem, 3.4vw, 2.8rem); }
+body[data-project="fury"] .ftf__mode {
+  display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; margin-bottom: clamp(1.2rem, 3vw, 2rem);
+  background: #fff; border: 1px solid var(--line); border-radius: 999px;
+}
+body[data-project="fury"] .ftf__mode button {
+  margin: 0; padding: .5rem 1rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer;
+  font: inherit; font-size: .8rem; font-weight: 500; color: var(--dim);
+  display: inline-flex; align-items: baseline; gap: .5rem;
+  transition: color .2s ease, background-color .2s ease;
+}
+body[data-project="fury"] .ftf__mode button b { font-family: var(--fury-display); font-size: .7rem; font-weight: 600; color: #a1a1aa; font-variant-numeric: tabular-nums; transition: color .2s ease; }
+body[data-project="fury"] .ftf__mode button:hover { color: var(--ink); }
+body[data-project="fury"] .ftf__mode button[aria-pressed="true"] { background: var(--navy); color: #fff; }
+body[data-project="fury"] .ftf__mode button[aria-pressed="true"] b { color: var(--fury-pink); }
+body[data-project="fury"] .ftf__mode button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+body[data-project="fury"] .ftf__panel { position: absolute; inset: 0; }
+body[data-project="fury"] .ftf__panel[hidden] { display: none; }
+body[data-project="fury"] .ftf__canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; scale: var(--k); }
+
+/* a step */
+body[data-project="fury"] .ftf__n {
+  position: absolute; box-sizing: border-box; margin: 0; padding: 0 12px;
+  display: grid; align-content: center; justify-items: center; gap: 2px; text-align: center;
+  font: inherit; color: var(--ink); background: #fff;
+  border: 1px solid var(--line); border-radius: 6px;
+  cursor: default; -webkit-tap-highlight-color: transparent;
+  opacity: 0; translate: 0 6px;
+  transition: color .22s ease, border-color .22s ease, background-color .22s ease, box-shadow .22s ease;
+}
+body[data-project="fury"] .ftf.is-in .ftf__n {
+  opacity: 1; translate: 0 0;
+  transition: opacity .4s ease calc(var(--i) * 0.045s), translate .55s cubic-bezier(.2, .7, .2, 1) calc(var(--i) * 0.045s),
+    color .22s ease, border-color .22s ease, background-color .22s ease, box-shadow .22s ease;
+}
+body[data-project="fury"] .ftf.is-still .ftf__n { opacity: 1; translate: 0 0; }
+body[data-project="fury"] .ftf.is-in .fia__line { transition: stroke-dashoffset .5s cubic-bezier(.4, 0, .2, 1) calc(0.1s + var(--i) * 0.045s), stroke .22s ease; }
+body[data-project="fury"] .ftf.is-in .fia__head { transition: opacity .2s ease calc(0.5s + var(--i) * 0.045s); }
+body[data-project="fury"] .ftf__n:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+body[data-project="fury"] .ftf__t { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; line-height: 1.2; white-space: nowrap; }
+body[data-project="fury"] .ftf__m { font-size: 10.5px; line-height: 1.2; color: var(--dim); white-space: nowrap; transition: color .22s ease; }
+/* where a flow starts and ends: the pink pill */
+body[data-project="fury"] .ftf__n--end { background: var(--fury-pink); border-color: var(--fury-pink); color: #fff; border-radius: 999px; }
+body[data-project="fury"] .ftf__n--end .ftf__t { font-family: var(--fury-display); }
+/* a choice: the navy of the check-in, as a pill */
+body[data-project="fury"] .ftf__n--choice { background: var(--navy); border-color: var(--navy); color: #fff; border-radius: 999px; }
+body[data-project="fury"] .ftf__n--choice .ftf__t { font-family: var(--fury-display); }
+/* the options a choice offers: lighter boxes on one trunk */
+body[data-project="fury"] .ftf__n--opt { background: #f4f4f6; border-color: transparent; }
+body[data-project="fury"] .ftf__n--opt .ftf__t { font-weight: 400; font-size: 12.5px; }
+body[data-project="fury"] .ftf__ai {
+  font-style: normal; font-size: 8.5px; font-weight: 600; line-height: 1; letter-spacing: .06em;
+  padding: 2px 5px; border-radius: 999px; color: #fff; background: var(--navy);
+}
+
+/* POINTING, as on the map: what leads here and where it goes stay lit */
+body[data-project="fury"] .ftf.has-lit .ftf__n:not(.is-lit) { color: rgba(17, 17, 20, .28); border-color: rgba(17, 17, 20, .07); background-color: rgba(255, 255, 255, .55); box-shadow: none; }
+body[data-project="fury"] .ftf.has-lit .ftf__n:not(.is-lit) .ftf__m { color: inherit; }
+body[data-project="fury"] .ftf.has-lit .ftf__n--end:not(.is-lit) { background-color: rgba(245, 45, 93, .22); border-color: transparent; color: rgba(255, 255, 255, .9); }
+body[data-project="fury"] .ftf.has-lit .ftf__n--choice:not(.is-lit) { background-color: rgba(27, 42, 68, .22); border-color: transparent; color: rgba(255, 255, 255, .9); }
+body[data-project="fury"] .ftf.has-lit .ftf__n--opt:not(.is-lit) { background-color: rgba(244, 244, 246, .6); border-color: transparent; }
+body[data-project="fury"] .ftf.has-lit .ftf__n:not(.is-lit) :is(.fia__vr, .ftf__ai) { opacity: .35; }
+body[data-project="fury"] .ftf__n.is-lit { border-color: rgba(17, 17, 20, .45); }
+body[data-project="fury"] .ftf__n--opt.is-lit { background: #fff; }
+body[data-project="fury"] :is(.ftf__n--end, .ftf__n--choice).is-lit { border-color: transparent; }
+body[data-project="fury"] .ftf__n.is-on { border-color: var(--ink); box-shadow: 0 0 0 .5px var(--ink), 0 12px 26px -16px rgba(17, 17, 20, .5); }
+body[data-project="fury"] :is(.ftf__n--end, .ftf__n--choice).is-on { box-shadow: 0 0 0 2px #fafafa, 0 0 0 3px var(--ink), 0 12px 26px -16px rgba(17, 17, 20, .5); }
+
+/* key swatches */
+body[data-project="fury"] .ftf__sw { width: 1.1rem; height: .6rem; border-radius: 999px; }
+body[data-project="fury"] .ftf__sw--end { background: var(--fury-pink); }
+body[data-project="fury"] .ftf__sw--choice { background: var(--navy); }
+
+/* --- the outline, for a screen too narrow to draw in ---------------------- */
+body[data-project="fury"] .ftf__list { display: none; }
+@media (max-width: 46rem) {
+  body[data-project="fury"] .ftf__mode { display: flex; border-radius: 14px; }
+  body[data-project="fury"] .ftf__mode button { flex: 1 1 100%; border-radius: 11px; }
+  body[data-project="fury"] .ftf__fit { display: block; }
+  body[data-project="fury"] .ftf__fit .fia__size { width: auto !important; height: auto !important; }
+  body[data-project="fury"] .ftf__canvas { display: none; }
+  body[data-project="fury"] .ftf__panel { position: static; }
+  body[data-project="fury"] .ftf .fia__foot { display: none; }
+  body[data-project="fury"] .ftf__list, body[data-project="fury"] .ftf__list ol {
+    display: grid; gap: .45rem; list-style: none; margin: 0; padding: 0 0 0 .9rem; border-left: 1px solid var(--ink);
+  }
+  body[data-project="fury"] .ftf__list > li, body[data-project="fury"] .ftf__list ol > li { position: relative; }
+  body[data-project="fury"] .ftf__li::before { content: ''; position: absolute; left: -.9rem; top: 50%; width: .9rem; border-top: 1px solid var(--ink); }
+  body[data-project="fury"] .ftf__li {
+    display: grid; gap: 2px; padding: .6rem .8rem; background: #fff; border: 1px solid var(--line); border-radius: 6px;
+  }
+  body[data-project="fury"] .ftf__t { font-size: .85rem; }
+  body[data-project="fury"] .ftf__li--end { background: var(--fury-pink); border-color: var(--fury-pink); color: #fff; border-radius: 999px; justify-self: start; padding-inline: 1.1rem; }
+  body[data-project="fury"] .ftf__li--choice { background: var(--navy); border-color: var(--navy); color: #fff; border-radius: 999px; justify-self: start; padding-inline: 1.1rem; }
+  body[data-project="fury"] .ftf__li--opt { background: #f4f4f6; border-color: transparent; }
+  body[data-project="fury"] .ftf__alt { display: grid; gap: .45rem; padding: .2rem 0; }
+  body[data-project="fury"] .ftf__or { font-family: var(--fury-display); font-size: .68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+}
+
+/* --- VR screens ---------------------------------------------------------------- */
+body[data-project="fury"] .fy-vr { display: grid; gap: clamp(2rem, 5vw, 3.5rem); }
+body[data-project="fury"] .fy-vr__row { display: grid; grid-template-columns: 1.6fr 1fr; gap: 2rem; align-items: center; }
+body[data-project="fury"] .fy-vr__row--flip { grid-template-columns: 1fr 1.6fr; }
+body[data-project="fury"] .fy-vr__row--flip .fy-zoom { order: 2; }
+body[data-project="fury"] .fy-vr__row--flip p { text-align: right; }
+body[data-project="fury"] .fy-vr__row p { margin: 0; font-family: var(--fury-display); font-size: clamp(1rem, .9rem + .5vw, 1.3rem); line-height: 1.5; color: #fff; }
+body[data-project="fury"] .fy-vr__row p b { color: var(--fury-lime); font-weight: 500; }
+body[data-project="fury"] .fy-vr__row p strong { color: var(--fury-pink); font-weight: 500; }
+body[data-project="fury"] .fy-vr__row p em { font-style: normal; border: 1.5px solid var(--fury-pink); border-radius: 50%; padding: 0 .4em; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-vr__row, body[data-project="fury"] .fy-vr__row--flip { grid-template-columns: 1fr; gap: .8rem; }
+  body[data-project="fury"] .fy-vr__row--flip .fy-zoom { order: 0; }
+  body[data-project="fury"] .fy-vr__row--flip p { text-align: left; }
+}
+
+/* --- Unity ------------------------------------------------------------------- */
+body[data-project="fury"] .fy-unity { display: grid; grid-template-columns: 1.2fr 1fr 1.32fr; gap: .8rem; }
+body[data-project="fury"] .fy-unity img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+body[data-project="fury"] .fy-unity p { grid-column: 1 / -1; margin: .2rem 0 0; color: #8d8d96; font-size: .85rem; }
+@media (max-width: 760px) { body[data-project="fury"] .fy-unity { grid-template-columns: 1fr; } }
+
+/* --- Testing ----------------------------------------------------------------- */
+body[data-project="fury"] .fy-tc { background: #f4f4f5; color: #3a3a40; border-radius: 6px; padding: 1.2rem 1.3rem; font-size: .88rem; line-height: 1.55; margin: 0; }
+body[data-project="fury"] .fy-tc h5 { margin: 0 0 .6rem; font-family: var(--fury-display); font-weight: 600; font-size: 1rem; color: #111114; }
+body[data-project="fury"] .fy-tc p { margin: 0 0 .4rem; }
+body[data-project="fury"] .fy-tc ol, body[data-project="fury"] .fy-tc ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .25rem; }
+body[data-project="fury"] .fy-tc--pink { background: var(--fury-pink); color: #fff; }
+body[data-project="fury"] .fy-tc--pink h5 { color: #fff; }
+body[data-project="fury"] .fy-tc--ink {
+  background: #0b0101; color: #fff; border: 1px solid #3a3a40; font-family: var(--fury-display); font-size: 1.1rem; line-height: 1.5;
+  position: relative; padding: 2.4rem 2rem 2.4rem 3.4rem;
+}
+body[data-project="fury"] .fy-tc--ink::before { content: '\201C'; position: absolute; left: 1rem; top: .6rem; font-size: 3rem; line-height: 1; }
+body[data-project="fury"] .fy-tc--ink::after { content: '\201D'; position: absolute; right: 1rem; bottom: -.8rem; font-size: 3rem; line-height: 1; }
+/* the people first: three photos as the band the notes hang under */
+body[data-project="fury"] .fy-test { display: grid; gap: .9rem; }
+body[data-project="fury"] .fy-test__band {
+  display: grid; gap: .9rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1fr);
+  grid-template-rows: repeat(2, clamp(10rem, 15vw, 15rem));
+}
+body[data-project="fury"] .fy-shot { position: relative; margin: 0; min-height: 0; border-radius: 14px; overflow: hidden; background: #26262c; }
+body[data-project="fury"] .fy-shot--tall { grid-row: 1 / span 2; }
+body[data-project="fury"] .fy-shot .fy-zoom, body[data-project="fury"] .fy-shot .fframe__in { height: 100%; }
+body[data-project="fury"] .fy-shot .shotimg { width: 100%; height: 100%; object-fit: cover; border-radius: 0; transition: scale .9s cubic-bezier(.2, .8, .2, 1); }
+body[data-project="fury"] .fy-shot:hover .shotimg { scale: 1.04; }
+body[data-project="fury"] .fy-shot figcaption {
+  position: absolute; left: .8rem; bottom: .8rem; pointer-events: none;
+  font-family: var(--fury-sticker); font-size: .78rem; font-weight: 500; color: #0d0d0f;
+  background: var(--fury-lime); padding: .25rem .6rem; border-radius: 6px; rotate: -3deg;
+}
+body[data-project="fury"] .fy-test__stat {
+  grid-column: 3; grid-row: 1 / span 2; display: flex; flex-direction: column; justify-content: space-between;
+  padding: clamp(1.2rem, 2.4vw, 2rem); border-radius: 14px; background: #0b0b0d; border: 1px solid #2e2e35; color: #fff;
+}
+body[data-project="fury"] .fy-test__n { font-family: var(--fury-display); font-weight: 700; font-size: clamp(4.5rem, 3rem + 5vw, 8rem); line-height: .85; letter-spacing: -.05em; color: var(--fury-lime); }
+body[data-project="fury"] .fy-test__u { display: block; margin-top: .6rem; font-family: var(--fury-display); font-size: 1.05rem; line-height: 1.35; color: #d4d4d8; }
+body[data-project="fury"] .fy-test__stat blockquote { margin: 1.2rem 0 0; font-family: var(--fury-display); font-size: clamp(1.05rem, .9rem + .5vw, 1.35rem); line-height: 1.4; }
+body[data-project="fury"] .fy-test__stat blockquote::before { content: '\201C'; display: block; font-size: 2.6rem; line-height: .6; color: var(--fury-pink); margin-bottom: .5rem; }
+body[data-project="fury"] .fy-test__cards { display: grid; gap: .9rem; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
+body[data-project="fury"] .fy-tc--wide { grid-column: span 2; }
+/* the band arrives first, one photo after another */
+body[data-project="fury"] .fy-test__band > * { opacity: 0; translate: 0 14px; transition: opacity .6s ease, translate .8s cubic-bezier(.2, .8, .2, 1); }
+body[data-project="fury"] .fy-test__band > :nth-child(2) { transition-delay: .1s; }
+body[data-project="fury"] .fy-test__band > :nth-child(3) { transition-delay: .2s; }
+body[data-project="fury"] .fy-test__band > :nth-child(4) { transition-delay: .3s; }
+body[data-project="fury"] .is-in .fy-test__band > * { opacity: 1; translate: 0 0; }
+@media (prefers-reduced-motion: reduce) { body[data-project="fury"] .fy-test__band > * { opacity: 1; translate: 0 0; } }
+@media (max-width: 860px) {
+  body[data-project="fury"] .fy-test__band { grid-template-columns: 1fr 1fr; grid-template-rows: 13rem 13rem auto; }
+  body[data-project="fury"] .fy-shot--tall { grid-row: 1 / span 2; }
+  body[data-project="fury"] .fy-test__band .fy-shot:nth-child(2) { grid-column: 2; grid-row: 1; }
+  body[data-project="fury"] .fy-test__band .fy-shot:nth-child(3) { grid-column: 2; grid-row: 2; }
+  body[data-project="fury"] .fy-test__stat { grid-column: 1 / -1; grid-row: 3; }
+  body[data-project="fury"] .fy-test__cards { grid-template-columns: 1fr; }
+  body[data-project="fury"] .fy-tc--wide { grid-column: auto; }
+}
+
+/* --- FAQ ----------------------------------------------------------------------- */
+body[data-project="fury"] .fy-faq { display: grid; gap: 3rem; }
+body[data-project="fury"] .fy-faq__q { max-width: 46rem; }
+body[data-project="fury"] .fy-faq__q--r { margin-left: auto; }
+body[data-project="fury"] .fy-faq h4 { font-family: var(--fury-display); font-weight: 600; font-size: clamp(1.2rem, 1rem + .8vw, 1.6rem); color: #fff; letter-spacing: -0.02em; margin: 0 0 1.4rem; }
+body[data-project="fury"] .fy-faq ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.3rem; }
+body[data-project="fury"] .fy-faq li { position: relative; padding-left: 3rem; color: #c3c3ca; line-height: 1.85; font-size: .95rem; }
+body[data-project="fury"] .fy-faq li::before { content: '\27F6'; position: absolute; left: 0; top: -.05rem; color: var(--fury-pink); font-size: 1.2rem; }
+body[data-project="fury"] .fy-faq mark { background: #3a3a42; color: #fff; padding: .12em .2em; }
+
+/* --- Revenue model (on the pink band, so it sits on paper) ------------------ */
+body[data-project="fury"] .fy-rev { background: #fff; color: #111114; border-radius: 26px; padding: clamp(1.2rem, 3vw, 2.8rem); }
+body[data-project="fury"] .fy-rev__head { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 2rem; align-items: end; margin-bottom: 2rem; }
+body[data-project="fury"] .fy-rev__head .fy-label { grid-column: 1; margin: 0; }
+body[data-project="fury"] .fy-rev__head h3 { grid-column: 1; margin: 0; font-family: var(--fury-display); font-weight: 600; font-size: clamp(1.8rem, 1.2rem + 2vw, 2.8rem); letter-spacing: -0.03em; }
+body[data-project="fury"] .fy-rev__head p { grid-column: 2; grid-row: 1 / span 2; margin: 0; color: #3a3a40; font-size: .92rem; line-height: 1.6; }
+body[data-project="fury"] .fy-rev__map {
+  display: grid; grid-template-columns: 1fr minmax(0, 18rem) 1fr; gap: 1.4rem 2rem; align-items: center;
+  grid-template-areas: "a w b" "c w d" "e w f";
+}
+body[data-project="fury"] .fy-rev__wheel { grid-area: w; }
+body[data-project="fury"] .fy-rev__pt:nth-child(1) { grid-area: a; } body[data-project="fury"] .fy-rev__pt:nth-child(2) { grid-area: b; }
+body[data-project="fury"] .fy-rev__pt:nth-child(3) { grid-area: c; } body[data-project="fury"] .fy-rev__pt:nth-child(5) { grid-area: d; }
+body[data-project="fury"] .fy-rev__pt:nth-child(6) { grid-area: e; } body[data-project="fury"] .fy-rev__pt:nth-child(7) { grid-area: f; }
+body[data-project="fury"] .fy-rev__pt:nth-child(odd) { text-align: right; }
+body[data-project="fury"] .fy-rev__pt:nth-child(5) { text-align: left; }
+body[data-project="fury"] .fy-rev__pt h5 { margin: 0 0 .3rem; font-family: var(--fury-sticker); font-weight: 600; font-size: 1.15rem; color: #e0244f; }
+body[data-project="fury"] .fy-rev__pt p { margin: 0; font-size: .85rem; line-height: 1.5; color: #3a3a40; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-rev__head { grid-template-columns: 1fr; }
+  body[data-project="fury"] .fy-rev__head p { grid-column: 1; grid-row: auto; }
+  body[data-project="fury"] .fy-rev__map { grid-template-columns: 1fr; grid-template-areas: "w" "a" "b" "c" "d" "e" "f"; }
+  body[data-project="fury"] .fy-rev__pt { text-align: left !important; }
+  body[data-project="fury"] .fy-rev__wheel { max-width: 16rem; justify-self: center; }
+}
+
+/* --- widths: the boards want the full column, not the reading measure -------- */
+body[data-project="fury"] .blk-raw .fy-win,
+body[data-project="fury"] .blk-raw > div { max-width: 1120px; }
+
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-conf { grid-template-columns: 1fr; min-height: 0; padding-bottom: 6rem; }
+  body[data-project="fury"] .fy-conf__art img { max-height: 26rem; }
+  body[data-project="fury"] .fy-tile--ego > div { max-width: 60%; }
+}
+
+/* =========================================================================
+   FURY — the Persona board and the Ideate board, as drawn in Figma
+   ========================================================================= */
+
+/* --- Persona board ------------------------------------------------------- */
+body[data-project="fury"] .fp-board {
+  border-radius: 34px;
+  background: linear-gradient(170deg, #1d1d21 0%, #17171a 60%, #1b1b1f 100%);
+  border: 1px solid #26262c;
+  padding: clamp(1.6rem, 4.5vw, 4.5rem) clamp(1.2rem, 4.5vw, 4.5rem) clamp(2rem, 5vw, 5rem);
+  overflow: hidden;
+}
+body[data-project="fury"] .fp-persona {
+  position: relative; isolation: isolate;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.15rem; align-items: start;
+  margin: 3rem 0 clamp(5rem, 9vw, 8rem);
+}
+body[data-project="fury"] .fp-persona--b { margin-bottom: clamp(4rem, 8vw, 7rem); }
+body[data-project="fury"] .fp-num {
+  position: absolute; z-index: -1; top: -5.6rem; left: -3.2rem;
+  font-family: var(--fury-display); font-weight: 700; font-size: clamp(7rem, 4rem + 9vw, 12rem); line-height: 1; letter-spacing: -0.07em;
+  color: #232327;
+}
+body[data-project="fury"] .fp-persona--b .fp-num { left: auto; right: -2rem; }
+body[data-project="fury"] .fp-col { display: grid; gap: 1.15rem; }
+body[data-project="fury"] .fp-card {
+  background: #2d3033; border-radius: 10px; padding: 1.35rem 1.5rem 1.5rem; color: #c9cbce;
+}
+body[data-project="fury"] .fp-card h5 { margin: 0 0 .75rem; display: flex; gap: .45rem; align-items: center; font-family: var(--fury-display); font-weight: 600; font-size: 1.15rem; color: #fff; letter-spacing: -0.01em; }
+body[data-project="fury"] .fp-card ul { margin: 0; padding-left: 1.15rem; display: grid; gap: .1rem; font-size: .84rem; line-height: 1.6; color: #c9cbce; }
+body[data-project="fury"] .fp-card li::marker { color: #8d8f94; }
+body[data-project="fury"] .fp-id { display: flex; align-items: center; gap: 1.2rem; padding: .7rem 1.2rem .7rem .7rem; }
+body[data-project="fury"] .fp-id img { width: 5.4rem; height: 5.4rem; border-radius: 10px; flex: none; }
+body[data-project="fury"] .fp-id b { font-family: var(--fury-display); font-weight: 600; font-size: 1.5rem; line-height: 1.15; color: #fff; letter-spacing: -0.01em; }
+body[data-project="fury"] .fp-demo dl { margin: .4rem 0 1.6rem 1.1rem; display: grid; gap: .55rem; font-size: .86rem; }
+body[data-project="fury"] .fp-demo dl div { display: flex; gap: .3rem; }
+body[data-project="fury"] .fp-demo dt { color: #fff; font-weight: 600; }
+body[data-project="fury"] .fp-demo dd { margin: 0; color: #c9cbce; }
+body[data-project="fury"] .fp-demo h6 { margin: 0 0 .4rem; font-family: var(--fury-display); font-weight: 600; font-size: .98rem; color: #fff; }
+body[data-project="fury"] .fp-slider {
+  position: relative; display: flex; justify-content: space-between; margin: 1rem .2rem 0;
+  font-size: .62rem; font-weight: 600; color: #fff; padding-bottom: .45rem; border-bottom: 1.5px solid #111214;
+}
+body[data-project="fury"] .fp-slider i {
+  position: absolute; bottom: -5px; left: 50%; width: 8px; height: 8px; border-radius: 50%; background: #d7262b;
+  transition: left 1.4s cubic-bezier(.2, .8, .2, 1) .4s;
+}
+body[data-project="fury"] .is-in .fp-slider i { left: var(--at); }
+
+/* the cards arrive one after another */
+body[data-project="fury"] .fp-card { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .7s cubic-bezier(.2, .8, .2, 1); transition-delay: calc(var(--i) * 90ms); }
+body[data-project="fury"] .is-in .fp-card { opacity: 1; transform: none; }
+
+/* --- Empathy map, as drawn: the dashed X, the person, the four senses --- */
+body[data-project="fury"] .fp-label { display: block; font-family: var(--fury-sticker); font-size: .7rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--fury-lime); }
+body[data-project="fury"] .fp-h { margin: .3rem 0 2rem; font-family: var(--fury-display); font-weight: 600; font-size: clamp(2rem, 1.3rem + 2.4vw, 3.4rem); letter-spacing: -0.03em; color: #fff; }
+body[data-project="fury"] .fp-emp { position: relative; aspect-ratio: 1000 / 720; }
+body[data-project="fury"] .fp-emp__x { position: absolute; inset: 0; width: 100%; height: 100%; }
+body[data-project="fury"] .fp-emp__x path { fill: none; stroke: #6d6d75; stroke-width: 1.4; stroke-dasharray: 6 7; vector-effect: non-scaling-stroke; animation: fpMarch 2.6s linear infinite; opacity: 0; transition: opacity 1s ease .2s; }
+body[data-project="fury"] .is-in .fp-emp__x path { opacity: 1; }
+@keyframes fpMarch { to { stroke-dashoffset: -26; } }
+body[data-project="fury"] .fp-emp__me { position: absolute; left: 50%; top: 50%; width: 17%; aspect-ratio: 1; transform: translate(-50%, -50%) scale(.85); opacity: 0; transition: transform .9s cubic-bezier(.2, .8, .2, 1), opacity .6s ease; }
+body[data-project="fury"] .is-in .fp-emp__me { transform: translate(-50%, -50%); opacity: 1; }
+body[data-project="fury"] .fp-emp__me img { position: absolute; inset: 9%; width: 82%; height: 82%; border-radius: 50%; }
+body[data-project="fury"] .fp-emp__ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px dashed #8d8d96; animation: fpSpin 24s linear infinite; }
+@keyframes fpSpin { to { transform: rotate(360deg); } }
+body[data-project="fury"] .fp-ico { position: absolute; width: 4.4%; aspect-ratio: 1; transform: translate(-50%, -50%); fill: none; stroke: #c9cbce; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; animation: fpBob 3.4s ease-in-out infinite; }
+body[data-project="fury"] .fp-ico--heart { left: 50%; top: 31%; animation-name: fpBeat; animation-duration: 1.8s; }
+body[data-project="fury"] .fp-ico--ear { left: 36.5%; top: 50%; animation-delay: -.8s; }
+body[data-project="fury"] .fp-ico--lips { left: 63.5%; top: 50%; animation-delay: -1.6s; }
+body[data-project="fury"] .fp-ico--eye { left: 50%; top: 69%; animation-delay: -2.4s; }
+@keyframes fpBob { 50% { transform: translate(-50%, calc(-50% - 5px)); } }
+@keyframes fpBeat { 0%, 60%, 100% { transform: translate(-50%, -50%) scale(1); } 15% { transform: translate(-50%, -50%) scale(1.14); } 30% { transform: translate(-50%, -50%) scale(1.04); } }
+body[data-project="fury"] .fp-q { position: absolute; }
+body[data-project="fury"] .fp-q h5 { margin: 0 0 .7rem; font-family: var(--fury-display); font-weight: 600; font-size: 1.2rem; color: #fff; }
+body[data-project="fury"] .fp-q ul { margin: 0; padding-left: 1rem; display: grid; gap: .25rem; font-size: .8rem; line-height: 1.55; color: #c9cbce; }
+body[data-project="fury"] .fp-q--think { left: 50%; top: 0; width: 40%; transform: translateX(-50%); text-align: center; }
+body[data-project="fury"] .fp-q--see { left: 50%; bottom: 0; width: 52%; transform: translateX(-50%); text-align: center; }
+body[data-project="fury"] .fp-q--think ul, body[data-project="fury"] .fp-q--see ul { list-style-position: inside; padding: 0; }
+body[data-project="fury"] .fp-q--hear { left: 0; top: 37%; width: 28%; }
+body[data-project="fury"] .fp-q--hear h5 { text-align: center; }
+body[data-project="fury"] .fp-q--say { right: 0; top: 39%; width: 28%; }
+body[data-project="fury"] .fp-q--say h5 { text-align: center; }
+body[data-project="fury"] .fp-q { opacity: 0; transition: opacity .8s ease .5s; }
+body[data-project="fury"] .is-in .fp-q { opacity: 1; }
+
+@media (max-width: 900px) {
+  body[data-project="fury"] .fp-persona { grid-template-columns: 1fr 1fr; }
+  body[data-project="fury"] .fp-col:has(.fp-id) { grid-column: 1 / -1; order: -1; grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  body[data-project="fury"] .fp-persona { grid-template-columns: 1fr; margin-top: 4rem; }
+  body[data-project="fury"] .fp-col:has(.fp-id) { grid-template-columns: 1fr; }
+  body[data-project="fury"] .fp-num { font-size: 7rem; top: -4rem; left: -1rem; }
+  body[data-project="fury"] .fp-emp { aspect-ratio: auto; display: grid; gap: 1.8rem; justify-items: center; }
+  body[data-project="fury"] .fp-emp__x, body[data-project="fury"] .fp-ico { display: none; }
+  body[data-project="fury"] .fp-emp__me { position: relative; left: auto; top: auto; width: 10rem; transform: none !important; }
+  body[data-project="fury"] .fp-q { position: static; width: 100% !important; transform: none !important; text-align: left !important; }
+  body[data-project="fury"] .fp-q h5 { text-align: left !important; }
+  body[data-project="fury"] .fp-q ul { list-style-position: outside !important; padding-left: 1rem !important; }
+}
+
+/* --- Ideate board ------------------------------------------------------- */
+body[data-project="fury"] .fz-win .fy-win__in { padding: clamp(1.2rem, 4vw, 3.6rem); }
+body[data-project="fury"] .fz { color: #111114; }
+body[data-project="fury"] .fz-h { margin: 0 0 2rem; font-family: var(--fury-display); font-weight: 600; font-size: clamp(2rem, 1.3rem + 2.4vw, 3.2rem); letter-spacing: -0.035em; color: #000; line-height: 1.05; }
+body[data-project="fury"] .fz-treat { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.2rem, 3.5vw, 3rem); }
+body[data-project="fury"] .fz-card { margin: 0; border: 1.5px dashed #6d6d75; border-radius: 10px; padding: clamp(1.1rem, 2.5vw, 2rem); }
+body[data-project="fury"] .fz-card figcaption { font-size: .92rem; line-height: 1.6; color: #222; }
+body[data-project="fury"] .fz-card figcaption b { display: block; margin-bottom: .7rem; font-family: var(--fury-display); font-weight: 600; font-size: 1.25rem; color: #000; }
+body[data-project="fury"] .fz-card svg { display: block; width: 100%; height: auto; margin-top: .6rem; overflow: visible; }
+body[data-project="fury"] .fz-cbt__t { font: 600 15px Georgia, 'Times New Roman', serif; fill: #111; }
+body[data-project="fury"] .fz-cbt__q { font: 11.5px Georgia, 'Times New Roman', serif; fill: #333; }
+body[data-project="fury"] .fz-exp__c { font: 600 22px var(--fury-display); fill: #fff; }
+body[data-project="fury"] .fz-exp__n { font: 600 13.5px var(--fury-display); fill: #fff; }
+
+/* nodes pop, arrows draw, rings turn */
+body[data-project="fury"] .fz-node { transform-box: fill-box; transform-origin: center; opacity: 0; transform: scale(.6); transition: opacity .5s ease, transform .7s cubic-bezier(.3, 1.4, .5, 1); transition-delay: var(--d); }
+body[data-project="fury"] .is-in .fz-node { opacity: 1; transform: none; }
+body[data-project="fury"] .fz-spin { transform-box: fill-box; transform-origin: center; animation: fzSpin 7s linear infinite; }
+@keyframes fzSpin { to { transform: rotate(360deg); } }
+body[data-project="fury"] .fz-draw { stroke-dasharray: 160; stroke-dashoffset: 160; transition: stroke-dashoffset .9s ease; transition-delay: calc(var(--d) + .6s); }
+body[data-project="fury"] .is-in .fz-draw { stroke-dashoffset: 0; }
+body[data-project="fury"] .fz-cbt__orbit { transform-box: view-box; transform-origin: 260px 292px; animation: fzSpin 6s linear infinite; }
+body[data-project="fury"] .fz-cross { transform-box: fill-box; transform-origin: center; animation: fzBreathe 2.6s ease-in-out infinite; }
+@keyframes fzBreathe { 50% { transform: scale(1.15); } }
+body[data-project="fury"] .fz-arc { stroke-dasharray: 0 300; transition: stroke-dasharray 1.1s cubic-bezier(.5, 0, .2, 1); transition-delay: var(--d); }
+body[data-project="fury"] .is-in .fz-arc { stroke-dasharray: 100 200; }
+body[data-project="fury"] .fz-exp__orbit { transform-box: view-box; transform-origin: 260px 245px; animation: fzSpin 9s linear infinite; }
+body[data-project="fury"] .fz-exp__core { transform-box: fill-box; transform-origin: center; animation: fzBreathe 3.4s ease-in-out infinite; }
+
+/* Why VR? */
+body[data-project="fury"] .fz-why { position: relative; aspect-ratio: 2 / 1; margin: clamp(3rem, 8vw, 6rem) 0; }
+body[data-project="fury"] .fz-why__lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+body[data-project="fury"] .fz-line { stroke-dasharray: 260; stroke-dashoffset: 260; transition: stroke-dashoffset 1s ease; transition-delay: var(--d); }
+body[data-project="fury"] .is-in .fz-line { stroke-dashoffset: 0; }
+body[data-project="fury"] .fz-dot { transform-box: fill-box; transform-origin: center; opacity: 0; transform: scale(.3); transition: opacity .4s ease, transform .6s cubic-bezier(.3, 1.5, .5, 1); transition-delay: calc(var(--d) + .8s); }
+body[data-project="fury"] .is-in .fz-dot { opacity: 1; transform: none; }
+body[data-project="fury"] .fz-dot__ping { transform-box: fill-box; transform-origin: center; animation: fzPing 2.4s ease-out infinite; }
+@keyframes fzPing { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.9); opacity: 0; } }
+body[data-project="fury"] .fz-why__h {
+  position: absolute; left: 50%; top: 53%; transform: translate(-50%, -50%); margin: 0; white-space: nowrap;
+  font-family: var(--fury-display); font-weight: 800; font-size: clamp(2.8rem, 1rem + 6.4vw, 7.4rem); letter-spacing: -0.04em; line-height: 1;
+  background: linear-gradient(100deg, #e43c64 0%, #c91f4c 45%, #ff5c84 55%, #c91f4c 65%, #e43c64 100%); background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: fzSheen 5s ease-in-out infinite;
+}
+@keyframes fzSheen { 0%, 40% { background-position: 100% 0; } 70%, 100% { background-position: 0 0; } }
+body[data-project="fury"] .fz-why__pt { position: absolute; width: 27%; opacity: 0; transform: translateY(10px); transition: opacity .6s ease, transform .6s ease; }
+body[data-project="fury"] .is-in .fz-why__pt { opacity: 1; transform: none; }
+body[data-project="fury"] .fz-why__pt h5 { margin: .2rem 0; font-family: var(--fury-sticker); font-weight: 700; font-size: clamp(1rem, .6rem + 1.15vw, 1.75rem); line-height: 1.1; letter-spacing: .02em; color: #e8365e; }
+body[data-project="fury"] .fz-why__pt p { margin: .3rem 0; font-size: clamp(.72rem, .6rem + .3vw, .9rem); line-height: 1.55; color: #111; }
+body[data-project="fury"] .fz-why__pt--a { right: 64.6%; bottom: 57%; text-align: right; transition-delay: .9s; }
+body[data-project="fury"] .fz-why__pt--b { left: 67.8%; bottom: 68.4%; width: 31%; transition-delay: 1.1s; }
+body[data-project="fury"] .fz-why__pt--c { right: 68%; top: 70%; text-align: right; transition-delay: 1.3s; }
+body[data-project="fury"] .fz-why__pt--d { left: 68.6%; top: 64%; transition-delay: 1.5s; }
+
+/* Power of visualisation */
+body[data-project="fury"] .fz-vis { display: grid; grid-template-columns: 1.1fr .9fr; gap: 2rem; align-items: center; margin: 0 0 clamp(3rem, 8vw, 6rem); }
+body[data-project="fury"] .fz-vis__field { position: relative; height: 22rem; }
+body[data-project="fury"] .fz-pill {
+  position: absolute; display: inline-flex; align-items: center; gap: .9rem; white-space: nowrap;
+  background: #fff; border: 1.5px solid #a9a9b0; border-radius: 999px; padding: .4rem 1.8rem .4rem .4rem;
+  font-family: var(--fury-display); font-size: .86rem; color: #111;
+  animation: fzFloat 4.5s ease-in-out infinite; animation-delay: calc(var(--i) * -.8s);
+}
+body[data-project="fury"] .fz-pill i { width: 2.6rem; height: 2.6rem; border-radius: 50%; flex: none; border: 1.5px solid #a9a9b0;
+  background: radial-gradient(circle at 30% 30%, #f6dde7, #d6a6c0 60%, #c79bb8); background-size: 160% 160%; animation: fzGlow 5s ease-in-out infinite; animation-delay: calc(var(--i) * -.6s); }
+body[data-project="fury"] .fz-pill--s { font-size: .74rem; padding-right: 1.4rem; } body[data-project="fury"] .fz-pill--s i { width: 2rem; height: 2rem; }
+body[data-project="fury"] .fz-pill--l { font-size: 1rem; padding-right: 2.6rem; } body[data-project="fury"] .fz-pill--l i { width: 3.4rem; height: 3.4rem; }
+@keyframes fzFloat { 50% { transform: translateY(-9px); } }
+@keyframes fzGlow { 50% { background-position: 100% 100%; } }
+body[data-project="fury"] .fz-vis__txt { text-align: right; }
+body[data-project="fury"] .fz-vis__txt h3 { margin: 0 0 1.4rem; font-family: var(--fury-display); font-weight: 600; font-size: clamp(1.8rem, 1.2rem + 2vw, 2.8rem); letter-spacing: -0.03em; color: #000; line-height: 1.05; }
+body[data-project="fury"] .fz-vis__txt h4 { margin: 0 0 .5rem; font-family: var(--fury-sticker); font-weight: 600; font-size: 1.05rem; color: #e8365e; }
+body[data-project="fury"] .fz-vis__txt p { margin: 0; font-size: 1.02rem; line-height: 1.75; color: #222; }
+
+/* Brainstorming */
+body[data-project="fury"] .fz-brain .fy-sticker { margin-bottom: .3rem; }
+body[data-project="fury"] .fz-brain .fz-h { margin-bottom: 1rem; }
+body[data-project="fury"] .fz-brain__p { margin: 0 0 1.8rem; font-size: 1.02rem; line-height: 1.65; color: #222; max-width: 48rem; }
+body[data-project="fury"] .fz-notes {
+  list-style: none; margin: 0; padding: clamp(1rem, 2.4vw, 2rem);
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1.4rem 1.6rem; align-items: start;
+  background: radial-gradient(circle, #d9d9de 1px, transparent 1.2px) 0 0 / 14px 14px;
+}
+body[data-project="fury"] .fz-notes li {
+  display: flex; flex-direction: column; justify-content: space-between; gap: .8rem; min-height: 8.5rem;
+  background: #f4b2a4; padding: .75rem .8rem .6rem; color: #3b211b; font-size: .8rem; line-height: 1.5;
+  box-shadow: 0 6px 12px -8px rgba(80, 30, 20, .55);
+  opacity: 0; transform: translateY(14px) rotate(0deg);
+  transition: opacity .5s ease, transform .6s cubic-bezier(.3, 1.4, .5, 1); transition-delay: calc(var(--i) * 70ms);
+}
+body[data-project="fury"] .is-in .fz-notes li { opacity: 1; transform: rotate(var(--r)); }
+body[data-project="fury"] .is-in .fz-notes li:hover { transform: rotate(0) translateY(-4px) scale(1.04); transition-delay: 0s; }
+body[data-project="fury"] .fz-notes small { font-size: .55rem; opacity: .55; }
+
+@media (max-width: 860px) {
+  body[data-project="fury"] .fz-treat { grid-template-columns: 1fr; }
+  body[data-project="fury"] .fz-why { aspect-ratio: auto; display: grid; gap: 1.4rem; }
+  body[data-project="fury"] .fz-why__lines { display: none; }
+  body[data-project="fury"] .fz-why__h { position: static; transform: none; order: -1; }
+  body[data-project="fury"] .fz-why__pt { position: static; width: auto; text-align: left !important; }
+  body[data-project="fury"] .fz-vis { grid-template-columns: 1fr; }
+  body[data-project="fury"] .fz-vis__field { height: 19rem; }
+  body[data-project="fury"] .fz-pill { font-size: .72rem !important; }
+  body[data-project="fury"] .fz-vis__txt { text-align: left; }
+  body[data-project="fury"] .fz-notes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-project="fury"] :is(.fz, .fp-board) * { animation: none !important; transition: none !important; }
+  body[data-project="fury"] :is(.fz-node, .fz-dot, .fz-why__pt, .fz-notes li, .fp-card, .fp-q, .fp-emp__me, .fp-emp__x path) { opacity: 1 !important; }
+  body[data-project="fury"] :is(.fz-draw, .fz-line) { stroke-dashoffset: 0 !important; }
+  body[data-project="fury"] .fz-arc { stroke-dasharray: 100 200 !important; }
+}
+
+/* Why VR? label fit */
+body[data-project="fury"] .fz-why__pt h5 { font-size: clamp(.95rem, .45rem + 1.05vw, 1.55rem); }
+body[data-project="fury"] .fz-why__pt--b { left: 67.4%; width: 34%; }
+body[data-project="fury"] .fz-why__pt--b h5 { white-space: nowrap; }
+body[data-project="fury"] .fz-why__pt--c { right: 69.6%; }
+body[data-project="fury"] .fz-why__pt--d { left: 69.8%; }
+
+@media (max-width: 860px) {
+  body[data-project="fury"] .fz-vis__field { height: auto; display: flex; flex-wrap: wrap; gap: .7rem; }
+  body[data-project="fury"] .fz-pill { position: static; }
+}
+@media (max-width: 860px) { body[data-project="fury"] .fz-why__pt { width: auto !important; } body[data-project="fury"] .fz-why__pt h5 { white-space: normal !important; } }
+
+/* no browser chrome on the boards: no dots, no address bar */
+body[data-project="fury"] .fy-win__bar, body[data-project="fury"] .fy-win__url { display: none !important; }
+body[data-project="fury"] .fframe::before, body[data-project="fury"] .fframe::after { content: none !important; }
+
+/* --- Problem, reworked: no pink band, quieter chips, stats row, then quotes */
+body[data-project="fury"] #problem.sec--dark { background: transparent; box-shadow: none; clip-path: none; }
+body[data-project="fury"] .fy-prob { background: #1f1f24; border: 1px solid #2c2c33; border-radius: 28px; padding: clamp(1.4rem, 4vw, 3.2rem); }
+body[data-project="fury"] .fy-chips { gap: .55rem; margin-bottom: clamp(2.4rem, 5vw, 3.6rem); }
+body[data-project="fury"] .fy-chips li {
+  background: #3a3a40; color: #e9e9ec; border: 1px solid #4a4a52; border-radius: 8px; box-shadow: none;
+  padding: .3rem .85rem .3rem .3rem; font-size: .84rem;
+  opacity: 0; transform: translateY(8px); transition: opacity .5s ease, transform .5s ease; transition-delay: calc(var(--i) * 60ms);
+}
+body[data-project="fury"] .fy-chips li::before { width: 1.6rem; height: 1.15rem; border-radius: 4px; background: #a3203f; }
+body[data-project="fury"] .is-in .fy-chips li { opacity: 1; transform: none; }
+body[data-project="fury"] .fy-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.6rem; align-items: start; }
+body[data-project="fury"] .fy-stat b { font-size: clamp(2.6rem, 1.6rem + 3.2vw, 4.6rem); font-variant-numeric: tabular-nums; }
+body[data-project="fury"] .fy-stat span { font-size: .9rem; }
+body[data-project="fury"] .fy-stat--icon img { width: 7rem; height: auto; margin: .2rem auto .3rem; }
+body[data-project="fury"] .fy-seven { display: flex !important; justify-content: center; gap: .3rem; margin: .7rem auto 0 !important; }
+body[data-project="fury"] .fy-seven i {
+  width: .55rem; height: 1.3rem; border-radius: .3rem .3rem .15rem .15rem; background: #4a4a52; position: relative;
+  transform: translateY(6px); opacity: 0; transition: opacity .4s ease, transform .4s ease, background .5s ease; transition-delay: calc(.3s + var(--i) * 90ms);
+}
+body[data-project="fury"] .fy-seven i::before { content: ''; position: absolute; left: 50%; top: -.55rem; width: .45rem; height: .45rem; border-radius: 50%; background: inherit; transform: translateX(-50%); }
+body[data-project="fury"] .is-in .fy-seven i { opacity: 1; transform: none; }
+body[data-project="fury"] .is-in .fy-seven i:first-child { background: var(--fury-pink); transition-delay: 1.2s; }
+body[data-project="fury"] .fy-quotes { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: clamp(2.4rem, 5vw, 3.6rem); }
+@media (max-width: 860px) {
+  body[data-project="fury"] .fy-stats { grid-template-columns: 1fr 1fr; row-gap: 2.4rem; }
+  body[data-project="fury"] .fy-quotes { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-project="fury"] .fy-chips li, body[data-project="fury"] .fy-seven i { opacity: 1; transform: none; transition: none; }
+}
+
+/* count-up digits sit inside the big figure, not as a caption */
+body[data-project="fury"] .fy-stat b .fy-count { display: inline; margin: 0; font-size: inherit; color: inherit; max-width: none; line-height: inherit; }
+body[data-project="fury"] .fy-stat--icon img { mix-blend-mode: lighten; }
+
+/* seamless: the persona board and the problem block sit on the page itself */
+body[data-project="fury"] .fp-board,
+body[data-project="fury"] .fy-prob { background: none; border: 0; border-radius: 0; padding-left: 0; padding-right: 0; }
+body[data-project="fury"] .fp-board { padding-top: 0; overflow: visible; }
+body[data-project="fury"] .fy-prob { padding-top: .5rem; }
+body[data-project="fury"] .fp-num { color: #222227; }
+
+body[data-project="fury"] .fp-board > .fp-persona:first-child { margin-top: clamp(5rem, 9vw, 7.5rem); }
+
+/* --- Key Features bento (Figma "Frame 481818") -------------------------- */
+body[data-project="fury"] .fb-wrap { margin-top: clamp(3rem, 7vw, 5rem); }
+body[data-project="fury"] .fb-head { display: flex; justify-content: space-between; align-items: end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+body[data-project="fury"] .fb {
+  display: grid; grid-template-columns: 360fr 843fr 415fr; gap: 14px;
+  aspect-ratio: 1662 / 1080;
+}
+body[data-project="fury"] .fb-col { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+body[data-project="fury"] .fb-col > * { flex: var(--g) 1 0; min-height: 0; }
+body[data-project="fury"] .fb-row { display: grid; grid-template-columns: 320fr 510fr; gap: 14px; min-height: 0; }
+body[data-project="fury"] .fb-t {
+  position: relative; overflow: hidden; isolation: isolate; border-radius: 12px; color: #fff;
+  padding: clamp(.9rem, 1.6vw, 1.4rem);
+  opacity: 0; transform: translateY(16px) scale(.985);
+  transition: opacity .7s ease, transform .8s cubic-bezier(.2, .8, .2, 1);
+}
+body[data-project="fury"] .is-in .fb-t { opacity: 1; transform: none; }
+body[data-project="fury"] .fb-col--m .fb-t { transition-delay: .1s; }
+body[data-project="fury"] .fb-col--r .fb-t { transition-delay: .2s; }
+body[data-project="fury"] .fb-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+body[data-project="fury"] .fb-n { display: block; font-family: var(--fury-sticker); font-size: .72rem; opacity: .65; }
+body[data-project="fury"] .fb-t h4 { margin: .5rem 0 .5rem; font-family: var(--fury-display); font-weight: 600; letter-spacing: -0.035em; line-height: 1.05; font-size: clamp(1.15rem, .7rem + 1.2vw, 1.9rem); }
+body[data-project="fury"] .fb-t p { margin: 0; font-size: clamp(.74rem, .62rem + .3vw, .92rem); line-height: 1.45; max-width: 17rem; }
+
+/* quote: the photo breathes, the words arrive one at a time */
+body[data-project="fury"] .fb-quote { background: #23308f; }
+body[data-project="fury"] .fb-quote .fb-bg { object-position: bottom; animation: fbBreathe 14s ease-in-out infinite; transform-origin: 50% 80%; }
+@keyframes fbBreathe { 50% { transform: scale(1.07); } }
+body[data-project="fury"] .fb-quote__mark { display: block; font-family: Georgia, serif; font-weight: 700; font-size: 3.6rem; line-height: .7; color: #5b7ae0; margin-top: .6rem; }
+body[data-project="fury"] .fb-quote__t { font-family: var(--fury-display) !important; font-size: clamp(.95rem, .6rem + .9vw, 1.45rem) !important; line-height: 1.25 !important; letter-spacing: -0.03em; color: #c9d1ff; max-width: none !important; margin-top: .6rem !important; }
+body[data-project="fury"] .fb-quote__t span { display: inline-block; opacity: 0; transform: translateY(6px); transition: opacity .5s ease, transform .5s ease; transition-delay: calc(.6s + var(--i) * 90ms); }
+body[data-project="fury"] .is-in .fb-quote__t span { opacity: 1; transform: none; }
+
+/* VR: pink, text right, the headset floats */
+body[data-project="fury"] .fb-vr { background: #f52d5d; text-align: right; }
+body[data-project="fury"] .fb-vr p { margin-left: auto; color: rgba(255,255,255,.9); }
+body[data-project="fury"] .fb-vr__art { object-position: bottom left; animation: fbFloat 6s ease-in-out infinite; }
+@keyframes fbFloat { 50% { transform: translateY(-10px); } }
+
+/* cardboard: the line drawing on blue, a light sweeps across */
+body[data-project="fury"] .fb-card { background: #2b9be2; text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+body[data-project="fury"] .fb-card .fb-bg { object-position: left; }
+body[data-project="fury"] .fb-card h4 { font-weight: 400; font-size: clamp(1.1rem, .6rem + 1.25vw, 1.9rem); margin-top: .4rem; }
+body[data-project="fury"] .fb-shine { position: absolute; inset: 0; z-index: -1; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%); background-size: 250% 100%; animation: fbSweep 5.5s ease-in-out infinite; }
+@keyframes fbSweep { 0%, 30% { background-position: 120% 0; } 70%, 100% { background-position: -20% 0; } }
+
+/* the colour bar from the board */
+body[data-project="fury"] .fb-bar { display: grid; grid-template-columns: repeat(5, 1fr) 1fr; overflow: hidden; border-radius: 2px; }
+body[data-project="fury"] .fb-bar i { background: var(--c); transform: scaleX(0); transform-origin: left; transition: transform .6s cubic-bezier(.2, .8, .2, 1); transition-delay: calc(.5s + var(--i) * 80ms); }
+body[data-project="fury"] .fb-bar i:last-child { background: linear-gradient(90deg, #141416, transparent); }
+body[data-project="fury"] .is-in .fb-bar i { transform: none; }
+
+/* --- the phones, in 3D ------------------------------------------------ */
+body[data-project="fury"] .fb-phones { padding: 0; background: radial-gradient(120% 90% at 50% 40%, #77777d 0%, #5a5a60 55%, #3c3c41 100%); }
+body[data-project="fury"] .fb-stage { position: absolute; inset: 0; perspective: 1100px; perspective-origin: 50% 40%; }
+body[data-project="fury"] .fb-ph { position: absolute; height: 82%; aspect-ratio: 0.48; transform-style: preserve-3d; }
+body[data-project="fury"] .fb-ph--a { left: 22%; top: 14%; transform: rotateX(14deg) rotateZ(-14deg); }
+body[data-project="fury"] .fb-ph--b { left: 58%; top: 4%; transform: rotateX(14deg) rotateZ(12deg); }
+body[data-project="fury"] .fb-ph__body { position: absolute; inset: 0; transform-style: preserve-3d; animation: fbSpin 13s linear infinite; }
+body[data-project="fury"] .fb-ph--b .fb-ph__body { animation-direction: reverse; animation-delay: -4s; }
+@keyframes fbSpin { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+body[data-project="fury"] .fb-ph__edge { position: absolute; inset: 0; border-radius: 14%/ 6.8%; background: linear-gradient(90deg, #2a2a2e, #4a4a50 50%, #2a2a2e); transform: translateZ(var(--z)); }
+body[data-project="fury"] .fb-ph__face { position: absolute; inset: 0; border-radius: 14% / 6.8%; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+body[data-project="fury"] .fb-ph__front { transform: translateZ(6px); background: #050506; padding: 4%; box-shadow: inset 0 0 0 1.5px #3a3a40; }
+body[data-project="fury"] .fb-ph__front img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 11% / 5.3%; display: block; }
+body[data-project="fury"] .fb-ph__notch { position: absolute; left: 50%; top: 3.4%; width: 32%; height: 3.2%; transform: translateX(-50%); border-radius: 999px; background: #050506; }
+body[data-project="fury"] .fb-ph__glare { position: absolute; inset: 0; background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.16) 45%, transparent 60%); pointer-events: none; }
+body[data-project="fury"] .fb-ph__back { transform: rotateY(180deg) translateZ(6px); background: linear-gradient(150deg, #2e2e33, #18181b 60%, #232327); box-shadow: inset 0 0 0 1.5px #3a3a40; }
+body[data-project="fury"] .fb-ph__cam { position: absolute; left: 8%; top: 4%; width: 40%; aspect-ratio: 1; border-radius: 26%; background: #26262b; box-shadow: inset 0 0 0 1px #45454c; }
+body[data-project="fury"] .fb-ph__cam i { position: absolute; width: 36%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #3b4a66, #0a0a0c 60%); box-shadow: 0 0 0 2px #3a3a40; }
+body[data-project="fury"] .fb-ph__cam i:nth-child(1) { left: 9%; top: 9%; }
+body[data-project="fury"] .fb-ph__cam i:nth-child(2) { left: 9%; bottom: 9%; }
+body[data-project="fury"] .fb-ph__cam i:nth-child(3) { right: 9%; top: 32%; }
+body[data-project="fury"] .fb-ph__mark { position: absolute; left: 50%; top: 55%; width: 46%; transform: translateX(-50%); opacity: .9; }
+
+/* green: the selection box hops between the two lines */
+body[data-project="fury"] .fb-green { background: #7fe03a; color: #0d0d0f; display: grid; grid-template-rows: auto 1fr; }
+body[data-project="fury"] .fb-sel { position: relative; place-self: center; margin: 0 !important; max-width: none !important; display: grid; font-family: var(--fury-display); font-weight: 600; font-size: clamp(1.1rem, .6rem + 1.2vw, 1.8rem) !important; line-height: 1.1 !important; letter-spacing: -0.03em; }
+body[data-project="fury"] .fb-sel span { padding: .1em .5em; animation: fbPick 4s steps(1) infinite; }
+body[data-project="fury"] .fb-sel span:nth-child(2) { animation-delay: -2s; }
+@keyframes fbPick { 0% { color: #0d0d0f; } 50% { color: rgba(13,13,15,.35); } }
+body[data-project="fury"] .fb-sel__box { position: absolute; left: 0; right: 0; top: 0; height: 50%; border: 2px solid #0d0d0f; animation: fbBox 4s cubic-bezier(.6, 0, .2, 1) infinite; }
+@keyframes fbBox { 0%, 40% { transform: translateY(0); } 50%, 90% { transform: translateY(100%); } 100% { transform: translateY(0); } }
+body[data-project="fury"] .fb-sel__box i { position: absolute; width: 9px; height: 9px; background: #fff; border: 2px solid #0d0d0f; }
+body[data-project="fury"] .fb-sel__box i:nth-child(1) { left: -6px; top: -6px; } body[data-project="fury"] .fb-sel__box i:nth-child(2) { right: -6px; top: -6px; }
+body[data-project="fury"] .fb-sel__box i:nth-child(3) { left: -6px; bottom: -6px; } body[data-project="fury"] .fb-sel__box i:nth-child(4) { right: -6px; bottom: -6px; }
+
+/* limitless: the sessions scroll past like a carousel */
+body[data-project="fury"] .fb-limit { background: #111113; border: 1px solid #2c2c33; text-align: center; display: flex; flex-direction: column; }
+body[data-project="fury"] .fb-limit h4 { font-weight: 400; margin-top: .2rem; }
+body[data-project="fury"] .fb-strip { margin: auto calc(-1 * clamp(.9rem, 1.6vw, 1.4rem)) calc(-1 * clamp(.9rem, 1.6vw, 1.4rem)); overflow: hidden; height: 55%; }
+body[data-project="fury"] .fb-strip__track { display: flex; width: max-content; height: 100%; animation: fbMarquee 18s linear infinite; }
+body[data-project="fury"] .fb-strip__track img { height: 100%; width: auto; max-width: none; display: block; }
+@keyframes fbMarquee { to { transform: translateX(-50%); } }
+
+/* alter ego: grey card, the pair bob, the mood flips */
+body[data-project="fury"] .fb-ego { background: #dcdcde; padding: 0; }
+body[data-project="fury"] .fb-ego__art { position: absolute; inset: 0; animation: fbFloat 5s ease-in-out infinite; }
+body[data-project="fury"] .fb-ego__art .fb-bg { object-fit: contain; object-position: right bottom; }
+body[data-project="fury"] .fb-ego__mood { position: absolute; left: 68%; top: 49%; color: #fff; display: grid; line-height: 1; }
+body[data-project="fury"] .fb-ego__mood small { font-size: clamp(.5rem, .3rem + .4vw, .72rem); color: #173c0c; font-weight: 600; }
+body[data-project="fury"] .fb-ego__mood b { font-family: var(--fury-display); font-size: clamp(.9rem, .5rem + .9vw, 1.5rem); font-weight: 700; }
+
+/* wheel: the emotions drift */
+body[data-project="fury"] .fb-wheel { background: #141416; border: 1px solid #2c2c33; }
+body[data-project="fury"] .fb-wheel__art { object-position: bottom; animation: fbDrift 12s ease-in-out infinite; transform-origin: 70% 100%; }
+@keyframes fbDrift { 50% { transform: scale(1.05) rotate(-1.5deg); } }
+
+@media (max-width: 860px) {
+  body[data-project="fury"] .fb { grid-template-columns: 1fr; aspect-ratio: auto; }
+  body[data-project="fury"] .fb-col > * { flex: none; }
+  body[data-project="fury"] .fb-quote { height: 22rem; } body[data-project="fury"] .fb-vr { height: 24rem; }
+  body[data-project="fury"] .fb-card { height: 10rem; } body[data-project="fury"] .fb-bar { height: 14px; }
+  body[data-project="fury"] .fb-phones { height: 26rem; }
+  body[data-project="fury"] .fb-row { grid-template-columns: 1fr; } body[data-project="fury"] .fb-green, body[data-project="fury"] .fb-limit { height: 11rem; }
+  body[data-project="fury"] .fb-ego { height: 15rem; } body[data-project="fury"] .fb-wheel { height: 30rem; }
+  body[data-project="fury"] .fb-ph { height: 78%; } body[data-project="fury"] .fb-ph--a { left: 8%; } body[data-project="fury"] .fb-ph--b { left: 52%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-project="fury"] .fb * { animation: none !important; transition: none !important; }
+  body[data-project="fury"] .fb-t, body[data-project="fury"] .fb-quote__t span { opacity: 1 !important; transform: none !important; }
+  body[data-project="fury"] .fb-bar i { transform: none !important; }
+  body[data-project="fury"] .fb-ph--a .fb-ph__body { transform: rotateY(-25deg); } body[data-project="fury"] .fb-ph--b .fb-ph__body { transform: rotateY(25deg); }
+}
+
+body[data-project="fury"] .fb-sel { font-size: clamp(.95rem, .5rem + .95vw, 1.5rem) !important; white-space: nowrap; }
+body[data-project="fury"] .fb-limit h4 { font-size: clamp(1rem, .6rem + .9vw, 1.5rem); }
+body[data-project="fury"] .fb-strip { height: 62%; }
+
+/* --- bridge lines: the sentence that hands one chapter to the next ------ */
+body[data-project="fury"] .fy-bridge {
+  margin: clamp(4rem, 9vw, 7rem) 0 0; max-width: 34ch;
+  font-family: var(--fury-display); font-weight: 500; font-size: clamp(1.35rem, .9rem + 1.6vw, 2.2rem);
+  line-height: 1.25; letter-spacing: -0.025em; color: #9a9aa3;
+  padding-left: 1.1rem; border-left: 3px solid var(--fury-pink);
+  opacity: 0; transform: translateY(14px); transition: opacity .8s ease, transform .8s cubic-bezier(.2, .8, .2, 1);
+}
+body[data-project="fury"] .is-in .fy-bridge { opacity: 1; transform: none; }
+body[data-project="fury"] .sec--dark .fy-bridge { color: rgba(255,255,255,.85); border-left-color: #fff; }
+@media (prefers-reduced-motion: reduce) { body[data-project="fury"] .fy-bridge { opacity: 1; transform: none; transition: none; } }
+
+/* =========================================================================
+   FURY, ON THE SITE'S SCALE
+   The study was set louder than every other study on the site: 58px section
+   titles, 35px bridge lines, boards at full width and no rest between
+   sections. This brings it onto the Onefinnet study's system: one type
+   scale, two typefaces (Geist for text, Sora for headings), artwork at a
+   reading width, and room between chapters. Fury keeps its colours and its
+   stickers; it stops shouting.
+   ========================================================================= */
+body[data-project="fury"] { --fury-sticker: 'Geist', system-ui, sans-serif; }
+
+/* chapters breathe */
+body[data-project="fury"] .sec { padding-block: clamp(4.5rem, 8vw, 8rem); }
+body[data-project="fury"] .sec + .sec { border-top: 1px solid rgba(255, 255, 255, .06); }
+
+/* the sticker, smaller and in Geist */
+body[data-project="fury"] .sec__eyebrow { font-family: 'Geist', system-ui, sans-serif; font-weight: 500; font-size: .72rem; letter-spacing: .01em; padding: .2em .55em .24em; border-radius: 5px; transform: rotate(-3deg); margin: 0 0 .6rem .2rem; }
+/* one heading size for every chapter */
+body[data-project="fury"] .sec__heading,
+body[data-project="fury"] #problem .sec__heading,
+body[data-project="fury"] #solution .sec__heading {
+  font-family: var(--fury-display); font-weight: 600; font-size: clamp(1.45rem, 1.1rem + .8vw, 1.85rem);
+  line-height: 1.2; letter-spacing: -.02em; max-width: 36ch; margin-inline: 0; text-align: left;
+}
+body[data-project="fury"] #solution { text-align: left; }
+body[data-project="fury"] #solution .sec__eyebrow { display: inline-block; width: auto; margin: 0 0 .6rem .2rem; translate: none; }
+body[data-project="fury"] .sec__body { max-width: 42rem; }
+body[data-project="fury"] .sec__body p { font-size: .9375rem; line-height: 1.65; }
+body[data-project="fury"] .blk-head__t { font-family: var(--fury-display); font-weight: 600; font-size: 1.05rem; letter-spacing: -.01em; }
+body[data-project="fury"] .blk-head__b { font-size: .9rem; line-height: 1.6; max-width: 42rem; }
+body[data-project="fury"] .blk + .blk { margin-top: clamp(2rem, 4vw, 3.5rem); }
+
+/* bridges: a quiet line between chapters, not a headline */
+body[data-project="fury"] .fy-bridge {
+  font-family: 'Geist', system-ui, sans-serif; font-weight: 400; font-size: .95rem; line-height: 1.5;
+  color: #8d8d96; margin-top: clamp(2.5rem, 5vw, 4rem); padding-left: .9rem; border-left-width: 2px;
+}
+
+/* headings and numbers inside the boards, onto the same scale */
+body[data-project="fury"] :is(.fp-h, .fz-h, .fz-vis__txt h3, .fy-rev__head h3, .fy-conf__h, .fy-syn__h, .fy-dual__h) {
+  font-size: clamp(1.3rem, 1rem + .9vw, 1.75rem) !important; line-height: 1.2; letter-spacing: -.02em;
+}
+body[data-project="fury"] :is(.fy-stat b, .fy-pc--id b, .fy-survey__n b) { font-size: clamp(1.9rem, 1.4rem + 1.4vw, 2.6rem) !important; }
+body[data-project="fury"] .fy-test__n { font-size: clamp(3rem, 2.2rem + 2.4vw, 4.4rem); }
+body[data-project="fury"] .fp-num { font-size: clamp(3.5rem, 2.5rem + 3vw, 5rem) !important; }
+
+/* artwork sits at a reading width, centred, with air around it */
+body[data-project="fury"] .blk-raw > .fy-zoom,
+body[data-project="fury"] .blk-raw > .fy-win,
+body[data-project="fury"] .blk-raw > .fy-maps,
+body[data-project="fury"] .blk-raw > .fframe { max-width: 60rem; margin-inline: auto; }
+body[data-project="fury"] .fy-zoom--device { max-width: 46rem; margin-inline: auto; }
+
+/* the in-scene caption, on the same scale */
+body[data-project="fury"] .fy-eco__st { font-size: clamp(1.15rem, 1rem + .5vw, 1.45rem); }
+body[data-project="fury"] .fy-eco__sp { font-size: .875rem; }
+body[data-project="fury"] .fy-eco__cap { height: 4.4rem; }
+
+/* --- the headset, seen from inside: the app plays in its lenses ---------- */
+body[data-project="fury"] .fy-eco__quest {
+  position: absolute; z-index: 2; left: 53%; top: 46%; width: 33%; aspect-ratio: 678 / 365; pointer-events: none;
+  filter: drop-shadow(0 1.6cqw 1.8cqw rgba(0,0,0,.85)) drop-shadow(0 0 calc(2.6cqw * var(--vglow)) rgba(191, 238, 97, calc(.45 * var(--vglow))));
+  animation: fyQuestFloat 6s ease-in-out infinite;
+}
+body[data-project="fury"] .fy-eco__qimg { position: absolute; inset: 0; width: 100%; height: 100%; }
+body[data-project="fury"] .fy-eco__eye {
+  position: absolute; overflow: hidden; border-radius: 46% 46% 44% 44%;
+  opacity: calc(var(--vglow)); box-shadow: inset 0 0 .8cqw .3cqw rgba(0,0,0,.85);
+}
+body[data-project="fury"] .fy-eco__eye--l { left: 38.4%; top: 60.4%; width: 8.4%; height: 15.8%; }
+body[data-project="fury"] .fy-eco__eye--r { left: 52.6%; top: 61.2%; width: 7.8%; height: 15.2%; }
+body[data-project="fury"] .fy-eco__eye img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; filter: saturate(1.2) brightness(1.15); }
+body[data-project="fury"] .fy-eco__eye::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 34% 30%, rgba(255,255,255,.45), transparent 32%), radial-gradient(circle, transparent 50%, rgba(10,0,30,.65)); }
+body[data-project="fury"] .fy-eco__name--v { left: 69.5%; top: 84%; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__quest { position: relative; left: auto; top: auto; order: 5; width: 92%; margin: -1rem auto 0; }
+
+/* --- Research: one module, three methods ---------------------------------- */
+body[data-project="fury"] .fy-tabs__bar {
+  display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; margin-bottom: 1.6rem;
+  background: #222227; border: 1px solid #2e2e35; border-radius: 999px;
+}
+body[data-project="fury"] .fy-tabs__bar button {
+  margin: 0; padding: .5rem 1rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer;
+  font: inherit; font-size: .82rem; font-weight: 500; color: #a1a1aa; display: inline-flex; align-items: baseline; gap: .45rem;
+  transition: color .2s ease, background-color .2s ease;
+}
+body[data-project="fury"] .fy-tabs__bar button b { font-family: var(--fury-display); font-size: .68rem; color: #6d6d75; }
+body[data-project="fury"] .fy-tabs__bar button i { font-style: normal; font-size: .68rem; padding: .05rem .4rem; border-radius: 999px; background: var(--fury-lime); color: #0d0d0f; }
+body[data-project="fury"] .fy-tabs__bar button:hover { color: #fff; }
+body[data-project="fury"] .fy-tabs__bar button[aria-selected="true"] { background: #fff; color: #0d0d0f; }
+body[data-project="fury"] .fy-tabs__bar button[aria-selected="true"] b { color: var(--fury-pink); }
+body[data-project="fury"] .fy-tabs__panel { animation: fyTabIn .45s cubic-bezier(.2, .8, .2, 1); }
+body[data-project="fury"] .fy-tabs__panel[hidden] { display: none; }
+@keyframes fyTabIn { from { opacity: 0; translate: 0 10px; } }
+body[data-project="fury"] .fy-tabs__lede { max-width: 40rem; margin: 0 0 1.4rem; font-size: .9rem; line-height: 1.6; color: #a1a1aa; }
+body[data-project="fury"] .fy-maps--compact { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; max-width: 60rem; }
+body[data-project="fury"] .fy-maps--compact figure { margin: 0; }
+body[data-project="fury"] .fy-maps--compact figcaption { margin-top: .6rem; font-size: .8rem; color: #8d8d96; }
+body[data-project="fury"] .fy-iq { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; max-width: 60rem; }
+body[data-project="fury"] .fy-iq li { display: flex; gap: .8rem; align-items: baseline; padding: .9rem 1rem; background: #222227; border: 1px solid #2e2e35; border-radius: 10px; font-size: .88rem; line-height: 1.5; color: #e4e4e7; }
+body[data-project="fury"] .fy-iq b { font-family: var(--fury-display); font-size: .72rem; color: var(--fury-pink); }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-maps--compact, body[data-project="fury"] .fy-iq { grid-template-columns: 1fr; }
+  body[data-project="fury"] .fy-tabs__bar { display: flex; border-radius: 14px; }
+  body[data-project="fury"] .fy-tabs__bar button { flex: 1 1 100%; border-radius: 11px; }
+}
+
+/* --- Validation: the numbers, and the reading folded away ----------------- */
+body[data-project="fury"] .fy-val { display: grid; gap: 1rem; max-width: 60rem; }
+body[data-project="fury"] .fy-val__stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
+body[data-project="fury"] .fy-val__s { padding: 1.2rem 1.1rem; border-radius: 12px; background: #222227; border: 1px solid #2e2e35; display: grid; gap: .5rem; align-content: start; }
+body[data-project="fury"] .fy-val__s b { font-family: var(--fury-display); font-weight: 600; font-size: clamp(1.6rem, 1.2rem + 1vw, 2.2rem); letter-spacing: -.03em; color: var(--fury-lime); line-height: 1; }
+body[data-project="fury"] .fy-val__s:first-child b { color: #fff; }
+body[data-project="fury"] .fy-val__s span { font-size: .84rem; line-height: 1.45; color: #a1a1aa; }
+body[data-project="fury"] .fy-val__reads { border: 1px solid #2e2e35; border-radius: 12px; background: #1c1c21; }
+body[data-project="fury"] .fy-val__reads summary { list-style: none; display: flex; justify-content: space-between; align-items: center; padding: .9rem 1.1rem; cursor: pointer; font-size: .88rem; font-weight: 500; color: #e4e4e7; }
+body[data-project="fury"] .fy-val__reads summary::-webkit-details-marker { display: none; }
+body[data-project="fury"] .fy-val__reads summary i { font-style: normal; font-size: 1.1rem; color: #8d8d96; transition: rotate .25s ease; }
+body[data-project="fury"] .fy-val__reads[open] summary i { rotate: 45deg; }
+body[data-project="fury"] .fy-val__reads .fy-reads { margin: 0; padding: 0 1.1rem 1.1rem; }
+@media (max-width: 760px) { body[data-project="fury"] .fy-val__stats { grid-template-columns: 1fr 1fr; } }
+
+/* --- Proposed solution: the phone is a real iPhone frame -------------------
+   phone-frame.webp is an iPhone with its screen cut out. The UI sits behind it
+   in the screen hole (5.3% in, 2.5% down, 89.5% x 95% of the frame), so the
+   frame's bezel and Dynamic Island lie over the design exactly as a device's
+   would, and nothing is drawn on top of the screens themselves. */
+body[data-project="fury"] .fy-eco__phone {
+  left: 22.6%; top: 9%; width: 15.4%; height: auto; aspect-ratio: 418 / 842;
+  padding: 0; border-radius: 0; background: none; box-shadow: none; transform: none;
+  filter: drop-shadow(0 2.4cqw 2.4cqw rgba(0,0,0,.75)) drop-shadow(0 0 calc(2.6cqw * var(--pglow)) rgba(245, 45, 93, calc(.38 * var(--pglow))));
+}
+body[data-project="fury"] .fy-eco__phone::before,
+body[data-project="fury"] .fy-eco__phone::after,
+body[data-project="fury"] .fy-eco__phone .fy-eco__screen::before,
+body[data-project="fury"] .fy-eco__phone .fy-eco__screen::after,
+body[data-project="fury"] .fy-eco__island { display: none; }
+body[data-project="fury"] .fy-eco__phone .fy-eco__screen {
+  position: absolute; left: 5.4%; top: 2.6%; width: 89.3%; height: 94.8%; height: auto; aspect-ratio: 374 / 800;
+  border: 0; border-radius: 11% / 5.2%; overflow: hidden; background: #000;
+}
+body[data-project="fury"] .fy-eco__phone .fy-eco__screen > img { clip-path: none; border-radius: 0; }
+body[data-project="fury"] .fy-eco__frame { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+body[data-project="fury"] .fy-eco__spot { z-index: 1; }
+body[data-project="fury"] .fy-eco__name--m { top: 75%; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__phone { width: min(58vw, 15rem); padding: 0; border-radius: 0; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__phone .fy-eco__screen { border-radius: 11% / 5.2%; }
+
+/* --- Revenue model: the wheel, paying in ---------------------------------- */
+body[data-project="fury"] .fy-rev__pt h5 { font-family: var(--fury-display); font-weight: 600; font-size: 1.02rem; display: inline-flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+body[data-project="fury"] .fy-rev__pt:nth-child(odd) h5 { justify-content: flex-end; }
+body[data-project="fury"] .fy-rev__pt:nth-child(5) h5 { justify-content: flex-start; }
+body[data-project="fury"] .fy-rev__pt { cursor: default; transition: opacity .3s ease, transform .4s cubic-bezier(.2, .8, .2, 1); border-radius: 10px; outline: none; }
+body[data-project="fury"] .fy-rev.has-on .fy-rev__pt:not(.is-on) { opacity: .35; }
+body[data-project="fury"] .fy-rev__pt.is-on { transform: scale(1.03); }
+body[data-project="fury"] .fy-rv__soon { font-style: normal; font-family: 'Geist', system-ui, sans-serif; font-size: .62rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: .18rem .45rem; border-radius: 999px; border: 1px dashed currentColor; color: #8a6d00; background: #fff6d6; }
+
+body[data-project="fury"] .fy-rv { position: relative; aspect-ratio: 1; width: 100%; max-width: 26rem; justify-self: center; }
+body[data-project="fury"] .fy-rv__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+body[data-project="fury"] .fy-rv__seg { cursor: pointer; opacity: 0; transform: scale(.55) rotate(-24deg); transition: opacity .5s ease calc(var(--k) * .09s), transform .8s cubic-bezier(.2, 1.3, .4, 1) calc(var(--k) * .09s); }
+body[data-project="fury"] .fy-rev.is-in .fy-rv__seg { opacity: 1; transform: none; }
+body[data-project="fury"] .fy-rv__shape { fill: var(--c); stroke: var(--c); stroke-width: 12; stroke-linejoin: round; transition: filter .3s ease; }
+body[data-project="fury"] .fy-rv__hatch { fill: url(#fyHatch); stroke: none; pointer-events: none; }
+body[data-project="fury"] .fy-rv__ico { fill: none; stroke: #fff; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; color: #fff; pointer-events: none; }
+body[data-project="fury"] .fy-rv__seg.is-future .fy-rv__shape { fill-opacity: .82; }
+/* the stream paying in steps out of the wheel */
+body[data-project="fury"] .fy-rev.is-in .fy-rv__seg.is-on { transform: scale(1.07); transition-delay: 0s; }
+body[data-project="fury"] .fy-rv__seg.is-on .fy-rv__shape { filter: drop-shadow(0 6px 14px rgba(0,0,0,.25)) brightness(1.06); }
+body[data-project="fury"] .fy-rev.has-on .fy-rv__seg:not(.is-on) { opacity: .5; }
+
+/* the ring that fills as streams pay in */
+body[data-project="fury"] .fy-rv__track { fill: #fafafa; stroke: #eceae4; stroke-width: 7; }
+body[data-project="fury"] .fy-rv__fill { fill: none; stroke: #f2b230; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 0 6; transition: stroke-dasharray .6s cubic-bezier(.2, .8, .2, 1); filter: drop-shadow(0 0 6px rgba(242, 178, 48, .5)); }
+body[data-project="fury"] .fy-rv__bag { position: absolute; left: 50%; top: 50%; width: 30%; height: auto; transform: translate(-50%, -50%); pointer-events: none; opacity: 0; transition: opacity .5s ease .5s; }
+body[data-project="fury"] .fy-rev.is-in .fy-rv__bag { opacity: 1; }
+body[data-project="fury"] .fy-rev.is-full .fy-rv__bag { filter: drop-shadow(0 0 18px rgba(242, 178, 48, .65)); }
+body[data-project="fury"] .fy-rv__count { position: absolute; left: 50%; top: 67.5%; translate: -50% 0; font-size: .7rem; color: #8d8d96; white-space: nowrap; pointer-events: none; }
+body[data-project="fury"] .fy-rv__count b { color: #111114; font-variant-numeric: tabular-nums; }
+
+/* a coin */
+body[data-project="fury"] .fy-rv__coin {
+  position: absolute; z-index: 3; width: 7%; aspect-ratio: 1; border-radius: 50%; pointer-events: none;
+  display: grid; place-items: center; font-weight: 800; font-size: .8rem; color: #9a6400;
+  background: radial-gradient(circle at 35% 30%, #fff3b0, #f6c445 45%, #d99a1c 80%);
+  box-shadow: inset 0 0 0 2px rgba(160, 100, 0, .35), 0 4px 10px rgba(160, 100, 0, .35);
+}
+body[data-project="fury"] .fy-rv__coin.is-ghost { background: rgba(255, 246, 214, .7); color: #b89a3a; box-shadow: inset 0 0 0 1.5px #d9b54a; border: 1px dashed #d9b54a; }
+
+body[data-project="fury"] .fy-rv__key { display: flex; justify-content: center; gap: 1.4rem; margin: 1.6rem 0 0; font-size: .78rem; color: #6d6d75; }
+body[data-project="fury"] .fy-rv__sw { display: inline-block; width: .9rem; height: .9rem; border-radius: 3px; margin-right: .45rem; vertical-align: -2px; background: #dc2a3f; }
+body[data-project="fury"] .fy-rv__sw--f { background: repeating-linear-gradient(45deg, #f07481 0 3px, #f6a7af 3px 6px); }
+body[data-project="fury"] .fy-rev.is-still .fy-rv__seg { transition: none; }
+
+/* --- Proposed solution: fixes ---------------------------------------------
+   The in-headset screen floats clear of the headset with a soft beam from the
+   lenses up to it, so it reads as what you see inside rather than a monitor on
+   a stand. Arcs end flat, so nothing shows before they draw. The Reflections
+   mark sits on the Reflections row, above the screenshot. */
+body[data-project="fury"] .fy-eco__arc { stroke-linecap: butt; }
+body[data-project="fury"] .fy-eco__visor { top: 6%; height: 30%; }
+body[data-project="fury"] .fy-eco__quest { top: 51%; }
+body[data-project="fury"] .fy-eco__beam {
+  position: absolute; z-index: 1; left: 58%; top: 35%; width: 22%; height: 34%; pointer-events: none;
+  clip-path: polygon(0 0, 100% 0, 62% 100%, 38% 100%);
+  background: linear-gradient(0deg, rgba(191, 238, 97, .0), rgba(191, 238, 97, .16) 45%, rgba(191, 238, 97, .05));
+  opacity: var(--vglow); filter: blur(.4cqw);
+}
+body[data-project="fury"] .fy-eco__spot { top: 32.5%; height: 28.5%; left: 2%; right: 2%; z-index: 2; border-radius: .9cqw; }
+body[data-project="fury"] .fy-eco__name--v { top: 86.5%; }
+body[data-project="fury"] .fy-eco.is-flat .fy-eco__beam { display: none; }
+
+/* interviews: the board's own cards, made compact. Same light cards, pink
+   numbers and sticker; the staggered tall heights are gone, so seven
+   questions sit in two short rows of a four-column grid. */
+body[data-project="fury"] .fy-qs--compact {
+  position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem;
+  max-width: 60rem; padding: 1.6rem 1.2rem 1.2rem; background: #fff; border-radius: 16px;
+}
+body[data-project="fury"] .fy-qs--compact .fy-qs__tag { right: 1.4rem; top: -.7rem; font-size: .78rem; }
+body[data-project="fury"] .fy-qs--compact .fy-q { min-height: 0; grid-row: auto; grid-column: auto; justify-content: start; padding: .85rem .95rem; }
+body[data-project="fury"] .fy-qs--compact .fy-q b { font-size: 1.35rem; line-height: 1; }
+body[data-project="fury"] .fy-qs--compact .fy-q p { margin-top: .45rem; font-size: .82rem; line-height: 1.45; }
+body[data-project="fury"] .fy-qs--compact .fy-q--07 { grid-column: span 2; }
+@media (max-width: 900px) { body[data-project="fury"] .fy-qs--compact { grid-template-columns: 1fr 1fr; } body[data-project="fury"] .fy-qs--compact .fy-q--07 { grid-column: 1 / -1; } }
+@media (max-width: 520px) { body[data-project="fury"] .fy-qs--compact { grid-template-columns: 1fr; } body[data-project="fury"] .fy-qs--compact .fy-q--07 { grid-column: auto; } }
+
+/* --- Why VR: the question and its four answers, evenly --------------------- */
+body[data-project="fury"] .fw {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto auto;
+  column-gap: clamp(1.5rem, 4vw, 3.5rem); row-gap: clamp(1.4rem, 3vw, 2.4rem); align-items: center;
+  max-width: 60rem; margin: clamp(2.5rem, 6vw, 4.5rem) auto;
+}
+body[data-project="fury"] .fw__h {
+  grid-column: 2; grid-row: 1 / span 2; margin: 0; white-space: nowrap;
+  font-family: var(--fury-display); font-weight: 800; font-size: clamp(2.6rem, 1.6rem + 3.4vw, 4.4rem); letter-spacing: -.05em; line-height: 1;
+  background: linear-gradient(100deg, #e8365e 0%, #c2264b 40%, #ff7a96 50%, #c2264b 60%, #e8365e 100%); background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: fwSheen 4.5s ease-in-out infinite;
+}
+@keyframes fwSheen { 0%, 30% { background-position: 100% 0; } 70%, 100% { background-position: 0 0; } }
+body[data-project="fury"] .fw__h span { display: inline-block; opacity: 0; translate: 0 .5em; transition: opacity .5s ease calc(var(--i) * .05s), translate .7s cubic-bezier(.2, 1.4, .4, 1) calc(var(--i) * .05s); }
+body[data-project="fury"] .is-in .fw__h span { opacity: 1; translate: 0 0; }
+
+body[data-project="fury"] .fw__pt {
+  position: relative; padding: 1.1rem 1.2rem; border-radius: 14px; background: #fff; border: 1px solid #ececf0;
+  box-shadow: 0 10px 24px -18px rgba(17, 17, 20, .3);
+  opacity: 0; translate: 0 12px; transition: opacity .55s ease calc(.35s + var(--i) * .12s), translate .7s cubic-bezier(.2, .8, .2, 1) calc(.35s + var(--i) * .12s), border-color .35s ease, box-shadow .35s ease, background-color .35s ease;
+}
+body[data-project="fury"] .is-in .fw__pt { opacity: 1; translate: 0 0; }
+body[data-project="fury"] .fw__pt--a { grid-column: 1; grid-row: 1; text-align: right; }
+body[data-project="fury"] .fw__pt--c { grid-column: 1; grid-row: 2; text-align: right; }
+body[data-project="fury"] .fw__pt--b { grid-column: 3; grid-row: 1; }
+body[data-project="fury"] .fw__pt--d { grid-column: 3; grid-row: 2; }
+body[data-project="fury"] .fw__pt h5 { margin: 0 0 .35rem; font-family: var(--fury-display); font-weight: 600; font-size: 1.02rem; color: #e8365e; letter-spacing: -.01em; }
+body[data-project="fury"] .fw__pt p { margin: 0; font-size: .85rem; line-height: 1.55; color: #3a3a40; }
+/* the line from the card to the word: draws out, then runs while the card is lit */
+body[data-project="fury"] .fw__pt::before {
+  content: ''; position: absolute; top: 50%; width: clamp(1.5rem, 4vw, 3.5rem); height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, #f6b3c2, #e8365e); transform: scaleX(0);
+  transition: transform .6s cubic-bezier(.2, .8, .2, 1) calc(.6s + var(--i) * .12s);
+}
+body[data-project="fury"] :is(.fw__pt--a, .fw__pt--c)::before { left: 100%; transform-origin: right center; }
+body[data-project="fury"] :is(.fw__pt--b, .fw__pt--d)::before { right: 100%; transform-origin: left center; background: linear-gradient(270deg, #f6b3c2, #e8365e); }
+body[data-project="fury"] .is-in .fw__pt::before { transform: scaleX(1); }
+body[data-project="fury"] .fw__dot { position: absolute; top: 50%; width: .8rem; height: .8rem; margin-top: -.4rem; border-radius: 50%; background: #e8365e; box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px #111; }
+body[data-project="fury"] :is(.fw__pt--a, .fw__pt--c) .fw__dot { right: -.4rem; }
+body[data-project="fury"] :is(.fw__pt--b, .fw__pt--d) .fw__dot { left: -.4rem; }
+body[data-project="fury"] .fw__dot::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid #f52d5d; opacity: 0; }
+/* the answer whose turn it is */
+body[data-project="fury"] .fw__pt.is-hot { border-color: #f5a3b6; background: #fff5f7; box-shadow: 0 16px 34px -18px rgba(232, 54, 94, .55); }
+body[data-project="fury"] .fw__pt.is-hot .fw__dot::after { animation: fwPing 1.2s cubic-bezier(.2, .8, .2, 1) infinite; }
+body[data-project="fury"] .fw__pt.is-hot::before { background-size: 200% 100%; animation: fwRun .9s linear infinite; }
+@keyframes fwPing { 0% { opacity: .9; transform: scale(.6); } 100% { opacity: 0; transform: scale(2); } }
+@keyframes fwRun { from { filter: brightness(1); } 50% { filter: brightness(1.35); } to { filter: brightness(1); } }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fw { grid-template-columns: 1fr; }
+  body[data-project="fury"] .fw__h { grid-column: 1; grid-row: auto; order: -1; text-align: center; }
+  body[data-project="fury"] .fw__pt { grid-column: 1 !important; grid-row: auto !important; text-align: left !important; }
+  body[data-project="fury"] .fw__pt::before, body[data-project="fury"] .fw__dot { display: none; }
+}
+
+/* --- Power of visualisation, compact --------------------------------------- */
+body[data-project="fury"] .fv { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; max-width: 60rem; margin: 0 auto clamp(2.5rem, 6vw, 4.5rem); }
+body[data-project="fury"] .fv__txt h3 { margin: .2rem 0 1rem; font-family: var(--fury-display); font-weight: 600; font-size: clamp(1.3rem, 1rem + .9vw, 1.75rem); letter-spacing: -.02em; color: #000; line-height: 1.15; }
+body[data-project="fury"] .fv__txt h4 { margin: 0 0 .45rem; font-family: var(--fury-display); font-weight: 600; font-size: .95rem; color: #e8365e; }
+body[data-project="fury"] .fv__txt p { margin: 0; font-size: .9rem; line-height: 1.65; color: #3a3a40; }
+body[data-project="fury"] .fv__chips { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+body[data-project="fury"] .fv__chip {
+  display: flex; align-items: center; gap: .7rem; padding: .55rem .9rem .55rem .55rem; border-radius: 999px;
+  background: #fff; border: 1px solid #e6e6ea; font-size: .86rem; font-weight: 500; color: #26262b;
+  opacity: 0; translate: 0 10px; transition: opacity .5s ease calc(.2s + var(--i) * .08s), translate .6s cubic-bezier(.2, .8, .2, 1) calc(.2s + var(--i) * .08s), border-color .4s ease, box-shadow .4s ease;
+}
+body[data-project="fury"] .is-in .fv__chip { opacity: 1; translate: 0 0; }
+body[data-project="fury"] .fv__orb {
+  flex: none; width: 1.9rem; height: 1.9rem; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0%, #f1d4e3 35%, #c98aab 100%);
+  box-shadow: inset 0 0 0 1px rgba(150, 80, 120, .25); transition: transform .5s cubic-bezier(.3, 1.6, .5, 1), box-shadow .4s ease, background .4s ease;
+}
+body[data-project="fury"] .fv__chip.is-hot { border-color: #e8a6c5; box-shadow: 0 10px 24px -14px rgba(201, 138, 171, .8); }
+body[data-project="fury"] .fv__chip.is-hot .fv__orb { transform: scale(1.18); background: radial-gradient(circle at 35% 30%, #fff 0%, #ffd1e0 30%, #e8365e 100%); box-shadow: 0 0 0 4px rgba(232, 54, 94, .15), 0 0 14px rgba(232, 54, 94, .5); }
+@media (max-width: 760px) { body[data-project="fury"] .fv { grid-template-columns: 1fr; } body[data-project="fury"] .fv__chips { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) {
+  body[data-project="fury"] :is(.fw__h span, .fw__pt, .fv__chip) { opacity: 1 !important; translate: none !important; transition: none !important; }
+  body[data-project="fury"] .fw__pt::before { transform: scaleX(1) !important; }
+  body[data-project="fury"] .fw__h { animation: none; }
+}
+
+/* the screen runs a little under the bezel on every side, so no sliver of the
+   page can show between the UI and the frame */
+body[data-project="fury"] .fy-eco__phone .fy-eco__screen { left: 4.2%; top: 2%; width: 91.6%; height: 96%; aspect-ratio: auto; border-radius: 12% / 6%; }
+
+/* no highlight box on the phone; the notes sit off the devices, with room */
+body[data-project="fury"] .fy-eco__spot { display: none !important; }
+body[data-project="fury"] .fy-eco__notes li { font-size: 1.75cqw; }
+body[data-project="fury"] .fy-eco__notes--l li { max-width: 19cqw; }
+body[data-project="fury"] .fy-eco__notes--r li { max-width: 11.5cqw; }
+body[data-project="fury"] .fy-eco__dash { stroke-width: 1.8; stroke-dasharray: 4 6; }
+
+/* the VR side, settled: the group sits a little left so its notes have room,
+   the notes read left to right beside their arrows, the beam is a hint */
+body[data-project="fury"] .fy-eco__visor { left: 48.5%; width: 32%; }
+body[data-project="fury"] .fy-eco__quest { left: 50%; width: 30%; top: 52%; }
+body[data-project="fury"] .fy-eco__beam { left: 56%; width: 17%; top: 36%; height: 30%; opacity: calc(.55 * var(--vglow)); }
+body[data-project="fury"] .fy-eco__name--v { left: 65%; }
+body[data-project="fury"] .fy-eco__notes--r li { text-align: left; max-width: 13cqw; }
+body[data-project="fury"] .fy-eco__notes--l li { text-align: right; }
+
+/* Why VR?: solid letters (a gradient clipped to text does not survive the
+   per-letter motion), and a wave that runs through them while in view */
+body[data-project="fury"] .fw__h { background: none; color: #e8365e; animation: none; -webkit-background-clip: border-box; background-clip: border-box; }
+body[data-project="fury"] .fw__h span { color: #e8365e; }
+body[data-project="fury"] .is-in .fw__h span { animation: fwWave 3.2s ease-in-out calc(1.2s + var(--i) * .09s) infinite; }
+@keyframes fwWave { 0%, 60%, 100% { translate: 0 0; color: #e8365e; } 20% { translate: 0 -.12em; color: #ff5a80; } 40% { translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) { body[data-project="fury"] .is-in .fw__h span { animation: none; } }
+
+/* testing photos at their own size and ratio: no fixed band height, no
+   letterboxing. The tall photo's column is sized (1.23 : 1) so the two
+   stacked photos beside it come out the same height as it, uncropped. */
+body[data-project="fury"] .fy-test__band { grid-template-columns: minmax(0, 1.23fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto; align-items: start; }
+body[data-project="fury"] .fy-shot { background: none; }
+body[data-project="fury"] .fy-shot .fy-zoom, body[data-project="fury"] .fy-shot .fframe__in { height: auto; }
+body[data-project="fury"] .fy-shot .shotimg { height: auto; max-height: none; object-fit: initial; display: block; }
+body[data-project="fury"] .fy-test__stat { align-self: stretch; }
+@media (max-width: 860px) { body[data-project="fury"] .fy-test__band { grid-template-columns: minmax(0, 1.23fr) minmax(0, 1fr); grid-template-rows: auto auto auto; } }
+
+/* revenue: each swatch sits with its own label; the bag is smaller and the
+   stream count has its own line under it, inside the ring */
+body[data-project="fury"] .fy-rv__key { gap: 1.6rem; align-items: center; }
+body[data-project="fury"] .fy-rv__key span { display: inline-flex; align-items: center; gap: .5rem; }
+body[data-project="fury"] .fy-rv__sw { margin-right: 0; vertical-align: 0; }
+body[data-project="fury"] .fy-rv__bag { width: 19%; top: 46%; }
+body[data-project="fury"] .fy-rv__count { top: 61.5%; font-size: .72rem; padding: .15rem .55rem; border-radius: 999px; background: #fff; box-shadow: 0 2px 8px -4px rgba(0,0,0,.25); }
+
+/* FAQ: the highlights are drawn on as you reach them, like a marker pen.
+   Each mark starts as plain text; when its line comes into view the fill
+   sweeps across it left to right (across every line it wraps onto), one
+   phrase after another, and the words brighten as they are marked. */
+body[data-project="fury"] .fy-faq mark {
+  background-color: transparent; color: inherit;
+  background-image: linear-gradient(90deg, rgba(245, 45, 93, .55), #3a3a42 60%);
+  background-repeat: no-repeat; background-size: 0% 100%; background-position: 0 0;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone; border-radius: 3px;
+  transition: background-size 1.1s cubic-bezier(.6, 0, .2, 1) var(--d, 0s), color .5s ease calc(var(--d, 0s) + .3s);
+}
+body[data-project="fury"] .fy-faq li.is-lit mark { background-size: 100% 100%; color: #fff; }
+body[data-project="fury"] .fy-faq li { transition: color .6s ease; }
+body[data-project="fury"] .fy-faq li:not(.is-lit) { color: #8d8d96; }
+@media (prefers-reduced-motion: reduce) {
+  body[data-project="fury"] .fy-faq mark { background-size: 100% 100%; color: #fff; transition: none; }
+}
+
+/* the Unity walkthrough, full width under the build photos */
+body[data-project="fury"] .fy-unity__walk { grid-column: 1 / -1; margin: 1.2rem 0 0; }
+body[data-project="fury"] .fy-unity__walk video { display: block; width: 100%; height: auto; aspect-ratio: 1600 / 752; border-radius: 14px; background: #222227; box-shadow: 0 30px 60px -40px #000; }
+body[data-project="fury"] .fy-unity__walk figcaption { display: grid; gap: .3rem; max-width: 40rem; margin-top: .9rem; font-size: .88rem; line-height: 1.6; color: #a1a1aa; }
+body[data-project="fury"] .fy-unity__walk figcaption b { font-family: var(--fury-display); font-weight: 600; font-size: .98rem; color: #fff; }
+
+/* --- Problem statement, with a hand ---------------------------------------
+   The statement is the headline of the section, set large, and "socially
+   anxious" gets circled in pink with three spark strokes, drawn on like a pen
+   the moment the line arrives. The eight costs below fade from lit to dim
+   across each row, the second row set in like a staircase, and a light runs
+   along them so the eye travels the whole list. */
+body[data-project="fury"] #problem .sec__body { max-width: 46rem; }
+body[data-project="fury"] .fy-ps { display: block; font-family: var(--fury-display); font-weight: 500; font-size: clamp(1.35rem, 1rem + 1.2vw, 1.95rem); line-height: 1.4; letter-spacing: -.02em; color: #fff; }
+body[data-project="fury"] .fy-ps__ring { position: relative; display: inline-block; padding: 0 .15em; white-space: nowrap; }
+body[data-project="fury"] .fy-ps__ring svg { position: absolute; left: -10%; top: -26%; width: 120%; height: 152%; overflow: visible; pointer-events: none; }
+body[data-project="fury"] .fy-ps__ring path { fill: none; stroke: #f0436b; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+body[data-project="fury"] .fy-ps.is-on .fy-ps__o { stroke-dashoffset: 0; transition: stroke-dashoffset .9s cubic-bezier(.55, 0, .3, 1) .2s; }
+body[data-project="fury"] .fy-ps.is-on .fy-ps__k { stroke-dashoffset: 0; transition: stroke-dashoffset .22s ease-out; }
+body[data-project="fury"] .fy-ps.is-on .fy-ps__k:nth-of-type(2) { transition-delay: 1.1s; }
+body[data-project="fury"] .fy-ps.is-on .fy-ps__k:nth-of-type(3) { transition-delay: 1.2s; }
+body[data-project="fury"] .fy-ps.is-on .fy-ps__k:nth-of-type(4) { transition-delay: 1.3s; }
+@media (prefers-reduced-motion: reduce) { body[data-project="fury"] .fy-ps__ring path { stroke-dashoffset: 0; } }
+
+body[data-project="fury"] .fy-chips { display: grid; grid-template-columns: repeat(4, max-content); gap: .7rem .9rem; }
+body[data-project="fury"] .fy-chips li:nth-child(5) { margin-left: clamp(1.5rem, 5vw, 4.5rem); }
+body[data-project="fury"] .fy-chips li {
+  --a: calc(1 - var(--c) * .22);
+  display: inline-flex; align-items: center; gap: .9rem; padding: .5rem 1.1rem .5rem .55rem; border-radius: 9px; border: 0;
+  font-family: var(--fury-display); font-weight: 500; font-size: .92rem; letter-spacing: -.005em;
+  color: rgba(17, 17, 20, calc(.35 + .65 * var(--a)));
+  background: linear-gradient(90deg, rgba(255, 255, 255, calc(.25 + .6 * var(--a))), rgba(255, 255, 255, calc(.12 + .45 * var(--a))));
+  animation: fyChipRun 5s ease-in-out calc(var(--c) * .35s + var(--i) * .05s) infinite;
+}
+body[data-project="fury"] .fy-chips li::before { width: 2rem; height: 1.45rem; border-radius: 5px; background: #c7174a; opacity: calc(.35 + .65 * var(--a)); }
+@keyframes fyChipRun {
+  0%, 70%, 100% { filter: brightness(1); box-shadow: none; }
+  12% { filter: brightness(1.35); box-shadow: 0 0 0 1px rgba(255,255,255,.35), 0 10px 30px -12px rgba(255, 255, 255, .45); }
+}
+@media (max-width: 900px) {
+  body[data-project="fury"] .fy-chips { grid-template-columns: repeat(2, max-content); }
+  body[data-project="fury"] .fy-chips li:nth-child(5) { margin-left: 0; }
+  body[data-project="fury"] .fy-chips li { --c: 0 !important; }
+}
+@media (prefers-reduced-motion: reduce) { body[data-project="fury"] .fy-chips li { animation: none; } }
+
+/* --- Why VR, as on the board ----------------------------------------------- */
+body[data-project="fury"] .fw2 { position: relative; container-type: inline-size; aspect-ratio: 1000 / 600; max-width: 62rem; margin: clamp(1.5rem, 4vw, 3rem) auto; }
+body[data-project="fury"] .fw2__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+body[data-project="fury"] .fw2__line { fill: none; stroke: #e7899c; stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+body[data-project="fury"] .fw2__ring { fill: #fff; stroke: #111; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+body[data-project="fury"] .fw2__core { fill: #e8365e; }
+body[data-project="fury"] .fw2__ping { fill: none; stroke: #f52d5d; stroke-width: 2; vector-effect: non-scaling-stroke; opacity: 0; transform-box: fill-box; transform-origin: center; }
+body[data-project="fury"] .fw2__dot { transform: scale(0); transform-box: fill-box; transform-origin: center; }
+body[data-project="fury"] .is-in .fw2__line { stroke-dashoffset: 0; transition: stroke-dashoffset .8s cubic-bezier(.5, 0, .2, 1) calc(.5s + var(--i) * .18s); }
+body[data-project="fury"] .is-in .fw2__dot { transform: scale(1); transition: transform .5s cubic-bezier(.3, 1.7, .5, 1) calc(1.15s + var(--i) * .18s); }
+body[data-project="fury"] .is-in .fw2__ping { animation: fw2Ping 2.4s ease-out calc(1.6s + var(--i) * .6s) infinite; }
+@keyframes fw2Ping { 0% { opacity: .8; transform: scale(.7); } 60%, 100% { opacity: 0; transform: scale(1.9); } }
+
+body[data-project="fury"] .fw2__h { position: absolute; left: 50%; top: 53%; translate: -50% -50%; margin: 0; font-size: 10.2cqw; grid-column: auto; grid-row: auto; }
+body[data-project="fury"] .fw2__pt { position: absolute; width: 30%; }
+body[data-project="fury"] .fw2__pt h5 { margin: .4cqw 0; font-family: var(--fury-display); font-weight: 700; font-size: 2.9cqw; line-height: 1.1; letter-spacing: -.01em; color: #e8365e; }
+body[data-project="fury"] .fw2__pt p { margin: .6cqw 0; font-size: 1.5cqw; line-height: 1.55; color: #26262b; }
+body[data-project="fury"] .fw2__pt--a { right: 65%; bottom: 58.5%; text-align: right; }
+body[data-project="fury"] .fw2__pt--b { left: 68.8%; bottom: 66.5%; width: 31%; }
+body[data-project="fury"] .fw2__pt--b h5 { white-space: nowrap; }
+body[data-project="fury"] .fw2__pt--c { right: 68.6%; top: 68%; text-align: right; }
+body[data-project="fury"] .fw2__pt--d { left: 69.2%; top: 62.6%; }
+body[data-project="fury"] .fw2__pt--c h5, body[data-project="fury"] .fw2__pt--d h5 { margin-bottom: 1.2cqw; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fw2 { aspect-ratio: auto; display: grid; gap: 1.4rem; container-type: normal; }
+  body[data-project="fury"] .fw2__svg { display: none; }
+  body[data-project="fury"] .fw2__h { position: static; translate: none; font-size: 3.2rem; text-align: center; }
+  body[data-project="fury"] .fw2__pt { position: static; width: auto; text-align: left !important; }
+  body[data-project="fury"] .fw2__pt h5 { font-size: 1.15rem; white-space: normal !important; }
+  body[data-project="fury"] .fw2__pt p { font-size: .9rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-project="fury"] .fw2__line { stroke-dashoffset: 0; }
+  body[data-project="fury"] .fw2__dot { transform: none; }
+}
+
+/* Power of visualisation: a plain list, nothing moving */
+body[data-project="fury"] .fv__chips { display: block; border-top: 1px solid #e6e6ea; }
+body[data-project="fury"] .fv__chip {
+  display: flex; align-items: center; gap: .8rem; padding: .8rem .2rem; border: 0; border-bottom: 1px solid #e6e6ea; border-radius: 0;
+  background: none; box-shadow: none; font-size: .92rem; font-weight: 500; color: #26262b;
+  opacity: 1 !important; translate: none !important; transition: none; animation: none;
+}
+body[data-project="fury"] .fv__chip::before { content: ''; flex: none; width: .45rem; height: .45rem; border-radius: 50%; background: #e8365e; }
+body[data-project="fury"] .fw2__pt--a { right: 66.6%; }
+body[data-project="fury"] .fw2__pt--c { right: 70.4%; }
+body[data-project="fury"] .fw2__pt--b { left: 69.8%; }
+body[data-project="fury"] .fw2__pt--d { left: 70.2%; }
+body[data-project="fury"] .fw2__pt--b h5 { font-size: 2.6cqw; }
+
+/* Proposed solution: no glows. Devices sit on the page with a plain soft
+   shadow; the arcs are thinner, gentler and in softer colours. */
+body[data-project="fury"] .fy-eco__phone { filter: drop-shadow(0 2cqw 2.2cqw rgba(0, 0, 0, .55)) !important; }
+body[data-project="fury"] .fy-eco__quest { filter: drop-shadow(0 1.4cqw 1.6cqw rgba(0, 0, 0, .55)) !important; }
+body[data-project="fury"] .fy-eco__visor::before, body[data-project="fury"] .fy-eco__beam { display: none !important; }
+body[data-project="fury"] .fy-eco__lens { box-shadow: inset 0 0 0 .08cqw rgba(255,255,255,.14), 0 1.6cqw 3cqw -1.6cqw rgba(0,0,0,.7); }
+body[data-project="fury"] .fy-eco__arc { stroke-width: 2.6; filter: none; opacity: .9; }
+body[data-project="fury"] .fy-eco__ghost { stroke: #2c2c33; stroke-width: 2; }
+body[data-project="fury"] .fy-eco__you { box-shadow: 0 .6cqw 1.4cqw rgba(0, 0, 0, .5); }
+body[data-project="fury"] .fy-eco__arc { stroke-width: 3.2; opacity: 1; }
+
+/* facts: the Onefinnet row. Quiet labels, small dark tags with a hairline. */
+body[data-project="fury"] .blk-facts dt { font-family: 'Geist', system-ui, sans-serif; font-size: var(--step-0); color: #8d8d96; margin-bottom: .5rem; }
+body[data-project="fury"] .blk-facts dd > span,
+body[data-project="fury"] .sec--dark .blk-facts dd > span {
+  display: inline-block; gap: 0; padding: .3rem .5rem; border-radius: 4px;
+  font-family: 'Geist', system-ui, sans-serif; font-size: var(--step--1); color: #e4e4e7;
+  background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+}
+body[data-project="fury"] .blk-facts dd > span::before { content: none; }
+
+/* --- Flow prototypes: a phone playing the flow, the steps beside it -------- */
+body[data-project="fury"] .fpt { display: grid; grid-template-columns: minmax(0, 17.5rem) minmax(0, 1fr); gap: clamp(2rem, 6vw, 5rem); align-items: center; max-width: 58rem; margin: clamp(1.5rem, 4vw, 3rem) auto 0; }
+body[data-project="fury"] .fpt__phone { position: relative; width: 100%; aspect-ratio: 418 / 842; filter: drop-shadow(0 30px 40px rgba(0, 0, 0, .5)); }
+body[data-project="fury"] .fpt__frame { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+body[data-project="fury"] .fpt__screen { position: absolute; left: 4.2%; top: 2%; width: 91.6%; height: 96%; border-radius: 12% / 6%; overflow: hidden; background: #0b0102; }
+body[data-project="fury"] .fpt__shot { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; transition: opacity .35s ease; }
+body[data-project="fury"] .fpt__shot--long { height: auto; object-fit: initial; }
+body[data-project="fury"] .fpt__shot.is-on { opacity: 1; }
+body[data-project="fury"] .fpt__tap {
+  position: absolute; z-index: 3; width: 14%; aspect-ratio: 1; margin: -7% 0 0 -7%; border-radius: 50%; pointer-events: none;
+  background: rgba(255, 255, 255, .45); box-shadow: 0 0 0 2px rgba(255, 255, 255, .75); opacity: 0; transform: scale(.4);
+}
+body[data-project="fury"] .fpt__tap.is-on { animation: fptTap .52s ease-out forwards; }
+@keyframes fptTap { 0% { opacity: 0; transform: scale(1.3); } 35% { opacity: 1; transform: scale(.8); } 100% { opacity: 0; transform: scale(1.6); } }
+
+body[data-project="fury"] .fpt__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; }
+body[data-project="fury"] .fpt__steps button {
+  position: relative; width: 100%; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: .8rem; align-items: start; text-align: left;
+  padding: .8rem .9rem 1rem; margin: 0; border: 0; border-radius: 10px; background: transparent; color: inherit; font: inherit; cursor: pointer;
+  transition: background-color .3s ease;
+}
+body[data-project="fury"] .fpt__steps button:hover { background: rgba(255, 255, 255, .03); }
+body[data-project="fury"] .fpt__n { font-family: var(--fury-display); font-size: .78rem; color: #6d6d75; padding-top: .15rem; transition: color .3s ease; }
+body[data-project="fury"] .fpt__body b { display: block; font-family: var(--fury-display); font-weight: 600; font-size: 1rem; color: #8d8d96; transition: color .3s ease; }
+body[data-project="fury"] .fpt__body span { display: grid; grid-template-rows: 0fr; overflow: hidden; font-size: .88rem; line-height: 1.55; color: #a1a1aa; opacity: 0; transition: opacity .35s ease, margin .35s ease; margin-top: 0; max-height: 0; }
+body[data-project="fury"] .fpt__steps button.is-on { background: rgba(255, 255, 255, .04); }
+body[data-project="fury"] .fpt__steps button.is-on .fpt__n { color: var(--fury-pink); }
+body[data-project="fury"] .fpt__steps button.is-on b, body[data-project="fury"] .fpt__steps button.is-done b { color: #fff; }
+body[data-project="fury"] .fpt__steps button.is-on .fpt__body span { opacity: 1; max-height: 8rem; margin-top: .35rem; }
+body[data-project="fury"] .fpt__bar { position: absolute; left: .9rem; right: .9rem; bottom: .35rem; height: 2px; border-radius: 2px; background: transparent; overflow: hidden; }
+body[data-project="fury"] .fpt__steps button.is-on .fpt__bar { background: rgba(255, 255, 255, .08); }
+body[data-project="fury"] .fpt__bar i { display: block; height: 100%; background: var(--fury-pink); transform: scaleX(0); transform-origin: left center; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fpt { grid-template-columns: 1fr; }
+  body[data-project="fury"] .fpt__phone { width: min(70vw, 16rem); margin: 0 auto; }
+}
+
+/* prototype v2: layered screens with real transitions */
+body[data-project="fury"] .fpt__screen { container-type: inline-size; }
+body[data-project="fury"] .fpt__shot { position: absolute; inset: 0; opacity: 0; transition: none; overflow: hidden; will-change: transform, opacity; }
+body[data-project="fury"] .fpt__shot.is-on { opacity: 1; }
+body[data-project="fury"] .fpt__shot.is-top { z-index: 1; }
+body[data-project="fury"] .fpt__shot img { display: block; width: 100%; height: auto; }
+body[data-project="fury"] .fpt__shot:not(.fpt__shot--long) img { height: 100%; object-fit: cover; object-position: top; }
+body[data-project="fury"] .fpt__tap { z-index: 4; }
+/* welcome: the pink word cycles */
+body[data-project="fury"] .fpt__word { position: absolute; left: 21.3%; top: 70.8%; width: 37.5%; height: 4.75%; overflow: hidden; background: #0d0101; }
+body[data-project="fury"] .fpt__word i { display: block; font-style: normal; }
+body[data-project="fury"] .fpt__word b {
+  display: block; height: calc(4.75 * 1624 / 750 * 1cqw); line-height: calc(4.75 * 1624 / 750 * 1cqw);
+  font-family: var(--fury-display); font-weight: 600; font-size: 9cqw; letter-spacing: -.02em; color: #f52d5d; white-space: nowrap;
+}
+/* you feel: Morning gets picked */
+body[data-project="fury"] .fpt__chip {
+  position: absolute; left: 5.33%; top: 58.5%; width: 23.4%; height: 4.3%; border-radius: 999px; display: grid; place-items: center;
+  font-family: var(--fury-display); font-size: 3.1cqw; color: #0d0d0f; background: #6fd0f6; opacity: 0; transform: scale(.9); transition: opacity .25s ease, transform .3s cubic-bezier(.3, 1.6, .5, 1);
+}
+body[data-project="fury"] .fpt__shot.is-chip .fpt__chip { opacity: 1; transform: none; }
+/* overlays measured in the screenshot's own pixels (1cqw = 7.5px of a 750px shot) */
+body[data-project="fury"] .fpt__word { left: 21.33cqw; top: 153.33cqw; width: 37.33cqw; height: 10cqw; }
+body[data-project="fury"] .fpt__word b { height: 10cqw; line-height: 10.6cqw; font-size: 9.1cqw; }
+body[data-project="fury"] .fpt__chip { left: 5.33cqw; top: 126.67cqw; width: 23.33cqw; height: 9.33cqw; }
+
+/* flows as films: one video in the phone, steps follow its clock */
+body[data-project="fury"] .fpt--film { margin-bottom: clamp(3rem, 7vw, 5rem); }
+body[data-project="fury"] .fpt__stage { position: relative; }
+body[data-project="fury"] .fpt--film .fpt__screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; background: #0d0101; }
+body[data-project="fury"] .fpt__steps button { transition: background-color .3s ease; }
+
+/* flow 2's ending: a Google Cardboard drawn in white line, the phone turns
+   landscape and drops into the slot behind the lenses. The drawing is two
+   layers (lid + tray behind the phone, the box in front of it) so the phone
+   really sits inside. The phone's end pose is the exact isometric plane of
+   the slot, generated with the drawing. */
+body[data-project="fury"] .fpt--cb .fpt__steps { position: relative; z-index: 6; }
+body[data-project="fury"] .fcb {
+  position: absolute; left: -26.158%; top: 23.799%; width: 155.00%; height: auto; max-width: none;
+  overflow: visible; pointer-events: none; opacity: 0; transition: opacity .4s ease;
+}
+body[data-project="fury"] .fcb--back { z-index: 1; }
+body[data-project="fury"] .fcb--front { z-index: 4; }
+body[data-project="fury"] .fcb path {
+  fill: none; stroke: #f4f4f5; stroke-linejoin: round; stroke-linecap: round;
+  stroke-dasharray: 1 1; stroke-dashoffset: 1;
+}
+body[data-project="fury"] .fcb .L { stroke-width: 1.1; }
+body[data-project="fury"] .fcb .l { stroke-width: .75; }
+body[data-project="fury"] .fcb .t { stroke-width: .5; stroke: rgba(244, 244, 245, .7); }
+body[data-project="fury"] .fcb .face { fill: var(--fury-night, #18181c); fill-opacity: 0; }
+body[data-project="fury"] .fcb .dots { fill: rgba(244, 244, 245, .75); opacity: 0; }
+body[data-project="fury"] .fcb .pf { opacity: 0; fill: #0e0e11; fill-opacity: 1; }
+body[data-project="fury"] .fpt--cb .fpt__phone { transform-origin: 0 0; z-index: 5; }
+
+body[data-project="fury"] .fpt--cb.is-cb .fcb { opacity: 1; }
+body[data-project="fury"] .fpt--cb.is-cb .fcb path { animation: fcbDraw 1.5s cubic-bezier(.55, 0, .25, 1) forwards; }
+body[data-project="fury"] .fpt--cb.is-cb .fcb .t { animation-delay: .45s; }
+body[data-project="fury"] .fpt--cb.is-cb .fcb .face { animation: fcbDraw 1.5s cubic-bezier(.55, 0, .25, 1) forwards, fcbFill .5s ease .9s forwards; }
+body[data-project="fury"] .fpt--cb.is-cb .fcb .dots { transition: opacity .6s ease 1.1s; opacity: 1; }
+body[data-project="fury"] .fpt--cb.is-cb .fcb .pf { animation: fcbDraw .01s 2.3s forwards, fcbFill .01s 2.3s forwards, fcbShow .35s ease 2.3s forwards; }
+body[data-project="fury"] .fpt--cb.is-cb .fpt__phone { animation: fcbPhone 2.1s cubic-bezier(.6, 0, .3, 1) .5s both; }
+@keyframes fcbDraw { to { stroke-dashoffset: 0; } }
+@keyframes fcbFill { to { fill-opacity: 1; } }
+@keyframes fcbShow { to { opacity: 1; } }
+@keyframes fcbPhone {
+  0%   { transform: translate(0, 0) matrix(1, 0, 0, 1, 0, 0); z-index: 5; filter: drop-shadow(0 30px 40px rgba(0, 0, 0, .5)); }
+  62%  { transform: translate(11.078%, 64.694%) matrix(0.00000, -0.44623, 0.38645, -0.22311, 0, 0); z-index: 5; filter: drop-shadow(0 14px 18px rgba(0, 0, 0, .55)); }
+  63%  { z-index: 2; }
+  100% { transform: translate(11.078%, 71.239%) matrix(0.00000, -0.44623, 0.38645, -0.22311, 0, 0); z-index: 2; filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-project="fury"] .fpt--cb.is-cb .fcb path, body[data-project="fury"] .fpt--cb.is-cb .fpt__phone { animation-duration: .01s; animation-delay: 0s; }
+}
+@media (max-width: 760px) { body[data-project="fury"] .fpt--cb { overflow-x: clip; } }
+
+
+
+
+/* ---------------------------------------------------------------------------
+   INSIDE THE HEADSET (fury-vr.js). The run is tall, the pin sticks for the
+   length of it, full bleed. Without WebGL or with reduced motion the run is
+   dropped and the flat rows stay. With it, the flat rows remain only for
+   screen readers and search. */
+body[data-project="fury"] .fvr { --vig: 1; }
+body[data-project="fury"] .fvr__run { display: none; }
+body[data-project="fury"] .fvr.is-3d .fvr__run { display: block; position: relative; height: 820vh; margin-top: clamp(1rem, 3vw, 2rem); }
+body[data-project="fury"] .fvr.is-3d .fvr__flat {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+body[data-project="fury"] .fvr__pin {
+  position: sticky; top: 0; height: 100vh; height: 100svh; width: 100vw; margin-left: calc(50% - 50vw);
+  overflow: hidden; background: var(--fury-night, #18181c); isolation: isolate;
+}
+body[data-project="fury"] .fvr__world { position: absolute; inset: 0; z-index: 0; opacity: 0; }
+body[data-project="fury"] .fvr__world canvas { display: block; width: 100%; height: 100%; }
+/* the lens: dark at the rim, strongest just after you push through */
+body[data-project="fury"] .fvr__vig {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 75% 80% at 50% 50%, transparent 55%, rgba(8, 8, 12, .55) 85%, rgba(8, 8, 12, .95) 100%);
+  opacity: calc(.55 + .45 * var(--vig));
+}
+
+body[data-project="fury"] .fvr__quest {
+  position: absolute; z-index: 2; inset: 0; margin: auto; top: 14vh; width: min(76vw, 780px); height: auto; aspect-ratio: 640 / 420;
+  overflow: visible; pointer-events: none; transform-origin: 60.625% 50.476%; will-change: transform, opacity;
+}
+body[data-project="fury"] .fvr__quest :is(path, circle, rect) { vector-effect: non-scaling-stroke; }
+
+body[data-project="fury"] .fvr__intro {
+  position: absolute; z-index: 3; left: 0; right: 0; top: clamp(5rem, 13vh, 9rem); text-align: center; pointer-events: none;
+}
+body[data-project="fury"] .fvr__kick { margin: 0; font-family: var(--fury-display); font-weight: 600; font-size: clamp(2rem, 1.4rem + 2.6vw, 3.6rem); letter-spacing: -.02em; color: #fff; }
+body[data-project="fury"] .fvr__sub { margin: .5rem 0 0; font-size: .95rem; color: #a1a1aa; }
+body[data-project="fury"] .fvr__hint {
+  position: absolute; z-index: 3; left: 50%; bottom: clamp(1.2rem, 4vh, 2.4rem); translate: -50% 0; margin: 0;
+  display: grid; justify-items: center; gap: .5rem; font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: #8d8d96;
+}
+body[data-project="fury"] .fvr__hint i { width: 1px; height: 2.4rem; background: linear-gradient(#f4f4f5, transparent); animation: fvrHint 1.8s ease-in-out infinite; transform-origin: top; }
+@keyframes fvrHint { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+
+/* the caption card, in the corner of your view */
+body[data-project="fury"] .fvr__hud {
+  position: absolute; z-index: 3; left: clamp(16px, 4vw, 56px); bottom: clamp(16px, 5vh, 56px); width: min(30rem, calc(100vw - 32px));
+  padding: 1.1rem 1.3rem 1.25rem; border-radius: 18px; color: #fff;
+  background: rgba(18, 18, 24, .62); border: 1px solid rgba(255, 255, 255, .12);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  opacity: 0; transform: translateY(14px); transition: opacity .45s ease, transform .45s ease; pointer-events: none;
+}
+body[data-project="fury"] .fvr__hud.is-on { opacity: 1; transform: none; }
+body[data-project="fury"] .fvr__count { margin: 0 0 .55rem; font-family: var(--fury-display); font-size: .78rem; color: #8d8d96; letter-spacing: .06em; }
+body[data-project="fury"] .fvr__count b { color: var(--fury-pink); font-weight: 600; }
+body[data-project="fury"] .fvr__caps { display: grid; }
+body[data-project="fury"] .fvr__cap {
+  grid-area: 1 / 1; margin: 0; font-family: var(--fury-display); font-size: clamp(1rem, .92rem + .4vw, 1.25rem); line-height: 1.5;
+  opacity: 0; transform: translateY(8px); transition: opacity .4s ease, transform .4s ease;
+}
+body[data-project="fury"] .fvr__cap.is-on { opacity: 1; transform: none; transition-delay: .12s; }
+body[data-project="fury"] .fvr__cap span { display: block; margin-bottom: .3rem; font-size: .72rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #a1a1aa; }
+body[data-project="fury"] .fvr__cap b { color: var(--fury-lime); font-weight: 500; }
+body[data-project="fury"] .fvr__cap strong { color: var(--fury-pink); font-weight: 500; }
+body[data-project="fury"] .fvr__cap em { font-style: normal; border: 1.5px solid var(--fury-pink); border-radius: 50%; padding: 0 .4em; }
+body[data-project="fury"] .fvr__fade { position: absolute; inset: 0; z-index: 4; background: var(--fury-night, #18181c); opacity: 0; pointer-events: none; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fvr__quest { width: 96vw; top: 8vh; }
+  body[data-project="fury"] .fvr__hud { padding: .9rem 1rem 1rem; }
+}
+/* the page's own chrome steps back while you are inside */
+body[data-project="fury"] .rail { transition: opacity .4s ease; }
+body[data-project="fury"].fvr-in .rail { opacity: 0; pointer-events: none; }
+/* the flow switch: a quiet segmented control, so it never reads as one of the
+   diagram's own (navy) nodes */
+body[data-project="fury"] .ftf__mode {
+  gap: 0; padding: 4px; background: #ececf0; border: 0; border-radius: 12px; box-shadow: inset 0 1px 2px rgba(17, 17, 20, .06);
+}
+body[data-project="fury"] .ftf__mode button {
+  padding: .55rem 1.05rem; border-radius: 9px; font-size: .82rem; color: #6d6d75; align-items: center; gap: .55rem;
+  transition: color .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+body[data-project="fury"] .ftf__mode button b {
+  font-family: 'Geist Mono', ui-monospace, monospace; font-size: .72rem; font-weight: 500; color: #a1a1aa; letter-spacing: 0;
+}
+body[data-project="fury"] .ftf__mode button[aria-pressed="true"] {
+  background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(17, 17, 20, .08), 0 2px 8px rgba(17, 17, 20, .06);
+}
+body[data-project="fury"] .ftf__mode button[aria-pressed="true"] b { color: var(--fury-pink); }
