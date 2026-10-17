@@ -610,7 +610,6 @@ window.SITE = {
        Not links, not focusable, no hover; each is [stack, proportion]. Delete
        a line when a real project takes its place. */
     placeholders: [
-      ['b', 0.9],
     ],
     items: [
       /* --------------------------------------------------- X0 digital identity
@@ -2542,20 +2541,6 @@ window.SITE = {
          `meta` and the fact chips are taken from that title card, so the two
          now agree. Earlier values (2025, "Remote", "Product Designer") were
          placeholders written before the card existed.                        */
-      /* --------------------------------------------------- X1 Vault, in 3D
-         NOT A DOOR. `still` makes the tile a picture rather than a link: no
-         href, nothing to press, but the same hover as every other card. It is
-         a 16s, 60fps silent loop of the three.js model of the X1 Vault: it
-         opens and ends on the assembled front with the logo, eases round as it
-         comes apart, holds, and goes back together. `still` also holds it on
-         frame one until the page is uncovered and the tile is in view.
-         Rendered from the model, poster is its first frame. */
-      { title: 'Cypherock X1 Vault', meta: '3D product model, 2026',
-        still: true,
-        col: 'b', ratio: 1.6,
-        thumb: 'assets/media/x1/x1-vault-thumb.mp4?v=2',
-        thumbPoster: 'assets/media/x1/x1-vault-thumb.webp?v=2',
-        preview: 'bloom' },
       { title: 'Onefinnet Talent', meta: 'B2B SaaS, 2024–25, Noida (on-site)',
         href: '#onefinnet-talent',
         /* THE COUNTER. Narrower stack and the widest proportion in the set, so
@@ -3200,16 +3185,21 @@ window.SITE = {
          "FURY". Nothing in that markup is shared with another study.
 
          `tone: 'dark'` on this study means a Fury-pink band.               */
-      { title: 'Fury', meta: 'Mobile & VR, 2024',
+      { title: 'Designing for progressive immersion', meta: 'Mobile to VR, 2024',
         href: '#fury',
-        /* takes the empty frame that sat under Onefinnet in stack a */
-        col: 'a', ratio: 1.6,
+        /* in the right-hand stack, under the X1 Vault, taking the empty frame there */
+        col: 'b', ratio: 1.6,
+        /* a silent teaser loop from the hero film: the headset seats, the
+           thoughts blur away, red turns to blue. The full film is inside. */
+        thumb: 'assets/media/fury/fury-thumb.mp4',
+        thumbPoster: 'assets/media/fury/fury-thumb.webp',
         preview: 'words', line: 'Step into confidence',
         brief: {
-          tagline: 'An AI companion for social anxiety, from phone to headset.',
-          summary: 'Fury starts on mobile, expands into XR and reaches a Meta '
-            + 'Quest 2 experience where people can safely rehearse the social '
-            + 'situations they fear, and track their growth every step of the way.',
+          tagline: 'Helping socially anxious people build confidence, one step deeper at a time: from phone, to Cardboard, to headset.',
+          summary: 'Fury, an AI companion for social anxiety, is designed so no one '
+            + 'has to jump straight into what scares them. It starts small on the phone, '
+            + 'steps up to Cardboard VR, then lets people rehearse real situations on a '
+            + 'Meta Quest 2, with their growth tracked at every step.',
           facts: [
             { k: 'Scope', v: 'Mobile & Virtual Reality Design' },
             { k: 'Year', v: '2024' },
@@ -3233,8 +3223,12 @@ window.SITE = {
         study: {
           slug: 'fury',
           end: {
-            h: 'Thanks for your valuable time.',
+            /* closes where the film's turn ends: in the safe space */
+            h: 'Somewhere safe to start.',
             meta: 'That’s Fury: a mobile companion that helps people name what they feel, and a VR space where they can practise facing it.',
+            art: 'assets/media/fury/end-headset.webp',
+            artAlt: 'The Meta Quest 2 headset from the film, alone, in calm blue light.',
+            cta: { label: 'Let’s talk', href: 'mailto:ishaangupta.888@gmail.com?subject=' + encodeURIComponent('Fury: case study') },
           },
           company: 'Fury',
           category: 'Mobile & VR',
@@ -3246,11 +3240,20 @@ window.SITE = {
           title: 'Social Phobia',
           /* the wordmark and the headset, the two layers of the board's
              opening, composed on a transparent canvas over the night field */
+          /* THE FILM, FULL SCREEN, the same opening as Talent but on the night
+             field. One person's morning: 1 in 8, the 12.7-year wait, a
+             presentation at 11, Fury on the phone, a rehearsal in VR, and it
+             goes fine. Opens and closes on the hero board, so it loops.
+             Source: .tools/fury-film/film.html */
           hero: {
-            field: 'transparent', ink: '#f4f4f5',
-            visual: { src: 'assets/img/fury/hero.webp', w: 1400, h: 960,
-              alt: 'The FURY wordmark in pink over a white Meta Quest 2 headset' },
-            facts: ['Mobile & VR', '2024', '8 weeks', 'Figma \u00b7 Unity'],
+            kind: 'film',
+            film: 'assets/media/fury/fury-film.webm',
+            film2: 'assets/media/fury/fury-film.mp4',
+            poster: 'assets/media/fury/fury-film.webp',
+            tone: 'night',
+            ground: '#18181c',
+            /* no caption over the film: it carries the opening on its own */
+            prog: false,
           },
           reading: false,
           dock: false,
@@ -3258,7 +3261,7 @@ window.SITE = {
           sections: [
 
             { id: 'overview', nav: 'Overview', eyebrow: 'What & Why ?',
-              heading: 'Fury: designing for progressive immersion in social growth',
+              heading: 'Designing for progressive immersion in social growth',
               body: [
                 'What if facing social fear could feel safe, guided, and even exciting? <b>Fury is an AI companion</b> that does exactly that, starting on mobile, expanding into XR, and reaching a <b>Meta Quest 2 VR experience</b> where users can safely explore social scenarios and track their growth every step of the way.',
               ],
@@ -3267,8 +3270,10 @@ window.SITE = {
                   { label: 'Role', values: ['Sole designer', 'Unity build'] },
                   { label: 'Timeline', values: ['2024', '8 weeks', 'Waterfall'] },
                   { label: 'Surfaces', values: ['Mobile app', 'VR app'] },
-                  { label: 'Research', values: ['7 interviews', '65 survey responses', '3 expert testers'] },
-                  { label: 'Tools', values: ['Figma', 'Unity'] },
+                  { label: 'Research', values: ['7 interviews', '65 survey responses', '6 expert testers'] },
+                  { label: 'Tools', values: [
+                    '<img class="fy-tool" src="assets/img/fury/logo-figma.png" alt="" width="16" height="24">Figma',
+                    '<img class="fy-tool" src="assets/img/fury/logo-unity-mark.png" alt="" width="20" height="20">Unity'] },
                 ] },
                 { type: 'raw', html: '<p class="fy-bridge">But first, the thing nobody talks about.</p>' },
               ] },
@@ -3310,8 +3315,8 @@ window.SITE = {
                 { type: 'raw', html: '<p class="fy-bridge">They didn\u2019t need more information. They needed a safe place to practise.</p>' },
               ] },
 
-            { id: 'ideate', nav: 'Why VR', eyebrow: 'Ideate',
-              heading: 'Ideate',
+            { id: 'ideate', nav: 'Why VR', eyebrow: 'Hmm, what if\u2026',
+              heading: 'What already works',
               body: [],
               blocks: [ { type: 'raw', key: 'ideate' },
                 { type: 'raw', html: '<p class="fy-bridge">Out of the sticky notes, one idea held: start small on the phone, go deeper in VR.</p>' },
@@ -3328,9 +3333,7 @@ window.SITE = {
               heading: 'Information architecture',
               body: ['Organising, structuring and labelling content in an effective and sustainable way, so users can find information and complete tasks.'],
               blocks: [
-                { type: 'raw', key: 'ia' },
-                { type: 'head', title: 'Task flows' },
-                { type: 'raw', key: 'flows' },
+                { type: 'raw', key: 'iaFlows' },
                 { type: 'raw', html: '<p class="fy-bridge">With the flows on paper, the screens came next.</p>' },
               ] },
 
@@ -3361,16 +3364,23 @@ window.SITE = {
             { id: 'faq', nav: 'FAQ', eyebrow: 'FAQ',
               heading: 'Some questions that generally arise',
               body: [],
-              blocks: [ { type: 'raw', key: 'faq' },
-                { type: 'raw', html: '<p class="fy-bridge">And where it could go next.</p>' },
-              ] },
-
-            { id: 'future', nav: 'Future Scope', eyebrow: 'Potential Upgrades', tone: 'dark',
-              heading: 'Future scope',
-              body: [],
-              blocks: [ { type: 'raw', key: 'revenue' } ] },
+              blocks: [ { type: 'raw', key: 'faq' } ] },
           ],
         } },
+      /* --------------------------------------------------- X1 Vault, in 3D
+         NOT A DOOR. `still` makes the tile a picture rather than a link: no
+         href, nothing to press, but the same hover as every other card. It is
+         a 16s, 60fps silent loop of the three.js model of the X1 Vault: it
+         opens and ends on the assembled front with the logo, eases round as it
+         comes apart, holds, and goes back together. `still` also holds it on
+         frame one until the page is uncovered and the tile is in view.
+         Rendered from the model, poster is its first frame. */
+      { title: 'Cypherock X1 Vault', meta: '3D product model, 2026',
+        still: true,
+        col: 'b', ratio: 1.6,
+        thumb: 'assets/media/x1/x1-vault-thumb.mp4?v=2',
+        thumbPoster: 'assets/media/x1/x1-vault-thumb.webp?v=2',
+        preview: 'bloom' },
       /* ------------------------------------------------------------- X0 Cards
          THE SECOND CHAPTER OF X0, not a new project. The X0 study ends on
          "I also designed the X0 hardware cards, the packaging and everything

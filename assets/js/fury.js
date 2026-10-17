@@ -206,7 +206,7 @@
       var fit = host.querySelector('.fia__fit'), size = host.querySelector('.fia__size');
       var canvas = host.querySelector('.fia__canvas'), svg = host.querySelector('.fia__wires');
       var readEl = host.querySelector('.fia__read'), hint = readEl.innerHTML;
-      var MAX = 1.15, MIN = 0.66;
+      var MAX = 1.15, MIN = host.closest('.fy-duo') ? 0.4 : 0.66;
       function doFit() {
         var w = fit.clientWidth; if (!w) return;
         var k = Math.min(MAX, w / D.W), pan = false;
@@ -337,6 +337,53 @@
         outline: ['tk', 'refl', 'sel', ['pick', ['s1', 's2', 's3', 's4', 's5']], 'tut', 'walk', 'cust', 'end'] },
     ];
 
+    /* TOP TO BOTTOM. The flows sit beside the architecture now, in a column
+       half the width, so each is laid out down the page from its outline:
+       steps stack on one spine, an either/or splits into lanes side by side,
+       a choice's options stack as a bracketed list. W and H become the
+       largest flow, so switching never moves the page. */
+    var CX = 200, G = 16, EL = 10;
+    FLOWS.forEach(function (F) {
+      var N = {}; F.nodes.forEach(function (n) { N[n.id] = n; });
+      var y = 0;
+      function place(id, cx, top) { var n = N[id], h = n.h || 40; n.h = h; n.x = Math.round(cx - n.w / 2); n.y = top; return top + h; }
+      F.outline.forEach(function (it) {
+        if (typeof it === 'string') { y = place(it, CX, y) + G; return; }
+        if (it[0] === 'alt') {
+          var lanes = it.slice(1), ws = lanes.map(function (l) { return Math.max.apply(null, l.map(function (id) { return N[id].w; })); });
+          var total = ws.reduce(function (a, b) { return a + b; }, 0) + 22 * (lanes.length - 1), x0 = CX - total / 2, bottom = y;
+          lanes.forEach(function (l, k) {
+            var cx = x0 + ws[k] / 2, yy = y + EL;
+            l.forEach(function (id) { yy = place(id, cx, yy) + 10; });
+            bottom = Math.max(bottom, yy - 10);
+            x0 += ws[k] + 22;
+          });
+          y = bottom + EL + G; return;
+        }
+        // a choice's options: a stacked list, one width
+        var ow = Math.max.apply(null, it[1].map(function (id) { return N[id].w; })), yy = y;
+        it[1].forEach(function (id) { N[id].w = ow; N[id].h = 30; yy = place(id, CX, yy) + 6; });
+        F.opts = { l: CX - ow / 2 - 16, r: CX + ow / 2 + 16, top: y, bottom: yy - 6 };
+        y = yy - 6 + G;
+      });
+      F.vh = y - G;
+      var minX = Math.min.apply(null, F.nodes.map(function (n) { return n.x; })), maxX = Math.max.apply(null, F.nodes.map(function (n) { return n.x + n.w; }));
+      F.vw = maxX - minX; F.vx = minX;
+    });
+    W = Math.max.apply(null, FLOWS.map(function (F) { return F.vw; })) + 40;
+    H = Math.max.apply(null, FLOWS.map(function (F) { return F.vh; })) + 8;
+    FLOWS.forEach(function (F) { F.w = F.vw; F.h = F.vh; F.dx = (W - F.vw) / 2 - F.vx; F.dy = 4; });
+
+    function vroute(F, a, b) {
+      var A = { cx: a.x + a.w / 2, top: a.y, bot: a.y + a.h, cy: a.y + a.h / 2, r: a.x + a.w, l: a.x },
+          B = { cx: b.x + b.w / 2, top: b.y, bot: b.y + b.h, cy: b.y + b.h / 2, r: b.x + b.w, l: b.x };
+      if (b.kind === 'opt') { var rt = A.bot + 10; return [[A.cx, A.bot], [A.cx, rt], [F.opts.l, rt], [F.opts.l, B.cy], [B.l, B.cy]]; }
+      if (a.kind === 'opt') { var rb = B.top - 10; return [[A.r, A.cy], [F.opts.r, A.cy], [F.opts.r, rb], [B.cx, rb], [B.cx, B.top]]; }
+      if (Math.abs(A.cx - B.cx) < 1) return [[A.cx, A.bot], [B.cx, B.top]];
+      var outs = F.edges.filter(function (e) { return e[0] === a.id; }).length;
+      var my = outs > 1 ? A.bot + EL : B.top - EL;
+      return [[A.cx, A.bot], [A.cx, my], [B.cx, my], [B.cx, B.top]];
+    }
     function box(n) { var w = n.w, h = n.h || 40; return { x: n.x, y: n.y, w: w, h: h, r: n.x + w, cy: n.y + h / 2 }; }
     function route(f, t, mx) {
       var a = box(f), b = box(t);
@@ -349,7 +396,7 @@
 
     function panel(F, on) {
       var N = {}; F.nodes.forEach(function (n) { N[n.id] = n; });
-      var dx = (W - F.w) / 2, dy = (H - F.h) / 2;
+      var dx = F.dx, dy = F.dy;
       var prev = {}, next = {};
       F.edges.forEach(function (e) { (next[e[0]] = next[e[0]] || []).push(e[1]); (prev[e[1]] = prev[e[1]] || []).push(e[0]); });
       var names = function (ids) { return (ids || []).map(function (id) { return N[id].t; }).filter(function (v, i, a) { return a.indexOf(v) === i; }); };
@@ -368,7 +415,7 @@
           (n.m ? '<span class="ftf__m">' + esc(n.m) + '</span>' : '') + '</button>';
       }).join('');
       var wires = F.edges.map(function (e) {
-        var pts = route(N[e[0]], N[e[1]], e[2]).map(function (q) { return [q[0] + dx, q[1] + dy]; });
+        var pts = vroute(F, N[e[0]], N[e[1]]).map(function (q) { return [q[0] + dx, q[1] + dy]; });
         var o = Math.max(F.nodes.indexOf(N[e[0]]), F.nodes.indexOf(N[e[1]]));
         return '<g class="fia__e" data-f="' + e[0] + '" data-t="' + e[1] + '" style="--i:' + o + '">' +
           '<path class="fia__line" pathLength="1" d="' + path(pts) + '"/><path class="fia__head" d="' + head(pts) + '"/></g>';
@@ -379,7 +426,7 @@
         if (x[0] === 'alt') return '<li class="ftf__alt"><span class="ftf__or">Either</span>' + x.slice(1).map(function (lane) { return '<ol>' + lane.map(li).join('') + '</ol>'; }).join('<span class="ftf__or">or</span>') + '</li>';
         return '<li class="ftf__alt"><span class="ftf__or">One of</span><ol class="ftf__fan">' + x[1].map(li).join('') + '</ol></li>';
       }).join('') + '</ol>';
-      return '<div class="ftf__panel" data-flow="' + F.id + '"' + (on ? '' : ' hidden') + '>' +
+      return '<div class="ftf__panel" data-flow="' + F.id + '" data-h="' + (F.vh + 8) + '"' + (on ? '' : ' hidden') + '>' +
         '<div class="ftf__canvas" style="width:' + W + 'px;height:' + H + 'px">' +
           '<svg class="fia__wires" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true">' + wires + '</svg>' + nodes +
         '</div>' + outline + '</div>';
@@ -408,8 +455,9 @@
       var readEl = host.querySelector('.fia__read'), hint = readEl.innerHTML;
       function doFit() {
         var w = fit.clientWidth; if (!w) return;
-        var k = Math.min(1.1, w / W), pan = false;
-        if (k < 0.62) { k = 0.62; pan = true; }
+        var lo = 0.62;
+        var k = Math.min(1.0, w / W), pan = false;
+        if (k < lo) { k = lo; pan = true; }
         size.style.setProperty('--k', k.toFixed(4));
         fit.classList.toggle('is-pan', pan);
       }
@@ -419,6 +467,8 @@
       addEventListener('resize', doFit, { passive: true });
 
       var pinned = null, ready = false, cur = host.querySelector('.ftf__panel:not([hidden])');
+      function fitH() { size.style.setProperty('--h', cur.dataset.h + 'px'); }
+      fitH();
       function clear() {
         host.classList.remove('has-lit');
         Array.prototype.forEach.call(host.querySelectorAll('.is-lit, .is-on'), function (x) { x.classList.remove('is-lit', 'is-on'); });
@@ -475,7 +525,7 @@
           if (btn.getAttribute('aria-pressed') === 'true') return;
           Array.prototype.forEach.call(host.querySelectorAll('.ftf__mode button'), function (x) { x.setAttribute('aria-pressed', String(x === btn)); });
           Array.prototype.forEach.call(host.querySelectorAll('.ftf__panel'), function (p) { p.hidden = p.dataset.flow !== btn.dataset.flow; });
-          cur = host.querySelector('.ftf__panel:not([hidden])');
+          cur = host.querySelector('.ftf__panel:not([hidden])'); fitH();
           pinned = null; clear();
           if (host.classList.contains('is-in')) draw();
         });
@@ -559,6 +609,7 @@
     /* ------------------------------------------------------------- Problem */
     problem:
       '<div class="fy-prob">' +
+        '<p class="fy-prob__k">What it costs people</p>' +
         '<ul class="fy-chips">' +
           ['Isolation and Loneliness', 'Stifled Personal Development', 'Missed Opportunities', 'Stigma &amp; Misunderstanding',
            'Impact on Mental Health', 'Fear of Participation', 'Emotional Toll', 'Relationship Strain']
@@ -946,7 +997,7 @@
     /* USABILITY TESTING, LED BY THE PEOPLE IN IT. The three sessions are the
        evidence, so they come first and large: the standing tester as the tall
        frame, the other two stacked beside her, and the one number that frames
-       them (three expert users, guerrilla method) on the ink card. Each photo
+       them (six expert users, guerrilla method) on the ink card. Each photo
        opens in the lightbox. The notes from the board sit underneath. */
     testing:
       '<div class="fy-test">' +
@@ -955,12 +1006,12 @@
           '<figure class="fy-shot">' + Z('test-1.webp', 'A tester smiling inside the headset, controllers raised', 406, 300) + '</figure>' +
           '<figure class="fy-shot">' + Z('test-2.webp', 'A tester reaching out to interact in VR', 406, 374) + '</figure>' +
           '<div class="fy-test__stat">' +
-            '<span class="fy-test__n">3</span><span class="fy-test__u">expert users,<br>in a moderated session</span>' +
+            '<span class="fy-test__n fy-slot" aria-label="6"><span class="fy-slot__win" aria-hidden="true"><span class="fy-slot__reel"><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></span></span><span class="fy-test__u">expert users,<br>in a moderated session</span>' +
             '<blockquote>Guerrilla testing method was used in this whole process</blockquote>' +
           '</div>' +
         '</div>' +
         '<div class="fy-test__cards">' +
-          '<div class="fy-tc"><h5>Background Summary</h5><p>The synthesis of a usability evaluation of my prototype, conducted by <b>3 expert users</b> in a moderated environment to get their reviews and find bugs.</p></div>' +
+          '<div class="fy-tc"><h5>Background Summary</h5><p>The synthesis of a usability evaluation of my prototype, conducted by <b>6 expert users</b> in a moderated environment to get their reviews and find bugs.</p></div>' +
           '<div class="fy-tc"><h5>Methodology</h5><p>The expert users navigated through the app to find problems and usability issues.</p><ol><li>Analyse your behaviours</li><li>Use toolkit to enter VR environment</li><li>Interact with VR</li></ol></div>' +
           '<div class="fy-tc fy-tc--pink"><h5>Goals</h5><ol><li>Identify usability problems</li><li>Get general feedback about the application and its working</li><li>Find bugs &amp; fix them</li></ol></div>' +
           '<div class="fy-tc"><h5>Questions</h5><ol><li>How easy was the app to use?</li><li>What problems did you face?</li></ol></div>' +
@@ -1080,9 +1131,9 @@
       var exposure =
         '<svg class="fz-exp" viewBox="0 0 520 470" role="img" aria-label="Exposure therapy at the centre of three kinds of exposure: imaginal, role-play and real world">' +
           '<g class="fz-exp__ring" transform="rotate(-90 260 245)">' +
-            '<circle class="fz-arc" style="--d:.1s" cx="260" cy="245" r="150" fill="none" stroke="#c0504d" stroke-width="14" pathLength="300" stroke-dashoffset="0"/>' +
-            '<circle class="fz-arc" style="--d:.5s" cx="260" cy="245" r="150" fill="none" stroke="#9bbb59" stroke-width="14" pathLength="300" stroke-dashoffset="-100"/>' +
-            '<circle class="fz-arc" style="--d:.9s" cx="260" cy="245" r="150" fill="none" stroke="#8064a2" stroke-width="14" pathLength="300" stroke-dashoffset="-200"/>' +
+            '<circle class="fz-arc" data-k="0" style="--d:.1s" cx="260" cy="245" r="150" fill="none" stroke="#c0504d" stroke-width="14" pathLength="300" stroke-dashoffset="0"/>' +
+            '<circle class="fz-arc" data-k="1" style="--d:.5s" cx="260" cy="245" r="150" fill="none" stroke="#9bbb59" stroke-width="14" pathLength="300" stroke-dashoffset="-100"/>' +
+            '<circle class="fz-arc" data-k="2" style="--d:.9s" cx="260" cy="245" r="150" fill="none" stroke="#8064a2" stroke-width="14" pathLength="300" stroke-dashoffset="-200"/>' +
           '</g>' +
           '<g class="fz-exp__orbit"><circle cx="260" cy="95" r="7" fill="#fff" stroke="#f52d5d" stroke-width="3"/></g>' +
           '<g class="fz-exp__core"><circle cx="260" cy="245" r="66" fill="#4f81bd"/>' +
@@ -1090,7 +1141,7 @@
           [['#c0504d', 260, 95, ['Imaginal', 'Exposure']], ['#9bbb59', 390, 320, ['Role-', 'play', 'Exposure']], ['#8064a2', 130, 320, ['Real', 'World', 'Exposure']]]
             .map(function (n, i) {
               var y0 = n[2] - (n[3].length - 1) * 8;
-              return '<g class="fz-node" style="--d:' + (0.3 + i * 0.4) + 's"><circle cx="' + n[1] + '" cy="' + n[2] + '" r="50" fill="' + n[0] + '"/>' +
+              return '<g class="fz-node" data-k="' + i + '" style="--d:' + (0.3 + i * 0.4) + 's"><circle cx="' + n[1] + '" cy="' + n[2] + '" r="50" fill="' + n[0] + '"/>' +
                 n[3].map(function (w, k) { return '<text x="' + n[1] + '" y="' + (y0 + k * 17 + 5) + '" text-anchor="middle" class="fz-exp__n">' + w + '</text>'; }).join('') + '</g>';
             }).join('') +
         '</svg>';
@@ -1130,7 +1181,7 @@
         '<div class="fv">' +
           '<div class="fv__txt"><span class="fy-label">Seeing is believing</span><h3>Power of Visualisation</h3>' +
             '<h4>The science behind how visualising works</h4>' +
-            '<p>The practice causes your amygdala, a little region in the centre of the brain that controls the fight-or-flight reaction, to have difficulty telling the difference between something simply being seen during a visualisation meditation session and something truly happening in real time.</p></div>' +
+            '<p>Your amygdala, the brain’s fight-or-flight centre, struggles to tell a vividly pictured situation from a real one.</p></div>' +
           '<ul class="fv__chips">' +
             ['Improved Performance in Sports', 'Boosting Confidence', 'Increasing Focus', 'Managing Stress &amp; Anxiety', 'Managing Depression', 'Managing Chronic Pain']
               .map(function (t) { return '<li class="fv__chip">' + t + '</li>'; }).join('') +
@@ -1150,18 +1201,35 @@
         '<div class="fz-brain">' + sticker('Ohh noo!!') + '<h3 class="fz-h">Brainstorming</h3>' +
           '<p class="fz-brain__p">It enabled me to come up with concepts and insights for creating a successful solution. I was also able to identify opportunities to close those gaps.</p>' +
           '<ul class="fz-notes">' + notes.map(function (n, i) {
-            return '<li style="--i:' + i + ';--r:' + ([-1.5, 1, -0.5, 1.5, -1, 0.5][i % 6]) + 'deg"><span>' + n + '</span><small>Ishaan Gupta</small></li>';
+            /* a loose cluster: two overlapping rows, each note nudged and tilted */
+            var x = (i % 6) * 16.3 + [0, 1.2, -0.6, 1.4, -0.3, 0.8][i % 6] + (i < 6 ? 0 : 2.2);
+            var y = (i < 6 ? 0 : 49) + [0, 5, 1, 6, 2, 4][i % 6];
+            return '<li style="--i:' + i + ';--x:' + x.toFixed(1) + '%;--y:' + y + '%;--r:' + ([-4, 3, -2, 4.5, -3, 2][(i + (i < 6 ? 0 : 2)) % 6]) + 'deg"><span>' + n + '</span><small>Ishaan Gupta</small></li>';
           }).join('') + '</ul></div>';
 
+      /* FOUR STEPS, ONE PANEL. Numbered like a story, a pink line fills under
+         the step being read and moves on by itself while the panel is on screen;
+         pointing at the panel holds it, a click takes over for good. The panel
+         grows or shrinks to each step, and every step replays its drawing when
+         it opens. Interactions live in the controller at the end of this file. */
+      var steps = ['Existing treatment', 'Why VR', 'Visualisation', 'Brainstorm'];
+      var pane = function (k, html) { return '<section class="fzs-pane' + (k ? '' : ' is-on') + '" role="tabpanel" data-k="' + k + '">' + html + '</section>'; };
       return win('Ideate',
-        '<div class="fz">' +
-          '<h3 class="fz-h">Existing Treatment</h3>' +
-          '<div class="fz-treat">' +
-            '<figure class="fz-card"><figcaption><b>Cognitive Behavioral Therapy</b>People learn different ways of reacting to thoughts and feelings, and they learn to engage in different behaviors that result in decreased fear.</figcaption>' + cbt + '</figure>' +
-            '<figure class="fz-card"><figcaption><b>Exposure Therapy</b>In this form of therapy, psychologists create a safe environment in which to “expose” individuals to the things they fear and avoid.</figcaption>' + exposure + '</figure>' +
+        '<div class="fz fz--dark fz--steps">' +
+          '<div class="fzs-nav" role="tablist" aria-label="What already works">' +
+            steps.map(function (t, k) {
+              return '<button type="button" class="fzs-tab' + (k ? '' : ' is-on') + '" role="tab" data-k="' + k + '" aria-selected="' + (k ? 'false' : 'true') + '">' +
+                '<span class="fzs-n">0' + (k + 1) + '</span><span class="fzs-t">' + t + '</span><i class="fzs-bar" aria-hidden="true"><b></b></i></button>';
+            }).join('') +
           '</div>' +
-          whyvr + visual + brainstorm +
-        '</div>', 'fy-win--light fz-win');
+          '<div class="fzs-view">' +
+            pane(0, '<div class="fz-treat">' +
+              '<figure class="fz-card"><figcaption><b>Cognitive Behavioral Therapy</b>People learn different ways of reacting to thoughts and feelings, and they learn to engage in different behaviors that result in decreased fear.<span class="fz-tip">Point at a step of the cycle to see the question it asks.</span></figcaption>' + cbt + '</figure>' +
+              '<figure class="fz-card"><figcaption><b>Exposure Therapy</b>In this form of therapy, psychologists create a safe environment in which to “expose” individuals to the things they fear and avoid.<span class="fz-tip" data-def="Point at a kind of exposure to see what it means.">Point at a kind of exposure to see what it means.</span></figcaption>' + exposure + '</figure>' +
+            '</div>') +
+            pane(1, whyvr) + pane(2, visual) + pane(3, brainstorm) +
+          '</div>' +
+        '</div>', 'fz-win fz-win--dark');
     })(),
 
     /* ------------------------------------------------- PERSONAS + EMPATHY
@@ -1195,14 +1263,22 @@
         beh: ['Avoids social situations and events, which limits opportunities for social interaction', 'Experiences physical symptoms of anxiety, such as sweating, rapid heartbeat, and trembling', 'Tends to rely on close friends or family members for support and guidance', 'Has sought out therapy or counseling to help manage social anxiety'],
         mot: ['Wants to make new friends and build meaningful relationships', 'Values personal growth and development', 'Desires to be more independent and self-sufficient'] };
 
-      var salman = '<div class="fp-persona"><span class="fp-num" aria-hidden="true">01</span>' +
-        '<div class="fp-col">' + who(S, 0) + '</div>' +
-        '<div class="fp-col fp-col--down">' + card('Goals', S.goals, 2) + card('Behaviours', S.beh, 4) + '</div>' +
-        '<div class="fp-col fp-col--down">' + card('Challenges', S.chall, 3) + card('Motivations', S.mot, 5) + '</div></div>';
-      var babita = '<div class="fp-persona fp-persona--b"><span class="fp-num" aria-hidden="true">02</span>' +
-        '<div class="fp-col fp-col--down">' + card('Goals', B.goals, 2) + card('Behaviours', B.beh, 4) + '</div>' +
-        '<div class="fp-col fp-col--down">' + card('Challenges', B.chall, 3) + card('Motivations', B.mot, 5) + '</div>' +
-        '<div class="fp-col">' + who(B, 0) + '</div></div>';
+      /* compact: the two personas side by side, three points a box, the
+         rest one tap away */
+      function mini(p, n, flip) {
+        var meta = p.demo.map(function (d) { return d[1]; }).filter(function (v, i) { return i !== 3; }).join(' · ');
+        return '<div class="fp-persona fp-mini' + (flip ? ' fp-persona--b' : '') + '"><span class="fp-num" aria-hidden="true">' + n + '</span>' +
+          '<div class="fp-card fp-mhead" style="--i:0">' + img(p.av, 'Illustrated avatar of ' + p.name, 179, 179) +
+            '<div><b>' + p.name + '</b><span class="fp-meta">' + meta + '</span></div></div>' +
+          card('Goals', p.goals.slice(0, 3), 1) + card('Challenges', p.chall.slice(0, 3), 2) +
+          '<details class="fp-card fp-more" style="--i:3"><summary><span>Behaviours, motivations &amp; traits</span><i aria-hidden="true">+</i></summary>' +
+            '<h6>Behaviours</h6>' + list(p.beh.slice(0, 3)) + '<h6>Motivations</h6>' + list(p.mot.slice(0, 3)) +
+            '<div class="fp-slider"><span>Introvert</span><span>Extrovert</span><i style="--at:' + p.t[0] + '%"></i></div>' +
+            '<div class="fp-slider"><span>Analytical</span><span>Creative</span><i style="--at:' + p.t[1] + '%"></i></div>' +
+          '</details></div>';
+      }
+      var salman = '<div class="fp-pair">' + mini(S, '01') + mini(B, '02', true) + '</div>';
+      var babita = '';
 
       var I = {
         heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
@@ -1216,10 +1292,10 @@
             '<path d="M0 0 L420 250 M1000 0 L580 250 M0 620 L420 370 M1000 620 L580 370"/></svg>' +
           '<div class="fp-emp__me"><span class="fp-emp__ring" aria-hidden="true"></span>' + img('avatar-empathy.webp', 'The persona at the centre of the empathy map', 340, 339) + '</div>' +
           ico('heart', 'fp-ico--heart') + ico('ear', 'fp-ico--ear') + ico('lips', 'fp-ico--lips') + ico('eye', 'fp-ico--eye') +
-          '<div class="fp-q fp-q--think"><h5>Thinks &amp; Feels</h5>' + list(['“Everyone is looking at me and judging me”', '“I’m not good enough”', '“I’m going to embarrass myself”', '“I can’t handle this”', '“I wish I could just disappear”']) + '</div>' +
-          '<div class="fp-q fp-q--hear"><h5>Hears</h5>' + list(['Internal dialogue with negative self-talk or self-criticism', 'Fear of being judged, criticized, or rejected by others', 'Negative or critical comments from others in social situations', 'Criticism or negative feedback from authority figures or loved ones']) + '</div>' +
-          '<div class="fp-q fp-q--say"><h5>Says &amp; Does</h5>' + list(['Avoids social situations or events', 'Struggles to engage in conversations', 'Tends to keep to themselves and not participate in group activities', 'May rely on substance use to cope with social situations', 'May use self-deprecating humour to deflect attention away from themselves']) + '</div>' +
-          '<div class="fp-q fp-q--see"><h5>Sees</h5>' + list(['Crowded or overwhelming social situations, such as parties', 'Busy or noisy environments, such as restaurants or public transportation', 'Potential sources of stress, such as upcoming social events or situations', 'Public Speaking opportunities']) + '</div>' +
+          '<div class="fp-q fp-q--think"><h5>Thinks &amp; Feels</h5>' + list(['“Everyone is looking at me and judging me”', '“I’m going to embarrass myself”', '“I wish I could just disappear”']) + '</div>' +
+          '<div class="fp-q fp-q--hear"><h5>Hears</h5>' + list(['Internal dialogue with negative self-talk or self-criticism', 'Fear of being judged, criticized, or rejected by others', 'Criticism or negative feedback from authority figures or loved ones']) + '</div>' +
+          '<div class="fp-q fp-q--say"><h5>Says &amp; Does</h5>' + list(['Avoids social situations or events', 'Struggles to engage in conversations', 'May use self-deprecating humour to deflect attention away from themselves']) + '</div>' +
+          '<div class="fp-q fp-q--see"><h5>Sees</h5>' + list(['Crowded or overwhelming social situations, such as parties', 'Busy or noisy environments, such as restaurants or public transportation', 'Public Speaking opportunities']) + '</div>' +
         '</div>';
 
       return '<div class="fp-board">' + salman + babita +
@@ -1736,10 +1812,232 @@ window.STUDY_HTML.protoTherapy = window.FURY_PROTO.html('therapy');
     var io = new IntersectionObserver(function (es) {
       if (!es[0].isIntersecting) return;
       io.disconnect();
-      import(new URL('assets/js/fury-vr.js?v=3', document.baseURI).href)
+      import(new URL('assets/js/fury-vr.js?v=4', document.baseURI).href)
         .then(function (m) { m.mount(host); })
         .catch(function (e) { if (window.console) console.warn('fury-vr', e); });
     }, { rootMargin: '1200px 0px' });
     io.observe(host);
   })();
+})();
+/* architecture and task flows, side by side in one row */
+window.STUDY_HTML.iaFlows = '<div class="fy-duo">' +
+  '<div class="fy-duo__c"><p class="fy-duo__h">Information architecture</p>' + window.STUDY_HTML.ia + '</div>' +
+  '<div class="fy-duo__c"><p class="fy-duo__h">Task flows</p>' + window.STUDY_HTML.flows + '</div>' +
+  '<ul class="fy-duo__key" aria-label="Key">' +
+    '<li><svg viewBox="0 0 22 8" aria-hidden="true"><path d="M1 4h19M16.5 1.2 20 4l-3.5 2.8"/></svg>Leads to</li>' +
+    '<li><i class="fy-duo__sw fy-duo__sw--tab"></i>Tab bar section</li>' +
+    '<li><i class="fy-duo__sw fy-duo__sw--end"></i>Start and end</li>' +
+    '<li><i class="fy-duo__sw fy-duo__sw--choice"></i>Check-in / a choice</li>' +
+    '<li><i class="fia__vr">VR</i>In the headset</li><li><i class="ftf__ai">AI</i>AI-assisted</li>' +
+  '</ul></div>';
+
+
+
+/* THE "WHAT ALREADY WORKS" STEPS: switching, autoplay, animated height,
+   replayed drawings, and the four interactions (diagram hover, Why VR answers,
+   visualisation chips, draggable sticky notes). */
+(function () {
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var EXP = ['Picturing the feared situation in vivid detail, guided step by step.',
+    'Acting the situation out with someone else, where nothing is at stake.',
+    'Facing the real situation in everyday life, a little at a time.'];
+  function bind(root) {
+    if (root.dataset.bound) return; root.dataset.bound = '1';
+    var tabs = [].slice.call(root.querySelectorAll('.fzs-tab'));
+    var panes = [].slice.call(root.querySelectorAll('.fzs-pane'));
+    var view = root.querySelector('.fzs-view');
+    var cur = 0, manual = false, chipT = 0, chipK = 0;
+
+    function play(p) {
+      p.classList.remove('is-play'); void p.offsetWidth;
+      requestAnimationFrame(function () { requestAnimationFrame(function () { p.classList.add('is-play'); }); });
+    }
+    function chips(on) {
+      clearTimeout(chipT);
+      var cs = [].slice.call(panes[2].querySelectorAll('.fv__chip'));
+      cs.forEach(function (c) { c.classList.remove('is-hot'); });
+      if (!on || reduce) return;
+      (function tick() {
+        if (!panes[2].dataset.held) { cs.forEach(function (c, j) { c.classList.toggle('is-hot', j === chipK % cs.length); }); chipK++; }
+        chipT = setTimeout(tick, 1100);
+      })();
+    }
+    function go(k, user) {
+      if (user) { manual = true; root.classList.add('is-manual'); }
+      if (k === cur && !user) return;
+      var h0 = view.offsetHeight;
+      tabs.forEach(function (t, j) { t.classList.toggle('is-on', j === k); t.setAttribute('aria-selected', j === k ? 'true' : 'false'); });
+      panes.forEach(function (p, j) { p.classList.toggle('is-on', j === k); });
+      cur = k; play(panes[k]); chips(k === 2);
+      if (!reduce) {
+        var h1 = view.offsetHeight;
+        view.classList.add('is-sizing');
+        view.style.height = h0 + 'px'; void view.offsetHeight;
+        view.style.height = h1 + 'px';
+        clearTimeout(view._t); view._t = setTimeout(function () { view.style.height = ''; view.classList.remove('is-sizing'); }, 520);
+      }
+    }
+    tabs.forEach(function (t, j) { t.addEventListener('click', function () { go(j, true); }); });
+    /* autoplay: the active tab's line fills over 7s; when it ends, the next step */
+    tabs.forEach(function (t) {
+      t.querySelector('.fzs-bar b').addEventListener('animationend', function () { if (!manual) go((cur + 1) % tabs.length); });
+    });
+    root.addEventListener('pointerenter', function () { root.classList.add('is-held'); });
+    root.addEventListener('pointerleave', function () { root.classList.remove('is-held'); });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          root.classList.toggle('is-live', e.isIntersecting);
+          if (e.isIntersecting && !root.dataset.seen) { root.dataset.seen = '1'; play(panes[cur]); }
+        });
+      }, { threshold: 0.35 }).observe(root);
+    } else { root.classList.add('is-live'); play(panes[0]); }
+
+    /* CBT: point at a step and its question lights; the rest step back */
+    var cbt = root.querySelector('.fz-cbt');
+    if (cbt) [].forEach.call(cbt.querySelectorAll('.fz-node'), function (n) {
+      n.addEventListener('pointerenter', function () { cbt.classList.add('has-hot'); n.classList.add('is-hot'); });
+      n.addEventListener('pointerleave', function () { cbt.classList.remove('has-hot'); n.classList.remove('is-hot'); });
+    });
+    /* exposure: point at a kind and its arc lights, with a line on what it is */
+    var exp = root.querySelector('.fz-exp'), tip = exp && exp.closest('.fz-card').querySelector('.fz-tip');
+    if (exp) [].forEach.call(exp.querySelectorAll('.fz-node[data-k]'), function (n) {
+      var k = n.getAttribute('data-k');
+      n.addEventListener('pointerenter', function () {
+        exp.setAttribute('data-on', k); tip.textContent = EXP[+k]; tip.classList.add('is-on');
+      });
+      n.addEventListener('pointerleave', function () {
+        exp.removeAttribute('data-on'); tip.textContent = tip.getAttribute('data-def'); tip.classList.remove('is-on');
+      });
+    });
+    /* Why VR: point at an answer and its line and dot light */
+    var fw = root.querySelector('.fw2');
+    if (fw) {
+      var lines = fw.querySelectorAll('.fw2__line'), dots = fw.querySelectorAll('.fw2__dot');
+      ['a', 'b', 'c', 'd'].forEach(function (c, j) {
+        var pt = fw.querySelector('.fw2__pt--' + c); if (!pt) return;
+        pt.addEventListener('pointerenter', function () { fw.classList.add('has-hot'); pt.classList.add('is-hot'); lines[j].classList.add('is-hot'); dots[j].classList.add('is-hot'); });
+        pt.addEventListener('pointerleave', function () { fw.classList.remove('has-hot'); pt.classList.remove('is-hot'); lines[j].classList.remove('is-hot'); dots[j].classList.remove('is-hot'); });
+      });
+    }
+    /* visualisation: pointing at a chip holds it */
+    [].forEach.call(panes[2].querySelectorAll('.fv__chip'), function (c) {
+      c.addEventListener('pointerenter', function () { panes[2].dataset.held = '1'; [].forEach.call(panes[2].querySelectorAll('.fv__chip'), function (x) { x.classList.toggle('is-hot', x === c); }); });
+      c.addEventListener('pointerleave', function () { delete panes[2].dataset.held; });
+    });
+    /* sticky notes: pick one up and move it */
+    var wall = root.querySelector('.fz-notes'), z = 60;
+    if (wall) [].forEach.call(wall.querySelectorAll('li'), function (li) {
+      li.addEventListener('pointerdown', function (e) {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        var r = wall.getBoundingClientRect(), sx = e.clientX, sy = e.clientY;
+        var x0 = parseFloat(li.style.getPropertyValue('--x')), y0 = parseFloat(li.style.getPropertyValue('--y'));
+        li.setPointerCapture(e.pointerId); li.classList.add('is-drag'); li.style.zIndex = ++z;
+        function mv(ev) {
+          var x = Math.max(-2, Math.min(86, x0 + (ev.clientX - sx) / r.width * 100));
+          var y = Math.max(-4, Math.min(62, y0 + (ev.clientY - sy) / r.height * 100));
+          li.style.setProperty('--x', x.toFixed(2) + '%'); li.style.setProperty('--y', y.toFixed(2) + '%');
+        }
+        function up() { li.classList.remove('is-drag'); li.removeEventListener('pointermove', mv); li.removeEventListener('pointerup', up); li.removeEventListener('pointercancel', up); }
+        li.addEventListener('pointermove', mv); li.addEventListener('pointerup', up); li.addEventListener('pointercancel', up);
+      });
+    });
+  }
+  function scan() { [].forEach.call(document.querySelectorAll('.fz--steps'), bind); }
+  scan(); new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+/* A PEEK INTO THE HEADSET, FLOATING. A small looping clip of the VR room,
+   recorded from the chapter itself, that invites a visitor to see the real
+   thing before reading their way down to it. It floats at the bottom right of
+   the whole study (outside the hero, so the hero's parallax can't shake it).
+   While the page scrolls it tucks away to a sliver at the right edge and
+   glides back once scrolling stops; inside the VR room itself it steps aside.
+   A small x hides it for the rest of the visit. A click glides straight into
+   the room. */
+(function () {
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var M = 'assets/media/fury/', KEY = 'fury-peek-off';
+  var el = null, tuckT = 0, raf = 0;
+  function off() { try { return sessionStorage.getItem(KEY) === '1'; } catch (e) { return false; } }
+  function intoRoom() {
+    var run = document.querySelector('.fvr__run'); if (!run) return;
+    var beh = reduce ? 'auto' : 'smooth';
+    function inside() { var r = run.getBoundingClientRect(), span = r.height - innerHeight; return span > 0 ? r.top + scrollY + span * 0.21 : null; }
+    var t = inside();
+    if (t != null) { scrollTo({ top: t, behavior: beh }); return; }
+    var host = run.closest('.fvr') || run;
+    scrollTo({ top: host.getBoundingClientRect().top + scrollY, behavior: beh });
+    var n = 0;
+    (function wait() {
+      var y = inside();
+      if (y != null && Math.abs(run.getBoundingClientRect().top) < innerHeight) { scrollTo({ top: y, behavior: beh }); return; }
+      if (n++ < 60) setTimeout(wait, 100);
+    })();
+  }
+  function build() {
+    var a = document.createElement('a');
+    a.className = 'fpeek'; a.href = '#design';
+    a.setAttribute('aria-label', 'See it in VR: jump to the VR experience');
+    a.innerHTML = '<span class="fpeek__media">' +
+        (reduce ? '<img src="' + M + 'vr-peek.webp" alt="">' :
+          '<video muted loop playsinline autoplay preload="auto" poster="' + M + 'vr-peek.webp">' +
+            '<source src="' + M + 'vr-peek.webm" type="video/webm"><source src="' + M + 'vr-peek.mp4" type="video/mp4"></video>') +
+      '</span><span class="fpeek__t">See it in VR <i aria-hidden="true">→</i></span>' +
+      '<button type="button" class="fpeek__x" aria-label="Hide the VR preview">×</button>';
+    var v = a.querySelector('video'); if (v) { v.muted = true; v.play && v.play().catch(function () {}); }
+    a.addEventListener('click', function (e) {
+      if (e.target.closest('.fpeek__x')) {
+        e.preventDefault(); e.stopPropagation();
+        try { sessionStorage.setItem(KEY, '1'); } catch (_) {}
+        a.classList.remove('is-on'); setTimeout(function () { a.remove(); el = null; }, 400);
+        return;
+      }
+      e.preventDefault(); intoRoom();
+    });
+    document.body.appendChild(a);
+    setTimeout(function () { a.classList.add('is-on'); }, reduce ? 0 : 1200);
+    return a;
+  }
+  function inVR() {
+    var run = document.querySelector('.fvr__run'), r;
+    if (run && run.getBoundingClientRect().height > innerHeight) { r = run.getBoundingClientRect(); return r.top < innerHeight * 0.5 && r.bottom > innerHeight * 0.5; }
+    var host = document.querySelector('.fvr');
+    if (!host) return false;
+    r = host.getBoundingClientRect(); return r.top < innerHeight * 0.4 && r.bottom > innerHeight * 0.6;
+  }
+  function sync() {
+    raf = 0;
+    var onFury = !!document.querySelector('body[data-project="fury"] .fhero');
+    if (!onFury || off()) { if (el) { el.remove(); el = null; } return; }
+    if (!el || !el.isConnected) el = build();
+    el.classList.toggle('is-away', inVR());
+  }
+  addEventListener('scroll', function () {
+    if (!raf) raf = requestAnimationFrame(sync);
+    if (!el || reduce) return;
+    el.classList.add('is-tuck');
+    clearTimeout(tuckT);
+    tuckT = setTimeout(function () { if (el) el.classList.remove('is-tuck'); }, 600);
+  }, { passive: true });
+  addEventListener('resize', function () { if (!raf) raf = requestAnimationFrame(sync); });
+  new MutationObserver(function () { if (!raf) raf = requestAnimationFrame(sync); }).observe(document.documentElement, { childList: true, subtree: true });
+  sync();
+})();
+
+
+/* the testers count rolls only once its card is properly on screen */
+(function () {
+  function bind() {
+    [].forEach.call(document.querySelectorAll('.fy-slot:not([data-b])'), function (el) {
+      el.setAttribute('data-b', '1');
+      if (!('IntersectionObserver' in window)) { el.classList.add('is-roll'); return; }
+      var io = new IntersectionObserver(function (es) {
+        if (es[0].isIntersecting) { el.classList.add('is-roll'); io.disconnect(); }
+      }, { threshold: 1, rootMargin: '0px 0px -15% 0px' });
+      io.observe(el);
+    });
+  }
+  bind(); new MutationObserver(bind).observe(document.documentElement, { childList: true, subtree: true });
 })();

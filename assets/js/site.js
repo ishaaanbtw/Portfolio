@@ -8062,9 +8062,14 @@
          transforms or gets replaced. `App.mount` is the same door the three
          pods use. */
       /* the closing card, matching the film's end frame (see `.endcard`) */
-      if (p.end) main.appendChild(el('section', { class: 'endcard', 'aria-label': 'End of case study' },
+      /* `art` (an image beside the words) and `cta` ({ label, href }) are
+         optional; an end without them renders exactly as before */
+      if (p.end) main.appendChild(el('section', { class: 'endcard' + (p.end.art ? ' endcard--art' : ''), 'aria-label': 'End of case study' },
+        (p.end.art ? `<figure class="endcard__art" aria-hidden="true"><img src="${url(p.end.art)}" alt="${esc(p.end.artAlt || '')}" loading="lazy" decoding="async"></figure>` : '') +
         `<div class="endcard__in"><h2 class="endcard__h">${esc(p.end.h || '')}</h2>` +
-        `<p class="endcard__meta">${esc(p.end.meta || '')}</p></div>`));
+        `<p class="endcard__meta">${esc(p.end.meta || '')}</p>` +
+        (p.end.cta ? `<a class="endcard__cta" href="${esc(p.end.cta.href)}">${esc(p.end.cta.label)}<span aria-hidden="true">→</span></a>` : '') +
+        `</div>`));
       if (item) main.appendChild(this.onward());
       Marquee.bind(main);       // attached first, so measurements are real
       videos(main);
@@ -25786,4 +25791,49 @@
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
+})();
+
+/* ONE WAY BACK, FROM THE FIRST FRAME TO THE LAST. On a film-hero study the
+   hero's back link and the section rail's back link are two elements at the
+   same coordinate. The hero's used to scroll away with the film while the
+   rail's slid up from below, so for a moment there were two arrows and then a
+   "new" one. Now the hero's link is pinned to the corner, and the instant the
+   sticky rail docks its own link onto exactly that spot, the two swap in the
+   same frame: one arrow, never moving, never doubled. Shared by every study
+   with a film hero; elements are looked up on each pass, so it survives the
+   router swapping one study for another. */
+(function () {
+  let raf = 0;
+  function update() {
+    raf = 0;
+    const hero = document.querySelector('.fhero');
+    /* the hero is transformed for its parallax, which would make a fixed child
+       scroll with it, so the link is lifted out to the page; a lifted link
+       whose hero has gone (another study was opened) is dropped */
+    document.querySelectorAll('body > .fhero__back').forEach((x) => {
+      if (!hero || hero.querySelector('.fhero__back')) x.remove();
+    });
+    const own = hero && hero.querySelector('.fhero__back');
+    if (own) {
+      own.dataset.tone = hero.dataset.tone || 'dark';
+      document.body.appendChild(own);
+    }
+    const hb = document.querySelector('body > .fhero__back');
+    const rb = document.querySelector('.rail .rail__back');
+    const root = document.documentElement;
+    if (!hb || !rb || getComputedStyle(hb).display === 'none') {
+      root.classList.remove('has-fback');
+      if (rb) rb.classList.remove('is-handed');
+      return;
+    }
+    root.classList.add('has-fback');
+    const docked = rb.getBoundingClientRect().top <= hb.getBoundingClientRect().top + 1;
+    hb.classList.toggle('is-docked', docked);
+    rb.classList.toggle('is-handed', !docked);
+  }
+  const ask = () => { if (!raf) raf = requestAnimationFrame(update); };
+  addEventListener('scroll', ask, { passive: true });
+  addEventListener('resize', ask);
+  new MutationObserver(ask).observe(document.documentElement, { childList: true, subtree: true });
+  ask();
 })();

@@ -145,7 +145,6 @@ export function mount(host) {
       world.style.opacity = '1';
     }
     host.style.setProperty('--vig', String(1 - P(p, 0.17, 0.27)));
-    document.body.classList.toggle('fvr-in', p > 0.03 && p < 0.985);
 
     /* the tour */
     const q = P(p, T0, T1);
@@ -169,7 +168,9 @@ export function mount(host) {
       count.textContent = '0' + (y.focus + 1);
       panels.forEach((pn, i) => pn.play(i === y.focus));
     }
-    fade.style.opacity = String(P(p, 0.955, 0.995));
+    /* no fade to a blank frame at the end: the room itself scrolls away and
+       the next block follows straight after */
+    fade.style.opacity = '0';
 
     renderer.render(scene, camera);
     if (inView) raf = requestAnimationFrame(frame);

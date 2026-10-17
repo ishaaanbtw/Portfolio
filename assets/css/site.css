@@ -28100,8 +28100,10 @@ body[data-project="fury"] .fy-unity__walk figcaption b { font-family: var(--fury
    along them so the eye travels the whole list. */
 body[data-project="fury"] #problem .sec__body { max-width: 46rem; }
 body[data-project="fury"] .fy-ps { display: block; font-family: var(--fury-display); font-weight: 500; font-size: clamp(1.35rem, 1rem + 1.2vw, 1.95rem); line-height: 1.4; letter-spacing: -.02em; color: #fff; }
-body[data-project="fury"] .fy-ps__ring { position: relative; display: inline-block; padding: 0 .15em; white-space: nowrap; }
-body[data-project="fury"] .fy-ps__ring svg { position: absolute; left: -10%; top: -26%; width: 120%; height: 152%; overflow: visible; pointer-events: none; }
+body[data-project="fury"] .fy-ps__ring { position: relative; display: inline-block; white-space: nowrap; margin: 0 .2em; }
+/* inset, not a percentage width: the site caps svg at max-width 100%, which
+   squeezed a 120%-wide circle to the text width and shifted it left */
+body[data-project="fury"] .fy-ps__ring svg { position: absolute; left: -.42em; top: -.2em; width: calc(100% + .84em); height: calc(100% + .36em); max-width: none; overflow: visible; pointer-events: none; }
 body[data-project="fury"] .fy-ps__ring path { fill: none; stroke: #f0436b; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1 1; stroke-dashoffset: 1; }
 body[data-project="fury"] .fy-ps.is-on .fy-ps__o { stroke-dashoffset: 0; transition: stroke-dashoffset .9s cubic-bezier(.55, 0, .3, 1) .2s; }
 body[data-project="fury"] .fy-ps.is-on .fy-ps__k { stroke-dashoffset: 0; transition: stroke-dashoffset .22s ease-out; }
@@ -28390,7 +28392,7 @@ body[data-project="fury"] .fvr__fade { position: absolute; inset: 0; z-index: 4;
 }
 /* the page's own chrome steps back while you are inside */
 body[data-project="fury"] .rail { transition: opacity .4s ease; }
-body[data-project="fury"].fvr-in .rail { opacity: 0; pointer-events: none; }
+/* the rail stays: navigation is always available, even inside the VR chapter */
 /* the flow switch: a quiet segmented control, so it never reads as one of the
    diagram's own (navy) nodes */
 body[data-project="fury"] .ftf__mode {
@@ -28407,3 +28409,534 @@ body[data-project="fury"] .ftf__mode button[aria-pressed="true"] {
   background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(17, 17, 20, .08), 0 2px 8px rgba(17, 17, 20, .06);
 }
 body[data-project="fury"] .ftf__mode button[aria-pressed="true"] b { color: var(--fury-pink); }
+/* --- the night film hero (Fury) ----------------------------------------------
+   Like Talent's: the film keeps a counter along its top edge, so the stage sits
+   flush rather than hung off the window; a night fade rises under the caption. */
+.fhero[data-tone='night'] .fhero__stage { inset: 0; }
+.fhero[data-tone='night'] .fhero__scrim {
+  height: clamp(10rem, 28%, 18rem);
+  background: linear-gradient(transparent, color-mix(in srgb, var(--fh-ground) 75%, transparent) 50%, var(--fh-ground) 85%);
+}
+@media (max-aspect-ratio: 1 / 1) {
+  .fhero[data-tone='night'] .fhero__stage { inset: 14vh 0 auto 0; height: 46vh; }
+  .fhero[data-tone='night'] .fhero__vid { object-fit: contain; }
+}
+
+/* --- tighter: two personas side by side, three points a box --------------- */
+body[data-project="fury"] .fp-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 2.4vw, 2rem); margin: clamp(3.5rem, 6vw, 5rem) 0 clamp(3rem, 6vw, 4.5rem); }
+body[data-project="fury"] .fp-mini { display: grid; grid-template-columns: 1fr; gap: .8rem; margin: 0 !important; align-content: start; }
+body[data-project="fury"] .fp-mini .fp-num { top: -4.4rem; left: -1.4rem; font-size: clamp(6rem, 3rem + 6vw, 9rem); }
+body[data-project="fury"] .fp-mini.fp-persona--b .fp-num { left: auto; right: -1rem; }
+body[data-project="fury"] .fp-mhead { display: flex; align-items: center; gap: 1rem; padding: .7rem 1.1rem .7rem .7rem; }
+body[data-project="fury"] .fp-mhead img { width: 4.2rem; height: 4.2rem; border-radius: 10px; flex: none; }
+body[data-project="fury"] .fp-mhead b { display: block; font-family: var(--fury-display); font-weight: 600; font-size: 1.3rem; color: #fff; letter-spacing: -0.01em; }
+body[data-project="fury"] .fp-meta { display: block; margin-top: .25rem; font-size: .8rem; color: #a9abb0; }
+body[data-project="fury"] .fp-mini .fp-card { padding: 1.05rem 1.25rem 1.15rem; }
+body[data-project="fury"] .fp-mini .fp-card h5 { font-size: 1rem; margin-bottom: .5rem; }
+body[data-project="fury"] .fp-mini .fp-card ul { font-size: .82rem; line-height: 1.55; }
+body[data-project="fury"] .fp-more summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-family: var(--fury-display); font-weight: 600; font-size: .92rem; color: #fff; }
+body[data-project="fury"] .fp-more summary::-webkit-details-marker { display: none; }
+body[data-project="fury"] .fp-more summary i { font-style: normal; font-size: 1.1rem; color: #a9abb0; transition: transform .25s ease; }
+body[data-project="fury"] .fp-more[open] summary i { transform: rotate(45deg); }
+body[data-project="fury"] .fp-more h6 { margin: 1rem 0 .4rem; font-family: var(--fury-display); font-weight: 600; font-size: .9rem; color: #fff; }
+body[data-project="fury"] .fp-more .fp-slider { margin-top: 1rem; }
+@media (max-width: 760px) { body[data-project="fury"] .fp-pair { grid-template-columns: 1fr; gap: 4rem; } }
+
+/* --- tighter empathy map: the same radial, about half the height ----------- */
+body[data-project="fury"] .fp-emp { aspect-ratio: 1000 / 540; max-width: 62rem; margin: 0 auto; }
+body[data-project="fury"] .fp-emp__me { width: 13%; }
+body[data-project="fury"] .fp-q h5 { font-size: 1.02rem; margin-bottom: .45rem; }
+body[data-project="fury"] .fp-q ul { font-size: .76rem; line-height: 1.5; }
+body[data-project="fury"] .fp-q--think { width: 46%; }
+body[data-project="fury"] .fp-q--see { width: 56%; }
+body[data-project="fury"] .fp-q--hear { top: 36%; width: 27%; }
+body[data-project="fury"] .fp-q--say { top: 36%; width: 27%; }
+body[data-project="fury"] .fp-ico--heart { top: 27%; } body[data-project="fury"] .fp-ico--eye { top: 73%; }
+body[data-project="fury"] .fp-ico--ear { left: 38.5%; } body[data-project="fury"] .fp-ico--lips { left: 61.5%; }
+body[data-project="fury"] .fp-h { margin-bottom: 1.2rem; }
+@media (max-width: 900px) { body[data-project="fury"] .fp-emp { aspect-ratio: auto; } }
+
+/* --- architecture + task flows: side by side, drawn on the night page ------
+   No cards. The map on the left, the flows top-to-bottom on the right, one
+   quiet key under both. Same hover tracing as before, in light on dark. */
+body[data-project="fury"] .fy-duo {
+  display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr); gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: start; margin-top: clamp(1.5rem, 3vw, 2.5rem);
+}
+body[data-project="fury"] .fy-duo__c { min-width: 0; }
+body[data-project="fury"] .fy-duo__h { margin: 0 0 1rem; font-family: var(--fury-display); font-size: .78rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #8d8d96; }
+body[data-project="fury"] .fy-duo .fy-win { background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0; margin: 0 !important; }
+body[data-project="fury"] .fy-duo .fy-win__in { padding: 0 !important; background: none !important; }
+body[data-project="fury"] .fy-duo .fia { --ink: #f4f4f5; --line: rgba(255, 255, 255, .16); --dim: #8d8d96; --navy: #f4f4f5; color: var(--ink); }
+body[data-project="fury"] .fy-duo :is(.fia__n, .ftf__n) { background: #1f1f24; }
+body[data-project="fury"] .fy-duo .fia__n--spine { border-color: rgba(255, 255, 255, .5); }
+body[data-project="fury"] .fy-duo :is(.fia__n--check, .ftf__n--choice) { background: #f4f4f5; border-color: #f4f4f5; color: #111114; box-shadow: none; }
+body[data-project="fury"] .fy-duo .fia__n--check .fia__m { color: rgba(17, 17, 20, .55); }
+body[data-project="fury"] .fy-duo .ftf__n--opt { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .08); }
+body[data-project="fury"] .fy-duo .ftf__ai { background: #f4f4f5; color: #111114; }
+body[data-project="fury"] .fy-duo .fia__e { stroke: rgba(255, 255, 255, .32); }
+body[data-project="fury"] .fy-duo .fia.has-lit .fia__e { stroke: rgba(255, 255, 255, .08); }
+body[data-project="fury"] .fy-duo .fia.has-lit .fia__e.is-lit { stroke: #f4f4f5; }
+body[data-project="fury"] .fy-duo :is(.fia, .ftf).has-lit :is(.fia__n, .ftf__n):not(.is-lit) { color: rgba(244, 244, 245, .25); border-color: rgba(255, 255, 255, .06); background-color: #1b1b20; }
+body[data-project="fury"] .fy-duo .fia.has-lit :is(.fia__n--tab, .ftf__n--end):not(.is-lit) { background-color: rgba(245, 45, 93, .25); color: rgba(255, 255, 255, .6); }
+body[data-project="fury"] .fy-duo .fia.has-lit :is(.fia__n--check, .ftf__n--choice):not(.is-lit) { background-color: rgba(244, 244, 245, .2); color: rgba(17, 17, 20, .6); }
+body[data-project="fury"] .fy-duo :is(.fia__n, .ftf__n).is-lit { border-color: rgba(255, 255, 255, .45); }
+body[data-project="fury"] .fy-duo :is(.fia__n, .ftf__n).is-on { border-color: #f4f4f5; box-shadow: 0 0 0 .5px #f4f4f5, 0 12px 26px -16px rgba(0, 0, 0, .8); }
+body[data-project="fury"] .fy-duo :is(.fia__n--tab, .fia__n--check, .ftf__n--end, .ftf__n--choice).is-on { box-shadow: 0 0 0 2px #18181c, 0 0 0 3px #f4f4f5; }
+body[data-project="fury"] .fy-duo .fia__key { display: none; }
+body[data-project="fury"] .fy-duo .fia__foot { margin-top: .9rem; }
+body[data-project="fury"] .fy-duo .fia__read { font-size: .78rem; height: 2.8em; }
+body[data-project="fury"] .fy-duo .fia__read b { color: #f4f4f5; }
+body[data-project="fury"] .fy-duo .fia__hint { color: #6d6d75; }
+body[data-project="fury"] .fy-duo .fia__fit { justify-items: start; }
+/* the flow switch, on the dark */
+body[data-project="fury"] .fy-duo .ftf__mode { display: flex; flex-wrap: wrap; gap: 4px; padding: 0; margin: 0 0 1.4rem; background: none; border: 0; box-shadow: none; }
+body[data-project="fury"] .fy-duo .ftf__mode button { padding: .38rem .75rem; font-size: .74rem; border-radius: 999px; color: #8d8d96; border: 1px solid rgba(255, 255, 255, .12); background: none; box-shadow: none; }
+body[data-project="fury"] .fy-duo .ftf__mode button:hover { color: #f4f4f5; }
+body[data-project="fury"] .fy-duo .ftf__mode button[aria-pressed="true"] { background: #f4f4f5; border-color: #f4f4f5; color: #111114; }
+body[data-project="fury"] .fy-duo .ftf__mode button b { font-family: 'Geist Mono', ui-monospace, monospace; font-size: .68rem; font-weight: 500; color: #6d6d75; }
+body[data-project="fury"] .fy-duo .ftf__mode button[aria-pressed="true"] b { color: var(--fury-pink); }
+/* one key for both */
+body[data-project="fury"] .fy-duo__key {
+  grid-column: 1 / -1; list-style: none; margin: .4rem 0 0; padding: 1rem 0 0; border-top: 1px solid rgba(255, 255, 255, .08);
+  display: flex; flex-wrap: wrap; gap: .5rem 1.6rem; font-size: .74rem; color: #8d8d96;
+}
+body[data-project="fury"] .fy-duo__key li { display: inline-flex; align-items: center; gap: .5rem; }
+body[data-project="fury"] .fy-duo__key svg { width: 1.3rem; height: .5rem; fill: none; stroke: #a1a1aa; stroke-width: 1.25; }
+body[data-project="fury"] .fy-duo__sw { width: .9rem; height: .55rem; border-radius: 3px; }
+body[data-project="fury"] .fy-duo__sw--tab { background: var(--fury-pink); }
+body[data-project="fury"] .fy-duo__sw--end { background: var(--fury-pink); border-radius: 999px; }
+body[data-project="fury"] .fy-duo__sw--choice { background: #f4f4f5; border-radius: 999px; }
+body[data-project="fury"] .fy-duo__key :is(.fia__vr, .ftf__ai) { margin: 0; }
+body[data-project="fury"] .fy-duo__key .ftf__ai { background: #f4f4f5; color: #111114; }
+@media (max-width: 1000px) { body[data-project="fury"] .fy-duo { grid-template-columns: 1fr; } }
+body[data-project="fury"] .fy-duo { grid-template-columns: minmax(0, 1.7fr) minmax(0, .7fr); }
+body[data-project="fury"] .fy-duo :is(.fia__n--tab, .ftf__n--end) { background: var(--fury-pink); border-color: var(--fury-pink); color: #fff; }
+@media (max-width: 1000px) { body[data-project="fury"] .fy-duo { grid-template-columns: 1fr; } }
+/* two parts, not one: each column sits on its own quiet panel */
+body[data-project="fury"] .fy-duo { gap: clamp(.8rem, 1.6vw, 1.2rem); align-items: stretch; }
+body[data-project="fury"] .fy-duo__c {
+  background: #1f1f24; border: 1px solid rgba(255, 255, 255, .06); border-radius: 20px;
+  padding: clamp(1.1rem, 2.4vw, 2rem);
+}
+body[data-project="fury"] .fy-duo__h { color: #c9c9cf; }
+body[data-project="fury"] .fy-duo :is(.fia__n, .ftf__n) { background: #26262c; }
+body[data-project="fury"] .fy-duo :is(.fia__n--tab, .ftf__n--end) { background: var(--fury-pink); }
+body[data-project="fury"] .fy-duo :is(.fia__n--check, .ftf__n--choice) { background: #f4f4f5; }
+body[data-project="fury"] .fy-duo .ftf__n--opt { background: rgba(255, 255, 255, .06); }
+body[data-project="fury"] .fy-duo__key { border-top: 0; padding-top: .4rem; }
+/* equal cards, no dead space: content sits at the top, the readout at the foot */
+body[data-project="fury"] .fy-duo { align-items: stretch; }
+body[data-project="fury"] .fy-duo__c { display: flex; flex-direction: column; }
+body[data-project="fury"] .fy-duo__c > .fy-win { flex: 1; display: flex; flex-direction: column; }
+body[data-project="fury"] .fy-duo__c > .fy-win > .fy-win__in { flex: 1; display: flex; flex-direction: column; }
+body[data-project="fury"] .fy-duo__c .fia { flex: 1; display: flex; flex-direction: column; }
+body[data-project="fury"] .fy-duo__c .fia__foot { margin-top: auto; padding-top: 1rem; }
+body[data-project="fury"] .fy-duo__h { margin-bottom: .8rem; }
+body[data-project="fury"] .fy-duo .ftf__mode { margin-bottom: 1rem; }
+body[data-project="fury"] .fy-duo .fia__size { transition: height .35s ease; }
+
+
+/* ==== endcard: Fury closes on the film's turn ==== */
+/* The calm, blue-lit face from the film sits right, fading into the night;
+   the words sit left at a reading scale, with one way to get in touch. */
+body[data-project="fury"] .endcard {
+  min-height: clamp(30rem, 76vh, 46rem);
+  background:
+    radial-gradient(45% 70% at 74% 50%, rgba(40, 92, 210, 0.22), rgba(5, 8, 18, 0) 70%),
+    #05070f;
+  margin-top: 0; margin-bottom: 0;
+}
+/* the way onward sits on the same night as the ending: no grey step below it.
+   The navy is painted edge to edge and down to the page's end by a shadow
+   clipped to the sides and bottom, so the grid itself keeps its column. */
+body[data-project="fury"] .onward {
+  margin-top: 0; padding-top: 1rem;
+  border-top-color: rgba(255, 255, 255, .1);
+  background: #05070f;
+  box-shadow: 0 0 0 100vmax #05070f;
+  clip-path: inset(0 -100vmax -100vmax -100vmax);
+}
+body[data-project="fury"] .onward > a + a { border-left-color: rgba(255, 255, 255, .1); }
+body[data-project="fury"] .onward__k { color: #6f7889; }
+body[data-project="fury"] .onward__m { color: #7d8697; }
+body[data-project="fury"] .endcard__art {
+  position: absolute; margin: 0; top: 50%; translate: 0 -50%; right: max(3%, calc((100% - 84rem) / 2));
+  width: min(50%, 44rem); aspect-ratio: 4 / 3;
+  -webkit-mask-image: radial-gradient(50% 50% at 50% 50%, #000 55%, transparent 100%);
+          mask-image: radial-gradient(50% 50% at 50% 50%, #000 55%, transparent 100%);
+}
+body[data-project="fury"] .endcard__art img {
+  width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block;
+  animation: endDrift 18s ease-in-out infinite alternate;
+}
+@keyframes endDrift { from { transform: scale(1.02); } to { transform: scale(1.08) translateY(-1%); } }
+@media (prefers-reduced-motion: reduce) { body[data-project="fury"] .endcard__art img { animation: none; } }
+body[data-project="fury"] .endcard__in { position: relative; z-index: 1; gap: 1.2rem; align-content: center; }
+body[data-project="fury"] .endcard__h {
+  font-size: min(clamp(2.25rem, 5vw, 4.5rem), 8svh);
+  max-width: 10ch; letter-spacing: -0.04em; line-height: 1.02;
+}
+body[data-project="fury"] .endcard__meta { font-size: .9375rem; color: #9aa3b4; max-width: 26rem; }
+body[data-project="fury"] .endcard__cta {
+  justify-self: start; margin-top: .6rem;
+  display: inline-flex; align-items: center; gap: .55rem;
+  padding: .7rem 1.15rem; border-radius: 999px;
+  font-size: .875rem; font-weight: 500; color: #05070f; background: #f4f6fb; text-decoration: none;
+  transition: background .25s ease, transform .25s ease;
+}
+body[data-project="fury"] .endcard__cta span { transition: transform .25s ease; }
+:root:not(.hover-cold) body[data-project="fury"] .endcard__cta:hover { background: #fff; }
+:root:not(.hover-cold) body[data-project="fury"] .endcard__cta:hover span { transform: translateX(3px); }
+@media (max-width: 760px) {
+  body[data-project="fury"] .endcard { align-items: flex-end; padding-bottom: 3rem; min-height: 40rem; }
+  body[data-project="fury"] .endcard__art { width: 100%; top: 30%; right: 0; }
+}
+
+/* ==== the problem, read in order: the statement, then what it costs, then the numbers ==== */
+body[data-project="fury"] .fy-ps {
+  font-size: clamp(1.15rem, .95rem + .65vw, 1.5rem); line-height: 1.45; letter-spacing: -.015em;
+  max-width: 34ch; margin: 0;
+}
+/* two columns, like the overview: the tag and heading on the left, the
+   statement itself on the right; everything below spans the full width */
+@media (min-width: 900px) {
+  body[data-project="fury"] #problem {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    column-gap: clamp(2rem, 6vw, 6rem); align-items: start;
+  }
+  body[data-project="fury"] #problem > * { grid-column: 1 / -1; }
+  body[data-project="fury"] #problem > .sec__eyebrow { grid-column: 1; grid-row: 1; justify-self: start; }
+  body[data-project="fury"] #problem > .sec__anchor { grid-column: 1; grid-row: 2; }
+  body[data-project="fury"] #problem > .sec__heading { grid-column: 1; grid-row: 2; }
+  body[data-project="fury"] #problem > .sec__body { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; }
+}
+body[data-project="fury"] #problem .fy-prob { margin-top: clamp(3rem, 6vw, 4.5rem); }
+body[data-project="fury"] .fy-prob__k {
+  margin: 0 0 1rem; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: #8b8b95;
+}
+body[data-project="fury"] .fy-chips {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem;
+  margin-bottom: clamp(3.5rem, 7vw, 5.5rem);
+}
+body[data-project="fury"] .fy-chips li:nth-child(5) { margin-left: 0; }
+body[data-project="fury"] .fy-chips li {
+  background: rgba(255, 255, 255, .045); color: #d9d9df;
+  border: 1px solid rgba(255, 255, 255, .08); border-radius: 10px;
+  padding: .75rem 1rem; gap: .7rem; font-size: .9rem; box-shadow: none;
+}
+body[data-project="fury"] .fy-chips li::before {
+  width: .5rem; height: .5rem; border-radius: 50%; background: var(--fury-pink, #f0436b); flex: none;
+}
+@media (max-width: 900px) { body[data-project="fury"] .fy-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* tool logos inside the Tools chips */
+body[data-project="fury"] .blk-facts dd span:has(.fy-tool) { display: inline-flex; align-items: center; gap: .45rem; }
+body[data-project="fury"] .fy-tool { height: 1.05em; width: auto; display: block; flex: none; }
+/* the Unity mark carries its own wordmark, so it stands alone in its chip */
+body[data-project="fury"] .fy-tool--word { height: 1.15em; }
+/* the chips stay still: no pulse, no ring, no glow */
+body[data-project="fury"] .fy-chips li { animation: none !important; filter: none !important; box-shadow: none !important; opacity: 1; }
+body[data-project="fury"] .fy-chips li::before { opacity: 1; }
+
+/* ==== "What already works": four soft dark panels instead of one white wall ==== */
+body[data-project="fury"] .fz-win--dark { background: transparent; border: 0; box-shadow: none; }
+body[data-project="fury"] .fz-win--dark .fy-win__in { padding: 0; }
+body[data-project="fury"] .fz--dark { color: #e9e9ee; display: grid; gap: clamp(1rem, 2vw, 1.4rem); }
+body[data-project="fury"] .fz-pn {
+  background: #1f1f24; border: 1px solid rgba(255, 255, 255, .06); border-radius: 20px;
+  padding: clamp(1.4rem, 3.5vw, 2.8rem);
+}
+body[data-project="fury"] .fz--dark .fz-h { color: #fff; font-size: clamp(1.4rem, 1rem + 1.2vw, 2rem); margin-bottom: 1.4rem; }
+/* existing treatment */
+body[data-project="fury"] .fz--dark .fz-card { border: 1px solid rgba(255, 255, 255, .1); background: rgba(255, 255, 255, .02); border-radius: 14px; }
+body[data-project="fury"] .fz--dark .fz-card figcaption { color: #a9a9b3; }
+body[data-project="fury"] .fz--dark .fz-card figcaption b { color: #fff; }
+body[data-project="fury"] .fz--dark .fz-cbt [stroke="#222"] { stroke: #b9b9c3; }
+body[data-project="fury"] .fz--dark .fz-cbt circle[fill="#fff"] { fill: #26262c; stroke: #3a3a42; }
+body[data-project="fury"] .fz--dark .fz-cbt__t { fill: #f2f2f5; }
+body[data-project="fury"] .fz--dark .fz-cbt__q { fill: #8f8f9a; }
+/* why vr */
+body[data-project="fury"] .fz--dark .fw2 { margin: 0 auto; }
+body[data-project="fury"] .fz--dark .fw2__ring { fill: #1f1f24; stroke: #d8d8de; }
+body[data-project="fury"] .fz--dark .fw2__pt p { color: #a9a9b3; }
+/* power of visualisation: one line and the chips */
+body[data-project="fury"] .fz--dark .fv { margin: 0 auto; max-width: none; }
+body[data-project="fury"] .fz--dark .fv__txt h3 { color: #fff; }
+body[data-project="fury"] .fz--dark .fv__txt p { color: #a9a9b3; }
+body[data-project="fury"] .fz--dark .fv__chip { background: rgba(255, 255, 255, .04); border-color: rgba(255, 255, 255, .08); color: #e2e2e8; }
+body[data-project="fury"] .fz--dark .fv__chip.is-hot { border-color: rgba(232, 54, 94, .55); box-shadow: none; }
+/* brainstorming: the real sticky notes on a faint dot grid */
+body[data-project="fury"] .fz--dark .fz-brain__p { color: #a9a9b3; }
+body[data-project="fury"] .fz--dark .fz-notes { background: radial-gradient(circle, rgba(255, 255, 255, .12) 1px, transparent 1.2px) 0 0 / 14px 14px; border-radius: 12px; }
+body[data-project="fury"] .fz--dark .fz-notes li { box-shadow: 0 10px 18px -10px rgba(0, 0, 0, .7); }
+body[data-project="fury"] .fz--dark .fv__chips { border-top: 1px solid rgba(255, 255, 255, .08); }
+
+/* one way back: see the note at the end of site.js */
+.has-fback body > .fhero__back { position: fixed; z-index: 60; opacity: 1; translate: 0 0; }
+.has-fback body > .fhero__back[data-tone='light'] { color: rgba(16, 24, 40, 0.6); }
+.has-fback body > .fhero__back.is-docked { opacity: 0 !important; pointer-events: none; transition: none; }
+.rail__back.is-handed { visibility: hidden; }
+
+/* ==== "What already works" as one tabbed panel ==== */
+body[data-project="fury"] .fz-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 1rem; background: #1f1f24; border: 1px solid rgba(255, 255, 255, .06); border-radius: 12px; flex-wrap: wrap; }
+body[data-project="fury"] .fz-tabs button { appearance: none; border: 0; background: transparent; color: #8f8f9a; font: inherit; font-size: .85rem; padding: .55rem 1rem; border-radius: 9px; cursor: pointer; transition: background .25s ease, color .25s ease; }
+:root:not(.hover-cold) body[data-project="fury"] .fz-tabs button:hover { color: #e9e9ee; }
+body[data-project="fury"] .fz-tabs button.is-on { background: rgba(255, 255, 255, .08); color: #fff; }
+body[data-project="fury"] .fz-stack { display: grid; }
+body[data-project="fury"] .fz-stack > .fz-pn { grid-area: 1 / 1; opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility 0s linear .35s; display: flex; flex-direction: column; justify-content: center; }
+body[data-project="fury"] .fz-stack > .fz-pn.is-on { opacity: 1; visibility: visible; transition: opacity .35s ease; }
+/* existing treatment: each therapy a short row, words beside a small diagram */
+body[data-project="fury"] .fz--tabs .fz-treat { grid-template-columns: 1fr 1fr; gap: 1rem; }
+body[data-project="fury"] .fz--tabs .fz-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 14rem); gap: 1rem; align-items: center; padding: 1.1rem 1.2rem; }
+body[data-project="fury"] .fz--tabs .fz-card svg { margin: 0; max-height: 14rem; }
+body[data-project="fury"] .fz--tabs .fz-h { margin-bottom: 1rem; }
+/* why vr a touch smaller */
+body[data-project="fury"] .fz--tabs .fw2 { max-width: 48rem; }
+/* brainstorm: a loose, overlapping cluster */
+body[data-project="fury"] .fz--tabs .fz-notes { position: relative; display: block; height: clamp(17rem, 30vw, 21rem); padding: 0; background: none; }
+body[data-project="fury"] .fz--tabs .fz-notes li {
+  position: absolute; left: var(--x); top: var(--y); width: 15.2%; min-height: 0; aspect-ratio: 1 / 1.08;
+  font-size: .72rem; line-height: 1.4; padding: .65rem .7rem .5rem; gap: .4rem;
+  z-index: calc(1 + var(--i)); transition: transform .35s cubic-bezier(.3, 1.4, .5, 1), opacity .5s ease, box-shadow .3s ease;
+}
+body[data-project="fury"] .fz--tabs .is-in .fz-notes li, body[data-project="fury"] .fz--tabs .fz-notes li { opacity: 1; transform: rotate(var(--r)); }
+:root:not(.hover-cold) body[data-project="fury"] .fz--tabs .fz-notes li:hover { z-index: 50; transform: rotate(0) scale(1.12); box-shadow: 0 18px 30px -12px rgba(0, 0, 0, .8); }
+@media (max-width: 860px) {
+  body[data-project="fury"] .fz--tabs .fz-treat { grid-template-columns: 1fr; }
+  body[data-project="fury"] .fz--tabs .fz-notes { height: auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+  body[data-project="fury"] .fz--tabs .fz-notes li { position: static; width: auto; aspect-ratio: auto; }
+}
+
+body[data-project="fury"] .fz-stack > .fz-pn > * { width: 100%; }
+body[data-project="fury"] .fz--tabs .fz-notes { height: clamp(18rem, 32vw, 23rem); }
+
+/* ==== "What already works" as four numbered steps ==== */
+body[data-project="fury"] .fz--steps { display: block; }
+/* the steps: number, name and a line that fills while the step is read */
+body[data-project="fury"] .fzs-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.8rem, 2vw, 1.8rem); margin-bottom: 1.1rem; }
+body[data-project="fury"] .fzs-tab {
+  all: unset; box-sizing: border-box; cursor: pointer; position: relative;
+  display: grid; gap: .3rem; padding: .2rem 0 .95rem; color: #6c6c77; transition: color .3s ease;
+}
+body[data-project="fury"] .fzs-tab:focus-visible { outline: 2px solid var(--fury-pink, #f0436b); outline-offset: 5px; border-radius: 4px; }
+:root:not(.hover-cold) body[data-project="fury"] .fzs-tab:hover { color: #c9c9d2; }
+body[data-project="fury"] .fzs-tab.is-on { color: #fff; }
+body[data-project="fury"] .fzs-n { font-size: .72rem; letter-spacing: .14em; font-variant-numeric: tabular-nums; transition: color .3s ease; }
+body[data-project="fury"] .fzs-tab.is-on .fzs-n { color: var(--fury-pink, #f0436b); }
+body[data-project="fury"] .fzs-t { font-family: var(--fury-display); font-weight: 600; font-size: clamp(.92rem, .8rem + .4vw, 1.12rem); letter-spacing: -.01em; }
+body[data-project="fury"] .fzs-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+body[data-project="fury"] .fzs-bar b { display: block; height: 100%; background: var(--fury-pink, #f0436b); transform-origin: left center; transform: scaleX(0); }
+body[data-project="fury"] .fzs-tab.is-on .fzs-bar b { animation: fzsFill 7s linear forwards; animation-play-state: paused; }
+body[data-project="fury"] .fz--steps.is-live:not(.is-held) .fzs-tab.is-on .fzs-bar b { animation-play-state: running; }
+body[data-project="fury"] .fz--steps.is-manual .fzs-tab.is-on .fzs-bar b { animation: none; transform: none; }
+@keyframes fzsFill { to { transform: scaleX(1); } }
+
+/* the panel: grows or shrinks to each step */
+body[data-project="fury"] .fzs-view {
+  background: #1f1f24; border: 1px solid rgba(255, 255, 255, .06); border-radius: 20px;
+  padding: clamp(1.2rem, 3vw, 2.2rem); overflow: hidden; transition: height .5s cubic-bezier(.3, .8, .2, 1);
+}
+body[data-project="fury"] .fzs-pane { display: none; }
+body[data-project="fury"] .fzs-pane.is-on { display: block; animation: fzsIn .45s ease both; }
+@keyframes fzsIn { from { opacity: 0; translate: 0 10px; } }
+
+/* every step replays its drawing when it opens */
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fz-node { opacity: 0; transform: scale(.6); transition: none; }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fz-draw { stroke-dashoffset: 160; transition: none; }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fz-arc { stroke-dasharray: 0 300; transition: none; }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fw2__line { stroke-dashoffset: 1; transition: none; }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fw2__dot { transform: scale(0); transition: none; }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fw__h span { opacity: 0; translate: 0 .5em; transition: none; }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fw2__pt { opacity: 0; translate: 0 10px; transition: none; }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fv__chip { opacity: 0; translate: 0 10px; transition: none; }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fz-notes li { opacity: 0; transform: translateY(16px); transition: none; }
+
+/* 01 existing treatment: two cards, words then a live diagram */
+body[data-project="fury"] .fz--steps .fz-treat { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+body[data-project="fury"] .fz--steps .fz-card { display: flex; flex-direction: column; padding: 1.2rem 1.3rem 1rem; }
+body[data-project="fury"] .fz--steps .fz-card figcaption { font-size: .88rem; line-height: 1.6; }
+body[data-project="fury"] .fz--steps .fz-card figcaption b { font-size: 1.05rem; margin-bottom: .35rem; }
+body[data-project="fury"] .fz--steps .fz-card svg { width: 100%; max-height: 16rem; margin: .6rem auto 0; }
+body[data-project="fury"] .fz-tip { display: block; margin-top: .6rem; min-height: 1.4em; font-size: .78rem; color: #6c6c77; transition: color .25s ease; }
+body[data-project="fury"] .fz-tip.is-on { color: var(--fury-pink, #f0436b); }
+body[data-project="fury"] .fz--steps .fz-node > * { transition: opacity .25s ease; }
+body[data-project="fury"] .fz--steps .fz-cbt.has-hot .fz-node:not(.is-hot) > * { opacity: .25; }
+body[data-project="fury"] .fz--steps .fz-cbt .fz-node.is-hot .fz-cbt__q { fill: #fff; }
+body[data-project="fury"] .fz--steps .fz-cbt .fz-node.is-hot .fz-spin { stroke-width: 5; }
+body[data-project="fury"] .fz--steps .fz-exp .fz-arc { transition: stroke-dasharray 1.1s cubic-bezier(.5, 0, .2, 1) var(--d), opacity .25s ease; }
+body[data-project="fury"] .fz--steps .fz-exp[data-on] .fz-arc,
+body[data-project="fury"] .fz--steps .fz-exp[data-on] .fz-node[data-k] > * { opacity: .25; }
+body[data-project="fury"] .fz--steps .fz-exp[data-on="0"] [data-k="0"],
+body[data-project="fury"] .fz--steps .fz-exp[data-on="1"] [data-k="1"],
+body[data-project="fury"] .fz--steps .fz-exp[data-on="2"] [data-k="2"],
+body[data-project="fury"] .fz--steps .fz-exp[data-on="0"] .fz-node[data-k="0"] > *,
+body[data-project="fury"] .fz--steps .fz-exp[data-on="1"] .fz-node[data-k="1"] > *,
+body[data-project="fury"] .fz--steps .fz-exp[data-on="2"] .fz-node[data-k="2"] > * { opacity: 1; }
+body[data-project="fury"] .fz--steps .fz-exp .fz-node[data-k] { cursor: default; }
+
+/* 02 why vr: answers arrive one by one; point at one and its line lights */
+body[data-project="fury"] .fz--steps .fw2 { max-width: 52rem; margin: 0 auto; }
+body[data-project="fury"] .fz--steps .fzs-pane.is-play .fw2__pt {
+  opacity: 1; translate: 0 0;
+  transition: opacity .5s ease var(--pd, 1.2s), translate .6s ease var(--pd, 1.2s), filter .25s ease;
+}
+body[data-project="fury"] .fz--steps .fw2__pt--b { --pd: 1.4s; }
+body[data-project="fury"] .fz--steps .fw2__pt--c { --pd: 1.6s; }
+body[data-project="fury"] .fz--steps .fw2__pt--d { --pd: 1.8s; }
+body[data-project="fury"] .fz--steps .fw2.has-hot .fw2__pt:not(.is-hot) { filter: opacity(.3); }
+body[data-project="fury"] .fz--steps .fw2__line { transition: stroke-dashoffset .8s cubic-bezier(.5, 0, .2, 1) calc(.5s + var(--i) * .18s), stroke .25s ease, stroke-width .25s ease; }
+body[data-project="fury"] .fz--steps .fw2__line.is-hot { stroke: #f52d5d; stroke-width: 3; }
+body[data-project="fury"] .fz--steps .fw2__dot.is-hot .fw2__ring { stroke: #f52d5d; stroke-width: 2.5; }
+body[data-project="fury"] .fz--steps .fw2__dot.is-hot .fw2__core { fill: #ff4d74; }
+body[data-project="fury"] .fz--steps .fw2__dot { transition: transform .5s cubic-bezier(.3, 1.7, .5, 1) calc(1.15s + var(--i) * .18s) ; }
+
+/* 03 visualisation: the benefits light in turn; point at one to hold it */
+body[data-project="fury"] .fz--steps .fv { margin: 0; max-width: none; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+body[data-project="fury"] .fz--steps .fv__chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; border: 0; }
+body[data-project="fury"] .fz--steps .fv__chip {
+  display: flex; align-items: center; gap: .65rem; border-radius: 12px; padding: .8rem .9rem;
+  background: rgba(255, 255, 255, .03); border: 1px solid rgba(255, 255, 255, .08); color: #c9c9d2; box-shadow: none;
+  transition: opacity .5s ease .15s, translate .5s ease .15s, background .35s ease, border-color .35s ease, color .35s ease;
+}
+body[data-project="fury"] .fz--steps .fzs-pane.is-play .fv__chip { opacity: 1; translate: 0 0; }
+body[data-project="fury"] .fz--steps .fv__chip::before { transition: box-shadow .35s ease; }
+body[data-project="fury"] .fz--steps .fv__chip.is-hot { background: rgba(240, 67, 107, .1); border-color: rgba(240, 67, 107, .5); color: #fff; }
+body[data-project="fury"] .fz--steps .fv__chip.is-hot::before { box-shadow: 0 0 0 4px rgba(240, 67, 107, .2); }
+
+/* 04 brainstorm: a loose pile of the real notes; pick one up and move it */
+body[data-project="fury"] .fz--steps .fz-brain .fz-h { font-size: clamp(1.3rem, 1rem + 1vw, 1.7rem); margin-bottom: .6rem; }
+body[data-project="fury"] .fz--steps .fz-brain__p { margin-bottom: 1.2rem; font-size: .92rem; }
+body[data-project="fury"] .fz--steps .fz-notes { position: relative; display: block; height: clamp(18rem, 30vw, 22rem); margin: 0; padding: 0; background: none; touch-action: none; }
+body[data-project="fury"] .fz--steps .fz-notes li {
+  position: absolute; left: var(--x); top: var(--y); width: 15.2%; min-height: 0; aspect-ratio: 1 / 1.08;
+  font-size: .72rem; line-height: 1.4; padding: .65rem .7rem .5rem; gap: .4rem; cursor: grab; user-select: none;
+  box-shadow: 0 10px 18px -10px rgba(0, 0, 0, .7);
+}
+body[data-project="fury"] .fz--steps .fzs-pane.is-play .fz-notes li {
+  opacity: 1; transform: rotate(var(--r));
+  transition: opacity .4s ease calc(var(--i) * 60ms), transform .5s cubic-bezier(.3, 1.4, .5, 1) calc(var(--i) * 60ms), box-shadow .3s ease;
+}
+:root:not(.hover-cold) body[data-project="fury"] .fz--steps .fzs-pane.is-play .fz-notes li:hover { transform: rotate(0) scale(1.08); transition-delay: 0s; box-shadow: 0 18px 30px -12px rgba(0, 0, 0, .85); }
+body[data-project="fury"] .fz--steps .fzs-pane.is-play .fz-notes li.is-drag { cursor: grabbing; transform: rotate(0) scale(1.1); transition: box-shadow .2s ease; box-shadow: 0 26px 40px -14px rgba(0, 0, 0, .9); }
+
+@media (max-width: 760px) {
+  body[data-project="fury"] .fzs-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body[data-project="fury"] .fz--steps .fz-treat, body[data-project="fury"] .fz--steps .fv, body[data-project="fury"] .fz--steps .fv__chips { grid-template-columns: 1fr; }
+  body[data-project="fury"] .fz--steps .fz-notes { height: auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+  body[data-project="fury"] .fz--steps .fz-notes li { position: static; width: auto; aspect-ratio: auto; }
+}
+
+/* ==== the steps, calmer: one easing, quick, nothing flies or bounces ==== */
+body[data-project="fury"] .fz--steps { --fz-ease: cubic-bezier(.2, .8, .2, 1); }
+/* clip only while the height is moving, so nothing at the edges is ever cut */
+body[data-project="fury"] .fzs-view { overflow: visible; }
+body[data-project="fury"] .fzs-view.is-sizing { overflow: hidden; }
+body[data-project="fury"] .fzs-pane.is-on { animation: fzsIn .35s ease both; }
+@keyframes fzsIn { from { opacity: 0; translate: 0 6px; } }
+
+/* why vr: the word rises, the lines draw, the answers and dots fade up in place */
+body[data-project="fury"] .fz--steps .fw2 { max-width: 46rem; width: 92%; }
+body[data-project="fury"] .fz--steps .fw2__h { font-size: 9cqw; }
+body[data-project="fury"] .fz--steps .fw2__ping { display: none; }
+body[data-project="fury"] .fz--steps .fw2__dot,
+body[data-project="fury"] .fz--steps .is-in .fw2__dot { transform: none; opacity: 1; transition: opacity .4s ease calc(.5s + var(--i) * .08s); }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fw2__dot { transform: none; opacity: 0; transition: none; }
+body[data-project="fury"] .fz--steps .fw2__line { transition: stroke-dashoffset .6s cubic-bezier(.4, 0, .2, 1) calc(.25s + var(--i) * .08s), stroke .25s ease, stroke-width .25s ease; }
+body[data-project="fury"] .fz--steps .fw__h span { transition: opacity .5s ease calc(var(--i) * .025s), translate .6s var(--fz-ease) calc(var(--i) * .025s); }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fw__h span { translate: 0 .25em; }
+body[data-project="fury"] .fz--steps .fw2__pt { --pd: .55s; }
+body[data-project="fury"] .fz--steps .fw2__pt--b { --pd: .63s; }
+body[data-project="fury"] .fz--steps .fw2__pt--c { --pd: .71s; }
+body[data-project="fury"] .fz--steps .fw2__pt--d { --pd: .79s; }
+body[data-project="fury"] .fz--steps .fzs-pane.is-play .fw2__pt { transition: opacity .5s ease var(--pd), translate .5s var(--fz-ease) var(--pd), filter .25s ease; }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fw2__pt { translate: 0 6px; }
+
+/* the treatment diagrams settle instead of springing */
+body[data-project="fury"] .fz--steps .fz-node { transition: opacity .45s ease var(--d), transform .55s var(--fz-ease) var(--d); }
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fz-node { transform: scale(.92); }
+body[data-project="fury"] .fz--steps .fz-draw { transition: stroke-dashoffset .7s cubic-bezier(.4, 0, .2, 1) calc(var(--d) + .3s); }
+
+/* the benefits and the notes, same language */
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fv__chip { translate: 0 6px; }
+body[data-project="fury"] .fz--steps .fzs-pane.is-play .fz-notes li {
+  transition: opacity .4s ease calc(var(--i) * 35ms), transform .5s var(--fz-ease) calc(var(--i) * 35ms), box-shadow .3s ease;
+}
+body[data-project="fury"] .fz--steps .fzs-pane:not(.is-play) .fz-notes li { transform: translateY(8px) rotate(var(--r)); }
+/* the invisible window around the steps must not clip or round anything */
+body[data-project="fury"] .fz-win--dark, body[data-project="fury"] .fz-win--dark .fy-win__in { overflow: visible; border-radius: 0; clip-path: none; }
+
+/* ==== the peek into the headset, bottom right of the Fury hero ==== */
+body[data-project="fury"] .fhero__peek {
+  position: absolute; z-index: 3; right: clamp(1rem, 2.4vw, 2rem); bottom: clamp(1rem, 2.4vw, 2rem);
+  width: clamp(12rem, 18vw, 16.5rem); pointer-events: auto; text-decoration: none; color: #fff;
+  display: grid; gap: .55rem; padding: .45rem .45rem .6rem;
+  background: rgba(20, 20, 26, .45); border: 1px solid rgba(255, 255, 255, .14); border-radius: 16px;
+  -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .8);
+  opacity: 0; translate: 0 12px;
+  transition: opacity .7s ease 1.2s, translate .8s cubic-bezier(.2, .8, .2, 1) 1.2s, transform .35s cubic-bezier(.2, .8, .2, 1), border-color .3s ease, background .3s ease;
+}
+body[data-project="fury"] .fhero__peek.is-on { opacity: 1; translate: 0 0; }
+body[data-project="fury"] .fhero__peek-media { display: block; aspect-ratio: 16 / 9; border-radius: 11px; overflow: hidden; background: #2a2d36; }
+body[data-project="fury"] .fhero__peek-media :is(video, img) { display: block; width: 100%; height: 100%; object-fit: cover; }
+body[data-project="fury"] .fhero__peek-t { display: flex; align-items: center; justify-content: space-between; padding: 0 .35rem; font-size: .82rem; font-weight: 500; letter-spacing: .01em; }
+body[data-project="fury"] .fhero__peek-t i { font-style: normal; transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+:root:not(.hover-cold) body[data-project="fury"] .fhero__peek:hover { transform: scale(1.03); border-color: rgba(255, 255, 255, .3); background: rgba(20, 20, 26, .6); }
+:root:not(.hover-cold) body[data-project="fury"] .fhero__peek:hover .fhero__peek-t i { transform: translateX(3px); }
+body[data-project="fury"] .fhero__peek:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+@media (max-width: 760px) { body[data-project="fury"] .fhero__peek { width: 9.5rem; padding: .35rem .35rem .45rem; } body[data-project="fury"] .fhero__peek-t { font-size: .72rem; } }
+
+/* ==== the VR peek, floating over the whole Fury study ==== */
+.fpeek {
+  --peek: 40px;
+  position: fixed; z-index: 70; right: 1.5rem; bottom: 5.25rem;
+  width: clamp(12rem, 17vw, 16rem); color: #fff; text-decoration: none;
+  display: grid; gap: .5rem; padding: .45rem .45rem .6rem;
+  background: rgba(20, 20, 26, .62); border: 1px solid rgba(255, 255, 255, .14); border-radius: 16px;
+  -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .8);
+  will-change: transform, opacity;
+  opacity: 0; transform: translate3d(0, 14px, 0);
+  transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .45s ease, border-color .3s ease, background .3s ease;
+}
+.fpeek.is-on { opacity: 1; transform: translate3d(0, 0, 0); }
+/* while scrolling: tucked to a sliver of the clip at the right edge */
+.fpeek.is-on.is-tuck { transform: translate3d(calc(100% + 1.5rem - var(--peek)), 0, 0); transition-duration: .4s; }
+/* inside the VR room: out of the way entirely */
+.fpeek.is-on.is-away { opacity: 0; transform: translate3d(calc(100% + 2rem), 0, 0); pointer-events: none; }
+.fpeek__media { display: block; aspect-ratio: 16 / 9; border-radius: 11px; overflow: hidden; background: #2a2d36; }
+.fpeek__media :is(video, img) { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fpeek__t { display: flex; align-items: center; justify-content: space-between; padding: 0 .35rem; font-size: .82rem; font-weight: 500; letter-spacing: .01em; }
+.fpeek__t i { font-style: normal; transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+.fpeek__x {
+  all: unset; position: absolute; top: -.55rem; left: -.55rem; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer; font-size: .95rem; line-height: 1;
+  color: #fff; background: #2a2a31; border: 1px solid rgba(255, 255, 255, .2);
+  opacity: 0; transform: scale(.8); transition: opacity .2s ease, transform .2s ease;
+}
+.fpeek:hover .fpeek__x, .fpeek:focus-within .fpeek__x { opacity: 1; transform: none; }
+:root:not(.hover-cold) .fpeek.is-on:not(.is-tuck):hover { border-color: rgba(255, 255, 255, .3); background: rgba(20, 20, 26, .75); transform: translate3d(0, -2px, 0); }
+:root:not(.hover-cold) .fpeek:hover .fpeek__t i { transform: translateX(3px); }
+.fpeek:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+@media (max-width: 760px) { .fpeek { width: 9.5rem; bottom: 4.5rem; right: 1rem; padding: .35rem .35rem .45rem; } .fpeek__t { font-size: .72rem; } .fpeek.is-on.is-tuck { transform: translate3d(calc(100% + 1rem - var(--peek)), 0, 0); } }
+@media (prefers-reduced-motion: reduce) { .fpeek { transition: opacity .2s ease; } }
+/* no IshaanLLM on the Fury study for now; the VR peek takes its corner */
+body[data-project="fury"] .llm { display: none !important; }
+body[data-project="fury"] .fpeek { bottom: 1.5rem; }
+@media (max-width: 760px) { body[data-project="fury"] .fpeek { bottom: 1rem; } }
+/* the testers card: the number sits with its label; the quote rests at the bottom */
+body[data-project="fury"] .fy-test__stat { justify-content: flex-start; }
+body[data-project="fury"] .fy-test__stat blockquote { margin-top: auto; padding-top: 1.2rem; }
+/* the testers count rolls in like a slot reel and lands on its number */
+body[data-project="fury"] .fy-slot { display: inline-block; line-height: 1; }
+body[data-project="fury"] .fy-slot__win { display: block; height: 1em; overflow: hidden; -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); }
+body[data-project="fury"] .fy-slot__reel { display: block; transform: translateY(0); }
+body[data-project="fury"] .fy-slot__reel i { display: block; height: 1em; line-height: 1; font-style: normal; text-align: left; }
+body[data-project="fury"] .fy-slot.is-roll .fy-slot__reel { animation: fySlot 2.2s cubic-bezier(.35, .05, .12, 1) .2s both; }
+@keyframes fySlot {
+  0% { transform: translateY(0); filter: blur(0); }
+  12% { filter: blur(1.5px); }
+  70% { filter: blur(.4px); }
+  100% { transform: translateY(-26em); filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) { body[data-project="fury"] .fy-slot__reel { animation: none !important; transform: translateY(-26em); } }
