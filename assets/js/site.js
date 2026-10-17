@@ -8437,8 +8437,13 @@
       /* AND WITH MOTION OFF THEY ARE NOT ADDED AT ALL. A `<video>` with no
          source shows its poster and downloads nothing, so a visitor who has
          asked for less motion gets the still frame and keeps the 350KB. */
+      /* A PORTRAIT CUT FOR PHONES. A study can give `phoneFilm` / `phoneFilm2`
+         / `phonePoster`: a 9:16 render of the same film, used on a portrait
+         phone so the opening fills the screen instead of sitting in a strip. */
+      const PH = !!(d.phoneFilm && matchMedia('(max-width: 760px) and (orientation: portrait)').matches);
+      if (PH) { h.classList.add('fhero--phone'); if (d.phonePoster) v.poster = url(d.phonePoster); }
       if (!REDUCED) {
-        [d.film, d.film2].forEach((f) => {
+        (PH ? [d.phoneFilm, d.phoneFilm2] : [d.film, d.film2]).forEach((f) => {
           if (!f) return;
           v.appendChild(el('source', {
             src: url(f),
@@ -25835,5 +25840,154 @@
   addEventListener('scroll', ask, { passive: true });
   addEventListener('resize', ask);
   new MutationObserver(ask).observe(document.documentElement, { childList: true, subtree: true });
+  ask();
+})();
+
+/* ONE NAVIGATION ON PHONES, FOR EVERY CASE STUDY. On a phone the section rail
+   used to take a different shape per study (a strip across the top on the
+   document studies, a "01 / 10" pill on the film ones). This replaces all of
+   them with one bar at the foot of the screen: back on the left, the section
+   you are in at the centre (its neighbours peeking either side, a dash per
+   section beneath), up and down on the right. Tapping the centre opens the
+   whole list. It is driven entirely by the study's own rail links, so their
+   scrolling, highlighting and router behaviour stay exactly as they are; the
+   bar only reads them and presses them. Hidden on the opening hero; slides up
+   once you are past it. Dark on Fury and X0, light on the others. */
+(function () {
+  const DARK = { 'fury': 1, 'cypherock-x0': 1 };
+  const mq = matchMedia('(max-width: 760px)');
+  let bar = null, sig = '', raf = 0;
+  const $ = (s, r = document) => r.querySelector(s);
+  const links = () => Array.prototype.slice.call(document.querySelectorAll('#rail .rail__link'));
+  const label = (a) => (a.childNodes[0] && a.childNodes[0].textContent || a.textContent).trim();
+  const svg = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+
+  function build(ls) {
+    const back = $('#rail .rail__back');
+    const b = document.createElement('nav');
+    b.className = 'pnav'; b.setAttribute('aria-label', 'Case study navigation');
+    b.innerHTML =
+      `<div class="pnav__sheet" role="menu" hidden><ol>${ls.map((a, i) =>
+        `<li><button type="button" role="menuitem" data-i="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${label(a)}</button></li>`).join('')}</ol></div>` +
+      `<div class="pnav__row">` +
+        `<a class="pnav__btn pnav__back" href="${back ? back.getAttribute('href') : 'index.html'}" aria-label="Back to all work">${svg('M19 12H5M11 6l-6 6 6 6')}</a>` +
+        `<button class="pnav__mid" type="button" aria-haspopup="menu" aria-expanded="false">` +
+          `<span class="pnav__view"><span class="pnav__track">${ls.map((a) => `<span class="pnav__t">${label(a)}</span>`).join('')}</span></span>` +
+          `<span class="pnav__dash" aria-hidden="true">${ls.map(() => '<i></i>').join('')}</span>` +
+        `</button>` +
+        `<span class="pnav__btn pnav__step">` +
+          `<button type="button" data-d="-1" aria-label="Previous section">${svg('M12 19V5M6 11l6-6 6 6')}</button>` +
+          `<button type="button" data-d="1" aria-label="Next section">${svg('M12 5v14M6 13l6 6 6-6')}</button>` +
+        `</span>` +
+      `</div>`;
+    const go = (i) => { const l = links()[i]; if (l) l.click(); close(); };
+    const sheet = $('.pnav__sheet', b), mid = $('.pnav__mid', b);
+    function close() { sheet.hidden = true; mid.setAttribute('aria-expanded', 'false'); b.classList.remove('is-open'); }
+    /* SCRUB: drag across the centre pill to run through the sections, a
+       haptic tick as each one reaches the middle; let go to jump there. A tap
+       without a drag opens the full list instead. */
+    let drag = null, justDragged = false;
+    const track = $('.pnav__track', b);
+    const centreOf = (k) => { const t = track.children[k]; return t ? t.offsetLeft + t.offsetWidth / 2 : 0; };
+    function setX(x) { track.style.transition = 'none'; track.style.transform = `translate3d(${x.toFixed(1)}px,0,0)`; }
+    function nearest(x) {
+      const c = mid.clientWidth / 2 - x; let best = 0, bd = 1e9;
+      for (let k = 0; k < track.children.length; k++) { const d = Math.abs(centreOf(k) - c); if (d < bd) { bd = d; best = k; } }
+      return best;
+    }
+    function mark(k) {
+      track.querySelectorAll('.pnav__t').forEach((t, j) => t.classList.toggle('is-on', j === k));
+      b.querySelectorAll('.pnav__dash i').forEach((d, j) => d.classList.toggle('is-on', j === k));
+    }
+    mid.addEventListener('pointerdown', (e) => {
+      const m = /translate3d\((-?[\d.]+)px/.exec(track.style.transform || '');
+      drag = { x0: e.clientX, t0: m ? +m[1] : 0, k: cur(), moved: false, id: e.pointerId };
+      b.classList.add('is-press');
+    });
+    mid.addEventListener('pointermove', (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const dx = e.clientX - drag.x0;
+      if (!drag.moved && Math.abs(dx) < 6) return;
+      if (!drag.moved) { drag.moved = true; try { mid.setPointerCapture(e.pointerId); } catch (_) {} b.classList.add('is-scrub'); close(); }
+      const lo = mid.clientWidth / 2 - centreOf(track.children.length - 1), hi = mid.clientWidth / 2 - centreOf(0);
+      let x = drag.t0 + dx * 1.4;
+      if (x > hi) x = hi + (x - hi) * 0.3; if (x < lo) x = lo + (x - lo) * 0.3;
+      setX(x);
+      const k = nearest(x);
+      if (k !== drag.k) { drag.k = k; mark(k); tick(); }
+    });
+    function end(e) {
+      if (!drag) return;
+      const d = drag; drag = null;
+      b.classList.remove('is-press', 'is-scrub');
+      track.style.transition = '';
+      if (d.moved) { justDragged = true; setTimeout(() => (justDragged = false), 50); if (d.k !== cur()) go(d.k); else ask(); }
+    }
+    mid.addEventListener('pointerup', end); mid.addEventListener('pointercancel', end);
+    mid.addEventListener('click', () => {
+      if (justDragged) return;
+      tick();
+      const open = sheet.hidden; sheet.hidden = !open; mid.setAttribute('aria-expanded', String(open)); b.classList.toggle('is-open', open);
+    });
+    b.querySelectorAll('.pnav__step button, .pnav__back').forEach((x) => x.addEventListener('pointerdown', () => tick()));
+    sheet.addEventListener('click', (e) => { const t = e.target.closest('[data-i]'); if (t) go(+t.dataset.i); });
+    $('.pnav__step', b).addEventListener('click', (e) => {
+      const t = e.target.closest('[data-d]'); if (!t) return;
+      go(Math.max(0, Math.min(links().length - 1, cur() + +t.dataset.d)));
+    });
+    document.addEventListener('pointerdown', (e) => { if (!b.contains(e.target)) close(); }, { passive: true });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    document.body.appendChild(b);
+    return b;
+  }
+  /* A HAPTIC TICK. Android vibrates; iOS gives web pages no vibration, but
+     since iOS 18 toggling a native switch through its label plays the system
+     tap, so a hidden one stands in. Elsewhere it is simply silent. */
+  let hapt = null;
+  function tick() {
+    try {
+      if (navigator.vibrate) { navigator.vibrate(8); return; }
+      if (!hapt) {
+        hapt = document.createElement('label'); hapt.setAttribute('aria-hidden', 'true');
+        hapt.style.cssText = 'position:fixed;left:-99px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
+        hapt.innerHTML = '<input type="checkbox" switch tabindex="-1">';
+        document.body.appendChild(hapt);
+      }
+      hapt.click();
+    } catch (_) {}
+  }
+  function cur() { const ls = links(); const i = ls.findIndex((a) => a.classList.contains('is-active')); return i < 0 ? 0 : i; }
+  function past() {
+    const hero = $('.fhero') || $('.phero') || $('.film .scn');
+    const h = hero ? hero.getBoundingClientRect().height : innerHeight;
+    return scrollY > Math.min(h, innerHeight) * 0.6;
+  }
+  function sync() {
+    raf = 0;
+    const ls = links(), proj = document.body.dataset.project;
+    const want = mq.matches && proj && ls.length > 1;
+    document.documentElement.classList.toggle('has-pnav', !!want);
+    if (!want) { if (bar) { bar.remove(); bar = null; sig = ''; } return; }
+    const s = proj + '|' + ls.map(label).join('|');
+    if (s !== sig || !bar || !bar.isConnected) { if (bar) bar.remove(); bar = build(ls); sig = s; }
+    bar.dataset.tone = DARK[proj] ? 'dark' : 'light';
+    const i = cur();
+    bar.style.setProperty('--i', i);
+    bar.querySelectorAll('.pnav__t').forEach((t, j) => t.classList.toggle('is-on', j === i));
+    bar.querySelectorAll('.pnav__dash i').forEach((d, j) => d.classList.toggle('is-on', j === i));
+    bar.querySelectorAll('.pnav__sheet [data-i]').forEach((d, j) => d.classList.toggle('is-on', j === i));
+    const steps = bar.querySelectorAll('.pnav__step button');
+    steps[0].disabled = i === 0; steps[1].disabled = i === ls.length - 1;
+    const tr = bar.querySelector('.pnav__track'), on = tr.children[i];
+    if (on) tr.style.transform = `translate3d(${(tr.parentNode.clientWidth / 2 - on.offsetLeft - on.offsetWidth / 2).toFixed(1)}px,0,0)`;
+    const show = past();
+    bar.classList.toggle('is-on', show);
+    document.documentElement.classList.toggle('pnav-on', show);
+  }
+  const ask = () => { if (!raf) raf = requestAnimationFrame(sync); };
+  addEventListener('scroll', ask, { passive: true });
+  addEventListener('resize', ask);
+  mq.addEventListener ? mq.addEventListener('change', ask) : mq.addListener(ask);
+  new MutationObserver(ask).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   ask();
 })();

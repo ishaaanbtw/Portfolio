@@ -3161,13 +3161,8 @@ window.SITE = {
 
             { id: 'learnings', nav: 'Learnings', eyebrow: 'Reflection',
               heading: 'Finally, my top learnings',
-              body: [
-                'Designing for admins versus recruiters. Admins care about control, structure and security; recruiters want speed and simplicity. Making both efficient at once was the hardest part.',
-                'Designing the data. Deep candidate and hiring analytics had to feel effortless and contextual, not heavy \u2014 the reference points were analytics tools that make complex data look lightweight.',
-                'The importance of trust. Hiring data is sensitive, so every number, insight and automation had to be trustworthy through transparency, feedback loops and a clean audit trail.',
-                'Using AI responsibly. The challenge was not to automate blindly but to assist intelligently, keeping humans in control while AI handled the heavy lifting.',
-                'Designing for scale and change. Teams, roles and data all grow, so the admin panel had to be a system that absorbs that rather than an interface that breaks under it.',
-              ] },
+              body: [],
+              blocks: [ { type: 'raw', html: '<ol class="lrn"><li><span class="lrn__n">01</span><b class="lrn__t">Admins vs recruiters</b></li><li><span class="lrn__n">02</span><b class="lrn__t">Making data feel light</b></li><li><span class="lrn__n">03</span><b class="lrn__t">Earning trust</b></li><li><span class="lrn__n">04</span><b class="lrn__t">AI that assists, not replaces</b></li><li><span class="lrn__n">05</span><b class="lrn__t">Built to scale</b></li></ol>' } ] },
           ],
         } },
       /* ----------------------------------------------------------------- Fury
@@ -3250,6 +3245,10 @@ window.SITE = {
             film: 'assets/media/fury/fury-film.webm',
             film2: 'assets/media/fury/fury-film.mp4',
             poster: 'assets/media/fury/fury-film.webp',
+            /* the portrait cut, full screen on phones (.tools/fury-film/film-v9.html, ?v=1) */
+            phoneFilm: 'assets/media/fury/fury-film-phone.webm',
+            phoneFilm2: 'assets/media/fury/fury-film-phone.mp4',
+            phonePoster: 'assets/media/fury/fury-film-phone.webp',
             tone: 'night',
             ground: '#18181c',
             /* the document caption at the foot of the film, same as Talent */
@@ -3310,13 +3309,6 @@ window.SITE = {
               body: ['A literature review showed me the trends and where to begin; a survey checked whether the same things were happening in my own surroundings.'],
               blocks: [
                 { type: 'raw', key: 'validate' },
-                { type: 'raw', html: '<p class="fy-bridge">Two people kept showing up in the data.</p>' },
-              ] },
-
-            { id: 'define', nav: 'Personas', eyebrow: 'UX Research',
-              heading: 'User Persona',
-              body: [],
-              blocks: [ { type: 'raw', key: 'personaBoard' },
                 { type: 'raw', html: '<p class="fy-bridge">They didn\u2019t need more information. They needed a safe place to practise.</p>' },
               ] },
 

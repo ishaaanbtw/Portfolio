@@ -206,7 +206,7 @@
       var fit = host.querySelector('.fia__fit'), size = host.querySelector('.fia__size');
       var canvas = host.querySelector('.fia__canvas'), svg = host.querySelector('.fia__wires');
       var readEl = host.querySelector('.fia__read'), hint = readEl.innerHTML;
-      var MAX = 1.15, MIN = host.closest('.fy-duo') ? 0.4 : 0.66;
+      var MAX = 1.15, MIN = matchMedia('(max-width: 760px)').matches ? 0.05 : host.closest('.fy-duo') ? 0.4 : 0.66;
       function doFit() {
         var w = fit.clientWidth; if (!w) return;
         var k = Math.min(MAX, w / D.W), pan = false;
@@ -455,7 +455,7 @@
       var readEl = host.querySelector('.fia__read'), hint = readEl.innerHTML;
       function doFit() {
         var w = fit.clientWidth; if (!w) return;
-        var lo = 0.62;
+        var lo = matchMedia('(max-width: 760px)').matches ? 0.05 : 0.62;
         var k = Math.min(1.0, w / W), pan = false;
         if (k < lo) { k = lo; pan = true; }
         size.style.setProperty('--k', k.toFixed(4));
@@ -665,13 +665,13 @@
 
     insights:
       '<ul class="fy-insights">' +
-        '<li>People are unable to relate to the information available on the internet. They believe that <b>too much information equals less information.</b></li>' +
-        '<li>People have a <b>variety of trigger points</b> that cause them to get anxious.</li>' +
-        '<li>People think that as <b>time passes</b>, their <b>pain will eventually go away.</b></li>' +
-        '<li>They believe that rather than wanting to be a <b>leader</b>, they lack confidence and prefer to <b>remain a team-player.</b></li>' +
-        '<li><b>Mental health is a stigma</b> and if they share their feelings and emotions, they are considered <b>weak.</b></li>' +
-        '<li>Shy and timid personalities are <b>simple targets for abuse.</b></li>' +
-        '<li>People are more comfortable with themselves since they are afraid of being criticised by others.</li>' +
+        '<li><span class="fy-ins__full">People are unable to relate to the information available on the internet. They believe that <b>too much information equals less information.</b></span><span class="fy-ins__short">Online advice doesn’t land: <b>more information feels like less.</b></span></li>' +
+        '<li><span class="fy-ins__full">People have a <b>variety of trigger points</b> that cause them to get anxious.</span><span class="fy-ins__short">Everyone has <b>different triggers.</b></span></li>' +
+        '<li><span class="fy-ins__full">People think that as <b>time passes</b>, their <b>pain will eventually go away.</b></span><span class="fy-ins__short">They hope <b>time will fix it.</b></span></li>' +
+        '<li><span class="fy-ins__full">They believe that rather than wanting to be a <b>leader</b>, they lack confidence and prefer to <b>remain a team-player.</b></span><span class="fy-ins__short">They’d rather <b>stay in the background</b> than lead.</span></li>' +
+        '<li><span class="fy-ins__full"><b>Mental health is a stigma</b> and if they share their feelings and emotions, they are considered <b>weak.</b></span><span class="fy-ins__short"><b>Opening up feels like weakness.</b></span></li>' +
+        '<li><span class="fy-ins__full">Shy and timid personalities are <b>simple targets for abuse.</b></span><span class="fy-ins__short">Shy people become <b>easy targets.</b></span></li>' +
+        '<li><span class="fy-ins__full">People are more comfortable with themselves since they are afraid of being criticised by others.</span><span class="fy-ins__short">Fear of criticism keeps them <b>to themselves.</b></span></li>' +
       '</ul>',
 
     /* -------------------------------------------------------- Validation */
@@ -1428,7 +1428,7 @@
     var arcT = host.querySelector('.fy-eco__arc--t'), arcB = host.querySelector('.fy-eco__arc--b');
     var you = host.querySelector('.fy-eco__you');
     var lenT = arcT.getTotalLength(), lenB = arcB.getTotalLength();
-    var flatMQ = matchMedia('(max-width: 760px)'), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var flatMQ = matchMedia('(max-width: 1px)'), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     /* screen i of n is shown between its cut points, with a short crossfade */
     function cross(shots, p, cuts, back) {
@@ -2042,4 +2042,146 @@ window.STUDY_HTML.iaFlows = '<div class="fy-duo">' +
     });
   }
   bind(); new MutationObserver(bind).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+/* USABILITY TESTING ON PHONES: A DECK. The photos stay pinned at the top while
+   the notes come up one card at a time, each sliding over the last as you
+   scroll. When the last has arrived they gather into a grid of titles, and a
+   tap on any title brings that card back. Desktop is untouched. */
+(function () {
+  var mq = matchMedia('(max-width: 760px)'), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function build(host) {
+    if (host.dataset.deck || !mq.matches || reduce) return;
+    host.dataset.deck = '1';
+    var band = host.querySelector('.fy-test__band'), stat = host.querySelector('.fy-test__stat');
+    var cards = [].slice.call(host.querySelectorAll('.fy-test__cards > .fy-tc'));
+    if (!band || !cards.length) return;
+    var items = (stat ? [stat] : []).concat(cards);
+    var N = items.length;
+    var run = document.createElement('div'); run.className = 'fyd__run'; run.style.setProperty('--n', N);
+    var pin = document.createElement('div'); pin.className = 'fyd__pin';
+    var stack = document.createElement('div'); stack.className = 'fyd__stack';
+    var grid = document.createElement('div'); grid.className = 'fyd__grid';
+    var count = document.createElement('p'); count.className = 'fyd__count';
+    items.forEach(function (it, i) {
+      it.classList.add('fyd__card'); it.style.setProperty('--j', i); stack.appendChild(it);
+      var h = it.querySelector('h5'), t = document.createElement('button');
+      t.type = 'button'; t.className = 'fyd__tab'; t.dataset.i = i;
+      t.textContent = h ? h.textContent : '6 expert users';
+      grid.appendChild(t);
+    });
+    host.insertBefore(run, host.firstChild);
+    pin.appendChild(band); pin.appendChild(grid); pin.appendChild(stack); pin.appendChild(count);
+    run.appendChild(pin);
+    var cardsWrap = host.querySelector('.fy-test__cards'); if (cardsWrap) cardsWrap.remove();
+
+    var done = false, pick = 0, raf = 0, lastA = 0, lastPH = -1;
+    function show(a, f) {
+      items.forEach(function (it, j) {
+        var tf, op = 1, z = j;
+        if (done) { tf = j === pick ? 'none' : 'translateY(16px) scale(.97)'; op = j === pick ? 1 : 0; }
+        else if (j < a) { var d = a - j; tf = 'translateY(' + (-d * 9) + 'px) scale(' + (1 - d * .04).toFixed(3) + ')'; op = d > 2 ? 0 : 1 - d * .18; }
+        else if (j === a) tf = 'none';
+        else if (j === a + 1) tf = 'translateY(' + ((1 - f) * 115).toFixed(1) + '%)';
+        else { tf = 'translateY(115%)'; op = 0; }
+        it.style.transform = tf; it.style.opacity = op; it.style.zIndex = z;
+        it.classList.toggle('is-front', done ? j === pick : j === a);
+      });
+      grid.querySelectorAll('.fyd__tab').forEach(function (t, j) { t.classList.toggle('is-on', done ? j === pick : j === a); t.classList.toggle('is-seen', !done && j < a); });
+      count.textContent = done ? 'Tap a card to read it again' : String(a + 1).padStart(2, '0') + ' / ' + String(N).padStart(2, '0');
+    }
+    /* the deck is as tall as its tallest card, not the whole screen */
+    function fit() {
+      var mx = 0; items.forEach(function (it) { mx = Math.max(mx, it.scrollHeight); });
+      var room = pin.clientHeight - band.offsetHeight - grid.offsetHeight - count.offsetHeight - 100;
+      stack.style.height = Math.max(160, Math.min(mx + 26, room)) + 'px';
+    }
+    function measure() {
+      raf = 0;
+      if (pin.clientHeight !== lastPH) { lastPH = pin.clientHeight; fit(); }
+      var r = run.getBoundingClientRect(), span = run.offsetHeight - pin.offsetHeight;
+      var p = span > 0 ? Math.min(1, Math.max(0, -r.top / span)) : 0;
+      var x = p * N;                       // N card steps, the last step is "gather"
+      /* hysteresis, so the state cannot flicker at the threshold */
+      var nowDone = done ? x >= N - 0.6 : x >= N - 0.3;
+      if (nowDone !== done) { done = nowDone; host.classList.toggle('is-done', done); if (done) pick = N - 1; }
+      var a = Math.min(N - 1, Math.floor(x)), f = Math.min(1, Math.max(0, (x - a) * 1.6 - .3));
+      if (done) { show(pick, 0); return; }
+      lastA = a; show(a, f);
+    }
+    grid.addEventListener('click', function (e) {
+      var t = e.target.closest('.fyd__tab'); if (!t || !done) return;
+      pick = +t.dataset.i; show(pick, 0);
+    });
+    addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(measure); }, { passive: true });
+    var lw = innerWidth;
+    addEventListener('resize', function () { if (innerWidth === lw) return; lw = innerWidth; fit(); if (!raf) raf = requestAnimationFrame(measure); });
+    fit(); measure();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  }
+  function scan() { [].forEach.call(document.querySelectorAll('body[data-project="fury"] .fy-test'), build); }
+  scan(); new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+/* PERSONAS ON PHONES: a carousel. Side by side, the next one peeking in at the
+   edge; it moves on by itself every few seconds while on screen, and a touch
+   takes over. Dots underneath say which one is showing. */
+(function () {
+  var mq = matchMedia('(max-width: 760px)'), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function bind(pair) {
+    if (pair.dataset.car || !mq.matches) return; pair.dataset.car = '1';
+    var cards = [].slice.call(pair.children); if (cards.length < 2) return;
+    var dots = document.createElement('div'); dots.className = 'fp-dots';
+    cards.forEach(function (c, i) {
+      var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', 'Persona ' + (i + 1));
+      b.addEventListener('click', function () { held = true; go(i); }); dots.appendChild(b);
+    });
+    pair.after(dots);
+    var cur = 0, held = false, live = false, t = 0;
+    function go(i) { cur = i; pair.scrollTo({ left: cards[i].offsetLeft - cards[0].offsetLeft, behavior: reduce ? 'auto' : 'smooth' }); }
+    function mark() {
+      var x = pair.scrollLeft, best = 0, bd = 1e9;
+      cards.forEach(function (c, i) { var d = Math.abs(c.offsetLeft - cards[0].offsetLeft - x); if (d < bd) { bd = d; best = i; } });
+      cur = best;
+      [].forEach.call(dots.children, function (d, i) { d.classList.toggle('is-on', i === best); });
+      cards.forEach(function (c, i) { c.classList.toggle('is-on', i === best); });
+    }
+    pair.addEventListener('scroll', function () { requestAnimationFrame(mark); }, { passive: true });
+    ['touchstart', 'pointerdown', 'wheel'].forEach(function (ev) { pair.addEventListener(ev, function () { held = true; }, { passive: true }); });
+    function loop() { clearTimeout(t); t = setTimeout(function () { if (live && !held && !reduce) go((cur + 1) % cards.length); loop(); }, 4500); }
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { live = es[0].isIntersecting; }, { threshold: 0.4 }).observe(pair);
+    mark(); loop();
+  }
+  function scan() { [].forEach.call(document.querySelectorAll('body[data-project="fury"] .fp-pair'), bind); }
+  scan(); new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+/* PROPOSED SOLUTION ON PHONES: the title and paragraph join the pinned view,
+   so the screen holds the whole story while the scene plays. */
+(function () {
+  function go() {
+    if (!matchMedia('(max-width: 760px)').matches) return;
+    var eco = document.querySelector('body[data-project="fury"] .fy-eco'); if (!eco || eco.dataset.mob) return;
+    var pin = eco.querySelector('.fy-eco__pin');
+    var n = eco.querySelector(':scope > .fy-dual__name'), p = eco.querySelector(':scope > .fy-dual__p');
+    if (!pin || !n || !p) return;
+    eco.dataset.mob = '1';
+    var box = document.createElement('div'); box.className = 'fy-eco__text';
+    box.appendChild(n); box.appendChild(p); pin.appendChild(box);
+    /* the camera: the phone, then the headset, then pull back to see both */
+    var stage = eco.querySelector('.fy-eco__stage'), raf = 0;
+    var ss = function (a, b, x) { var t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    function cam() {
+      raf = 0;
+      var q = parseFloat(eco.style.getPropertyValue('--p')) || 0;
+      var x = 25 - 50 * ss(0.3, 0.45, q), s = 1;
+      var back = ss(0.62, 0.78, q);
+      x = x + (0 - x) * back; s = 1 - 0.5 * back;
+      stage.style.transform = 'translateX(' + x.toFixed(2) + '%) scale(' + s.toFixed(3) + ')';
+    }
+    addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(cam); }, { passive: true });
+    new MutationObserver(function () { if (!raf) raf = requestAnimationFrame(cam); }).observe(eco, { attributes: true, attributeFilter: ['style'] });
+    cam();
+  }
+  go(); new MutationObserver(go).observe(document.documentElement, { childList: true, subtree: true });
 })();

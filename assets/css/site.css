@@ -28157,13 +28157,13 @@ body[data-project="fury"] .fw2__pt--b h5 { white-space: nowrap; }
 body[data-project="fury"] .fw2__pt--c { right: 68.6%; top: 68%; text-align: right; }
 body[data-project="fury"] .fw2__pt--d { left: 69.2%; top: 62.6%; }
 body[data-project="fury"] .fw2__pt--c h5, body[data-project="fury"] .fw2__pt--d h5 { margin-bottom: 1.2cqw; }
+/* phones keep the desktop diagram, scaled down (type a touch larger so it reads) */
 @media (max-width: 760px) {
-  body[data-project="fury"] .fw2 { aspect-ratio: auto; display: grid; gap: 1.4rem; container-type: normal; }
-  body[data-project="fury"] .fw2__svg { display: none; }
-  body[data-project="fury"] .fw2__h { position: static; translate: none; font-size: 3.2rem; text-align: center; }
-  body[data-project="fury"] .fw2__pt { position: static; width: auto; text-align: left !important; }
-  body[data-project="fury"] .fw2__pt h5 { font-size: 1.15rem; white-space: normal !important; }
-  body[data-project="fury"] .fw2__pt p { font-size: .9rem; }
+  body[data-project="fury"] .fz--steps .fw2 { width: 100%; max-width: none; }
+  body[data-project="fury"] .fw2__pt p { font-size: 2.15cqw; line-height: 1.4; }
+  body[data-project="fury"] .fw2__pt h5 { font-size: 3.1cqw; }
+  body[data-project="fury"] .fw2__pt--b h5 { font-size: 3cqw; }
+  body[data-project="fury"] .fzs-tab:focus:not(:focus-visible), body[data-project="fury"] .fzs-tab:focus { outline: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   body[data-project="fury"] .fw2__line { stroke-dashoffset: 0; }
@@ -28944,3 +28944,372 @@ body[data-project="fury"] .fy-slot.is-roll .fy-slot__reel { animation: fySlot 2.
 body[data-project="fury"] .fpeek { transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .45s ease, bottom .55s cubic-bezier(.2, .8, .2, 1), border-color .3s ease, background .3s ease; }
 body[data-project="fury"] .fpeek.is-hero { bottom: clamp(8.5rem, 16vh, 10.5rem); }
 @media (max-width: 760px) { body[data-project="fury"] .fpeek.is-hero { bottom: 1rem; } }
+
+/* ==== one phone navigation for every case study (see the end of site.js) ==== */
+.pnav { display: none; }
+@media (max-width: 760px) {
+  /* the old phone navigations step aside for it */
+  :root.has-pnav #rail { display: none !important; }
+  :root.has-pnav.pnav-on .pback { opacity: 0; pointer-events: none; }
+  :root.has-pnav .pback { transition: opacity .3s ease; }
+
+  .pnav {
+    --bg: rgba(28, 27, 26, .94); --ink: #f3f1ee; --dim: rgba(243, 241, 238, .42); --line: rgba(255, 255, 255, .08); --accent: #f4a3b4;
+    display: block; position: fixed; z-index: 80; left: 0; right: 0;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px)); padding: 0 14px;
+    transform: translate3d(0, 140%, 0); opacity: 0; pointer-events: none;
+    transition: transform .5s cubic-bezier(.2, .8, .2, 1), opacity .35s ease;
+    font-family: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  }
+  .pnav[data-tone='light'] { --bg: rgba(255, 255, 255, .94); --ink: #1d1c1a; --dim: rgba(29, 28, 26, .38); --line: rgba(0, 0, 0, .08); --accent: #e8365e; }
+  .pnav.is-on { transform: none; opacity: 1; pointer-events: auto; }
+  .pnav__row { display: flex; gap: 8px; align-items: stretch; height: 48px; }
+  .pnav__btn, .pnav__mid {
+    background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 999px;
+    -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
+    box-shadow: 0 10px 28px -14px rgba(0, 0, 0, .55);
+  }
+  :where(.pnav) button { all: unset; box-sizing: border-box; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .pnav .pnav__mid { display: block; flex: 1 1 auto; min-width: 0; height: 100%; position: relative; overflow: hidden; }
+  .pnav .pnav__step { height: 100%; align-items: stretch; }
+  .pnav .pnav__step button { height: 100%; }
+  .pnav__back { flex: none; width: 48px; display: grid; place-items: center; color: var(--accent); text-decoration: none; }
+  .pnav svg { width: 18px; height: 18px; display: block; }
+  .pnav__mid {
+    flex: 1; min-width: 0; position: relative; overflow: hidden; display: block;
+  }
+  .pnav__view { position: absolute; inset: 0 14px; overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 24%, #000 76%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 24%, #000 76%, transparent); }
+  .pnav__track { position: absolute; left: 0; top: 11px; display: flex; gap: 22px; white-space: nowrap; transition: transform .45s cubic-bezier(.2, .8, .2, 1); }
+  .pnav__t { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); transition: color .3s ease; }
+  .pnav__t.is-on { color: var(--ink); }
+  .pnav__dash { position: absolute; left: 50%; bottom: 9px; translate: -50% 0; display: flex; gap: 4px; }
+  .pnav__dash i { width: 6px; height: 2px; border-radius: 1px; background: var(--dim); opacity: .55; transition: background .3s ease, opacity .3s ease, width .3s ease; }
+  .pnav__dash i.is-on { background: var(--ink); opacity: 1; width: 10px; }
+  .pnav__step { flex: none; display: flex; padding: 0 4px; }
+  .pnav__step button { width: 40px; display: grid; place-items: center; color: var(--ink); transition: opacity .25s ease; }
+  .pnav__step button:disabled { opacity: .3; cursor: default; }
+  .pnav :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 999px; }
+
+  /* the full list, opening upward from the bar */
+  .pnav__sheet {
+    position: absolute; left: 14px; right: 14px; bottom: calc(100% + 8px); max-height: 60vh; overflow: auto;
+    background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 22px; padding: 8px;
+    -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
+    box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .6);
+    animation: pnavUp .3s cubic-bezier(.2, .8, .2, 1);
+  }
+  @keyframes pnavUp { from { opacity: 0; translate: 0 8px; } }
+  .pnav__sheet ol { list-style: none; margin: 0; padding: 0; }
+  .pnav__sheet button { display: flex; gap: 14px; align-items: baseline; width: 100%; padding: 12px 14px; border-radius: 14px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+  .pnav__sheet button span { font-size: 11px; opacity: .7; }
+  .pnav__sheet button.is-on { color: var(--ink); background: var(--line); }
+
+  /* the floating pieces keep clear of the bar */
+  :root.has-pnav.pnav-on .llm, :root.has-pnav.pnav-on .tools { translate: 0 -64px; transition: translate .4s ease; }
+}
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) { .pnav, .pnav__track { transition: opacity .2s ease; } }
+@media (max-width: 760px) {
+  .pnav__mid { touch-action: pan-y; transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
+  .pnav.is-press .pnav__mid { transform: scale(1.04); }
+  .pnav.is-scrub .pnav__mid { transform: scale(1.07); }
+  .pnav__step button:active, .pnav__back:active { transform: scale(.9); }
+  .pnav__step button, .pnav__back { transition: transform .2s ease, opacity .25s ease; }
+}
+
+/* ==== phones: the film hero, tight (Talent and Fury) ====
+   The whole 16:9 frame, full width, just under the back arrow, and the caption
+   straight beneath it: no empty band above or below. */
+@media (max-width: 760px) {
+  .fhero:is([data-tone='light'], [data-tone='night']) {
+    min-height: 0; height: auto;
+    padding-top: calc(3.5rem + 56.25vw);
+  }
+  .fhero:is([data-tone='light'], [data-tone='night']) .fhero__stage { inset: 3.5rem 0 auto 0; height: 56.25vw; }
+  .fhero:is([data-tone='light'], [data-tone='night']) .fhero__vid { object-fit: cover; }
+  .fhero:is([data-tone='light'], [data-tone='night']) .fhero__caption { position: relative; bottom: auto; padding-top: 1.4rem; }
+  .fhero:is([data-tone='light'], [data-tone='night']) .fhero__scrim { display: none; }
+  /* the VR peek lives on the opening screen only, small, under the caption */
+  body[data-project="fury"] .fpeek { display: none; }
+  body[data-project="fury"] .fpeek.is-hero { display: grid; position: absolute; top: calc(3.5rem + 56.25vw - 5.6rem); bottom: auto; right: 1rem; width: 8.5rem; }
+}
+/* phones: the NDA tape crosses the artwork, not the caption under it */
+@media (max-width: 760px) {
+  .ndawrap .ndatape--front { bottom: auto; top: 58%; }
+  .ndawrap :is(figcaption, .blk__caption, .fframe__cap) { position: relative; z-index: 3; margin-top: 1.6rem; }
+}
+
+/* phones: the hero caption reads from the left edge, title above the facts */
+@media (max-width: 760px) {
+  .fhero__caption.phero__foot { align-items: stretch; }
+  .fhero__caption .phero__id { align-self: flex-start; width: 100%; margin: 0; padding-left: 0; }
+  body[data-project="fury"] .fpeek.is-hero { top: calc(3.5rem + 56.25vw - 6.4rem); width: 7.5rem; }
+}
+
+/* ==== phones: the portrait film fills the screen ==== */
+@media (max-width: 760px) {
+  .fhero.fhero--phone { min-height: 100vh; min-height: 100svh; height: 100svh; padding-top: 0; }
+  .fhero.fhero--phone .fhero__stage { inset: 0; height: auto; }
+  .fhero.fhero--phone .fhero__vid { width: 100%; height: 100%; object-fit: cover; }
+  .fhero.fhero--phone .fhero__scrim { display: block; position: absolute; left: 0; right: 0; bottom: 0; height: 42%;
+    background: linear-gradient(transparent, rgba(5, 5, 8, .7) 45%, rgba(5, 5, 8, .95)); -webkit-mask-image: none; mask-image: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .fhero.fhero--phone .fhero__caption { position: absolute; bottom: 0; padding-bottom: calc(1.6rem + env(safe-area-inset-bottom, 0px)); }
+  /* the VR shortcut as a small glass pill over the film */
+  body[data-project="fury"] .fpeek.is-hero {
+    top: calc(100svh - 15.5rem - env(safe-area-inset-bottom, 0px)); bottom: auto; right: 1rem; width: auto; position: absolute;
+    padding: .5rem .85rem; border-radius: 999px; gap: 0;
+  }
+  body[data-project="fury"] .fhero--phone ~ * .fpeek, body[data-project="fury"] .fpeek.is-hero .fpeek__media,
+  body[data-project="fury"] .fpeek.is-hero .fpeek__x { display: none; }
+  body[data-project="fury"] .fpeek.is-hero .fpeek__t { padding: 0; gap: .5rem; font-size: .78rem; }
+}
+
+/* ==== phones: Talent's film larger, fading into the page ==== */
+@media (max-width: 760px) {
+  .fhero[data-tone='light']:not(.fhero--phone) { padding-top: 60vh; padding-top: 60svh; }
+  .fhero[data-tone='light']:not(.fhero--phone) .fhero__stage { inset: 0 0 auto 0; height: 60vh; height: 60svh; }
+  .fhero[data-tone='light']:not(.fhero--phone) .fhero__vid { width: 100%; height: 100%; object-fit: contain; }
+  .fhero[data-tone='light']:not(.fhero--phone) .fhero__stage::after {
+    content: ''; position: absolute; inset: auto 0 0 0; height: 38%; pointer-events: none;
+    background: linear-gradient(transparent, var(--fh-ground));
+  }
+  .fhero[data-tone='light']:not(.fhero--phone) .fhero__stage::before {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 14%; z-index: 1; pointer-events: none;
+    background: linear-gradient(var(--fh-ground), transparent);
+  }
+  .fhero[data-tone='light']:not(.fhero--phone) .fhero__caption { padding-top: .4rem; }
+}
+/* phones: the solution scene is the desktop one, scaled to the screen, on a shorter run */
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-eco__run { height: 210vh; }
+  body[data-project="fury"] .fy-eco__stage { width: 100%; }
+  body[data-project="fury"] .fy-eco__cap { height: 4.2rem; }
+  body[data-project="fury"] .fy-eco__st { font-size: 1.15rem; }
+  body[data-project="fury"] .fy-eco__sp { font-size: .8rem; }
+}
+
+/* ==== phones: the architecture and the task flows are the desktop diagrams, scaled to fit ==== */
+@media (max-width: 760px) {
+  body[data-project="fury"] .fia__fit { display: grid !important; overflow: hidden; }
+  body[data-project="fury"] .fia__foot { display: flex !important; }
+  body[data-project="fury"] :is(.fia__list, .ftf__list) { display: none !important; }
+  body[data-project="fury"] .ftf__canvas { display: block !important; }
+  body[data-project="fury"] .ftf__panel { position: absolute; }
+  body[data-project="fury"] .ftf__fit .fia__size { width: calc(var(--w) * var(--k)) !important; height: calc(var(--h) * var(--k)) !important; }
+  body[data-project="fury"] .fy-duo .fia__read { display: none; }
+}
+/* phones: every step of "What already works" keeps its desktop layout, smaller */
+@media (max-width: 760px) {
+  body[data-project="fury"] .fzs-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+  body[data-project="fury"] .fzs-t { font-size: .68rem; line-height: 1.2; }
+  body[data-project="fury"] .fzs-n { font-size: .6rem; }
+  body[data-project="fury"] .fzs-view { padding: .8rem; border-radius: 16px; }
+  body[data-project="fury"] .fz--steps .fz-treat { grid-template-columns: 1fr 1fr; gap: .5rem; }
+  body[data-project="fury"] .fz--steps .fz-card { padding: .7rem .65rem .6rem; border-radius: 10px; }
+  body[data-project="fury"] .fz--steps .fz-card figcaption { font-size: .64rem; line-height: 1.45; }
+  body[data-project="fury"] .fz--steps .fz-card figcaption b { font-size: .78rem; }
+  body[data-project="fury"] .fz-tip { display: none; }
+  body[data-project="fury"] .fz--steps .fv { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: .7rem; }
+  body[data-project="fury"] .fz--steps .fv__txt h3 { font-size: .95rem; }
+  body[data-project="fury"] .fz--steps .fv__txt h4 { font-size: .68rem; }
+  body[data-project="fury"] .fz--steps .fv__txt p { font-size: .66rem; }
+  body[data-project="fury"] .fz--steps .fv__txt .fy-label { font-size: .55rem; }
+  body[data-project="fury"] .fz--steps .fv__chips { grid-template-columns: 1fr; gap: .3rem; }
+  body[data-project="fury"] .fz--steps .fv__chip { padding: .4rem .5rem; font-size: .62rem; border-radius: 8px; }
+  body[data-project="fury"] .fz--steps .fz-brain .fz-h { font-size: 1rem; }
+  body[data-project="fury"] .fz--steps .fz-brain__p { font-size: .68rem; margin-bottom: .6rem; }
+  body[data-project="fury"] .fz--steps .fz-notes { display: block; height: 15rem; }
+  body[data-project="fury"] .fz--steps .fz-notes li { position: absolute; width: 15.2%; aspect-ratio: 1 / 1.25; font-size: .42rem; line-height: 1.3; padding: .3rem .3rem .25rem; }
+  body[data-project="fury"] .fz--steps .fz-notes small { font-size: .3rem; }
+}
+
+/* ==== phones: usability testing as a deck (see the end of fury.js) ==== */
+@media (max-width: 760px) {
+  body[data-project="fury"] .fyd__run { position: relative; height: calc(var(--n) * 62vh + 100svh); }
+  body[data-project="fury"] .fyd__pin {
+    position: sticky; top: 0; height: 100svh; display: flex; flex-direction: column; gap: .7rem;
+    padding: 1rem 0 calc(5.2rem + env(safe-area-inset-bottom, 0px));
+  }
+  body[data-project="fury"] .fyd__pin .fy-test__band { display: grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: 1fr 1fr; gap: .45rem; height: 34svh; flex: none; }
+  body[data-project="fury"] .fyd__pin .fy-test__band .fy-shot { margin: 0; min-height: 0; overflow: hidden; border-radius: 12px; }
+  body[data-project="fury"] .fyd__pin .fy-test__band .fy-shot--tall { grid-row: 1 / span 2; grid-column: 1; }
+  body[data-project="fury"] .fyd__pin .fy-test__band .fy-shot :is(img, button, .fy-zoom) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  body[data-project="fury"] .fyd__stack { position: relative; flex: 1; min-height: 0; }
+  body[data-project="fury"] .fyd__card {
+    position: absolute !important; left: 0; right: 0; bottom: 0; margin: 0 !important; max-height: 100%; overflow: auto;
+    grid-column: auto !important; grid-row: auto !important;
+    transform-origin: 50% 0; transition: transform .45s cubic-bezier(.2, .8, .2, 1), opacity .35s ease;
+    box-shadow: 0 -12px 30px -18px rgba(0, 0, 0, .8); opacity: 1;
+  }
+  body[data-project="fury"] .fyd__card.fy-test__stat { min-height: 0; padding: 1.1rem 1.2rem; gap: .4rem; justify-content: flex-start; }
+  body[data-project="fury"] .fyd__card.fy-test__stat blockquote { margin-top: .6rem; padding-top: 0; font-size: .95rem; }
+  body[data-project="fury"] .fyd__count { margin: 0; text-align: center; font-size: .7rem; letter-spacing: .14em; color: #8b8b95; flex: none; }
+  /* the gathered titles, after the last card */
+  body[data-project="fury"] .fyd__grid { display: none; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; flex: none; }
+  body[data-project="fury"] .fy-test.is-done .fyd__grid { display: grid; animation: fydIn .45s cubic-bezier(.2, .8, .2, 1); }
+  @keyframes fydIn { from { opacity: 0; translate: 0 10px; } }
+  body[data-project="fury"] .fyd__tab {
+    all: unset; box-sizing: border-box; cursor: pointer; text-align: center; padding: .55rem .4rem; border-radius: 10px;
+    font-size: .68rem; line-height: 1.2; color: #c9c9d2; background: #1f1f24; border: 1px solid rgba(255, 255, 255, .08);
+    transition: background .25s ease, color .25s ease, border-color .25s ease;
+  }
+  body[data-project="fury"] .fyd__tab.is-on { background: rgba(240, 67, 107, .14); border-color: rgba(240, 67, 107, .55); color: #fff; }
+  body[data-project="fury"] .fy-test.is-done .fyd__pin .fy-test__band { height: 24svh; transition: height .4s ease; }
+}
+/* the sticky notes, tighter on phones so nothing spills */
+@media (max-width: 760px) {
+  body[data-project="fury"] .fz--steps .fz-notes li { font-size: .38rem; overflow: hidden; }
+}
+@media (max-width: 760px) {
+  body[data-project="fury"] .fyd__pin .fy-test__band { overflow: hidden; }
+  body[data-project="fury"] .fyd__pin .fy-test__band .fy-shot { height: 100%; position: relative; }
+  body[data-project="fury"] .fyd__pin .fy-test__band .fy-shot :is(.fframe, .fframe__in) { height: 100% !important; width: 100% !important; aspect-ratio: auto !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  body[data-project="fury"] .fyd__pin .fy-test__band .fy-shot img { width: 100% !important; height: 100% !important; object-fit: cover; }
+  body[data-project="fury"] .fyd__pin .fy-test__band figcaption { position: absolute; left: .5rem; bottom: .5rem; margin: 0; }
+  /* cards hang from the top of the deck; nothing peeks below it */
+  body[data-project="fury"] .fyd__stack { clip-path: inset(-80px -20px 0 -20px); padding-top: 26px; }
+  body[data-project="fury"] .fyd__card { top: 26px; bottom: auto; max-height: calc(100% - 26px); }
+}
+/* insights: the short wording on phones, the full on larger screens */
+body[data-project="fury"] .fy-ins__short { display: none; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-ins__full { display: none; }
+  body[data-project="fury"] .fy-ins__short { display: inline; }
+}
+
+/* ==== phones: the two personas as a peeking carousel ==== */
+body[data-project="fury"] .fp-dots { display: none; }
+@media (max-width: 760px) {
+  body[data-project="fury"] .fp-pair {
+    display: flex !important; gap: .75rem; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+    margin-left: calc(-1 * var(--gut, 1.25rem)); margin-right: calc(-1 * var(--gut, 1.25rem));
+    padding: 0 var(--gut, 1.25rem); scroll-padding: 0 var(--gut, 1.25rem); scrollbar-width: none; align-items: flex-start;
+  }
+  body[data-project="fury"] .fp-pair::-webkit-scrollbar { display: none; }
+  body[data-project="fury"] .fp-pair > .fp-persona { flex: 0 0 86%; scroll-snap-align: start; transition: opacity .4s ease; opacity: .55; }
+  body[data-project="fury"] .fp-pair > .fp-persona.is-on { opacity: 1; }
+  body[data-project="fury"] .fp-pair .fp-num { display: none; }
+  body[data-project="fury"] .fp-dots { display: flex; justify-content: center; gap: .45rem; margin: .9rem 0 0; }
+  body[data-project="fury"] .fp-dots button { all: unset; width: 6px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .25); cursor: pointer; transition: width .3s ease, background .3s ease; }
+  body[data-project="fury"] .fp-dots button.is-on { width: 18px; background: var(--fury-pink, #f0436b); }
+}
+
+/* ==== phones: the empathy map keeps its desktop radial, scaled to fit ==== */
+@media (max-width: 760px) {
+  body[data-project="fury"] .fp-emp { display: block; aspect-ratio: 1000 / 1180; container-type: inline-size; max-width: none; }
+  body[data-project="fury"] .fp-emp__x, body[data-project="fury"] .fp-ico { display: block; }
+  body[data-project="fury"] .fp-emp__me { position: absolute; left: 50%; top: 50%; width: 19%; transform: translate(-50%, -50%) !important; }
+  body[data-project="fury"] .fp-q { position: absolute; }
+  body[data-project="fury"] .fp-q h5 { font-size: 4.3cqw; margin-bottom: 1.6cqw; }
+  body[data-project="fury"] .fp-q ul { font-size: 2.95cqw !important; line-height: 1.4; gap: .8cqw; padding-left: 3cqw !important; }
+  body[data-project="fury"] .fp-q--think { left: 50%; top: 0; width: 78% !important; transform: translateX(-50%) !important; text-align: center !important; }
+  body[data-project="fury"] .fp-q--see { left: 50%; top: auto; bottom: 0; width: 82% !important; transform: translateX(-50%) !important; text-align: center !important; }
+  body[data-project="fury"] :is(.fp-q--think, .fp-q--see) h5 { text-align: center !important; }
+  body[data-project="fury"] :is(.fp-q--think, .fp-q--see) ul { list-style-position: inside !important; padding-left: 0 !important; }
+  body[data-project="fury"] .fp-q--hear { left: 0; top: 33%; width: 34% !important; }
+  body[data-project="fury"] .fp-q--say { right: 0; left: auto; top: 33%; width: 34% !important; }
+  body[data-project="fury"] .fp-ico { width: 6%; }
+  body[data-project="fury"] .fp-ico--heart { top: 35%; } body[data-project="fury"] .fp-ico--eye { top: 65%; }
+  body[data-project="fury"] .fp-ico--ear { left: 37%; } body[data-project="fury"] .fp-ico--lips { left: 63%; }
+}
+
+/* ==== phones: proposed solution, large and full-bleed, panning phone → headset ==== */
+@media (max-width: 760px) {
+  body[data-project="fury"] .fy-eco__run { height: 260vh; margin-top: .5rem; }
+  body[data-project="fury"] .fy-eco__pin {
+    height: 100svh; width: 100vw; margin-left: calc(50% - 50vw); overflow: hidden;
+    justify-content: center; gap: .5rem; padding: 0 0 calc(4.6rem + env(safe-area-inset-bottom, 0px));
+  }
+  body[data-project="fury"] .fy-eco__cap { height: 3.8rem; flex: none; }
+  body[data-project="fury"] .fy-eco__stage {
+    width: 200vw !important; flex: none; max-width: none;
+    transform-origin: 50% 50%;
+  }
+  body[data-project="fury"] .fy-eco__rail { flex: none; margin-top: .2rem; }
+  body[data-project="fury"] .fy-eco__text { padding: 0 var(--gut, 1.25rem); flex: none; }
+  body[data-project="fury"] .fy-eco__text .fy-dual__name { margin: .4rem auto .5rem; font-size: .9rem; }
+  body[data-project="fury"] .fy-eco__text .fy-dual__p { margin: 0; font-size: .82rem; line-height: 1.55; }
+}
+
+/* ==== phones: the metrics stay in one row, as on desktop, just smaller ==== */
+@media (max-width: 760px) {
+  .mgrid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: .35rem; }
+  .mcard { padding: .55rem .45rem .5rem !important; gap: .3rem !important; border-radius: 10px; }
+  .mcard__ico { width: 20px !important; height: 20px !important; border-radius: 6px; }
+  .mcard__ico svg { width: 11px !important; height: 11px !important; }
+  .mcard__v { font-size: 1.05rem !important; }
+  .mcard__l { font-size: .58rem !important; line-height: 1.25 !important; }
+  .mcard__b { font-size: .5rem !important; line-height: 1.35 !important; }
+  .mcard__spark { margin-top: .2rem !important; }
+  .mcard__note { font-size: .62rem; }
+}
+/* phones: Talent's impact metrics in one row like desktop, smaller */
+@media (max-width: 760px) {
+  .imp__row { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .imp__col, .imp__col:nth-child(n) { border-top: 0 !important; border-left: 1px solid var(--imp-rule) !important; padding: .7rem .4rem 0 !important; }
+  .imp__col:first-child { border-left: 0 !important; padding-left: 0 !important; }
+  .imp__k { font-size: .5rem; gap: .25rem; }
+  .imp__dir { width: .9rem; height: .9rem; } .imp__dir svg { width: .55rem; height: .55rem; }
+  .imp__n { font-size: 1.45rem; margin: .5rem 0 .2rem; }
+  .imp__l { font-size: .58rem; line-height: 1.25; }
+  .imp__spark { height: 1.6rem; margin: .5rem 0 .4rem; }
+  .imp__b { font-size: .5rem; line-height: 1.35; margin-bottom: .6rem; }
+  .imp__note { font-size: .62rem; }
+}
+
+/* ==== Talent: the learnings as five numbered cards ==== */
+.lrn { list-style: none; margin: var(--sp-4, 1.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; counter-reset: none; }
+.lrn li {
+  display: grid; align-content: space-between; gap: 2.2rem; min-height: 8.5rem;
+  padding: 1.1rem 1.15rem 1.2rem; border-radius: 14px;
+  background: color-mix(in srgb, var(--ink, #101828) 3.5%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink, #101828) 7%, transparent);
+  transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s ease;
+}
+:root:not(.hover-cold) .lrn li:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink, #101828) 16%, transparent); }
+.lrn__n { font-family: var(--mono); font-size: .72rem; letter-spacing: .08em; color: var(--ink-dim, #667085); }
+.lrn__t { font-size: clamp(1.05rem, .95rem + .4vw, 1.3rem); font-weight: 550; letter-spacing: -.02em; line-height: 1.2; color: var(--ink, #101828); }
+@media (max-width: 760px) {
+  .lrn {
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    margin-left: calc(-1 * var(--gut, 1.25rem)); margin-right: calc(-1 * var(--gut, 1.25rem));
+    padding: 0 var(--gut, 1.25rem); scroll-padding: 0 var(--gut, 1.25rem);
+  }
+  .lrn::-webkit-scrollbar { display: none; }
+  .lrn li { flex: 0 0 62%; scroll-snap-align: start; min-height: 7.5rem; }
+}
+
+/* Talent "Screens from across the platform" ticker on phones: the generic phone image
+   reset (height:auto) let each screen render at its native 1488px width inside a
+   170px card, so only a zoomed corner showed. Pin the card height and let the width
+   follow the aspect again. */
+@media (max-width: 760px) {
+  .tick__card { height: 150px; overflow: visible; }
+  .tick .tick__card img {
+    height: 100%;
+    width: auto;
+    max-width: none;
+    object-fit: contain;
+  }
+}
+
+/* ==== phones: testing deck, steadier and compact ====
+   The deck used to stretch to fill the screen (short cards left a void under them)
+   and changed layout at the end (titles appeared, photos shrank), which read as a
+   jump. Now the titles are always there and double as progress, the photos keep
+   one height, the deck is sized to its tallest card and the group sits centred.
+   Card motion follows the scroll directly; easing only applies to taps. */
+@media (max-width: 760px) {
+  body[data-project="fury"] .fyd__pin { justify-content: center; gap: .6rem; padding-top: .5rem; }
+  body[data-project="fury"] .fyd__pin .fy-test__band,
+  body[data-project="fury"] .fy-test.is-done .fyd__pin .fy-test__band { height: 26svh; transition: none; }
+  body[data-project="fury"] .fyd__grid,
+  body[data-project="fury"] .fy-test.is-done .fyd__grid { display: grid; animation: none; }
+  body[data-project="fury"] .fyd__tab { pointer-events: none; }
+  body[data-project="fury"] .fy-test.is-done .fyd__tab { pointer-events: auto; }
+  body[data-project="fury"] .fyd__tab.is-seen { color: #8b8b95; }
+  body[data-project="fury"] .fyd__stack { flex: none; }
+  body[data-project="fury"] .fyd__card { transition: none; will-change: transform; }
+  body[data-project="fury"] .fy-test.is-done .fyd__card { transition: transform .4s cubic-bezier(.2, .8, .2, 1), opacity .3s ease; }
+}
