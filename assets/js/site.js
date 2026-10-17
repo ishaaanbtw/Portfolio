@@ -8748,21 +8748,28 @@
       const next = bySlug(st.next) || list[(i + 1) % list.length];
       const nav = el('nav', { class: 'onward', 'aria-label': 'More work' });
 
-      const door = (kind, it) => {
-        if (!it || it === this.item || (kind === 'prev' && it === next)) return '';
-        if (it.wip && !OWNER) return '';
-        return `<a class="onward__go onward__go--${kind}" href="${projectHref(it.study.slug)}">`
-          + `<span class="onward__k">${kind === 'prev' ? 'Previous' : 'Next'}</span>`
-          + `<span class="onward__t">${esc(it.title)}</span>`
-          + `<span class="onward__m">${esc(it.meta || '')}</span></a>`;
-      };
-
+      /* EDITORIAL, NOT TILES: one large line for where to go next, and the
+         rest as small text under it. The large line is the next piece; with
+         none to offer it is the previous one, and with neither, the index.
+         On phones this whole block hands itself to the floating nav, whose
+         pill turns into the large line at the end of the page. */
+      const ok = (it) => it && it !== this.item && !(it.wip && !OWNER);
+      const nx = ok(next) ? next : null;
+      const pv = ok(prev) && prev !== next ? prev : null;
+      const big = nx ? ['next', 'Next', nx.title, projectHref(nx.study.slug)]
+        : pv ? ['prev', 'Previous', pv.title, projectHref(pv.study.slug)]
+        : ['all', 'Index', 'All work', url('index.html')];
+      const arrow = big[0] === 'prev' ? '\u2190' : '\u2192';
+      const small = [];
+      if (nx && pv) small.push(`<a class="onward__prev" href="${projectHref(pv.study.slug)}"><span aria-hidden="true">\u2190\u00a0</span>${esc(pv.title)}</a>`);
+      if (big[0] !== 'all') small.push(`<a class="onward__all" href="${url('index.html')}">All work</a>`);
       nav.innerHTML =
-        /* the index is the home page's grid now, not a page of its own */
-        `<a class="onward__all" href="${url('index.html')}">`
-        + '<span class="onward__k">Index</span>'
-        + '<span class="onward__t">All work</span></a>'
-        + door('prev', prev) + door('next', next);
+        `<a class="onward__big" data-kind="${big[0]}" data-title="${esc(big[2])}" href="${big[3]}">`
+        + `<span class="onward__k">${big[1]}</span>`
+        + (big[0] === 'prev'
+          ? `<span class="onward__t"><span class="onward__a" aria-hidden="true">${arrow}\u00a0</span>${esc(big[2])}</span></a>`
+          : `<span class="onward__t">${esc(big[2])}<span class="onward__a" aria-hidden="true">\u00a0${arrow}</span></span></a>`)
+        + (small.length ? `<div class="onward__small">${small.join('')}</div>` : '');
       return nav;
     },
 
@@ -25871,10 +25878,15 @@
         `<li><button type="button" role="menuitem" data-i="${i}"><span>${String(i + 1).padStart(2, '0')}</span>${label(a)}</button></li>`).join('')}</ol></div>` +
       `<div class="pnav__row">` +
         `<a class="pnav__btn pnav__back" href="${back ? back.getAttribute('href') : 'index.html'}" aria-label="Back to all work">${svg('M19 12H5M11 6l-6 6 6 6')}</a>` +
+        `<span class="pnav__slot">` +
         `<button class="pnav__mid" type="button" aria-haspopup="menu" aria-expanded="false">` +
           `<span class="pnav__view"><span class="pnav__track">${ls.map((a) => `<span class="pnav__t">${label(a)}</span>`).join('')}</span></span>` +
           `<span class="pnav__dash" aria-hidden="true">${ls.map(() => '<i></i>').join('')}</span>` +
         `</button>` +
+        /* at the end of the page the pill becomes the way on */
+        `<a class="pnav__go" href="#" tabindex="-1" aria-hidden="true"><span class="pnav__gk"></span><span class="pnav__gt"></span>` +
+          `<span class="pnav__ga">${svg('M5 12h14M13 6l6 6-6 6')}</span></a>` +
+        `</span>` +
         `<span class="pnav__btn pnav__step">` +
           `<button type="button" data-d="-1" aria-label="Previous section">${svg('M12 19V5M6 11l6-6 6 6')}</button>` +
           `<button type="button" data-d="1" aria-label="Next section">${svg('M12 5v14M6 13l6 6 6-6')}</button>` +
@@ -25933,6 +25945,7 @@
     sheet.addEventListener('click', (e) => { const t = e.target.closest('[data-i]'); if (t) go(+t.dataset.i); });
     $('.pnav__step', b).addEventListener('click', (e) => {
       const t = e.target.closest('[data-d]'); if (!t) return;
+      if (b.classList.contains('is-end')) { go(0); return; }   /* at the end, up means the top */
       go(Math.max(0, Math.min(links().length - 1, cur() + +t.dataset.d)));
     });
     document.addEventListener('pointerdown', (e) => { if (!b.contains(e.target)) close(); }, { passive: true });
@@ -25983,6 +25996,25 @@
     const show = past();
     bar.classList.toggle('is-on', show);
     document.documentElement.classList.toggle('pnav-on', show);
+    /* THE END: once the closing block (a spacer on phones) comes into view,
+       the pill turns into its large line: Next, Previous or the index */
+    const ow = $('.onward'), bg = $('.onward__big');
+    const end = !!(ow && bg && ow.getBoundingClientRect().top < innerHeight - 8);
+    if (bg) {
+      const g = $('.pnav__go', bar), k = $('.onward__k', bg).textContent, t = bg.dataset.title;
+      if (g.getAttribute('href') !== bg.getAttribute('href')) {
+        g.setAttribute('href', bg.getAttribute('href'));
+        $('.pnav__gk', g).textContent = k; $('.pnav__gt', g).textContent = t;
+        g.dataset.kind = bg.dataset.kind;
+      }
+      g.tabIndex = end ? 0 : -1; g.setAttribute('aria-hidden', String(!end));
+    }
+    if (end !== bar.classList.contains('is-end')) {
+      bar.classList.toggle('is-end', end);
+      if (end && !$('.pnav__sheet', bar).hidden) $('.pnav__mid', bar).click();
+      steps[0].setAttribute('aria-label', end ? 'Back to top' : 'Previous section');
+    }
+    if (end) steps[0].disabled = false;
   }
   const ask = () => { if (!raf) raf = requestAnimationFrame(sync); };
   addEventListener('scroll', ask, { passive: true });

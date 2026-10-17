@@ -2664,6 +2664,11 @@ window.SITE = {
             film: 'assets/media/onefinnet/talent-film.webm',
             film2: 'assets/media/onefinnet/talent-film.mp4',
             poster: 'assets/media/onefinnet/talent-film.webp',
+            /* a portrait cut for phones: tall screening grid, the camera over
+               the board. Source: .tools/talent-film/film-phone.html */
+            phoneFilm: 'assets/media/onefinnet/talent-film-phone.webm',
+            phoneFilm2: 'assets/media/onefinnet/talent-film-phone.mp4',
+            phonePoster: 'assets/media/onefinnet/talent-film-phone.webp',
             ground: '#f7f8fa',
             /* no cinema title: the document hero's caption instead, on a
                paper fade at the foot of the film */

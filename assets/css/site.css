@@ -29313,3 +29313,70 @@ body[data-project="fury"] .fp-dots { display: none; }
   body[data-project="fury"] .fyd__card { transition: none; will-change: transform; }
   body[data-project="fury"] .fy-test.is-done .fyd__card { transition: transform .4s cubic-bezier(.2, .8, .2, 1), opacity .3s ease; }
 }
+
+/* ==== phones: Talent's portrait film, full screen on paper ==== */
+@media (max-width: 760px) {
+  .fhero.fhero--phone[data-tone='light'] { background: #f7f8fa; }
+  .fhero.fhero--phone[data-tone='light'] .fhero__scrim {
+    height: 40%;
+    background: linear-gradient(rgba(247, 248, 250, 0), rgba(247, 248, 250, .88) 42%, #f7f8fa 70%);
+  }
+}
+
+/* ==== the closing line, editorial ======================================
+   One large line for where to go next; Previous and All work as small text
+   under it. Mono labels, sans titles, no boxes. */
+.onward { display: block; border-top: 1px solid var(--line); margin-top: var(--sp-6, 2.25rem);
+  padding-top: clamp(1.8rem, 5vh, 3rem); padding-bottom: clamp(2.5rem, 9vh, 5rem); }
+.onward > a.onward__big { display: block; padding: 0; border: 0; color: inherit; text-decoration: none; }
+.onward__big .onward__k, .onward__small { font-family: var(--mono); }
+.onward__big .onward__k { display: block; margin-bottom: .7rem; font-size: .68rem; letter-spacing: .14em; }
+.onward__big .onward__t { display: block; max-width: 20ch; font-size: clamp(2rem, 4.4vw, 3.7rem); line-height: 1.02; letter-spacing: -.035em; font-weight: 500; }
+.onward__a { display: inline-block; transition: transform 420ms var(--spring); }
+:root:not(.hover-cold) .onward > a.onward__big:hover { transform: none; }
+:root:not(.hover-cold) .onward__big:hover .onward__a { transform: translateX(.3em); }
+.onward__big[data-kind='prev']:hover .onward__a { transform: translateX(-.3em) !important; }
+.onward__small { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .6rem 2rem; margin-top: clamp(1.6rem, 4vh, 2.6rem);
+  font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+.onward__small a { color: var(--ink-dim); text-decoration: none; padding: 0; border: 0; transition: color 240ms var(--ease); }
+.onward__small a:only-child { margin-left: auto; }
+.onward__small .onward__all { margin-left: auto; }
+:root:not(.hover-cold) .onward__small a:hover { color: var(--ink); transform: none; }
+:root:not(.hover-cold) .onward__big:hover .onward__t { color: inherit; }
+body[data-project="fury"] .onward__small a { color: #8b93a3; }
+/* X0's ending is black like its film: no pale strip under it */
+body[data-project="cypherock-x0"] .onward {
+  margin-top: 0; background: #030303; color: #f3f1ee; border-top-color: rgba(255, 255, 255, .1);
+  box-shadow: 0 0 0 100vmax #030303; clip-path: inset(0 -100vmax -100vmax -100vmax);
+}
+body[data-project="cypherock-x0"] .onward__k, body[data-project="cypherock-x0"] .onward__small a { color: #8b93a3; }
+
+/* PHONES: the block hands itself to the floating nav and stays only as the
+   room the nav needs at the very end; the pill becomes the large line */
+@media (max-width: 760px) {
+  :root.has-pnav .onward { height: calc(76px + env(safe-area-inset-bottom, 0px)); padding: 0; margin-top: 0; border-top: 0; position: relative; overflow: hidden; }
+  :root.has-pnav .onward > * { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .pnav__slot { flex: 1 1 auto; min-width: 0; position: relative; display: block; height: 100%; }
+  .pnav .pnav__slot .pnav__mid { width: 100%; }
+  .pnav .pnav__mid, .pnav__go { transition: opacity .32s ease, transform .45s cubic-bezier(.2, .8, .2, 1); }
+  .pnav__go {
+    position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto;
+    align-content: center; column-gap: 10px; padding: 0 8px 0 18px; text-decoration: none;
+    background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 999px;
+    -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
+    box-shadow: 0 10px 28px -14px rgba(0, 0, 0, .55);
+    opacity: 0; transform: translateY(10px); pointer-events: none;
+  }
+  .pnav__gk { grid-column: 1; font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); line-height: 1.2; }
+  .pnav__gt { grid-column: 1; font-family: var(--sans); font-size: 13.5px; font-weight: 500; letter-spacing: -.01em; line-height: 1.25;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pnav__ga { grid-column: 2; grid-row: 1 / span 2; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--ink); color: var(--bg); }
+  .pnav__ga svg { width: 15px; height: 15px; }
+  .pnav__go[data-kind='prev'] .pnav__ga svg { transform: scaleX(-1); }
+  .pnav.is-end .pnav__mid { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+  .pnav.is-end .pnav__go { opacity: 1; transform: none; pointer-events: auto; }
+  .pnav .pnav__step button { transition: opacity .25s ease, width .35s cubic-bezier(.2, .8, .2, 1); }
+  .pnav.is-end .pnav__step button[data-d='1'] { width: 0; opacity: 0; pointer-events: none; }
+}
