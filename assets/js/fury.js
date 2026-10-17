@@ -1981,9 +1981,9 @@ window.STUDY_HTML.iaFlows = '<div class="fy-duo">' +
     a.className = 'fpeek'; a.href = '#design';
     a.setAttribute('aria-label', 'See it in VR: jump to the VR experience');
     a.innerHTML = '<span class="fpeek__media">' +
-        (reduce ? '<img src="' + M + 'vr-peek.webp" alt="">' :
-          '<video muted loop playsinline autoplay preload="auto" poster="' + M + 'vr-peek.webp">' +
-            '<source src="' + M + 'vr-peek.webm" type="video/webm"><source src="' + M + 'vr-peek.mp4" type="video/mp4"></video>') +
+        (reduce ? '<img src="' + M + 'vr-peek.webp?v=2" alt="">' :
+          '<video muted loop playsinline autoplay preload="auto" poster="' + M + 'vr-peek.webp?v=2">' +
+            '<source src="' + M + 'vr-peek.webm?v=2" type="video/webm"><source src="' + M + 'vr-peek.mp4?v=2" type="video/mp4"></video>') +
       '</span><span class="fpeek__t">See it in VR <i aria-hidden="true">→</i></span>' +
       '<button type="button" class="fpeek__x" aria-label="Hide the VR preview">×</button>';
     var v = a.querySelector('video'); if (v) { v.muted = true; v.play && v.play().catch(function () {}); }
@@ -2013,6 +2013,8 @@ window.STUDY_HTML.iaFlows = '<div class="fy-duo">' +
     if (!onFury || off()) { if (el) { el.remove(); el = null; } return; }
     if (!el || !el.isConnected) el = build();
     el.classList.toggle('is-away', inVR());
+    /* on the opening frame it rides above the hero's caption */
+    el.classList.toggle('is-hero', scrollY < innerHeight * 0.55);
   }
   addEventListener('scroll', function () {
     if (!raf) raf = requestAnimationFrame(sync);

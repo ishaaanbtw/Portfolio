@@ -3185,7 +3185,7 @@ window.SITE = {
          "FURY". Nothing in that markup is shared with another study.
 
          `tone: 'dark'` on this study means a Fury-pink band.               */
-      { title: 'Designing for progressive immersion', meta: 'Mobile to VR, 2024',
+      { title: 'Designing for progressive immersion', meta: 'Mobile to VR, 2025',
         href: '#fury',
         /* in the right-hand stack, under the X1 Vault, taking the empty frame there */
         col: 'b', ratio: 1.6,
@@ -3202,7 +3202,7 @@ window.SITE = {
             + 'Meta Quest 2, with their growth tracked at every step.',
           facts: [
             { k: 'Scope', v: 'Mobile & Virtual Reality Design' },
-            { k: 'Year', v: '2024' },
+            { k: 'Year', v: '2025' },
             { k: 'Timeline', v: '8 weeks, waterfall' },
             { k: 'Platform', v: 'Mobile app · Meta Quest 2 · Cardboard VR' },
           ],
@@ -3232,7 +3232,7 @@ window.SITE = {
           },
           company: 'Fury',
           category: 'Mobile & VR',
-          year: '2024',
+          year: '2025',
           place: 'India',
           role: 'UX Designer',
           lede: 'What if facing social fear could feel safe, guided, and even exciting?',
@@ -3252,7 +3252,12 @@ window.SITE = {
             poster: 'assets/media/fury/fury-film.webp',
             tone: 'night',
             ground: '#18181c',
-            /* no caption over the film: it carries the opening on its own */
+            /* the document caption at the foot of the film, same as Talent */
+            caption: {
+              name: 'Designing for progressive immersion',
+              facts: ['Mobile & VR', 'Product design', '2025'],
+              line: 'Helping socially anxious people build confidence, one step deeper at a time.',
+            },
             prog: false,
           },
           reading: false,
@@ -3268,7 +3273,7 @@ window.SITE = {
               blocks: [
                 { type: 'facts', items: [
                   { label: 'Role', values: ['Sole designer', 'Unity build'] },
-                  { label: 'Timeline', values: ['2024', '8 weeks', 'Waterfall'] },
+                  { label: 'Timeline', values: ['2025', '8 weeks', 'Waterfall'] },
                   { label: 'Surfaces', values: ['Mobile app', 'VR app'] },
                   { label: 'Research', values: ['7 interviews', '65 survey responses', '6 expert testers'] },
                   { label: 'Tools', values: [

@@ -28940,3 +28940,7 @@ body[data-project="fury"] .fy-slot.is-roll .fy-slot__reel { animation: fySlot 2.
   100% { transform: translateY(-26em); filter: blur(0); }
 }
 @media (prefers-reduced-motion: reduce) { body[data-project="fury"] .fy-slot__reel { animation: none !important; transform: translateY(-26em); } }
+/* over the hero, the peek sits above the caption rather than on top of it */
+body[data-project="fury"] .fpeek { transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .45s ease, bottom .55s cubic-bezier(.2, .8, .2, 1), border-color .3s ease, background .3s ease; }
+body[data-project="fury"] .fpeek.is-hero { bottom: clamp(8.5rem, 16vh, 10.5rem); }
+@media (max-width: 760px) { body[data-project="fury"] .fpeek.is-hero { bottom: 1rem; } }
