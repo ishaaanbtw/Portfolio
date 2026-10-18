@@ -1875,7 +1875,25 @@
        preview as part of settling — so a video that then fails used to leave a
        card with nothing on it at all: no artwork, and the fallback switched off
        on its behalf. The class goes back with the element. */
+    /* ...UNLESS THERE IS A POSTER. The poster is a frame of the same video,
+       so a card whose video will not play (missing file, blocked codec, data
+       saver) now holds that still instead of dropping back to the CSS panel.
+       The panel is only for a card with neither. */
     vid.addEventListener('error', () => {
+      if (item.thumbPoster) {
+        const still = el('img', {
+          class: `wcard__thumb wcard__thumb--${sheet ? 'sheet' : 'cover'} is-on`,
+          src: item.thumbPoster, alt: '', 'aria-hidden': 'true', decoding: 'async',
+        });
+        still.addEventListener('error', () => {
+          (sheet ? host : still).remove();
+          media.classList.remove('is-covered', 'is-instant');
+        });
+        if (sheet) { vid.replaceWith(still); }
+        else { host.replaceWith(still); }
+        media.classList.add('is-covered');
+        return;
+      }
       host.remove();
       media.classList.remove('is-covered', 'is-instant');
     });
