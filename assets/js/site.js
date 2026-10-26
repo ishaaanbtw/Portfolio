@@ -7041,7 +7041,41 @@
        that replaced a whole device, and letting someone stop it half way is
        the only way a page can say so. `Film` seeks the video off the same
        `--p` everything else reads. */
-    video: (s) => `<div class="fg-vid" data-scrub>` +
+    /* A PLAYED FILM, NOT A SCRUBBED ONE, when the scene says `play: true`.
+       Used for footage that has its own pace and its own soundtrack (the X0
+       promo), where handing the timeline to the scroll would chop the cut
+       and the music. It loops muted with no player chrome at all: no
+       controls, nothing to pause or seek. The one control is the sound
+       toggle in the top-right corner, because audio is the thing a visitor
+       has to opt into. `credit` names who made it, under the copy. Playback
+       is bound in `bind()` below (it plays while the scene is on screen and
+       pauses when it leaves, so sound never carries on off screen). */
+    video: (s) => s.play ? (
+        `<div class="fg-vid fg-vid--play${s.caption ? ' fg-vid--cap' : ''}" data-play>` +
+          `<video src="${url(s.src)}"${s.poster ? ` poster="${url(s.poster)}"` : ''}` +
+          ` muted loop playsinline preload="metadata" aria-label="${esc(s.alt || '')}"></video>` +
+        `</div>` +
+        `<button type="button" class="fg-sound" aria-pressed="false" aria-label="Turn sound on">` +
+          `<svg class="fg-sound__off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg>` +
+          `<svg class="fg-sound__on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg>` +
+          `<span class="fg-sound__label">Sound</span>` +
+        `</button>` +
+        /* `caption: true`: the film is the scene, so the words step aside. The
+           headline drops to a one-line caption on the bottom edge with the
+           credit under it, and the paragraph is not drawn (it stays in the
+           content for anyone who wants it back). Footage with its own
+           on-screen type cannot have a headline sitting across it. */
+        (s.caption
+          ? `<div class="scn__in scn__in--foot fg-filmcap">` +
+              (s.h ? `<h2${AT(0.2)} class="fg-h fg-filmcap__h beat beat--still">${s.h}</h2>` : '') +
+              (s.credit ? `<p${AT(0.35)} class="fg-filmcap__credit beat">${s.credit}</p>` : '') +
+            `</div>`
+          : `<div class="scn__in scn__in--foot">` +
+              (s.h ? `<h2${AT(0.2)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
+              (s.p ? `<p${AT(0.5)} class="fg-p beat">${s.p}</p>` : '') +
+              (s.credit ? `<p${AT(0.6)} class="fg-credit beat"><span class="fg-credit__tag">Credit</span>${s.credit}</p>` : '') +
+            `</div>`)
+      ) : `<div class="fg-vid" data-scrub>` +
           `<video src="${url(s.src)}"${s.poster ? ` poster="${url(s.poster)}"` : ''}` +
           ` muted playsinline preload="auto" aria-label="${esc(s.alt || '')}"></video>` +
         `</div>` +
@@ -7401,6 +7435,39 @@
          write and the video seek are skipped, and the index, the tone and the
          progress hairline are written exactly as they always were. */
       this.still = REDUCED;
+
+      /* PLAYED FILMS (`play: true` on a video scene). Each plays while at
+         least a third of it is on screen and pauses when it leaves, so its
+         sound never carries on behind another scene. The only control is the
+         sound toggle. With reduced motion nothing starts on its own: the
+         poster holds, and turning the sound on is what starts the film.
+         When the router replaces the page the element is gone from the
+         document, and a detached video can keep playing audio, so a light
+         check stops and unloads it the moment that happens. */
+      $$('.fg-vid[data-play]', root).forEach((box) => {
+        const v = $('video', box), btn = $('.fg-sound', box.parentNode);
+        if (!v) return;
+        v.muted = true;
+        let seen = false;
+        const go = () => { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); };
+        const io = new IntersectionObserver((es) => es.forEach((e) => {
+          seen = e.intersectionRatio > 0.33;
+          if (seen && (!REDUCED || !v.muted)) go(); else if (!seen) v.pause();
+        }), { threshold: [0, 0.33, 0.66] });
+        io.observe(box);
+        if (btn) btn.addEventListener('click', () => {
+          v.muted = !v.muted;
+          if (!v.muted) { v.volume = 1; if (seen || REDUCED) go(); }
+          btn.classList.toggle('is-on', !v.muted);
+          btn.setAttribute('aria-pressed', String(!v.muted));
+          btn.setAttribute('aria-label', v.muted ? 'Turn sound on' : 'Turn sound off');
+        });
+        const watch = setInterval(() => {
+          if (v.isConnected) return;
+          clearInterval(watch); io.disconnect();
+          try { v.pause(); v.removeAttribute('src'); v.load(); } catch (err) { /* already gone */ }
+        }, 800);
+      });
 
       this.scenes = $$('.scn', root).map((n, ord) => ({
         n,

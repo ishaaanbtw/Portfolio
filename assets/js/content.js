@@ -2438,12 +2438,21 @@ window.SITE = {
                it at the moment of contact — and that control is the scene.
                This is the interaction that replaced a whole device; letting
                someone stop it half way is the only way a page can say so. */
+            /* NOW THE LAUNCH FILM, PLAYED RATHER THAN SCRUBBED. `play: true`
+               loops it muted with no player controls; a sound toggle sits in
+               the top-right corner. The film is the Cypherock marketing
+               team's launch promo, not Ishaan's work, and `credit` says so
+               on the page. The scrubbed walkthrough it replaces is still at
+               assets/media/x0/app-walkthrough.mp4 (used as a card image
+               further down, so it is not deleted). */
             { id: 'x0-tap', nav: 'Product', act: 'IV · Product', kind: 'video', dur: 170, dark: true,
-              src: 'assets/media/x0/app-walkthrough.mp4',
-              poster: 'assets/media/x0/app-walkthrough.webp',
-              alt: 'The X0 card tapped against the back of a phone, and the confirmation that follows',
+              play: true, caption: true,
+              src: 'assets/media/x0/x0-promo.mp4',
+              poster: 'assets/media/x0/x0-promo.webp',
+              alt: 'Cypherock X0 launch film: the card, the secure element, supported tokens and the app',
               h: 'This is what replaced the hardware.',
-              p: 'Everything about it is designed around a hand doing something physical. Stand-in footage: the shot to take is the hand, the card and the phone on a tripod, one key light, dark ground.' },
+              p: 'Everything about it is designed around a hand doing something physical: tap the card on the phone, hold, done.',
+              credit: 'Launch film by the Cypherock marketing team \u00b7 not my work, shown for context' },
 
             /* THE LAST CHAPTER OF THE PRODUCT: IT SHIPPED. One headline, a
                status, and the three places X0 lives now, shown as the real
@@ -3180,13 +3189,16 @@ window.SITE = {
          run-up, the batter's drive, the fielding and the run, then dusk as the
          floodlights flicker on, ending on the night match. The last shot
          dissolves back into the first, so the loop has no seam.
-         Source scene and shot list: .tools/cricket-film/ (scene.html, film.js).
+         The players are rigged characters: a Ready Player Me avatar (head,
+         hands, trousers, shoes) with a sculpted, skinned shirt and arms, driven
+         by the scene's cricket animation through two-bone IK.
+         Source: .tools/cricket-film/ (render.html, chars.js, film.js, avatar .glb).
          Poster is the film's first frame. */
       { title: 'Explorations', meta: 'Side projects, 3D & motion, 2026',
         still: true,
         col: 'a', ratio: 1.72,
-        thumb: 'assets/media/explorations/cricket-ground.mp4',
-        thumbPoster: 'assets/media/explorations/cricket-ground.webp',
+        thumb: 'assets/media/explorations/cricket-ground.mp4?v=2',
+        thumbPoster: 'assets/media/explorations/cricket-ground.webp?v=2',
         preview: 'bloom' },
       /* ----------------------------------------------------------------- Fury
          The Behance study (2023, gallery 170247419), rebuilt from the Figma
