@@ -5512,6 +5512,43 @@
     spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6.5c.6 3.2 2.3 4.9 5.5 5.5-3.2.6-4.9 2.3-5.5 5.5-.6-3.2-2.3-4.9-5.5-5.5 3.2-.6 4.9-2.3 5.5-5.5Z"/><path d="M17.5 3c.25 1.3.95 2 2.25 2.25-1.3.25-2 .95-2.25 2.25-.25-1.3-.95-2-2.25-2.25 1.3-.25 2-.95 2.25-2.25Z"/><path d="M18 15.5c.2 1 .75 1.55 1.75 1.75-1 .2-1.55.75-1.75 1.75-.2-1-.75-1.55-1.75-1.75 1-.2 1.55-.75 1.75-1.75Z"/></svg>',
   };
 
+  /* WHERE THE X1 PHOTOGRAPH FLIES TO. The handoff in the context scene moves
+     the photograph from its own column into the X1 row's thumbnail, and the
+     only honest way to know that distance is to measure it. Offsets, not
+     bounding rects, because both ends are mid-animation when this runs and
+     offsets ignore `translate` and `scale`. The result is three numbers on
+     `.fg-ctx`: where to move the picture's top-left corner and how small to
+     make it. Called from `Film.measure`, so it reruns on resize and as images
+     land. */
+  const CTX_FLY = (root) => {
+    (root || document).querySelectorAll('.fg-ctx').forEach((ctx) => {
+      const kit = ctx.querySelector('.fg-ctx__kit');
+      const dot = ctx.querySelector('.fg-ctx__row.is-me .fg-ctx__thumb');
+      if (!kit || !dot) return;
+      const off = (n) => {
+        let x = 0; let y = 0;
+        while (n && n !== ctx) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+        return n === ctx ? { x, y } : null;
+      };
+      const a = off(kit);
+      const b = off(dot);
+      if (!a || !b || !kit.offsetHeight) return;
+      const img = kit.querySelector('img');
+      const R = img && img.naturalWidth ? img.naturalWidth / img.naturalHeight : 1512 / 1745;
+      let w = kit.offsetWidth; let h = kit.offsetHeight; let ix = 0; let iy = 0;
+      if (w / h > R) { const nw = h * R; ix = (w - nw) / 2; w = nw; } else { const nh = w / R; iy = (h - nh) / 2; h = nh; }
+      const pad = 3;
+      const tw = dot.offsetWidth - pad * 2;
+      const th = dot.offsetHeight - pad * 2;
+      const sc = Math.min(tw / w, th / h);
+      const tx = b.x + pad + (tw - w * sc) / 2;
+      const ty = b.y + pad + (th - h * sc) / 2;
+      ctx.style.setProperty('--fx', `${(tx - a.x - ix * sc).toFixed(1)}px`);
+      ctx.style.setProperty('--fy', `${(ty - a.y - iy * sc).toFixed(1)}px`);
+      ctx.style.setProperty('--fs', sc.toFixed(4));
+    });
+  };
+
   const SCENE = {
     /* --- an object on the black, with the title behind it ----------------
        Scenes 01, 02 and 27. The card sits in front of the letters and the
@@ -5673,36 +5710,90 @@
        THE TILES ARRIVE, THEN THE MIDDLE. Staggered across the first third so
        the frame assembles, and the claim lands at 0.4 on a board that is
        already built rather than into an empty stage. */
-    bento: (s) => {
-      /* THE TAIL IS PULLED IN, for the reason the object scene's own note
-         gives: a beat that is still fading in at 90% of the scene is on screen
-         for one flick before the scene leaves. Everything has arrived by about
-         0.85, which leaves the pause this scene is built around — the board
-         assembled, the claim made, and then a beat of nothing. */
-      const b = SPREAD((s.facts || []).length, 0.48, 0.56);
-      const P = SCENE.PILL;
-      return `<div class="fg-bento">` +
-        (s.tiles || []).map((t, i) =>
-          `<figure${AT(0.04 + i * 0.045)} class="fg-bento__t beat">` +
-            `<img src="${url(t.src)}" alt="${esc(t.alt || '')}" decoding="async"` +
-            (t.pos ? ` style="object-position:${esc(t.pos)}"` : '') + `>` +
-          `</figure>`).join('') +
-        `<div class="fg-bento__mid">` +
-          (s.kicker ? `<span${AT(0.4)} class="fg-kick beat">${esc(s.kicker)}</span>` : '') +
-          (s.h ? `<h2${AT(0.44)} class="fg-h beat beat--still">${s.h}</h2>` : '') +
-          ((s.facts || []).length
-            ? `<ul class="fg-facts">` + s.facts.map((f, i) =>
-                `<li${AT(b[i])} class="beat">${f}</li>`).join('') + `</ul>`
+    /* --- 02 · context, in two beats --------------------------------------
+       Beat one is the flagship and its record; beat two is the market at the
+       same price. They share one grid cell and swap at `W`: everything in
+       beat one is a `beat--win` that closes there, everything in beat two
+       arrives after it. The ladder's bars read `--o` off their own row, so a
+       bar draws as its row arrives and undraws if the reader scrolls back. */
+    context: (s) => {
+      const A = s.a || {};
+      const B = s.b || {};
+      const W = 0.48;
+      const rows = B.rows || [];
+      const top = Math.max(1, ...rows.map((r) => +r.p || 0));
+      /* THE RECORD LIGHTS UP WITH THE OBJECT. Every row is on the page from
+         the start, dimmed, and comes up to full ink as the part it describes
+         lands: the price with the case, the hardware and the key split with
+         the cards, the rest straight after. `light` states those moments. */
+      const LIGHT = A.light || [0.1, 0.18, 0.21, 0.25, 0.28, 0.31, 0.34];
+      const spec = (A.spec || []).map(([k, v], i) =>
+        `<div class="beat" style="--at:${(LIGHT[i] != null ? LIGHT[i] : 0.34).toFixed(3)}">` +
+          `<dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
+      /* THE PHOTOGRAPH IS TWO OBJECTS AT TWO DEPTHS. The case and the cards
+         are separate cut-outs on the same canvas, so they stack exactly at
+         rest and can be moved apart. `.fg-ctx__kit` is the box that is
+         measured; `.fg-ctx__fly` inside it is the one that moves, first into
+         place and then, at the handoff, into the X1 row of the ladder. */
+      const layers = (A.layers || []).map((l) =>
+        `<img class="fg-ctx__layer fg-ctx__layer--${esc(l.k || 'x')}" src="${url(l.src)}" alt="" decoding="async">`).join('');
+      const kit = layers
+        ? `<div class="fg-ctx__kit" role="img" aria-label="${esc(A.alt || '')}">` +
+            `<div class="fg-ctx__fly">${layers}</div>` +
+          `</div>`
+        : (A.img ? `<div class="fg-ctx__kit"><div class="fg-ctx__fly"><img class="fg-ctx__layer" src="${url(A.img)}" alt="${esc(A.alt || '')}" decoding="async"></div></div>` : '');
+      const one = `<div class="fg-ctx__beat fg-ctx__beat--a">` +
+          `<div class="fg-ctx__copy">` +
+            (A.kicker ? `<span${AT(0, W)} class="fg-kick beat beat--lead beat--win">${esc(A.kicker)}</span>` : '') +
+            (A.h ? `<h2${AT(0, W)} class="fg-h beat beat--lead beat--win">${A.h}</h2>` : '') +
+            (A.p ? `<p${AT(0.02, W)} class="fg-ctx__p beat beat--win">${A.p}</p>` : '') +
+            (spec ? `<dl${AT(0, W)} class="fg-ctx__spec beat beat--lead beat--win">${spec}</dl>` : '') +
+          `</div>` +
+          (kit
+            ? `<figure class="fg-ctx__fig">${kit}` +
+                (A.cap ? `<figcaption${AT(0.2, W - 0.06)} class="beat beat--win">${esc(A.cap)}</figcaption>` : '') +
+              `</figure>`
             : '') +
-          (s.turn ? `<p${AT(0.62)} class="fg-turn beat">${s.turn}</p>` : '') +
-          ((s.pills || []).length
-            ? `<ul class="fg-pills">` + s.pills.map((q, i) =>
-                `<li${AT(0.7 + i * 0.035)} class="beat"><svg viewBox="0 0 24 24"`
-                + ` aria-hidden="true">${P[q.i] || P.box}</svg>${esc(q.t)}</li>`).join('')
-              + `</ul>`
-            : '') +
-        `</div>` +
-      `</div>`;
+        `</div>`;
+      const cell = (c, t) => `<span role="cell" class="fg-ctx__${c}">${t}</span>`;
+      /* A PICTURE BESIDE EACH NAME, so the reader knows the object before the
+         word. Each is the manufacturer's own product shot, cut to a 160px
+         thumbnail. A row without one shows its name alone. The X1 row's
+         picture is where the flying photograph lands, so it stays empty until
+         the photograph gets there. */
+      const thumb = (r) => (r.img
+        ? `<span class="fg-ctx__thumb" aria-hidden="true">` +
+            `<img src="${url(r.img)}" alt="" loading="lazy" decoding="async" onerror="this.parentNode.remove()">` +
+          `</span>`
+        : '');
+      /* THE X1 ROW ARRIVES FIRST, as an empty slot, so the photograph has
+         somewhere visible to land; the rest of the ladder fills in round it. */
+      let k = 0;
+      const at = rows.map((r) => (r.me ? W + 0.06 : W + 0.12 + (k++) * 0.03));
+      const two = `<div class="fg-ctx__beat fg-ctx__beat--b">` +
+          `<div class="fg-ctx__head">` +
+            (B.kicker ? `<span${AT(W + 0.02)} class="fg-kick beat">${esc(B.kicker)}</span>` : '') +
+            (B.h ? `<h2${AT(W + 0.03)} class="fg-h beat beat--still">${B.h}</h2>` : '') +
+            (B.p ? `<p${AT(W + 0.07)} class="fg-ctx__p beat">${B.p}</p>` : '') +
+          `</div>` +
+          `<div class="fg-ctx__table" role="table" aria-label="${esc(B.h || 'Comparison')}">` +
+            ((B.cols || []).length
+              ? `<div role="row"${AT(W + 0.05)} class="fg-ctx__row fg-ctx__row--h beat">` +
+                  B.cols.map((c) => `<span role="columnheader">${esc(c)}</span>`).join('') +
+                `</div>`
+              : '') +
+            rows.map((r, i) =>
+              `<div role="row" class="fg-ctx__row beat${r.me ? ' is-me' : ''}"` +
+                ` style="--at:${at[i].toFixed(3)};--v:${((+r.p || 0) / top).toFixed(3)}">` +
+                cell('n', thumb(r) + `<span>${esc(r.n)}</span>`) +
+                cell('bar', `<i aria-hidden="true"></i><b>$${esc(String(r.p))}</b>`) +
+                cell('f', esc(r.f || '')) +
+                cell('s', esc(r.s || '')) +
+              `</div>`).join('') +
+          `</div>` +
+          (B.note ? `<p${AT(W + 0.34)} class="fg-ctx__note beat">${esc(B.note)}</p>` : '') +
+        `</div>`;
+      return `<div class="fg-ctx">${one}${two}</div>`;
     },
 
     /* --- 03 · the market, as a field that becomes a phone ----------------
@@ -5782,6 +5873,35 @@
         `<li${AT(0.34 + i * 0.05)} class="beat"><b aria-label="${esc(t.n)}">` +
           `<span class="fg-roll__row" aria-hidden="true">${roll(t.n, i)}</span></b>` +
           `<span>${esc(t.l)}</span></li>`).join('');
+      /* THE PLATE LAYOUT. The full-bleed film under a white wash, with four
+         glass cards around the phone, read as a fintech advert. `layout:
+         'plate'` sets the same argument as an editorial split instead: the
+         copy and the three numbers on the left, the film as one contained
+         plate on the right with a small caption under it. No cards, no wash.
+         `films` is tried in order, so a new cut can be dropped in by name
+         and the old one still plays until it exists. */
+      if (s.layout === 'plate') {
+        const films = REDUCED ? '' : (s.films || []).map((f) =>
+          `<source src="${url(f)}" type="${/\.webm$/i.test(f) ? 'video/webm' : 'video/mp4'}">`).join('');
+        return `<div class="fg-insp">` +
+            `<div class="fg-insp__copy">` +
+              (s.kicker ? `<span${AT(0.02)} class="fg-kick beat beat--lead">${esc(s.kicker)}</span>` : '') +
+              `<h2${AT(0.04)} class="fg-h beat beat--lead beat--still">${s.h}` +
+                (s.h2 ? ` <span class="fg-insp__sub">${s.h2}</span>` : '') +
+              `</h2>` +
+              (s.p ? `<p${AT(0.12)} class="fg-insp__p beat">${s.p}</p>` : '') +
+              (stats ? `<ul class="fg-insp__stats fg-ins__stats">${stats}</ul>` : '') +
+            `</div>` +
+            `<figure${AT(0)} class="fg-insp__fig beat beat--lead">` +
+              `<div class="fg-insp__plate">` +
+                `<video data-bgloop muted loop playsinline preload="metadata"` +
+                  ` disablepictureinpicture disableremoteplayback tabindex="-1" aria-hidden="true"` +
+                  `${s.poster ? ` poster="${url(s.poster)}"` : ''}>${films}</video>` +
+              `</div>` +
+              (s.cap ? `<figcaption>${esc(s.cap)}</figcaption>` : '') +
+            `</figure>` +
+          `</div>`;
+      }
       return `<div class="fg-ins__bg" aria-hidden="true">` +
           `<div class="fg-ins__frame">` +
             `<video class="fg-ins__vid" data-bgloop muted loop playsinline preload="metadata"` +
@@ -7518,7 +7638,7 @@
         gT: 0,
         gDone: false,
         gCatch: false,
-        once: n.classList.contains('scn--contact') || n.classList.contains('scn--ia') || n.classList.contains('scn--kept') || n.classList.contains('scn--chain') || n.classList.contains('scn--stack') || n.classList.contains('scn--msgs') || n.id === 'x0-question' || n.id === 'x0-subtract' || n.id === 'x0-market' || n.id === 'x0-x1',
+        once: n.classList.contains('scn--contact') || n.classList.contains('scn--ia') || n.classList.contains('scn--kept') || n.classList.contains('scn--chain') || n.classList.contains('scn--stack') || n.classList.contains('scn--msgs') || n.id === 'x0-question' || n.id === 'x0-subtract' || n.id === 'x0-market',
         q: -1,
         o: -1,
         p: -1,
@@ -7602,6 +7722,7 @@
          over it; see the foot of `tick`. */
       this.end = last ? last.top + last.n.offsetHeight : 0;
       this.total = Math.max(1, this.end - this.first - vh);
+      CTX_FLY(document);
     },
 
     tick() {
