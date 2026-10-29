@@ -968,17 +968,17 @@ window.SITE = {
                launch metric because neither is recorded anywhere, and a case
                study that invents one has spent the only thing it had. */
             { id: 'x0-record', nav: 'Overview', kind: 'record', dur: 165,
-              kicker: 'Cypherock · Case study',
+              kicker: 'Case study',
               h: 'Cypherock X0',
               lede: 'A hardware wallet the size of a bank card, built to make '
                 + 'self-custody simpler, more approachable and more '
                 + '<b>physical</b> than the vault it sits beside.',
               rows: [
-                { k: 'Role', v: 'Senior Product Designer · Sole lead designer, end to end, concept to beta' },
-                { k: 'Timeline', v: 'Dec 2025 to present' },
-                { k: 'Team', v: 'Design of one, with firmware, hardware, blockchain and frontend engineering' },
-                { k: 'Scope', v: 'Product strategy · Information architecture · UX · UI · Design system · Industrial and packaging design' },
-                { k: 'Surfaces', v: 'The NFC card · X0 Wallet for iOS and Android' },
+                { k: 'Role', v: '*Senior Product Designer* · Sole lead designer, end to end, concept to beta' },
+                { k: 'Timeline', v: '*Dec 2025* to present' },
+                { k: 'Team', v: '*Design of one*, with firmware, hardware, blockchain and frontend engineering' },
+                { k: 'Scope', v: '*Product strategy* · *Information architecture* · *UX* · *UI* · *Design system* · *Industrial and packaging design*' },
+                { k: 'Surfaces', v: '*The NFC card* · *X0 Wallet* for iOS and Android' },
               ] },
 
             /* ==============================================================

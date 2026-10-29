@@ -5612,7 +5612,12 @@
           ? `<dl class="fg-rec__list">` + rows.map((r, i) =>
               `<div${AT(b[i])} class="fg-rec__r beat">` +
                 `<dt class="fg-rec__k">${esc(r.k)}</dt>` +
-                `<dd class="fg-rec__v">${esc(r.v)}</dd>` +
+                /* `*words*` in a value are its key words: set in ink and weight,
+                   with the rest of the value in grey, so the column can be
+                   skimmed by its key words alone */
+                (/\*[^*]+\*/.test(r.v)
+                  ? `<dd class="fg-rec__v fg-rec__v--key">${esc(r.v).replace(/\*([^*]+)\*/g, '<b>$1</b>')}</dd>`
+                  : `<dd class="fg-rec__v">${esc(r.v)}</dd>`) +
               `</div>`).join('') + `</dl>`
           : '') +
         (s.foot ? `<span${AT(0.4)} class="fg-rec__f beat">${esc(s.foot)}</span>` : '') +

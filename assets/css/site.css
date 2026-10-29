@@ -19135,6 +19135,11 @@ body.llm-open .ink:not(.ink--inline) { clip-path: inset(0 var(--llm-clear) 0 0);
   text-wrap: pretty;
 }
 
+/* a value with marked key words: the key words in ink and a touch heavier,
+   the connective text in grey, so the eye can run down the column */
+.fg-rec__v--key { color: var(--fg-quiet); }
+.fg-rec__v--key b { color: var(--fg-ink); font-weight: 540; }
+
 .fg-rec__f {
   margin-block-start: clamp(1rem, 2.2vh, 1.5rem);
   font-family: var(--mono);
