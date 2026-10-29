@@ -2771,27 +2771,6 @@ window.SITE = {
               blocks: [ { type: 'raw', html: '<ol class="lrn"><li><span class="lrn__n">01</span><b class="lrn__t">Admins vs recruiters</b></li><li><span class="lrn__n">02</span><b class="lrn__t">Making data feel light</b></li><li><span class="lrn__n">03</span><b class="lrn__t">Earning trust</b></li><li><span class="lrn__n">04</span><b class="lrn__t">AI that assists, not replaces</b></li><li><span class="lrn__n">05</span><b class="lrn__t">Built to scale</b></li></ol>' } ] },
           ],
         } },
-      /* --------------------------------------------------------- Explorations
-         NOT A DOOR, same as the X1 Vault tile: `still` makes it a picture
-         rather than a link, with the same hover as every other card. Sits in
-         the left stack, directly under Onefinnet Talent.
-
-         The film is a 20s, 30fps silent loop cut from a three.js side project:
-         a floating village cricket ground. Establishing push-in, the bowler's
-         run-up, the batter's drive, the fielding and the run, then dusk as the
-         floodlights flicker on, ending on the night match. The last shot
-         dissolves back into the first, so the loop has no seam.
-         The players are rigged characters: a Ready Player Me avatar (head,
-         hands, trousers, shoes) with a sculpted, skinned shirt and arms, driven
-         by the scene's cricket animation through two-bone IK.
-         Source: .tools/cricket-film/ (render.html, chars.js, film.js, avatar .glb).
-         Poster is the film's first frame. */
-      { title: 'Explorations', meta: 'Side projects, 3D & motion, 2026',
-        still: true,
-        col: 'a', ratio: 1.72,
-        thumb: 'assets/media/explorations/cricket-ground.mp4?v=2',
-        thumbPoster: 'assets/media/explorations/cricket-ground.webp?v=2',
-        preview: 'bloom' },
       /* ----------------------------------------------------------------- Fury
          The Behance study (2023, gallery 170247419), rebuilt from the Figma
          source ("Untitled", key Ju9mNyoaiUD2W0HHMKNhjb) LAYER BY LAYER rather
@@ -3075,8 +3054,9 @@ window.SITE = {
           title: 'X0 Cards',
           hero: {
             kind: 'film',
-            film: 'assets/media/x0/x0-card-reel4.webm',
-            film2: 'assets/media/x0/x0-card-reel4.mp4',
+            /* mp4 first: the webm is VP9 profile 1, which phones fail to decode */
+            film: 'assets/media/x0/x0-card-reel4.mp4',
+            film2: 'assets/media/x0/x0-card-reel4.webm',
             poster: 'assets/media/x0/x0-card-reel4.webp',
             ground: '#060607',
             h: 'X0 Cards',

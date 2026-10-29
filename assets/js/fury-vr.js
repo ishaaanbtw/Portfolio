@@ -12,6 +12,21 @@
    blue, light strips on the walls). Loaded only when the section is near. */
 import * as THREE from './vendor/three.module.min.js';
 
+/* OLDER PHONES HAVE NO roundRect. iOS before 16 lacks it, and the throw
+   happened before the scene was switched on, so those phones only ever got
+   the flat screenshots. A plain path does the same job. */
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    const q = Math.min(typeof r === 'number' ? r : (r && r[0]) || 0, w / 2, h / 2);
+    this.moveTo(x + q, y);
+    this.arcTo(x + w, y, x + w, y + h, q);
+    this.arcTo(x + w, y + h, x, y + h, q);
+    this.arcTo(x, y + h, x, y, q);
+    this.arcTo(x, y, x + w, y, q);
+    this.closePath();
+  };
+}
+
 const IMG = 'assets/img/fury/';
 const PANELS = [
   { src: IMG + 'vr-p-sessions.webp', aspect: 1600 / 921, yaw: 0 },

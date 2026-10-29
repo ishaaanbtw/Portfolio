@@ -2967,8 +2967,7 @@
       this.ends();
       /* ON A PHONE, THE DETAILS' HEIGHT IS WATCHED, not read once: the brief
          settles after the open (type, the facts list, the pinned button), and
-         whenever it changes size the workspace is measured again so the strip
-         below starts where the details end. */
+         whenever it changes size the workspace is measured again. */
       if (this.fitRO) this.fitRO.disconnect();
       const fitBody = $('.pvw__body', this.rail);
       if (fitBody && window.ResizeObserver
@@ -2995,24 +2994,6 @@
     remeasure() {
       const card = this.card;
       if (!card || !this.el) return;
-      /* ON A PHONE THE DETAILS TAKE THE HEIGHT THEY NEED. The column used to be
-         a fixed half of the screen, so a long brief was cut off under the
-         pinned button. Its real height is written to `--pv-bh` before anything
-         below reads the stage, so the strip underneath is laid out in whatever
-         is left. The stylesheet caps it, so the screens always keep a band. */
-      if (document.documentElement.classList.contains('is-phone')) {
-        const box = $('.pvw__brief', this.rail);
-        if (box) {
-          /* its natural height: freed from its `inset: 0` for one read, so it
-             is as tall as what is in it, then put straight back */
-          box.style.bottom = 'auto';
-          box.style.height = 'auto';
-          const h = Math.max(box.offsetHeight, box.scrollHeight);
-          box.style.removeProperty('bottom');
-          box.style.removeProperty('height');
-          if (h > 0) document.documentElement.style.setProperty('--pv-bh', `${Math.ceil(h)}px`);
-        }
-      }
       const was = this.el.style.getPropertyValue('--p');
       const camWas = this.el.style.getPropertyValue('--cam');
       this.view.style.setProperty('--p', '1');

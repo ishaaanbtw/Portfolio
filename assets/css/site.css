@@ -1439,7 +1439,12 @@ body.pile-hold * { cursor: grabbing; }
    only that it is inside a column rather than being the page: its own vertical
    padding comes off, because the top line is the layout's, and the grid stops
    insetting itself, because the column already has margins. */
-.home__work .showcase { padding: 0; }
+.home__work .showcase {
+  padding: 0;
+  /* room after the last card, so the grid ends on air rather than on the
+     bottom edge of the window */
+  padding-bottom: clamp(2.5rem, 7vh, 4.5rem);
+}
 
 /* TWO STACKS OF UNEQUAL WIDTH, AND NO ROWS.
 
@@ -25012,25 +25017,47 @@ body[data-page='notfound'] #main { min-height: 100svh; }
 @media (max-width: 62rem) {
   :root.is-phone.is-pvw .pmenu__btn { opacity: 0; pointer-events: none; }
   :root.is-phone .pvw::before { background: #141416; opacity: 1; inset: 0; }
-  /* the details are as tall as their content (measured into `--pv-bh` by
-     `Preview.remeasure`), up to 78% of the screen; the strip takes the rest */
-  :root.is-phone .pvwr { height: min(var(--pv-bh, 50svh), 78svh); }
+  /* ONE SPLIT FOR EVERY PROJECT. The strip of screens is always the same
+     height, so the pictures are the same size whichever project is open and
+     whatever the phone; the details take the rest of the screen and scroll
+     inside it. (The details used to be sized to their content, which made the
+     strip a different height for every project and, on a short phone, pushed
+     the button out of reach under it.) */
+  :root.is-phone { --pv-strip: clamp(12.5rem, 36svh, 22rem); }
+  :root.is-phone .pvwr { height: calc(100svh - var(--pv-strip)); }
   :root.is-phone .pvw::before { inset: 0; }
-  :root.is-phone .pvw__stage { inset: min(var(--pv-bh, 50svh), 78svh) 0 0 0; }
+  :root.is-phone .pvw__stage { inset: calc(100svh - var(--pv-strip)) 0 0 0; }
   /* AND NOTHING OF THE PAGE PAINTS OVER THE PREVIEW. The closing block is lifted
      (z-index 5) for the desktop column; on a phone it is in the same stacking
      context as the preview and was showing through the field. */
   :root.is-phone.is-pvw .mast__foot { z-index: 0; }
   :root.is-phone .pvw__edge { display: none; }
   :root.is-phone .pvw__brief { padding-bottom: 0; }
-  /* IN THE FLOW, NOT PINNED OVER IT. Pinned, the button and its fade sat on
-     top of the last rows of the brief; now the brief is sized to its content
-     and the button simply comes after the last row. */
+  /* THE BUTTON IS ALWAYS IN REACH. It follows the last row when the details
+     fit, and when they do not it sticks to the foot of their scrolling box on
+     an opaque fade, so it is never under the strip or below the fold. */
   :root.is-phone .pvw__door {
-    margin-top: 1.25rem;
-    padding: 0.25rem 0 0.25rem;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: 0.5rem;
+    padding: 1rem 0 0.9rem;
+    background: linear-gradient(to top, #141416 72%, rgba(20, 20, 22, 0));
   }
   :root.is-phone .pvw__door .pvw__cta { width: 100%; justify-content: center; }
+  /* clear of the notch or Dynamic Island when the page runs edge to edge */
+  :root.is-phone .pvw__brief { padding-top: calc(var(--sa-top, 0px) + clamp(0.9rem, 2.6vh, 1.4rem)); }
+  /* close and step controls big enough for a thumb (44px is the floor) */
+  :root.is-phone .pvw__back,
+  :root.is-phone .pvw__step { width: 2.75rem; height: 2.75rem; }
+  /* ONE KIND OF STRIP ON EVERY PROJECT. Captions are dropped on a phone (two
+     lines of 10px under a 200px picture were clipped mid-word), so every
+     project's pictures stand as tall as the strip allows, the way the
+     listing rows already do, and the strip clears the home indicator. */
+  :root.is-phone .pvw__cap { display: none; }
+  :root.is-phone .pvw__fig { height: auto; gap: 0; }
+  :root.is-phone .pvw__plate { border-radius: 10px; }
+  :root.is-phone .pvw__stage { bottom: var(--sa-bottom, 0px); }
 }
 
 /* A FINGER CAN PICK A BRICK UP. Without this the browser claimed the touch
